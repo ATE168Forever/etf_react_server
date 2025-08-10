@@ -484,9 +484,11 @@ function App() {
                   <th style={{ position: 'relative' }}>
                     <span className="sortable" onClick={() => handleSort('stock_id')}>
                       Stock
-                      {sortConfig.column === 'stock_id' && (
-                        <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
-                      )}
+                      <span className="sort-indicator">
+                        {sortConfig.column === 'stock_id'
+                          ? (sortConfig.direction === 'asc' ? '▲' : '▼')
+                          : '↕'}
+                      </span>
                     </span>
                     <span
                       className="filter-btn"
@@ -508,18 +510,22 @@ function App() {
                   <th>
                     <span className="sortable" onClick={() => handleSort('latest_price')}>
                       最新<br></br>股價
-                      {sortConfig.column === 'latest_price' && (
-                        <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
-                      )}
+                      <span className="sort-indicator">
+                        {sortConfig.column === 'latest_price'
+                          ? (sortConfig.direction === 'asc' ? '▲' : '▼')
+                          : '↕'}
+                      </span>
                     </span>
                   </th>
                   {MONTHS.map((m, idx) => (
                     <th key={m} className={idx === currentMonth ? 'current-month' : ''}>
                       <span className="sortable" onClick={() => handleSort(`month${idx}`)}>
                         {m}
-                        {sortConfig.column === `month${idx}` && (
-                          <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
-                        )}
+                        <span className="sort-indicator">
+                          {sortConfig.column === `month${idx}`
+                            ? (sortConfig.direction === 'asc' ? '▲' : '▼')
+                            : '↕'}
+                        </span>
                       </span>
                       <br />
                       <label style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
@@ -538,17 +544,21 @@ function App() {
                   <th>
                     <span className="sortable" onClick={() => handleSort('total')}>
                       累積{showDividendYield ? '殖利率' : '股息'}
-                      {sortConfig.column === 'total' && (
-                        <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
-                      )}
+                      <span className="sort-indicator">
+                        {sortConfig.column === 'total'
+                          ? (sortConfig.direction === 'asc' ? '▲' : '▼')
+                          : '↕'}
+                      </span>
                     </span>
                     {'/ '}
                     <br></br>
                     <span className="sortable" onClick={() => handleSort('annual_yield')}>
                       預估殖利率
-                      {sortConfig.column === 'annual_yield' && (
-                        <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
-                      )}
+                      <span className="sort-indicator">
+                        {sortConfig.column === 'annual_yield'
+                          ? (sortConfig.direction === 'asc' ? '▲' : '▼')
+                          : '↕'}
+                      </span>
                     </span>
                   </th>
                 </tr>
