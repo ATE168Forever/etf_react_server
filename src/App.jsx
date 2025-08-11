@@ -38,8 +38,8 @@ function FilterDropdown({ options, selected, setSelected, onClose }) {
   const [tempSelected, setTempSelected] = useState(selected);
   const [searchText, setSearchText] = useState('');
 
-  const filteredOptions = options.filter(val =>
-    val.toLowerCase().includes(searchText.trim().toLowerCase())
+  const filteredOptions = options.filter(opt =>
+    opt.label.toLowerCase().includes(searchText.trim().toLowerCase())
   );
 
   const handleCheck = (val) => {
@@ -49,15 +49,16 @@ function FilterDropdown({ options, selected, setSelected, onClose }) {
   };
 
   const handleAll = () => {
-    setTempSelected(
-      filteredOptions.length === tempSelected.length
-        ? []
-        : [...filteredOptions]
-    );
+    const filteredValues = filteredOptions.map(o => o.value);
+    const allSelected =
+      filteredValues.length > 0 &&
+      filteredValues.every(v => tempSelected.includes(v)) &&
+      tempSelected.length === filteredValues.length;
+    setTempSelected(allSelected ? [] : filteredValues);
   };
 
   const handleApply = () => {
-    setSelected(tempSelected.filter(x => options.includes(x)));
+    setSelected(tempSelected.filter(x => options.some(o => o.value === x)));
     onClose();
   };
 
@@ -81,7 +82,7 @@ function FilterDropdown({ options, selected, setSelected, onClose }) {
             type="checkbox"
             checked={
               filteredOptions.length > 0 &&
-              filteredOptions.every(val => tempSelected.includes(val))
+              filteredOptions.every(opt => tempSelected.includes(opt.value))
             }
             onChange={handleAll}
           />
@@ -91,13 +92,13 @@ function FilterDropdown({ options, selected, setSelected, onClose }) {
         {filteredOptions.length === 0 && (
           <div style={{ color: '#bbb', padding: '8px 0', fontSize: 13 }}>無符合選項</div>
         )}
-        {filteredOptions.map(val => (
-          <label key={val} className="dropdown-item">
+        {filteredOptions.map(opt => (
+          <label key={opt.value} className="dropdown-item">
             <input
               type="checkbox"
-              checked={tempSelected.includes(val)}
-              onChange={() => handleCheck(val)}
-            /> {val}
+              checked={tempSelected.includes(opt.value)}
+              onChange={() => handleCheck(opt.value)}
+            /> {opt.label}
           </label>
         ))}
       </div>
@@ -209,12 +210,6 @@ function App() {
   const filteredData = data.filter(
     item => new Date(item.dividend_date).getFullYear() === Number(selectedYear)
   );
-  const stockIdSet = new Set();
-  filteredData.forEach(item => {
-    stockIdSet.add(item.stock_id);
-  });
-  const stockIds = Array.from(stockIdSet);
-
   const stocks = [];
   const stockMap = {};
   filteredData.forEach(item => {
@@ -224,6 +219,10 @@ function App() {
       stockMap[key] = true;
     }
   });
+  const stockOptions = stocks.map(s => ({
+    value: s.stock_id,
+    label: `${s.stock_id} ${s.stock_name}`
+  }));
   const dividendTable = {};
   filteredData.forEach(item => {
     const month = new Date(item.dividend_date).getMonth();
@@ -500,7 +499,7 @@ function App() {
                     </span>
                     {showIdDropdown && (
                       <FilterDropdown
-                        options={stockIds}
+                        options={stockOptions}
                         selected={selectedStockIds}
                         setSelected={setSelectedStockIds}
                         onClose={() => setShowIdDropdown(false)}
