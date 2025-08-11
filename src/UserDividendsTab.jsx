@@ -119,6 +119,16 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     });
     const grandTotal = totalPerMonth.reduce((sum, val) => sum + val, 0);
 
+    // Calculate average dividend per month up to the latest dividend month
+    let monthsForAverage = 0;
+    for (let m = 11; m >= 0; m--) {
+        if (totalPerMonth[m] > 0) {
+            monthsForAverage = m + 1;
+            break;
+        }
+    }
+    const avgPerMonth = monthsForAverage > 0 ? grandTotal / monthsForAverage : 0;
+
     const handleSort = (column) => {
         setSortConfig(prev => {
             if (prev.column === column) {
@@ -242,7 +252,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                         <td>
                             {grandTotal > 0 ? (
                                 <span
-                                    title={`每月平均領取: ${Math.round(grandTotal / 12).toLocaleString()}`}
+                                    title={`每月平均領取: ${Math.round(avgPerMonth).toLocaleString()}`}
                                     style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
                                 >
                                     {Math.round(grandTotal).toLocaleString()}
