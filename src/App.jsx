@@ -136,6 +136,11 @@ function App() {
   const [selectedStockIds, setSelectedStockIds] = useState([]);
   const [showIdDropdown, setShowIdDropdown] = useState(false);
 
+  // Watch groups
+  const [watchGroups, setWatchGroups] = useState([]);
+  const [selectedGroup, setSelectedGroup] = useState('');
+  const [showGroupModal, setShowGroupModal] = useState(false);
+
   // Month value existence filters
   const [monthHasValue, setMonthHasValue] = useState(Array(12).fill(false));
   const [freqMap, setFreqMap] = useState({});
@@ -206,6 +211,87 @@ function App() {
       })
       .catch(() => setFreqMap({}));
   }, []);
+
+  // Load default watch groups from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('watchGroups');
+    if (stored) {
+      try {
+        setWatchGroups(JSON.parse(stored));
+      } catch {
+        setWatchGroups([]);
+      }
+    } else {
+      const defaults = [
+        {
+          name: '現金流導向（月月配息）',
+          ids: ['0056', '00878', '00919', '00731', '00918']
+        },
+        {
+          name: '穩健成長 + 配息',
+          ids: ['0056', '00878', '0050']
+        },
+        {
+          name: '簡化操作（季配息）',
+          ids: ['0056', '00878', '00919']
+        }
+      ];
+      setWatchGroups(defaults);
+      localStorage.setItem('watchGroups', JSON.stringify(defaults));
+    }
+  }, []);
+
+  const saveGroups = (groups) => {
+    setWatchGroups(groups);
+    localStorage.setItem('watchGroups', JSON.stringify(groups));
+  };
+
+  const handleGroupChange = (e) => {
+    const name = e.target.value;
+    setSelectedGroup(name);
+    const group = watchGroups.find(g => g.name === name);
+    if (group) {
+      setSelectedStockIds(group.ids);
+    } else {
+      setSelectedStockIds([]);
+    }
+  };
+
+  const handleAddGroup = () => {
+    const name = prompt('輸入組合名稱');
+    if (!name) return;
+    const ids = prompt('輸入 stock id ，以逗號分隔');
+    if (!ids) return;
+    const idsArr = ids.split(/[,\s]+/).filter(Boolean);
+    saveGroups([...watchGroups, { name, ids: idsArr }]);
+  };
+
+  const handleEditGroup = (idx) => {
+    const group = watchGroups[idx];
+    const name = prompt('修改組合名稱', group.name);
+    if (!name) return;
+    const ids = prompt('修改 stock id ，以逗號分隔', group.ids.join(','));
+    if (!ids) return;
+    const idsArr = ids.split(/[,\s]+/).filter(Boolean);
+    const newGroups = [...watchGroups];
+    newGroups[idx] = { name, ids: idsArr };
+    saveGroups(newGroups);
+    if (selectedGroup === group.name) {
+      setSelectedGroup(name);
+      setSelectedStockIds(idsArr);
+    }
+  };
+
+  const handleDeleteGroup = (idx) => {
+    if (!window.confirm('確定刪除?')) return;
+    const group = watchGroups[idx];
+    const newGroups = watchGroups.filter((_, i) => i !== idx);
+    saveGroups(newGroups);
+    if (selectedGroup === group.name) {
+      setSelectedGroup('');
+      setSelectedStockIds([]);
+    }
+  };
 
   const filteredData = data.filter(
     item => new Date(item.dividend_date).getFullYear() === Number(selectedYear)
@@ -435,6 +521,19 @@ function App() {
                 <option value={year} key={year}>{year}</option>
               ))}
             </select>
+            <label style={{ marginLeft: 20 }}>觀察組合：</label>
+            <select value={selectedGroup} onChange={handleGroupChange}>
+              <option value="">自選</option>
+              {watchGroups.map(g => (
+                <option key={g.name} value={g.name}>{g.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => setShowGroupModal(true)}
+              style={{ marginLeft: 5 }}
+            >
+              建立觀察組合
+            </button>
             <button
               onClick={handleResetFilters}
               style={{
@@ -657,6 +756,29 @@ function App() {
           .
         </p>
       </div>
+      {showGroupModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>觀察組合</h3>
+            <div style={{ marginBottom: 10 }}>
+              <button onClick={handleAddGroup}>新增組合</button>
+            </div>
+            {watchGroups.map((g, idx) => (
+              <div key={idx} style={{ marginBottom: 8 }}>
+                <div><strong>{g.name}</strong>: {g.ids.join(', ')}</div>
+                <div style={{ marginTop: 4 }}>
+                  <button onClick={() => handleEditGroup(idx)}>修改</button>
+                  <button onClick={() => handleDeleteGroup(idx)} style={{ marginLeft: 4 }}>刪除</button>
+                </div>
+              </div>
+            ))}
+            {watchGroups.length === 0 && <p style={{ fontSize: 14 }}>尚無組合</p>}
+            <div style={{ textAlign: 'right', marginTop: 12 }}>
+              <button onClick={() => setShowGroupModal(false)}>關閉</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
