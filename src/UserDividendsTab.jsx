@@ -239,7 +239,16 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                         {totalPerMonth.map((total, idx) => (
                             <td key={idx} className={idx === currentMonth ? 'current-month' : ''}>{total > 0 ? Math.round(total).toLocaleString() : ''}</td>
                         ))}
-                        <td>{grandTotal > 0 ? Math.round(grandTotal).toLocaleString() : ''}</td>
+                        <td>
+                            {grandTotal > 0 ? (
+                                <span
+                                    title={`每月平均領取: ${Math.round(grandTotal / 12).toLocaleString()}`}
+                                    style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
+                                >
+                                    {Math.round(grandTotal).toLocaleString()}
+                                </span>
+                            ) : ''}
+                        </td>
                     </tr>
                 </tbody>
             </table>
