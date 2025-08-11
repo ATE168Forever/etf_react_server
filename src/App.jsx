@@ -121,6 +121,7 @@ function App() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [dataSource, setDataSource] = useState('latest');
 
   // Toggle table/calendar view
   const [showCalendar, setShowCalendar] = useState(false);
@@ -180,8 +181,9 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const jsonData = await fetchWithCache(`${API_HOST}:8000/get_dividend`);
+        const { data: jsonData, fromCache } = await fetchWithCache(`${API_HOST}:8000/get_dividend`);
         setData(jsonData);
+        setDataSource(fromCache ? 'cache' : 'latest');
 
         const yearSet = new Set(jsonData.map(item => new Date(item.dividend_date).getFullYear()));
         const yearList = Array.from(yearSet).sort((a, b) => b - a);
@@ -199,7 +201,7 @@ function App() {
 
   useEffect(() => {
     fetchWithCache(`${API_HOST}:8000/get_stock_list`)
-      .then(list => {
+      .then(({ data: list }) => {
         const map = {};
         const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12 };
         list.forEach(s => {
@@ -509,6 +511,7 @@ function App() {
       {tab === 'dividend' && (
         <div className="App">
           <h1>ETF 每月配息總表</h1>
+          <p style={{ fontSize: 12 }}>{dataSource === 'cache' ? '使用快取' : '最新'}</p>
           <div style={{ marginBottom: 16 }}>
             <label>年份：</label>
             <select

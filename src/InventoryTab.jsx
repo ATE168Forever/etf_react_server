@@ -249,6 +249,7 @@ function SellModal({ show, stock, onClose, onSubmit }) {
 
 export default function InventoryTab() {
     const [stockList, setStockList] = useState([]);
+    const [stockListSource, setStockListSource] = useState('latest');
     const [transactionHistory, setTransactionHistory] = useState(getTransactionHistory());
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState({
@@ -338,8 +339,9 @@ export default function InventoryTab() {
 
     useEffect(() => {
         fetchWithCache(`${API_HOST}/get_stock_list`)
-            .then(list => {
+            .then(({ data: list, fromCache }) => {
                 setStockList(list);
+                setStockListSource(fromCache ? 'cache' : 'latest');
             })
             .catch(() => setStockList([]));
     }, []);
@@ -449,6 +451,7 @@ export default function InventoryTab() {
                     padding: '6px 18px', borderBottom: '2px solid #1e70b8'
                 }}>庫存管理</span>
             </div>
+            <p style={{ fontSize: 12 }}>{stockListSource === 'cache' ? '使用快取' : '最新'}</p>
             <p style={{ textAlign: 'left', marginBottom: 16 }}>
                 這是一個免費網站，我們不會把你的資料存到後台或伺服器，所有的紀錄（像是你的設定或操作紀錄）都只會保存在你的瀏覽器裡。簡單說：你的資料只在你這台電腦，不會上傳，也不會被我們看到，請安心使用！
             </p>
