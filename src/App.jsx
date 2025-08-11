@@ -757,7 +757,7 @@ function App() {
       </div>
       {showGroupModal && (
         <div className="modal-overlay">
-          <div className="modal">
+          <div className="custom-modal">
             <h3>觀察組合</h3>
             <div style={{ marginBottom: 10 }}>
               <button onClick={handleAddGroup}>新增組合</button>
