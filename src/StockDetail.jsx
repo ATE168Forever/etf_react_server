@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { API_HOST } from './config';
+import { fetchWithCache } from './api';
 
 export default function StockDetail({ stockId }) {
   const [stock, setStock] = useState(null);
 
   useEffect(() => {
-    fetch(`${API_HOST}/get_stock_list`)
-      .then(res => res.json())
+    fetchWithCache(`${API_HOST}/get_stock_list`)
       .then(list => {
         const s = list.find(item => item.stock_id === stockId);
         setStock(s || {});

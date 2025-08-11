@@ -6,6 +6,7 @@ import DividendCalendar from './DividendCalendar';
 
 import './App.css';
 import { API_HOST } from './config';
+import { fetchWithCache } from './api';
 
 const MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -179,9 +180,7 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`${API_HOST}:8000/get_dividend`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const jsonData = await response.json();
+        const jsonData = await fetchWithCache(`${API_HOST}:8000/get_dividend`);
         setData(jsonData);
 
         const yearSet = new Set(jsonData.map(item => new Date(item.dividend_date).getFullYear()));
@@ -199,8 +198,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    fetch(`${API_HOST}:8000/get_stock_list`)
-      .then(res => res.json())
+    fetchWithCache(`${API_HOST}:8000/get_stock_list`)
       .then(list => {
         const map = {};
         const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12 };
