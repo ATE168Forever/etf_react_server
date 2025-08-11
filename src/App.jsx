@@ -300,12 +300,12 @@ function App() {
 
   const totalPerStock = {};
   const yieldSum = {};
-  const monthsCount = {};
+  const yieldCount = {};
   const latestPrice = {};
   displayStocks.forEach(stock => {
     totalPerStock[stock.stock_id] = 0;
     yieldSum[stock.stock_id] = 0;
-    monthsCount[stock.stock_id] = 0;
+    yieldCount[stock.stock_id] = 0;
     latestPrice[stock.stock_id] = { price: null, date: null };
     for (let m = 0; m < 12; m++) {
       const cell = dividendTable[stock.stock_id]?.[m];
@@ -314,8 +314,10 @@ function App() {
       // track per-stock totals and yield sums
       if (cell) {
         totalPerStock[stock.stock_id] += val;
-        yieldSum[stock.stock_id] += yVal;
-        monthsCount[stock.stock_id] += cell.monthsSpan || 1;
+        if (yVal > 0) {
+          yieldSum[stock.stock_id] += yVal;
+          yieldCount[stock.stock_id] += 1;
+        }
         if (!latestPrice[stock.stock_id].date || new Date(cell.dividend_date) > new Date(latestPrice[stock.stock_id].date)) {
           latestPrice[stock.stock_id] = { price: cell.last_close_price, date: cell.dividend_date };
         }
@@ -325,9 +327,9 @@ function App() {
 
   const estAnnualYield = {};
   Object.keys(yieldSum).forEach(id => {
-    const avgYield = monthsCount[id] > 0 ? yieldSum[id] / monthsCount[id] : 0;
-    // annualize the average monthly yield
-    estAnnualYield[id] = avgYield * 12;
+    const avgYield = yieldCount[id] > 0 ? yieldSum[id] / yieldCount[id] : 0;
+    const freq = [1, 2, 4, 6, 12].includes(freqMap[id]) ? freqMap[id] : yieldCount[id];
+    estAnnualYield[id] = avgYield * freq;
   });
 
   const maxAnnualYield = Math.max(...Object.values(estAnnualYield), 0);
