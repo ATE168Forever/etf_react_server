@@ -246,6 +246,7 @@ function App() {
 
   const handleGroupChange = (e) => {
     const name = e.target.value;
+    handleResetFilters();
     setSelectedGroup(name);
     const group = watchGroups.find(g => g.name === name);
     if (group) {
