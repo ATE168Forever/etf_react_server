@@ -4,12 +4,14 @@ import { fetchWithCache } from './api';
 
 export default function StockDetail({ stockId }) {
   const [stock, setStock] = useState(null);
+  const [stockSource, setStockSource] = useState('latest');
 
   useEffect(() => {
     fetchWithCache(`${API_HOST}/get_stock_list`)
-      .then(list => {
+      .then(({ data: list, fromCache }) => {
         const s = list.find(item => item.stock_id === stockId);
         setStock(s || {});
+        setStockSource(fromCache ? 'cache' : 'latest');
       })
       .catch(() => setStock({}));
   }, [stockId]);
@@ -24,6 +26,7 @@ export default function StockDetail({ stockId }) {
 
   return (
     <div className="stock-detail">
+      <p style={{ fontSize: 12 }}>{stockSource === 'cache' ? '使用快取' : '最新'}</p>
       <h1>{stock.stock_id} {stock.stock_name}</h1>
       <p>配息頻率: {stock.dividend_frequency || '-'}</p>
       <p>保管銀行: {stock.custodian || '-'}</p>
