@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Cookies from 'js-cookie';
 import Select from 'react-select';
 import { API_HOST } from './config';
+import { fetchWithCache } from './api';
 
 const COOKIE_KEY = 'my_transaction_history';
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
@@ -336,8 +337,7 @@ export default function InventoryTab() {
     }, [transactionHistory, handleExport]);
 
     useEffect(() => {
-        fetch(`${API_HOST}/get_stock_list`)
-            .then(res => res.json())
+        fetchWithCache(`${API_HOST}/get_stock_list`)
             .then(list => {
                 setStockList(list);
             })
