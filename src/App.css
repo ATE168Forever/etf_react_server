@@ -405,7 +405,7 @@ button:active {
   z-index: 1000;
 }
 
-.modal {
+.custom-modal {
   background: #111;
   padding: 20px;
   border-radius: 8px;
@@ -415,5 +415,6 @@ button:active {
   overflow-y: auto;
   color: #f5f5f5;
   border: 1px solid #444;
+  display: block;
 }
 
