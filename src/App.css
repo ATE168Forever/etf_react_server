@@ -51,6 +51,19 @@ table {
   overflow: visible !important;
 }
 
+tbody tr {
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+tbody tr:hover {
+  background-color: #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
 th,
 td {
   padding: 8px;
@@ -171,7 +184,14 @@ td {
 header {
   border-bottom: 1px solid #dee2e6;
   margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
+  padding: 0.75rem 0;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s;
+}
+
+header:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .contact-section a,
@@ -180,19 +200,27 @@ header {
 }
 
 button {
-  background: #e7f0fd;
-  color: #1e70b8;
-  border: 1px solid #888;
+  background: #1e70b8;
+  color: #fff;
+  border: none;
   border-radius: 6px;
   font-weight: 500;
   padding: 6px 14px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
 }
 
-button:hover, button:focus {
-  background: #d3e4fa;
-  color: #135a96;
+button:hover,
+button:focus {
+  background: #135a96;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Calendar styles */
