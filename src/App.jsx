@@ -128,6 +128,8 @@ function ActionDropdown({
   showDiamondOnly,
   toggleDividendYield,
   showDividendYield,
+  toggleAxis,
+  showInfoAxis,
   onClose
 }) {
   const ref = useRef();
@@ -151,6 +153,9 @@ function ActionDropdown({
           </button>
           <button onClick={() => handleClick(toggleDividendYield)}>
             {showDividendYield ? '顯示配息' : '顯示殖利率'}
+          </button>
+          <button onClick={() => handleClick(toggleAxis)}>
+            {showInfoAxis ? '顯示月份' : '顯示資訊'}
           </button>
         </>
       )}
@@ -176,6 +181,8 @@ function App() {
   const [showDiamondOnly, setShowDiamondOnly] = useState(false);
   // Toggle between showing dividend or dividend yield
   const [showDividendYield, setShowDividendYield] = useState(false);
+  // Toggle axis between months and info categories
+  const [showInfoAxis, setShowInfoAxis] = useState(false);
 
   // Sorting state
   const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
@@ -435,11 +442,13 @@ function App() {
   const yieldSum = {};
   const yieldCount = {};
   const latestPrice = {};
+  const latestYield = {};
   displayStocks.forEach(stock => {
     totalPerStock[stock.stock_id] = 0;
     yieldSum[stock.stock_id] = 0;
     yieldCount[stock.stock_id] = 0;
     latestPrice[stock.stock_id] = { price: null, date: null };
+    latestYield[stock.stock_id] = { yield: null, date: null };
     for (let m = 0; m < 12; m++) {
       const cell = dividendTable[stock.stock_id]?.[m];
       const val = cell?.dividend || 0;
@@ -453,6 +462,9 @@ function App() {
         }
         if (!latestPrice[stock.stock_id].date || new Date(cell.dividend_date) > new Date(latestPrice[stock.stock_id].date)) {
           latestPrice[stock.stock_id] = { price: cell.last_close_price, date: cell.dividend_date };
+          latestYield[stock.stock_id] = { yield: yVal, date: cell.dividend_date };
+        } else if (!latestYield[stock.stock_id].date || new Date(cell.dividend_date) > new Date(latestYield[stock.stock_id].date)) {
+          latestYield[stock.stock_id] = { yield: yVal, date: cell.dividend_date };
         }
       }
     }
@@ -592,6 +604,8 @@ function App() {
                   showDiamondOnly={showDiamondOnly}
                   toggleDividendYield={() => setShowDividendYield(v => !v)}
                   showDividendYield={showDividendYield}
+                  toggleAxis={() => setShowInfoAxis(v => !v)}
+                  showInfoAxis={showInfoAxis}
                   onClose={() => setShowActions(false)}
                 />
               )}
@@ -603,6 +617,54 @@ function App() {
             <p>Error: {error.message}</p>
           ) : showCalendar ? (
             <DividendCalendar year={selectedYear} events={calendarEvents} />
+          ) : showInfoAxis ? (
+            <div className="table-responsive" style={{ minWidth: 800 }}>
+              <table className="table table-bordered table-striped">
+                <thead>
+                  <tr>
+                    <th>Stock</th>
+                    <th>最新股價</th>
+                    <th>股息總額</th>
+                    <th>當次殖利率</th>
+                    <th>平均殖利率</th>
+                    <th>月報酬1萬需張數</th>
+                    <th>月報酬1萬需成本</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  {sortedStocks.map(stock => {
+                    const price = latestPrice[stock.stock_id]?.price;
+                    const dividendTotal = totalPerStock[stock.stock_id] || 0;
+                    const avgYield = yieldCount[stock.stock_id] > 0
+                      ? (yieldSum[stock.stock_id] / yieldCount[stock.stock_id])
+                      : 0;
+                    let lotsNeeded = '';
+                    let cost = '';
+                    if (price && dividendTotal > 0) {
+                      const lots = Math.ceil(MONTHLY_INCOME_GOAL / (dividendTotal * 1000));
+                      lotsNeeded = lots;
+                      cost = Math.round(lots * 1000 * price).toLocaleString();
+                    }
+                    const lastYield = latestYield[stock.stock_id]?.yield;
+                    return (
+                      <tr key={stock.stock_id + stock.stock_name}>
+                        <td>
+                          <a href={`/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
+                            {stock.stock_id} {stock.stock_name}
+                          </a>
+                        </td>
+                        <td>{price ?? ''}</td>
+                        <td>{dividendTotal > 0 ? dividendTotal.toFixed(3) : ''}</td>
+                        <td>{lastYield > 0 ? `${lastYield.toFixed(1)}%` : ''}</td>
+                        <td>{avgYield > 0 ? `${avgYield.toFixed(1)}%` : ''}</td>
+                        <td>{lotsNeeded}</td>
+                        <td>{cost && `${cost}元`}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <div className="table-responsive" style={{ minWidth: 1300 }}>
               <table className="table table-bordered table-striped">
