@@ -161,6 +161,35 @@ td {
   border-top: 1px solid #444;
 }
 
+/* Action dropdown for top controls */
+.action-dropdown {
+  position: absolute;
+  z-index: 99;
+  top: 36px;
+  right: 0;
+  background: #111;
+  border: 1px solid #444;
+  box-shadow: 0 4px 18px rgba(255, 215, 0, 0.13);
+  padding: 10px;
+  border-radius: 8px;
+  min-width: 140px;
+}
+
+.action-dropdown button {
+  display: block;
+  width: 100%;
+  margin: 4px 0;
+  background: #222;
+  color: #d4af37;
+  border: 1px solid #666;
+  font-size: 14px;
+  text-align: left;
+}
+
+.action-dropdown button:hover {
+  background: #333;
+}
+
 .slogan {
   font-size: 1.4rem;
   margin-top: 0;
