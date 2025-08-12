@@ -21,6 +21,15 @@ const freqNameMap = {
   12: '月配'
 };
 
+const MONTHLY_INCOME_GOAL = 10000;
+
+function getIncomeGoalInfo(dividend, price) {
+  if (!price || dividend <= 0) return '';
+  const lotsNeeded = Math.ceil(MONTHLY_INCOME_GOAL / (dividend * 1000));
+  const cost = Math.round(lotsNeeded * 1000 * price).toLocaleString();
+  return `\n月報酬1萬需: ${lotsNeeded}張\n成本: ${cost}元`;
+}
+
 function useClickOutside(ref, handler) {
   useEffect(() => {
     const listener = (event) => {
@@ -697,10 +706,12 @@ function App() {
                         const displayVal = showDividendYield
                           ? `${parseFloat(cell.dividend_yield).toFixed(1)}%`
                           : cell.dividend.toFixed(3);
+                        const price = latestPrice[stock.stock_id]?.price;
+                        const extraInfo = getIncomeGoalInfo(cell.dividend, price);
                         return (
                           <td key={idx} className={idx === currentMonth ? 'current-month' : ''}>
                             <span
-                              title={`除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}%\n平均月殖利率: ${perYield.toFixed(2)}%\n配息頻率: ${freqNameMap[freq] || '不定期'}\n配息日期: ${cell.dividend_date}\n發放日期: ${cell.payment_date}`}
+                              title={`除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}%\n平均月殖利率: ${perYield.toFixed(2)}%\n配息頻率: ${freqNameMap[freq] || '不定期'}\n配息日期: ${cell.dividend_date}\n發放日期: ${cell.payment_date}${extraInfo}`}
                             >
                               {displayVal}
                               {perYield === maxYieldPerMonth[idx] && maxYieldPerMonth[idx] > 0 && (
