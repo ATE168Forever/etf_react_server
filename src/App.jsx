@@ -120,6 +120,44 @@ function FilterDropdown({ options, selected, setSelected, onClose }) {
   );
 }
 
+function ActionDropdown({
+  onReset,
+  toggleCalendar,
+  showCalendar,
+  toggleDiamond,
+  showDiamondOnly,
+  toggleDividendYield,
+  showDividendYield,
+  onClose
+}) {
+  const ref = useRef();
+  useClickOutside(ref, onClose);
+
+  const handleClick = (action) => {
+    action();
+    onClose();
+  };
+
+  return (
+    <div className="action-dropdown" ref={ref}>
+      <button onClick={() => handleClick(onReset)}>重置所有篩選</button>
+      <button onClick={() => handleClick(toggleCalendar)}>
+        {showCalendar ? '顯示表格' : '顯示月曆'}
+      </button>
+      {!showCalendar && (
+        <>
+          <button onClick={() => handleClick(toggleDiamond)}>
+            {showDiamondOnly ? '顯示全部' : '只顯示鑽石'}
+          </button>
+          <button onClick={() => handleClick(toggleDividendYield)}>
+            {showDividendYield ? '顯示配息' : '顯示殖利率'}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function App() {
   // Tab state
   const [tab, setTab] = useState('dividend');
@@ -150,6 +188,7 @@ function App() {
   const [watchGroups, setWatchGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState('');
   const [showGroupModal, setShowGroupModal] = useState(false);
+  const [showActions, setShowActions] = useState(false);
 
   // Month value existence filters
   const [monthHasValue, setMonthHasValue] = useState(Array(12).fill(false));
@@ -542,41 +581,21 @@ function App() {
             >
               建立觀察組合
             </button>
-            <button
-              onClick={handleResetFilters}
-              style={{
-                marginLeft: 20,
-                padding: "5px 16px",
-                borderRadius: 6,
-                border: "1px solid #aaa",
-                background: "#f5f5f5",
-                cursor: "pointer"
-              }}
-            >
-              重置所有篩選
-            </button>
-            <button
-              onClick={() => setShowCalendar(v => !v)}
-              style={{ marginLeft: 10 }}
-            >
-              {showCalendar ? '顯示表格' : '顯示月曆'}
-            </button>
-            {!showCalendar && (
-              <>
-                <button
-                  onClick={() => setShowDiamondOnly(v => !v)}
-                  style={{ marginLeft: 10 }}
-                >
-                  {showDiamondOnly ? '顯示全部' : '只顯示鑽石'}
-                </button>
-                <button
-                  onClick={() => setShowDividendYield(v => !v)}
-                  style={{ marginLeft: 10 }}
-                >
-                  {showDividendYield ? '顯示配息' : '顯示殖利率'}
-                </button>
-              </>
-            )}
+            <div style={{ display: 'inline-block', position: 'relative', marginLeft: 20 }}>
+              <button onClick={() => setShowActions(v => !v)}>更多操作</button>
+              {showActions && (
+                <ActionDropdown
+                  onReset={handleResetFilters}
+                  toggleCalendar={() => setShowCalendar(v => !v)}
+                  showCalendar={showCalendar}
+                  toggleDiamond={() => setShowDiamondOnly(v => !v)}
+                  showDiamondOnly={showDiamondOnly}
+                  toggleDividendYield={() => setShowDividendYield(v => !v)}
+                  showDividendYield={showDividendYield}
+                  onClose={() => setShowActions(false)}
+                />
+              )}
+            </div>
           </div>
           {loading ? (
             <p>Loading...</p>
