@@ -147,7 +147,7 @@ function ActionDropdown({
       {!showCalendar && (
         <>
           <button onClick={() => handleClick(toggleDiamond)}>
-            {showDiamondOnly ? '顯示全部' : '只顯示鑽石'}
+            {showDiamondOnly ? '顯示全部' : '顯示鑽石'}
           </button>
           <button onClick={() => handleClick(toggleDividendYield)}>
             {showDividendYield ? '顯示配息' : '顯示殖利率'}
@@ -911,19 +911,26 @@ function App() {
             </div>
             {editingGroupIndex !== null && (
               <div style={{ marginBottom: 10 }}>
-                <input
-                  type="text"
-                  placeholder="組合名稱"
-                  value={groupNameInput}
-                  onChange={e => setGroupNameInput(e.target.value)}
-                />
-                <input
-                  type="text"
-                  placeholder="ETF ID，以逗號分隔"
-                  value={groupIdsInput}
-                  onChange={e => setGroupIdsInput(e.target.value)}
-                  style={{ marginLeft: 4 }}
-                />
+                <div>
+                  <input
+                    type="text"
+                    placeholder="組合名稱"
+                    value={groupNameInput}
+                    onChange={e => setGroupNameInput(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="ETF ID，以逗號分隔"
+                    value={groupIdsInput}
+                    onChange={e => setGroupIdsInput(e.target.value)}
+                    style={{
+                      marginTop: 4,
+                      marginBottom: 4
+                    }}
+                  />
+                </div>
                 <button onClick={handleSaveGroup} style={{ marginLeft: 4 }}>儲存</button>
                 <button onClick={handleCancelEditGroup} style={{ marginLeft: 4 }}>取消</button>
               </div>
