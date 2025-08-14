@@ -527,8 +527,12 @@ function App() {
         date: item.dividend_date,
         type: 'ex',
         stock_id: item.stock_id,
+        stock_name: item.stock_name,
         amount,
         dividend_yield,
+        last_close_price: item.last_close_price,
+        dividend_date: item.dividend_date,
+        payment_date: item.payment_date,
       });
     }
     if (item.payment_date) {
@@ -536,8 +540,12 @@ function App() {
         date: item.payment_date,
         type: 'pay',
         stock_id: item.stock_id,
+        stock_name: item.stock_name,
         amount,
         dividend_yield,
+        last_close_price: item.last_close_price,
+        dividend_date: item.dividend_date,
+        payment_date: item.payment_date,
       });
     }
     return arr;

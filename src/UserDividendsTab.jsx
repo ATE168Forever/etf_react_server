@@ -51,7 +51,8 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     // Events for calendar view
     const calendarEvents = filteredData.flatMap(item => {
         const qty = getHolding(item.stock_id, item.dividend_date);
-        const amount = parseFloat(item.dividend) * qty;
+        const dividend = parseFloat(item.dividend);
+        const amount = dividend * qty;
         const dividend_yield = parseFloat(item.dividend_yield) || 0;
         const arr = [];
         if (item.dividend_date) {
@@ -59,8 +60,14 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 date: item.dividend_date,
                 type: 'ex',
                 stock_id: item.stock_id,
+                stock_name: item.stock_name,
                 amount,
+                dividend,
+                quantity: qty,
                 dividend_yield,
+                last_close_price: item.last_close_price,
+                dividend_date: item.dividend_date,
+                payment_date: item.payment_date,
             });
         }
         if (item.payment_date) {
@@ -68,8 +75,14 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 date: item.payment_date,
                 type: 'pay',
                 stock_id: item.stock_id,
+                stock_name: item.stock_name,
                 amount,
+                dividend,
+                quantity: qty,
                 dividend_yield,
+                last_close_price: item.last_close_price,
+                dividend_date: item.dividend_date,
+                payment_date: item.payment_date,
             });
         }
         return arr;
