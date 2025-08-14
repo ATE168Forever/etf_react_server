@@ -211,7 +211,7 @@ function App() {
 
   useEffect(() => {
     const callUpdate = () => {
-      fetch(`${API_HOST}:8000/update_dividend`).finally(() => {
+      fetch(`${API_HOST}:8001/update_dividend`).finally(() => {
         window.location.reload();
       });
     };
@@ -235,7 +235,7 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const jsonData = await fetchWithCache(`${API_HOST}:8000/get_dividend`);
+        const jsonData = await fetchWithCache(`${API_HOST}:8001/get_dividend`);
         setData(jsonData);
 
         const yearSet = new Set(jsonData.map(item => new Date(item.dividend_date).getFullYear()));
@@ -253,7 +253,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    fetchWithCache(`${API_HOST}:8000/get_stock_list`)
+    fetchWithCache(`${API_HOST}:8001/get_stock_list`)
       .then(list => {
         const map = {};
         const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12 };
