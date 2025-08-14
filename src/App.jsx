@@ -520,9 +520,26 @@ function App() {
   // Prepare events for calendar view
   const calendarEvents = filteredData.flatMap(item => {
     const amount = parseFloat(item.dividend);
+    const dividend_yield = parseFloat(item.dividend_yield) || 0;
     const arr = [];
-    if (item.dividend_date) arr.push({ date: item.dividend_date, type: 'ex', stock_id: item.stock_id, amount });
-    if (item.payment_date) arr.push({ date: item.payment_date, type: 'pay', stock_id: item.stock_id, amount });
+    if (item.dividend_date) {
+      arr.push({
+        date: item.dividend_date,
+        type: 'ex',
+        stock_id: item.stock_id,
+        amount,
+        dividend_yield,
+      });
+    }
+    if (item.payment_date) {
+      arr.push({
+        date: item.payment_date,
+        type: 'pay',
+        stock_id: item.stock_id,
+        amount,
+        dividend_yield,
+      });
+    }
     return arr;
   });
 
