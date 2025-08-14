@@ -5,6 +5,7 @@ const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 export default function DividendCalendar({ year, events }) {
   const [month, setMonth] = useState(new Date().getMonth());
+  const [expandedDates, setExpandedDates] = useState({});
   const todayStr = new Date().toISOString().slice(0, 10);
 
   const firstDay = new Date(year, month, 1);
@@ -20,7 +21,9 @@ export default function DividendCalendar({ year, events }) {
         week.push(null);
       } else {
         const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const dayEvents = events.filter(e => e.date === dateStr);
+        const dayEvents = events
+          .filter(e => e.date === dateStr)
+          .sort((a, b) => (b.dividend_yield || 0) - (a.dividend_yield || 0));
         week.push({ day, dateStr, events: dayEvents, isToday: dateStr === todayStr });
       }
       day++;
@@ -61,7 +64,7 @@ export default function DividendCalendar({ year, events }) {
                   {d && (
                     <div>
                       <div className={`date-num${d.isToday ? ' today' : ''}`}>{d.day}</div>
-                      {d.events.map((ev, j) => (
+                      {(expandedDates[d.dateStr] ? d.events : d.events.slice(0,1)).map((ev, j) => (
                         <div
                           key={j}
                           className={`event ${ev.type === 'ex' ? 'event-ex' : 'event-pay'}`}
@@ -70,6 +73,14 @@ export default function DividendCalendar({ year, events }) {
                           {ev.stock_id}
                         </div>
                       ))}
+                      {!expandedDates[d.dateStr] && d.events.length > 1 && (
+                        <button
+                          className="more-btn"
+                          onClick={() => setExpandedDates(prev => ({ ...prev, [d.dateStr]: true }))}
+                        >
+                          更多+
+                        </button>
+                      )}
                     </div>
                   )}
                 </td>

@@ -330,6 +330,15 @@ button:active {
 .event-pay {
   background: #4dabf7;
 }
+.more-btn {
+  margin-top: 4px;
+  font-size: 10px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: #0d6efd;
+  cursor: pointer;
+}
 .calendar-total {
   margin-top: 8px;
   text-align: right;
