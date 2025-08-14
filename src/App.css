@@ -56,11 +56,11 @@ tbody tr {
 }
 
 tbody tr:nth-child(even) {
-  background-color: #111;
+  background-color: #222;
 }
 
 tbody tr:hover {
-  background-color: #222;
+  background-color: #333;
   box-shadow: 0 2px 4px rgba(255, 215, 0, 0.1);
 }
 
@@ -116,7 +116,7 @@ td {
   z-index: 99;
   top: 30px;
   left: 0;
-  background: #111;
+  background: #222;
   border: 1px solid #444;
   box-shadow: 0 4px 18px rgba(255, 215, 0, 0.13);
   padding: 12px 14px 8px 14px;
@@ -167,7 +167,7 @@ td {
   z-index: 99;
   top: 36px;
   right: 0;
-  background: #111;
+  background: #222;
   border: 1px solid #444;
   box-shadow: 0 4px 18px rgba(255, 215, 0, 0.13);
   padding: 10px;
@@ -216,7 +216,7 @@ header {
   border-bottom: 1px solid #333;
   margin-bottom: 1rem;
   padding: 0.75rem 0;
-  background: #111;
+  background: #222;
   box-shadow: 0 2px 4px rgba(255, 215, 0, 0.1);
   transition: box-shadow 0.3s;
 }
@@ -256,7 +256,7 @@ button:active {
 
 /* Calendar styles */
 .calendar {
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 .calendar-header {
@@ -269,7 +269,7 @@ button:active {
 .calendar-legend {
   text-align: center;
   margin-bottom: 8px;
-  font-size: 14px;
+  font-size: 16px;
 }
 .legend-box {
   display: inline-block;
@@ -293,7 +293,7 @@ button:active {
 .calendar-grid td {
   border: 1px solid #ddd;
   width: 14.28%;
-  height: 80px;
+  height: 100px;
   vertical-align: top;
   position: relative;
 }
@@ -307,21 +307,21 @@ button:active {
   font-weight: bold;
 }
 .calendar-cell {
-  font-size: 12px;
-  padding: 2px;
+  font-size: 14px;
+  padding: 4px;
 }
 .date-num {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: 4px;
+  right: 4px;
   color: #555;
-  font-size: 11px;
+  font-size: 14px;
 }
 .event {
-  margin-top: 14px;
+  margin-top: 18px;
   padding: 2px 4px;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 12px;
   color: #fff;
 }
 .event-ex {
@@ -332,7 +332,7 @@ button:active {
 }
 .more-btn {
   margin-top: 4px;
-  font-size: 10px;
+  font-size: 12px;
   padding: 0;
   background: none;
   border: none;
@@ -371,7 +371,7 @@ button:active {
 
   .calendar-grid th,
   .calendar-grid td {
-    height: 60px;
+    height: 80px;
   }
 
   .inventory-tables {
@@ -396,7 +396,7 @@ button:active {
 /* Stock detail page */
 .stock-detail {
   padding: 20px;
-  background: #111;
+  background: #222;
   border-radius: 8px;
   line-height: 1.6;
   color: #f5f5f5;
@@ -444,7 +444,7 @@ button:active {
 }
 
 .custom-modal {
-  background: #111;
+  background: #222;
   padding: 20px;
   border-radius: 8px;
   max-width: 500px;

@@ -121,7 +121,6 @@ function FilterDropdown({ options, selected, setSelected, onClose }) {
 }
 
 function ActionDropdown({
-  onReset,
   toggleCalendar,
   showCalendar,
   toggleDiamond,
@@ -142,7 +141,6 @@ function ActionDropdown({
 
   return (
     <div className="action-dropdown" ref={ref}>
-      <button onClick={() => handleClick(onReset)}>重置所有篩選</button>
       <button onClick={() => handleClick(toggleCalendar)}>
         {showCalendar ? '顯示表格' : '顯示月曆'}
       </button>
@@ -196,6 +194,11 @@ function App() {
   const [selectedGroup, setSelectedGroup] = useState('');
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const [showAllStocks, setShowAllStocks] = useState(false);
+
+  const [editingGroupIndex, setEditingGroupIndex] = useState(null);
+  const [groupNameInput, setGroupNameInput] = useState('');
+  const [groupIdsInput, setGroupIdsInput] = useState('');
 
   // Month value existence filters
   const [monthHasValue, setMonthHasValue] = useState(Array(12).fill(false));
@@ -207,6 +210,7 @@ function App() {
     setShowIdDropdown(false);
     setShowDiamondOnly(false);
     setSortConfig({ column: 'stock_id', direction: 'asc' });
+    setShowAllStocks(false);
   };
 
   useEffect(() => {
@@ -312,28 +316,41 @@ function App() {
   };
 
   const handleAddGroup = () => {
-    const name = prompt('輸入組合名稱');
-    if (!name) return;
-    const ids = prompt('輸入 stock id ，以逗號分隔');
-    if (!ids) return;
-    const idsArr = ids.split(/[,\s]+/).filter(Boolean);
-    saveGroups([...watchGroups, { name, ids: idsArr }]);
+    setEditingGroupIndex(-1);
+    setGroupNameInput('');
+    setGroupIdsInput('');
   };
 
   const handleEditGroup = (idx) => {
     const group = watchGroups[idx];
-    const name = prompt('修改組合名稱', group.name);
-    if (!name) return;
-    const ids = prompt('修改 stock id ，以逗號分隔', group.ids.join(','));
-    if (!ids) return;
-    const idsArr = ids.split(/[,\s]+/).filter(Boolean);
-    const newGroups = [...watchGroups];
-    newGroups[idx] = { name, ids: idsArr };
-    saveGroups(newGroups);
-    if (selectedGroup === group.name) {
-      setSelectedGroup(name);
-      setSelectedStockIds(idsArr);
+    setEditingGroupIndex(idx);
+    setGroupNameInput(group.name);
+    setGroupIdsInput(group.ids.join(','));
+  };
+
+  const handleSaveGroup = () => {
+    const idsArr = groupIdsInput.split(/[,\s]+/).filter(Boolean);
+    if (editingGroupIndex === -1) {
+      saveGroups([...watchGroups, { name: groupNameInput, ids: idsArr }]);
+    } else {
+      const group = watchGroups[editingGroupIndex];
+      const newGroups = [...watchGroups];
+      newGroups[editingGroupIndex] = { name: groupNameInput, ids: idsArr };
+      saveGroups(newGroups);
+      if (selectedGroup === group.name) {
+        setSelectedGroup(groupNameInput);
+        setSelectedStockIds(idsArr);
+      }
     }
+    setEditingGroupIndex(null);
+    setGroupNameInput('');
+    setGroupIdsInput('');
+  };
+
+  const handleCancelEditGroup = () => {
+    setEditingGroupIndex(null);
+    setGroupNameInput('');
+    setGroupIdsInput('');
   };
 
   const handleDeleteGroup = (idx) => {
@@ -517,6 +534,8 @@ function App() {
     }
   });
 
+  const limitedStocks = showAllStocks ? sortedStocks : sortedStocks.slice(0, 20);
+
   // Prepare events for calendar view
   const calendarEvents = filteredData.flatMap(item => {
     const amount = parseFloat(item.dividend);
@@ -618,11 +637,11 @@ function App() {
             >
               建立觀察組合
             </button>
+            <button onClick={handleResetFilters} style={{ marginLeft: 10 }}>重置所有篩選</button>
             <div style={{ display: 'inline-block', position: 'relative', marginLeft: 20 }}>
-              <button onClick={() => setShowActions(v => !v)}>更多操作</button>
+              <button onClick={() => setShowActions(v => !v)}>更多顯示</button>
               {showActions && (
                 <ActionDropdown
-                  onReset={handleResetFilters}
                   toggleCalendar={() => setShowCalendar(v => !v)}
                   showCalendar={showCalendar}
                   toggleDiamond={() => setShowDiamondOnly(v => !v)}
@@ -636,6 +655,9 @@ function App() {
               )}
             </div>
           </div>
+          {!showCalendar && (
+            <p style={{fontSize:12, marginBottom:8}}>提示：點下篩選鈕開啟篩選視窗。</p>
+          )}
           {loading ? (
             <p>Loading...</p>
           ) : error ? (
@@ -644,6 +666,9 @@ function App() {
             <DividendCalendar year={selectedYear} events={calendarEvents} />
           ) : showInfoAxis ? (
             <div className="table-responsive" style={{ minWidth: 800 }}>
+              {showAllStocks && (
+                <button onClick={() => setShowAllStocks(false)} style={{ marginBottom: 8 }}>預設</button>
+              )}
               <table className="table table-bordered table-striped">
                 <thead>
                   <tr>
@@ -657,7 +682,7 @@ function App() {
                   </tr>
                   </thead>
                   <tbody>
-                  {sortedStocks.map(stock => {
+                  {limitedStocks.map(stock => {
                     const price = latestPrice[stock.stock_id]?.price;
                     const dividendTotal = totalPerStock[stock.stock_id] || 0;
                     const avgYield = yieldCount[stock.stock_id] > 0
@@ -689,9 +714,15 @@ function App() {
                   })}
                 </tbody>
               </table>
+              {!showAllStocks && sortedStocks.length > 20 && (
+                <button className="more-btn" onClick={() => setShowAllStocks(true)} style={{ marginTop: 8 }}>更多+</button>
+              )}
             </div>
           ) : (
             <div className="table-responsive" style={{ minWidth: 1300 }}>
+              {showAllStocks && (
+                <button onClick={() => setShowAllStocks(false)} style={{ marginBottom: 8 }}>預設</button>
+              )}
               <table className="table table-bordered table-striped">
               <thead>
                 <tr>
@@ -778,7 +809,7 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {sortedStocks.map(stock => {
+                {limitedStocks.map(stock => {
                   const totalVal = showDividendYield
                     ? (yieldSum[stock.stock_id] > 0
                       ? `${yieldSum[stock.stock_id].toFixed(1)}%`
@@ -837,10 +868,10 @@ function App() {
                 })}
                 </tbody>
               </table>
+              {!showAllStocks && sortedStocks.length > 20 && (
+                <button className="more-btn" onClick={() => setShowAllStocks(true)} style={{ marginTop: 8 }}>更多+</button>
+              )}
             </div>
-          )}
-          {!showCalendar && (
-            <p style={{fontSize:12, marginTop:8}}>提示：點下篩選鈕開啟篩選視窗。</p>
           )}
         </div>
       )}
@@ -854,8 +885,7 @@ function App() {
       {tab === 'about' && <AboutTab />}
       <div className="contact-section">
         <h3>Contact</h3>
-        <p>工作室：股息羅盤工作室</p>
-        <p>Email: <a href="mailto:info@example.com">info@example.com</a></p>
+        <p>Email: <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a></p>
       </div>
       <div className="donation-section">
         <h3>Support This Project</h3>
@@ -879,6 +909,25 @@ function App() {
             <div style={{ marginBottom: 10 }}>
               <button onClick={handleAddGroup}>新增組合</button>
             </div>
+            {editingGroupIndex !== null && (
+              <div style={{ marginBottom: 10 }}>
+                <input
+                  type="text"
+                  placeholder="組合名稱"
+                  value={groupNameInput}
+                  onChange={e => setGroupNameInput(e.target.value)}
+                />
+                <input
+                  type="text"
+                  placeholder="ETF ID，以逗號分隔"
+                  value={groupIdsInput}
+                  onChange={e => setGroupIdsInput(e.target.value)}
+                  style={{ marginLeft: 4 }}
+                />
+                <button onClick={handleSaveGroup} style={{ marginLeft: 4 }}>儲存</button>
+                <button onClick={handleCancelEditGroup} style={{ marginLeft: 4 }}>取消</button>
+              </div>
+            )}
             {watchGroups.map((g, idx) => (
               <div key={idx} style={{ marginBottom: 8 }}>
                 <div><strong>{g.name}</strong>: {g.ids.join(', ')}</div>
