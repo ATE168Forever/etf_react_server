@@ -5,6 +5,7 @@ function NLHelper() {
   const [query, setQuery] = useState('');
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const handleSubmit = async () => {
     if (!query.trim()) return;
@@ -25,18 +26,25 @@ function NLHelper() {
     }
   };
 
+  const toggleOpen = () => setOpen(o => !o);
+
   return (
-    <div className="nl-helper">
-      <textarea
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        placeholder="輸入查詢..."
-      />
-      <button onClick={handleSubmit} disabled={loading}>
-        {loading ? '查詢中...' : '送出'}
+    <>
+      <div className={`nl-helper ${open ? 'open' : ''}`}>
+        <textarea
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="輸入查詢..."
+        />
+        <button onClick={handleSubmit} disabled={loading}>
+          {loading ? '查詢中...' : '送出'}
+        </button>
+        <pre className="nl-helper-response">{response}</pre>
+      </div>
+      <button className="nl-helper-toggle" onClick={toggleOpen}>
+        {open ? '×' : '🤖'}
       </button>
-      <pre className="nl-helper-response">{response}</pre>
-    </div>
+    </>
   );
 }
 
