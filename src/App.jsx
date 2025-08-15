@@ -5,6 +5,7 @@ import AboutTab from './AboutTab';
 import DividendCalendar from './DividendCalendar';
 
 import './App.css';
+import NLHelper from './NLHelper';
 import { API_HOST } from './config';
 import { fetchWithCache } from './api';
 
@@ -956,6 +957,7 @@ function App() {
           .
         </p>
       </div>
+      <NLHelper />
       {showGroupModal && (
         <div className="modal-overlay">
           <div className="custom-modal">
