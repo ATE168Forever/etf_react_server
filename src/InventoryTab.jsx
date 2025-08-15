@@ -568,7 +568,9 @@ export default function InventoryTab() {
                                                         style={{ width: 80 }}
                                                     />
                                                 ) : (
-                                                    item.quantity
+                                                    <>
+                                                        {item.quantity} ({(item.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)
+                                                    </>
                                                 )}
                                             </td>
                                             <td>
@@ -653,7 +655,7 @@ export default function InventoryTab() {
                                         <td>{item.stock_id}</td>
                                         <td>{item.stock_name}</td>
                                         <td>{item.avg_price.toFixed(2)}</td>
-                                        <td>{item.total_quantity}</td>
+                                        <td>{item.total_quantity} ({(item.total_quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)</td>
                                         <td>
                                             <button onClick={() => setSellModal({ show: true, stock: item })}>賣出</button>
                                         </td>

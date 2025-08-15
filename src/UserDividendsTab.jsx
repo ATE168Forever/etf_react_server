@@ -251,7 +251,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                     return (
                                         <td key={idx} className={idx === currentMonth ? 'current-month' : ''}>
                                             <span
-                                                title={`持有數量: ${cell.quantity} 股\n每股配息: ${cell.dividend} 元\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`}
+                                                title={`持有數量: ${cell.quantity} 股 (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)\n每股配息: ${cell.dividend} 元\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`}
                                                 style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
                                             >
                                                 {total > 0 ? Math.round(total).toLocaleString() : ''}
