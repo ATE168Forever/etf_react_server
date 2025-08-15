@@ -65,8 +65,11 @@ export default function DividendCalendar({ year, events }) {
                     <div>
                       <div className={`date-num${d.isToday ? ' today' : ''}`}>{d.day}</div>
                       {(expandedDates[d.dateStr] ? d.events : d.events.slice(0,1)).map((ev, j) => {
+                        const lotText = ev.quantity != null
+                          ? (ev.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')
+                          : '';
                         const tooltip = ev.quantity != null
-                          ? `持有數量: ${ev.quantity} 股\n每股配息: ${ev.dividend} 元\n應收股息: ${Number(ev.amount).toFixed(1)} 元\n除息前一天收盤價: ${ev.last_close_price}\n當次殖利率: ${ev.dividend_yield}%\n配息日期: ${ev.dividend_date || '-'}\n發放日期: ${ev.payment_date || '-'}`
+                          ? `持有數量: ${ev.quantity} 股 (${lotText} 張)\n每股配息: ${ev.dividend} 元\n應收股息: ${Number(ev.amount).toFixed(1)} 元\n除息前一天收盤價: ${ev.last_close_price}\n當次殖利率: ${ev.dividend_yield}%\n配息日期: ${ev.dividend_date || '-'}\n發放日期: ${ev.payment_date || '-'}`
                           : `每股配息: ${Number(ev.amount).toFixed(3)} 元\n除息前一天收盤價: ${ev.last_close_price}\n當次殖利率: ${ev.dividend_yield}%\n配息日期: ${ev.dividend_date || '-'}\n發放日期: ${ev.payment_date || '-'}`;
                         return (
                           <div

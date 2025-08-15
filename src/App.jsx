@@ -23,6 +23,21 @@ const freqNameMap = {
 
 const MONTHLY_INCOME_GOAL = 10000;
 
+const DEFAULT_WATCH_GROUPS = [
+  {
+    name: '現金流導向（月月配息）',
+    ids: ['0056', '00878', '00919', '00731', '00918']
+  },
+  {
+    name: '穩健成長 + 配息',
+    ids: ['0056', '00878', '0050']
+  },
+  {
+    name: '簡化操作（季配息）',
+    ids: ['0056', '00878', '00919']
+  }
+];
+
 function getIncomeGoalInfo(dividend, price) {
   if (!price || dividend <= 0) return '';
   const lotsNeeded = Math.ceil(MONTHLY_INCOME_GOAL / (dividend * 1000));
@@ -175,6 +190,9 @@ function App() {
   // Toggle table/calendar view
   const [showCalendar, setShowCalendar] = useState(false);
 
+  // Filter which event types to show on calendar
+  const [calendarFilter, setCalendarFilter] = useState('ex');
+
   // Filter to show only rows with diamond
   const [showDiamondOnly, setShowDiamondOnly] = useState(false);
   // Toggle between showing dividend or dividend yield
@@ -279,28 +297,34 @@ function App() {
         setWatchGroups([]);
       }
     } else {
-      const defaults = [
-        {
-          name: '現金流導向（月月配息）',
-          ids: ['0056', '00878', '00919', '00731', '00918']
-        },
-        {
-          name: '穩健成長 + 配息',
-          ids: ['0056', '00878', '0050']
-        },
-        {
-          name: '簡化操作（季配息）',
-          ids: ['0056', '00878', '00919']
-        }
-      ];
-      setWatchGroups(defaults);
-      localStorage.setItem('watchGroups', JSON.stringify(defaults));
+      setWatchGroups(DEFAULT_WATCH_GROUPS);
+      localStorage.setItem('watchGroups', JSON.stringify(DEFAULT_WATCH_GROUPS));
     }
   }, []);
 
   const saveGroups = (groups) => {
     setWatchGroups(groups);
     localStorage.setItem('watchGroups', JSON.stringify(groups));
+  };
+
+  const isGroupModified = (group) => {
+    const def = DEFAULT_WATCH_GROUPS.find(g => g.name === group.name);
+    if (!def) return true;
+    const sortedDef = [...def.ids].sort();
+    const sortedIds = [...group.ids].sort();
+    if (sortedDef.length !== sortedIds.length) return true;
+    return sortedIds.some((id, idx) => id !== sortedDef[idx]);
+  };
+
+  const renderGroupIds = (group) => {
+    const def = DEFAULT_WATCH_GROUPS.find(g => g.name === group.name);
+    const defSet = def ? new Set(def.ids) : new Set();
+    return group.ids.map((id, i) => (
+      <span key={id} style={!def || !defSet.has(id) ? { color: 'red' } : {}}>
+        {i > 0 && ', '}
+        {id}
+      </span>
+    ));
   };
 
   const handleGroupChange = (e) => {
@@ -537,38 +561,46 @@ function App() {
   const limitedStocks = showAllStocks ? sortedStocks : sortedStocks.slice(0, 20);
 
   // Prepare events for calendar view
-  const calendarEvents = filteredData.flatMap(item => {
-    const amount = parseFloat(item.dividend);
-    const dividend_yield = parseFloat(item.dividend_yield) || 0;
-    const arr = [];
-    if (item.dividend_date) {
-      arr.push({
-        date: item.dividend_date,
-        type: 'ex',
-        stock_id: item.stock_id,
-        stock_name: item.stock_name,
-        amount,
-        dividend_yield,
-        last_close_price: item.last_close_price,
-        dividend_date: item.dividend_date,
-        payment_date: item.payment_date,
-      });
-    }
-    if (item.payment_date) {
-      arr.push({
-        date: item.payment_date,
-        type: 'pay',
-        stock_id: item.stock_id,
-        stock_name: item.stock_name,
-        amount,
-        dividend_yield,
-        last_close_price: item.last_close_price,
-        dividend_date: item.dividend_date,
-        payment_date: item.payment_date,
-      });
-    }
-    return arr;
-  });
+  const calendarEvents = filteredData
+    .filter(item =>
+      selectedStockIds.length === 0 || selectedStockIds.includes(item.stock_id)
+    )
+    .flatMap(item => {
+      const amount = parseFloat(item.dividend);
+      const dividend_yield = parseFloat(item.dividend_yield) || 0;
+      const arr = [];
+      if (item.dividend_date) {
+        arr.push({
+          date: item.dividend_date,
+          type: 'ex',
+          stock_id: item.stock_id,
+          stock_name: item.stock_name,
+          amount,
+          dividend_yield,
+          last_close_price: item.last_close_price,
+          dividend_date: item.dividend_date,
+          payment_date: item.payment_date,
+        });
+      }
+      if (item.payment_date) {
+        arr.push({
+          date: item.payment_date,
+          type: 'pay',
+          stock_id: item.stock_id,
+          stock_name: item.stock_name,
+          amount,
+          dividend_yield,
+          last_close_price: item.last_close_price,
+          dividend_date: item.dividend_date,
+          payment_date: item.payment_date,
+        });
+      }
+      return arr;
+    });
+
+  const filteredCalendarEvents = calendarEvents.filter(ev =>
+    calendarFilter === 'both' || ev.type === calendarFilter
+  );
 
 
   return (
@@ -663,7 +695,29 @@ function App() {
           ) : error ? (
             <p>Error: {error.message}</p>
           ) : showCalendar ? (
-            <DividendCalendar year={selectedYear} events={calendarEvents} />
+            <>
+              <div style={{ marginBottom: 8 }}>
+                <button
+                  onClick={() => setCalendarFilter('ex')}
+                  style={{ fontWeight: calendarFilter === 'ex' ? 'bold' : 'normal' }}
+                >
+                  除息日
+                </button>
+                <button
+                  onClick={() => setCalendarFilter('pay')}
+                  style={{ fontWeight: calendarFilter === 'pay' ? 'bold' : 'normal', marginLeft: 6 }}
+                >
+                  發放日
+                </button>
+                <button
+                  onClick={() => setCalendarFilter('both')}
+                  style={{ fontWeight: calendarFilter === 'both' ? 'bold' : 'normal', marginLeft: 6 }}
+                >
+                  除息/發放日
+                </button>
+              </div>
+              <DividendCalendar year={selectedYear} events={filteredCalendarEvents} />
+            </>
           ) : showInfoAxis ? (
             <div className="table-responsive" style={{ minWidth: 800 }}>
               {showAllStocks && (
@@ -738,7 +792,7 @@ function App() {
                     <span
                       className="filter-btn"
                       tabIndex={0}
-                      onClick={() => setShowIdDropdown(v => !v)}
+                      onClick={() => setShowIdDropdown(true)}
                       title="依代號篩選"
                     >
                       🔎
@@ -937,7 +991,9 @@ function App() {
             )}
             {watchGroups.map((g, idx) => (
               <div key={idx} style={{ marginBottom: 8 }}>
-                <div><strong>{g.name}</strong>: {g.ids.join(', ')}</div>
+                <div>
+                  <strong style={isGroupModified(g) ? { color: 'red' } : {}}>{g.name}</strong>: {renderGroupIds(g)}
+                </div>
                 <div style={{ marginTop: 4 }}>
                   <button onClick={() => handleEditGroup(idx)}>修改</button>
                   <button onClick={() => handleDeleteGroup(idx)} style={{ marginLeft: 4 }}>刪除</button>
