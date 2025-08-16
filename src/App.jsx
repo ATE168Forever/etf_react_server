@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import InventoryTab from './InventoryTab';
 import UserDividendsTab from './UserDividendsTab';
 import AboutTab from './AboutTab';
@@ -22,7 +22,7 @@ const freqNameMap = {
   12: '月配'
 };
 
-const MONTHLY_INCOME_GOAL = 10000;
+const DEFAULT_MONTHLY_GOAL = 10000;
 
 const DEFAULT_WATCH_GROUPS = [
   {
@@ -39,11 +39,11 @@ const DEFAULT_WATCH_GROUPS = [
   }
 ];
 
-function getIncomeGoalInfo(dividend, price) {
+function getIncomeGoalInfo(dividend, price, goal) {
   if (!price || dividend <= 0) return '';
-  const lotsNeeded = Math.ceil(MONTHLY_INCOME_GOAL / (dividend * 1000));
+  const lotsNeeded = Math.ceil(goal / (dividend * 1000));
   const cost = Math.round(lotsNeeded * 1000 * price).toLocaleString();
-  return `\n月報酬1萬需: ${lotsNeeded}張\n成本: ${cost}元`;
+  return `\n月報酬${goal.toLocaleString()}需: ${lotsNeeded}張\n成本: ${cost}元`;
 }
 
 function useClickOutside(ref, handler) {
@@ -200,6 +200,8 @@ function App() {
   const [showDividendYield, setShowDividendYield] = useState(false);
   // Toggle axis between months and info categories
   const [showInfoAxis, setShowInfoAxis] = useState(false);
+  // Monthly income goal input
+  const [monthlyIncomeGoal, setMonthlyIncomeGoal] = useState(DEFAULT_MONTHLY_GOAL);
 
   // Sorting state
   const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
@@ -389,58 +391,62 @@ function App() {
     }
   };
 
-  const filteredData = data.filter(
-    item => new Date(item.dividend_date).getFullYear() === Number(selectedYear)
-  );
-  const stocks = [];
-  const stockMap = {};
-  filteredData.forEach(item => {
-    const key = `${item.stock_id}|${item.stock_name}`;
-    if (!stockMap[key]) {
-      stocks.push({ stock_id: item.stock_id, stock_name: item.stock_name });
-      stockMap[key] = true;
-    }
-  });
-  const stockOptions = stocks.map(s => ({
-    value: s.stock_id,
-    label: `${s.stock_id} ${s.stock_name}`
-  }));
-  const dividendTable = {};
-  filteredData.forEach(item => {
-    const month = new Date(item.dividend_date).getMonth();
-    if (!dividendTable[item.stock_id]) dividendTable[item.stock_id] = {};
-    const cell = dividendTable[item.stock_id][month] || {
-      dividend: 0,
-      dividend_yield: 0,
-    };
-    cell.dividend += parseFloat(item.dividend);
-    cell.dividend_yield += parseFloat(item.dividend_yield) || 0;
-    cell.last_close_price = item.last_close_price;
-    cell.dividend_date = item.dividend_date;
-    cell.payment_date = item.payment_date;
-    dividendTable[item.stock_id][month] = cell;
-  });
-
-  // Calculate months span and per-month yield for each dividend entry
-  Object.keys(dividendTable).forEach(id => {
-    const months = Object.keys(dividendTable[id]).map(Number).sort((a, b) => a - b);
-    let prev = null;
-    const rawFreq = Number(freqMap[id]);
-    const freq = [1, 2, 4, 6, 12].includes(rawFreq) ? rawFreq : 1;
-    months.forEach(m => {
-      const cell = dividendTable[id][m];
-      let span;
-      if (prev === null) {
-        span = freq ? 12 / freq : 1;
-      } else {
-        span = m - prev;
-        if (span <= 0) span += 12;
+  const { filteredData, stocks, stockOptions, dividendTable } = useMemo(() => {
+    const fData = data.filter(
+      item => new Date(item.dividend_date).getFullYear() === Number(selectedYear)
+    );
+    const stocks = [];
+    const stockMap = {};
+    fData.forEach(item => {
+      const key = `${item.stock_id}|${item.stock_name}`;
+      if (!stockMap[key]) {
+        stocks.push({ stock_id: item.stock_id, stock_name: item.stock_name });
+        stockMap[key] = true;
       }
-      cell.monthsSpan = span;
-      cell.perYield = (parseFloat(cell.dividend_yield) || 0) / span;
-      prev = m;
     });
-  });
+    const stockOptions = stocks.map(s => ({
+      value: s.stock_id,
+      label: `${s.stock_id} ${s.stock_name}`
+    }));
+    const dividendTable = {};
+    fData.forEach(item => {
+      const month = new Date(item.dividend_date).getMonth();
+      if (!dividendTable[item.stock_id]) dividendTable[item.stock_id] = {};
+      const cell = dividendTable[item.stock_id][month] || {
+        dividend: 0,
+        dividend_yield: 0,
+      };
+      cell.dividend += parseFloat(item.dividend);
+      cell.dividend_yield += parseFloat(item.dividend_yield) || 0;
+      cell.last_close_price = item.last_close_price;
+      cell.dividend_date = item.dividend_date;
+      cell.payment_date = item.payment_date;
+      dividendTable[item.stock_id][month] = cell;
+    });
+
+    // Calculate months span and per-month yield for each dividend entry
+    Object.keys(dividendTable).forEach(id => {
+      const months = Object.keys(dividendTable[id]).map(Number).sort((a, b) => a - b);
+      let prev = null;
+      const rawFreq = Number(freqMap[id]);
+      const freq = [1, 2, 4, 6, 12].includes(rawFreq) ? rawFreq : 1;
+      months.forEach(m => {
+        const cell = dividendTable[id][m];
+        let span;
+        if (prev === null) {
+          span = freq ? 12 / freq : 1;
+        } else {
+          span = m - prev;
+          if (span <= 0) span += 12;
+        }
+        cell.monthsSpan = span;
+        cell.perYield = (parseFloat(cell.dividend_yield) || 0) / span;
+        prev = m;
+      });
+    });
+
+    return { filteredData: fData, stocks, stockOptions, dividendTable };
+  }, [data, selectedYear, freqMap]);
 
   const filteredStocks = stocks.filter(stock => {
     if (selectedStockIds.length && !selectedStockIds.includes(stock.stock_id)) return false;
@@ -671,6 +677,15 @@ function App() {
               建立觀察組合
             </button>
             <button onClick={handleResetFilters} style={{ marginLeft: 10 }}>重置所有篩選</button>
+            <label style={{ marginLeft: 20 }}>
+              預計月報酬：
+              <input
+                type="number"
+                value={monthlyIncomeGoal}
+                onChange={e => setMonthlyIncomeGoal(Number(e.target.value) || 0)}
+                style={{ width: 80, marginLeft: 4 }}
+              />
+            </label>
             <div style={{ display: 'inline-block', position: 'relative', marginLeft: 20 }}>
               <button onClick={() => setShowActions(v => !v)}>更多顯示</button>
               {showActions && (
@@ -732,8 +747,8 @@ function App() {
                     <th>股息總額</th>
                     <th>當次殖利率</th>
                     <th>平均殖利率</th>
-                    <th>月報酬1萬需張數</th>
-                    <th>月報酬1萬需成本</th>
+                    <th>月報酬{monthlyIncomeGoal.toLocaleString()}需張數</th>
+                    <th>月報酬{monthlyIncomeGoal.toLocaleString()}需成本</th>
                   </tr>
                   </thead>
                   <tbody>
@@ -746,7 +761,7 @@ function App() {
                     let lotsNeeded = '';
                     let cost = '';
                     if (price && dividendTotal > 0) {
-                      const lots = Math.ceil(MONTHLY_INCOME_GOAL / (dividendTotal * 1000));
+                      const lots = Math.ceil(monthlyIncomeGoal / (dividendTotal * 1000));
                       lotsNeeded = lots;
                       cost = Math.round(lots * 1000 * price).toLocaleString();
                     }
@@ -899,7 +914,7 @@ function App() {
                           ? `${parseFloat(cell.dividend_yield).toFixed(1)}%`
                           : cell.dividend.toFixed(3);
                         const price = latestPrice[stock.stock_id]?.price;
-                        const extraInfo = getIncomeGoalInfo(cell.dividend, price);
+                        const extraInfo = getIncomeGoalInfo(cell.dividend, price, monthlyIncomeGoal);
                         return (
                           <td key={idx} className={idx === currentMonth ? 'current-month' : ''}>
                             <span
