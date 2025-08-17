@@ -145,6 +145,9 @@ function ActionDropdown({
   showDividendYield,
   toggleAxis,
   showInfoAxis,
+  openGroupModal,
+  monthlyIncomeGoal,
+  setMonthlyIncomeGoal,
   onClose
 }) {
   const ref = useRef();
@@ -173,6 +176,18 @@ function ActionDropdown({
           </button>
         </>
       )}
+      <button onClick={() => handleClick(openGroupModal)}>建立觀察組合</button>
+      <div style={{ marginTop: 8, textAlign: 'left' }}>
+        <label>
+          預計月報酬：
+          <input
+            type="number"
+            value={monthlyIncomeGoal}
+            onChange={e => setMonthlyIncomeGoal(Number(e.target.value) || 0)}
+            style={{ width: 80, marginLeft: 4 }}
+          />
+        </label>
+      </div>
     </div>
   );
 }
@@ -671,25 +686,7 @@ function App() {
               ))}
             </select>
             <div style={{ display: 'inline-block', position: 'relative', marginLeft: 20 }}>
-              <button>更多功能</button>
-            </div>
-            <button
-              onClick={() => setShowGroupModal(true)}
-              style={{ marginLeft: 5 }}
-            >
-              建立觀察組合
-            </button>
-            <label style={{ marginLeft: 20 }}>
-              預計月報酬：
-              <input
-                type="number"
-                value={monthlyIncomeGoal}
-                onChange={e => setMonthlyIncomeGoal(Number(e.target.value) || 0)}
-                style={{ width: 80, marginLeft: 4 }}
-              />
-            </label>
-            <div style={{ display: 'inline-block', position: 'relative', marginLeft: 20 }}>
-              <button onClick={() => setShowActions(v => !v)}>更多顯示</button>
+              <button onClick={() => setShowActions(v => !v)}>更多功能</button>
               {showActions && (
                 <ActionDropdown
                   toggleCalendar={() => setShowCalendar(v => !v)}
@@ -700,6 +697,9 @@ function App() {
                   showDividendYield={showDividendYield}
                   toggleAxis={() => setShowInfoAxis(v => !v)}
                   showInfoAxis={showInfoAxis}
+                  openGroupModal={() => setShowGroupModal(true)}
+                  monthlyIncomeGoal={monthlyIncomeGoal}
+                  setMonthlyIncomeGoal={val => setMonthlyIncomeGoal(val)}
                   onClose={() => setShowActions(false)}
                 />
               )}
