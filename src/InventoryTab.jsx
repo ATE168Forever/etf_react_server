@@ -33,14 +33,11 @@ function getToday() {
 function Modal({ show, onClose, stockList, form, setForm, onSubmit }) {
     if (!show) return null;
 
-    // react-select options
     const options = stockList.map(s => ({
         value: s.stock_id,
         label: `${s.stock_id} - ${s.stock_name}${s.dividend_frequency ? '' : ' x'}`,
         isDisabled: !s.dividend_frequency
     }));
-
-    // react-select 的 value 格式
     const selectedOption = options.find(o => o.value === form.stock_id) || null;
 
     return (
@@ -50,7 +47,8 @@ function Modal({ show, onClose, stockList, form, setForm, onSubmit }) {
         }}>
             <div style={{
                 position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)',
-                background: '#fff', borderRadius: 10, padding: 28, minWidth: 350, boxShadow: "0 4px 18px #0002"
+                background: '#000', borderRadius: 10, padding: 28, minWidth: 400,
+                boxShadow: "0 4px 18px #0008", color: '#fff'
             }}>
                 <h2 style={{ marginTop: 0, marginBottom: 20, textAlign: "center" }}>新增購買紀錄</h2>
                 <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 10 }}>
@@ -58,18 +56,13 @@ function Modal({ show, onClose, stockList, form, setForm, onSubmit }) {
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <label
                             style={{
-                                width: 85,
-                                minWidth: 85,
-                                fontWeight: 500,
-                                textAlign: "left",
-                                whiteSpace: "nowrap",
-                                display: "block",
-                                lineHeight: "30px"
+                                width: 85, minWidth: 85, fontWeight: 500, textAlign: "left",
+                                whiteSpace: "nowrap", display: "block", lineHeight: "30px"
                             }}
                         >
                             股票：
                         </label>
-                        <div style={{ width: 220 }}>
+                        <div style={{ width: "100%" }}>
                             <Select
                                 options={options}
                                 value={selectedOption}
@@ -85,7 +78,8 @@ function Modal({ show, onClose, stockList, form, setForm, onSubmit }) {
                                         height: 30,
                                         borderRadius: 5,
                                         borderColor: "#ccc",
-                                        fontSize: 16
+                                        fontSize: 16,
+                                        backgroundColor: "#fff"
                                     }),
                                     valueContainer: base => ({
                                         ...base,
@@ -98,6 +92,11 @@ function Modal({ show, onClose, stockList, form, setForm, onSubmit }) {
                                     menu: base => ({
                                         ...base,
                                         zIndex: 9999
+                                    }),
+                                    option: (base, state) => ({
+                                        ...base,
+                                        color: "#000",
+                                        backgroundColor: state.isFocused ? "#eee" : "#fff"
                                     })
                                 }}
                             />
@@ -107,13 +106,8 @@ function Modal({ show, onClose, stockList, form, setForm, onSubmit }) {
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <label
                             style={{
-                                width: 85,
-                                minWidth: 85,
-                                fontWeight: 500,
-                                textAlign: "left",
-                                whiteSpace: "nowrap",
-                                display: "block",
-                                lineHeight: "30px"
+                                width: 85, minWidth: 85, fontWeight: 500, textAlign: "left",
+                                whiteSpace: "nowrap", display: "block", lineHeight: "30px"
                             }}
                         >
                             購買日期：
@@ -122,20 +116,15 @@ function Modal({ show, onClose, stockList, form, setForm, onSubmit }) {
                             type="date"
                             value={form.date}
                             onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
-                            style={{ width: 220, height: 30, borderRadius: 5, border: "1px solid #ccc", paddingLeft: 6 }}
+                            style={{ width: "100%", height: 30, borderRadius: 5, border: "1px solid #ccc", paddingLeft: 6, background: '#fff', color: '#000' }}
                         />
                     </div>
                     {/* 數量 */}
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <label
                             style={{
-                                width: 85,
-                                minWidth: 85,
-                                fontWeight: 500,
-                                textAlign: "left",
-                                whiteSpace: "nowrap",
-                                display: "block",
-                                lineHeight: "30px"
+                                width: 85, minWidth: 85, fontWeight: 500, textAlign: "left",
+                                whiteSpace: "nowrap", display: "block", lineHeight: "30px"
                             }}
                         >
                             數量（股）：
@@ -146,20 +135,15 @@ function Modal({ show, onClose, stockList, form, setForm, onSubmit }) {
                             value={form.quantity}
                             step={1000}
                             onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))}
-                            style={{ width: 220, height: 30, borderRadius: 5, border: "1px solid #ccc", paddingLeft: 6 }}
+                            style={{ width: "100%", height: 30, borderRadius: 5, border: "1px solid #ccc", paddingLeft: 6, background: '#fff', color: '#000' }}
                         />
                     </div>
                     {/* 價格 */}
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <label
                             style={{
-                                width: 85,
-                                minWidth: 85,
-                                fontWeight: 500,
-                                textAlign: "left",
-                                whiteSpace: "nowrap",
-                                display: "block",
-                                lineHeight: "30px"
+                                width: 85, minWidth: 85, fontWeight: 500, textAlign: "left",
+                                whiteSpace: "nowrap", display: "block", lineHeight: "30px"
                             }}
                         >
                             價格（元）：
@@ -170,7 +154,7 @@ function Modal({ show, onClose, stockList, form, setForm, onSubmit }) {
                             step={0.01}
                             value={form.price}
                             onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                            style={{ width: 220, height: 30, borderRadius: 5, border: "1px solid #ccc", paddingLeft: 6 }}
+                            style={{ width: "100%", height: 30, borderRadius: 5, border: "1px solid #ccc", paddingLeft: 6, background: '#fff', color: '#000' }}
                         />
                     </div>
                 </div>
@@ -217,7 +201,7 @@ function SellModal({ show, stock, onClose, onSubmit }) {
     if (!show || !stock) return null;
     return (
         <div style={{ position: 'fixed', left: 0, top: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.2)', zIndex: 1000 }}>
-            <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', background: '#fff', borderRadius: 10, padding: 28, minWidth: 350, boxShadow: '0 4px 18px #0002' }}>
+            <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', background: '#000', borderRadius: 10, padding: 28, minWidth: 350, boxShadow: '0 4px 18px #0008', color: '#fff' }}>
                 <h2 style={{ marginTop: 0, marginBottom: 20, textAlign: 'center' }}>賣出股票</h2>
                 <p style={{ margin: '8px 0' }}>股票：{stock.stock_id} - {stock.stock_name}</p>
                 <div style={{ display: 'flex', alignItems: 'center', margin: '12px 0' }}>
@@ -235,7 +219,7 @@ function SellModal({ show, stock, onClose, onSubmit }) {
                             if (val < 1) val = 1;
                             setQuantity(val);
                         }}
-                        style={{ width: 220, height: 30, borderRadius: 5, border: '1px solid #ccc', paddingLeft: 6 }}
+                        style={{ width: "100%", height: 30, borderRadius: 5, border: '1px solid #ccc', paddingLeft: 6, background: '#fff', color: '#000' }}
                     />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 10 }}>
@@ -258,8 +242,11 @@ export default function InventoryTab() {
         price: ''
     });
 
+    // view toggle: default show inventory summary
+    const [showInventory, setShowInventory] = useState(true);
+
     // 編輯用狀態
-    const [editingIdx, setEditingIdx] = useState(null);  // index in transactionHistory
+    const [editingIdx, setEditingIdx] = useState(null);
     const [editForm, setEditForm] = useState({ date: '', quantity: '', price: '' });
     const [sellModal, setSellModal] = useState({ show: false, stock: null });
     const fileInputRef = useRef(null);
@@ -338,9 +325,7 @@ export default function InventoryTab() {
 
     useEffect(() => {
         fetchWithCache(`${API_HOST}/get_stock_list`)
-            .then(list => {
-                setStockList(list);
-            })
+            .then(list => setStockList(list))
             .catch(() => setStockList([]));
     }, []);
 
@@ -396,12 +381,10 @@ export default function InventoryTab() {
                 type: 'buy'
             }
         ]);
-        // 新增完後，reset 並自動 today
         setForm({ stock_id: '', date: getToday(), quantity: '', price: '' });
         setShowModal(false);
     };
 
-    // 交易歷史編輯保存
     const handleEditSave = (idx) => {
         const original = transactionHistory[idx];
         if (!editForm.quantity || !editForm.date || (original.type === 'buy' && !editForm.price)) {
@@ -421,7 +404,6 @@ export default function InventoryTab() {
         setEditingIdx(null);
     };
 
-    // 交易歷史刪除
     const handleDelete = (idx) => {
         if (window.confirm("確定要刪除此筆紀錄？")) {
             setTransactionHistory(transactionHistory.filter((_, i) => i !== idx));
@@ -443,16 +425,11 @@ export default function InventoryTab() {
 
     return (
         <div className="App">
-            <div style={{ borderBottom: '2px solid #1e70b8', marginBottom: 12, paddingBottom: 4 }}>
-                <span style={{
-                    fontWeight: 600, color: '#1e70b8', fontSize: 19,
-                    padding: '6px 18px', borderBottom: '2px solid #1e70b8'
-                }}>庫存管理</span>
-            </div>
             <p style={{ textAlign: 'left', marginBottom: 16 }}>
                 這是一個免費網站，我們不會把你的資料存到後台或伺服器，所有的紀錄（像是你的設定或操作紀錄）都只會保存在你的瀏覽器裡。簡單說：你的資料只在你這台電腦，不會上傳，也不會被我們看到，請安心使用！
             </p>
-            <div style={{ textAlign: 'left', marginBottom: 16, display: 'flex', gap: 8 }}>
+
+            <div style={{ textAlign: 'left', marginBottom: 0, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
                     style={{
                         padding: "6px 18px",
@@ -500,6 +477,7 @@ export default function InventoryTab() {
                     onChange={handleImport}
                 />
             </div>
+
             <Modal
                 show={showModal}
                 onClose={() => setShowModal(false)}
@@ -514,158 +492,179 @@ export default function InventoryTab() {
                 onClose={() => setSellModal({ show: false, stock: null })}
                 onSubmit={handleSell}
             />
+
+            {/* View switcher: show one panel at a time */}
             <div className="inventory-tables">
-                {/* 交易歷史 */}
-                <div style={{ flex: 3, minWidth: 0 }}>
-                    <h3 style={{ margin: '10px 0 8px' }}>交易歷史</h3>
-                    <div className="table-responsive">
-                    <table className="table table-bordered table-striped" style={{ width: '100%' }}>
-                        <thead>
-                            <tr>
-                                <th>代碼</th>
-                                <th>名稱</th>
-                                <th>交易日期</th>
-                                <th>數量(股)</th>
-                                <th>價格(元)</th>
-                                <th>類型</th>
-                                <th style={{ width: 160 }}>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {transactionHistory.length === 0 ? (
-                                <tr><td colSpan={7}>尚無交易紀錄</td></tr>
-                            ) : (
-                                transactionHistory.map((item, idx) => {
-                                    const stock = stockList.find(s => s.stock_id === item.stock_id) || {};
-                                    const isEditing = editingIdx === idx;
-                                    return (
-                                        <tr key={idx}>
-                                            <td>{item.stock_id}</td>
-                                            <td>{stock.stock_name || ''}</td>
-                                            <td>
-                                                {isEditing ? (
-                                                    <input
-                                                        type="date"
-                                                        value={editForm.date}
-                                                        onChange={e =>
-                                                            setEditForm(f => ({ ...f, date: e.target.value }))
-                                                        }
-                                                    />
-                                                ) : (
-                                                    item.date
-                                                )}
-                                            </td>
-                                            <td>
-                                                {isEditing ? (
-                                                    <input
-                                                        type="number"
-                                                        min={item.type === 'buy' ? 1000 : 1}
-                                                        step={item.type === 'buy' ? 1000 : 1}
-                                                        value={editForm.quantity}
-                                                        onChange={e =>
-                                                            setEditForm(f => ({ ...f, quantity: e.target.value }))
-                                                        }
-                                                        style={{ width: 80 }}
-                                                    />
-                                                ) : (
-                                                    <>
-                                                        {item.quantity} ({(item.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)
-                                                    </>
-                                                )}
-                                            </td>
-                                            <td>
-                                                {item.type === 'buy' ? (
-                                                    isEditing ? (
-                                                        <input
-                                                            type="number"
-                                                            step={0.01}
-                                                            value={editForm.price}
-                                                            onChange={e =>
-                                                                setEditForm(f => ({ ...f, price: e.target.value }))
-                                                            }
-                                                            style={{ width: 80 }}
-                                                        />
-                                                    ) : (
-                                                        item.price
-                                                    )
-                                                ) : (
-                                                    '-'
-                                                )}
-                                            </td>
-                                            <td>{item.type === 'sell' ? '賣出' : '買入'}</td>
-                                            <td>
-                                                {isEditing ? (
-                                                    <>
-                                                        <button onClick={() => handleEditSave(idx)}>
-                                                            儲存
-                                                        </button>
-                                                        <button onClick={() => setEditingIdx(null)} style={{ marginLeft: 6 }}>
-                                                            取消
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <button
-                                                            onClick={() => {
-                                                                setEditingIdx(idx);
-                                                                setEditForm({ date: item.date, quantity: item.quantity, price: item.price });
-                                                            }}
-                                                        >
-                                                            修改
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDelete(idx)}
-                                                            style={{ marginLeft: 6 }}
-                                                        >
-                                                            刪除
-                                                        </button>
-                                                    </>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                    </div>
-                </div>
-
-                {/* 目前庫存 */}
-                <div style={{ flex: 2, minWidth: 0 }}>
-                    <h3 style={{ margin: '10px 0 8px' }}>目前庫存 (依股票彙總)</h3>
-                    <div className="table-responsive">
-                    <table className="table table-bordered table-striped" style={{ width: '100%' }}>
-                        <thead>
-                            <tr>
-                                <th style={{ width: 30 }}>#</th>
-                                <th>代碼</th>
-                                <th>名稱</th>
-                                <th>平均股價</th>
-                                <th>總數量</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {inventoryList.length === 0
-                                ? <tr><td colSpan={6}>尚無庫存</td></tr>
-                                : inventoryList.map((item, idx) => (
-                                    <tr key={idx}>
-                                        <td>{idx + 1}</td>
-                                        <td>{item.stock_id}</td>
-                                        <td>{item.stock_name}</td>
-                                        <td>{item.avg_price.toFixed(2)}</td>
-                                        <td>{item.total_quantity} ({(item.total_quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)</td>
-                                        <td>
-                                            <button onClick={() => setSellModal({ show: true, stock: item })}>賣出</button>
-                                        </td>
+                {showInventory ? (
+                    // 目前庫存 (依股票彙總)
+                    <div style={{ width: "100%" }}>
+                        <div style={{ display: "flex", alignItems: "center", margin: "10px 0 0 0", justifyContent: 'space-between' }}>
+                            <h3>目前庫存 (依股票彙總)</h3>
+                            {/* Toggle button */}
+                            <button
+                                onClick={() => setShowInventory(v => !v)}
+                                style={{
+                                    padding: "6px 14px",
+                                    borderRadius: 6,
+                                    border: "1px solid #888",
+                                    background: showInventory ? "#ffe082" : "#81d4fa", // yellow when showing 庫存, blue when showing 歷史
+                                    color: "#000",
+                                    cursor: "pointer",
+                                    marginRight: 6
+                                }}
+                                title="切換列表顯示"
+                            >
+                                {showInventory ? '顯示：交易歷史' : '顯示：目前庫存'}
+                            </button>
+                        </div>
+                        <div className="table-responsive">
+                            <table className="table table-bordered table-striped" style={{ width: '100%' }}>
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: 30 }}>#</th>
+                                        <th>代碼</th>
+                                        <th>名稱</th>
+                                        <th>平均股價</th>
+                                        <th>總數量</th>
+                                        <th>操作</th>
                                     </tr>
-                                ))}
-                        </tbody>
-                    </table>
+                                </thead>
+                                <tbody>
+                                    {inventoryList.length === 0
+                                        ? <tr><td colSpan={5}>尚無庫存</td></tr>
+                                        : inventoryList.map((item, idx) => (
+                                            <tr key={idx}>
+                                                <td>{idx + 1}</td>
+                                                <td>{item.stock_id}</td>
+                                                <td>{item.stock_name}</td>
+                                                <td>{item.avg_price.toFixed(2)}</td>
+                                                <td>{item.total_quantity} ({(item.total_quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)</td>
+                                                <td>
+                                                    <button onClick={() => setSellModal({ show: true, stock: item })}>賣出</button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-
+                ) : (
+                    // 交易歷史
+                    <div style={{ width: "100%" }}>
+                        <h3 style={{ margin: '10px 0 8px' }}>交易歷史</h3>
+                        <div className="table-responsive">
+                            <table className="table table-bordered table-striped" style={{ width: '100%' }}>
+                                <thead>
+                                    <tr>
+                                        <th>代碼</th>
+                                        <th>名稱</th>
+                                        <th>交易日期</th>
+                                        <th>數量(股)</th>
+                                        <th>價格(元)</th>
+                                        <th>類型</th>
+                                        <th style={{ width: 160 }}>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {transactionHistory.length === 0 ? (
+                                        <tr><td colSpan={6}>尚無交易紀錄</td></tr>
+                                    ) : (
+                                        transactionHistory.map((item, idx) => {
+                                            const stock = stockList.find(s => s.stock_id === item.stock_id) || {};
+                                            const isEditing = editingIdx === idx;
+                                            return (
+                                                <tr key={idx}>
+                                                    <td>{item.stock_id}</td>
+                                                    <td>{stock.stock_name || ''}</td>
+                                                    <td>
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="date"
+                                                                value={editForm.date}
+                                                                onChange={e =>
+                                                                    setEditForm(f => ({ ...f, date: e.target.value }))
+                                                                }
+                                                            />
+                                                        ) : (
+                                                            item.date
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        {isEditing ? (
+                                                            <input
+                                                                type="number"
+                                                                min={item.type === 'buy' ? 1000 : 1}
+                                                                step={item.type === 'buy' ? 1000 : 1}
+                                                                value={editForm.quantity}
+                                                                onChange={e =>
+                                                                    setEditForm(f => ({ ...f, quantity: e.target.value }))
+                                                                }
+                                                                style={{ width: 80 }}
+                                                            />
+                                                        ) : (
+                                                            <>
+                                                                {item.quantity} ({(item.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)
+                                                            </>
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        {item.type === 'buy' ? (
+                                                            isEditing ? (
+                                                                <input
+                                                                    type="number"
+                                                                    step={0.01}
+                                                                    value={editForm.price}
+                                                                    onChange={e =>
+                                                                        setEditForm(f => ({ ...f, price: e.target.value }))
+                                                                    }
+                                                                    style={{ width: 80 }}
+                                                                />
+                                                            ) : (
+                                                                item.price
+                                                            )
+                                                        ) : (
+                                                            '-'
+                                                        )}
+                                                    </td>
+                                                    <td>{item.type === 'sell' ? '賣出' : '買入'}</td>
+                                                    <td>
+                                                        {isEditing ? (
+                                                            <>
+                                                                <button onClick={() => handleEditSave(idx)}>
+                                                                    儲存
+                                                                </button>
+                                                                <button onClick={() => setEditingIdx(null)} style={{ marginLeft: 6 }}>
+                                                                    取消
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setEditingIdx(idx);
+                                                                        setEditForm({ date: item.date, quantity: item.quantity, price: item.price });
+                                                                    }}
+                                                                >
+                                                                    修改
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDelete(idx)}
+                                                                    style={{ marginLeft: 6 }}
+                                                                >
+                                                                    刪除
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

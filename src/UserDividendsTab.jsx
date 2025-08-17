@@ -191,10 +191,8 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
 
     return (
         <div className="App" style={{ margin: '0 auto' }}>
-            <div style={{ display: "flex", alignItems: "center", margin: "10px 0 20px 0", justifyContent: 'space-between' }}>
-                <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}>
-                    {selectedYear} 配息總覽（依持股計算）
-                </h1>
+            <div style={{ display: "flex", alignItems: "center", margin: "10px 0 0 0", justifyContent: 'space-between' }}>
+                <h3>{selectedYear} 配息總覽（依持股計算）</h3>
                 <button onClick={() => setShowCalendar(v => !v)}>
                     {showCalendar ? '顯示表格' : '顯示月曆'}
                 </button>

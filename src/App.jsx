@@ -612,11 +612,11 @@ function App() {
 
   return (
     <div className="container">
-      <header className="mb-4 text-center">
+      <header className="mb-1 text-center">
         <h1 className="site-title">ETF Dividend Tracker</h1>
         <h2 className="slogan">compound interest is the most powerful force in the universe</h2>
       </header>
-      <ul className="nav nav-tabs mb-3 justify-content-center">
+      <ul className="nav nav-tabs mb-1 justify-content-center">
         <li className="nav-item">
           <button
             className={`nav-link${tab === 'dividend' ? ' active' : ''}`}
@@ -652,8 +652,8 @@ function App() {
       </ul>
       {tab === 'dividend' && (
         <div className="App">
-          <h1>ETF 每月配息總表</h1>
-          <div style={{ marginBottom: 16 }}>
+          <h3>ETF 每月配息總表</h3>
+          <div style={{ marginBottom: 5 }}>
             <label>年份：</label>
             <select
               value={selectedYear}
@@ -670,13 +670,15 @@ function App() {
                 <option key={g.name} value={g.name}>{g.name}</option>
               ))}
             </select>
+            <div style={{ display: 'inline-block', position: 'relative', marginLeft: 20 }}>
+              <button>更多功能</button>
+            </div>
             <button
               onClick={() => setShowGroupModal(true)}
               style={{ marginLeft: 5 }}
             >
               建立觀察組合
             </button>
-            <button onClick={handleResetFilters} style={{ marginLeft: 10 }}>重置所有篩選</button>
             <label style={{ marginLeft: 20 }}>
               預計月報酬：
               <input
@@ -703,16 +705,18 @@ function App() {
               )}
             </div>
           </div>
+          <button onClick={handleResetFilters} style={{ marginRight: 10 }}>重置所有篩選</button>
           {!showCalendar && (
-            <p style={{fontSize:12, marginBottom:8}}>提示：點下篩選鈕開啟篩選視窗。</p>
+            <span>提示：點下篩選鈕開啟篩選視窗。</span>
           )}
+
           {loading ? (
             <p>Loading...</p>
           ) : error ? (
             <p>Error: {error.message}</p>
           ) : showCalendar ? (
             <>
-              <div style={{ marginBottom: 8 }}>
+              <div style={{ marginBottom: 5 }}>
                 <button
                   onClick={() => setCalendarFilter('ex')}
                   style={{ fontWeight: calendarFilter === 'ex' ? 'bold' : 'normal' }}
@@ -735,7 +739,7 @@ function App() {
               <DividendCalendar year={selectedYear} events={filteredCalendarEvents} />
             </>
           ) : showInfoAxis ? (
-            <div className="table-responsive" style={{ minWidth: 800 }}>
+            <div className="table-responsive" style={{ overflowX: "auto", display: "block" }}>
               {showAllStocks && (
                 <button onClick={() => setShowAllStocks(false)} style={{ marginBottom: 8 }}>預設</button>
               )}
