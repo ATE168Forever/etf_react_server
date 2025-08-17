@@ -18,7 +18,7 @@ export default function StockDetail({ stockId }) {
 
   // fetch dividend records
   useEffect(() => {
-    fetchWithCache(`${API_HOST}:8001/get_dividend`)
+    fetchWithCache(`${API_HOST}/get_dividend`)
       .then(data => {
         const arr = data.filter(item => item.stock_id === stockId);
         arr.sort((a, b) => new Date(b.dividend_date) - new Date(a.dividend_date));

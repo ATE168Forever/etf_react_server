@@ -12,7 +12,7 @@ function NLHelper() {
     setLoading(true);
     setResponse('');
     try {
-      const res = await fetch(`${API_HOST}:8001/nl_query?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`${API_HOST}/nl_query?q=${encodeURIComponent(query)}`);
       if (!res.ok) {
         setResponse(`Error: ${res.status}`);
       } else {
