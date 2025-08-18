@@ -4,9 +4,11 @@ const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 export default function DividendCalendar({ year, events }) {
-  const [month, setMonth] = useState(new Date().getMonth());
+  const timeZone = 'Asia/Taipei';
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone });
+  const [month, setMonth] = useState(Number(nowStr.slice(5, 7)) - 1);
   const [expandedDates, setExpandedDates] = useState({});
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = nowStr;
 
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
