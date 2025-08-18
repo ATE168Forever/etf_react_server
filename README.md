@@ -5,10 +5,10 @@ This project uses React + Vite. A Dockerfile is provided for serving the built a
 When working locally you will need to install dependencies before running lint or the development server:
 
 ```bash
-npm ci
+pnpm install
 ```
 
-Running `npm ci` (or `npm install`) populates the `node_modules` folder which ESLint relies on. Without it commands like `npm run lint` will fail with missing package errors.
+Running `pnpm install` populates the `node_modules` folder which ESLint relies on. Without it commands like `pnpm run lint` will fail with missing package errors.
 
 To build and run the production image:
 

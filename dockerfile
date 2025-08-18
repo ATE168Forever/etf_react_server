@@ -3,20 +3,16 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# 複製 package.json/yarn.lock，安裝依賴
-COPY package*.json ./
-# 如果你用 yarn
-# COPY yarn.lock ./
+# 複製 package.json，安裝依賴
+COPY package.json ./
 
-RUN npm ci
-# 或 yarn install
+RUN corepack enable && pnpm install
 
 # 複製所有檔案
 COPY . .
 
 # Build react app
-RUN npm run build
-# 或 yarn build
+RUN pnpm run build
 
 # 2. 生產環境: 用 nginx serve 靜態檔案
 FROM nginx:alpine
