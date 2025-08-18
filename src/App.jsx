@@ -137,6 +137,42 @@ function FilterDropdown({ options, selected, setSelected, onClose }) {
 }
 
 function ActionDropdown({
+  openGroupModal,
+  monthlyIncomeGoal,
+  setMonthlyIncomeGoal,
+  onClose
+}) {
+  const ref = useRef();
+  useClickOutside(ref, onClose);
+
+  const handleClick = (action) => {
+    action();
+    onClose();
+  };
+
+  return (
+    <div className="action-dropdown" ref={ref}>
+      {!showCalendar && (
+        <>
+          <button onClick={() => handleClick(openGroupModal)}>建立觀察組合</button>
+          <div style={{ marginTop: 8, textAlign: 'left' }}>
+            <label>
+              預計月報酬：
+              <input
+                type="number"
+                value={monthlyIncomeGoal}
+                onChange={e => setMonthlyIncomeGoal(Number(e.target.value) || 0)}
+                style={{ width: 80, marginLeft: 4 }}
+              />
+            </label>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DisplayDropdown({
   toggleCalendar,
   showCalendar,
   toggleDiamond,
@@ -145,9 +181,6 @@ function ActionDropdown({
   showDividendYield,
   toggleAxis,
   showInfoAxis,
-  openGroupModal,
-  monthlyIncomeGoal,
-  setMonthlyIncomeGoal,
   onClose
 }) {
   const ref = useRef();
@@ -176,18 +209,6 @@ function ActionDropdown({
           </button>
         </>
       )}
-      <button onClick={() => handleClick(openGroupModal)}>建立觀察組合</button>
-      <div style={{ marginTop: 8, textAlign: 'left' }}>
-        <label>
-          預計月報酬：
-          <input
-            type="number"
-            value={monthlyIncomeGoal}
-            onChange={e => setMonthlyIncomeGoal(Number(e.target.value) || 0)}
-            style={{ width: 80, marginLeft: 4 }}
-          />
-        </label>
-      </div>
     </div>
   );
 }
@@ -230,6 +251,7 @@ function App() {
   const [selectedGroup, setSelectedGroup] = useState('');
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const [showDisplays, setShowDisplays] = useState(false);
   const [showAllStocks, setShowAllStocks] = useState(false);
 
   const [editingGroupIndex, setEditingGroupIndex] = useState(null);
@@ -689,6 +711,17 @@ function App() {
               <button onClick={() => setShowActions(v => !v)}>更多功能</button>
               {showActions && (
                 <ActionDropdown
+                  openGroupModal={() => setShowGroupModal(true)}
+                  monthlyIncomeGoal={monthlyIncomeGoal}
+                  setMonthlyIncomeGoal={val => setMonthlyIncomeGoal(val)}
+                  onClose={() => setShowActions(false)}
+                />
+              )}
+            </div>
+            <div style={{ display: 'inline-block', position: 'relative', marginLeft: 20 }}>
+              <button onClick={() => setShowDisplays(v => !v)}>更多顯示</button>
+              {showDisplays && (
+                <DisplayDropdown
                   toggleCalendar={() => setShowCalendar(v => !v)}
                   showCalendar={showCalendar}
                   toggleDiamond={() => setShowDiamondOnly(v => !v)}
@@ -697,17 +730,16 @@ function App() {
                   showDividendYield={showDividendYield}
                   toggleAxis={() => setShowInfoAxis(v => !v)}
                   showInfoAxis={showInfoAxis}
-                  openGroupModal={() => setShowGroupModal(true)}
-                  monthlyIncomeGoal={monthlyIncomeGoal}
-                  setMonthlyIncomeGoal={val => setMonthlyIncomeGoal(val)}
-                  onClose={() => setShowActions(false)}
+                  onClose={() => setShowDisplays(false)}
                 />
               )}
             </div>
           </div>
-          <button onClick={handleResetFilters} style={{ marginRight: 10 }}>重置所有篩選</button>
           {!showCalendar && (
-            <span>提示：點下篩選鈕開啟篩選視窗。</span>
+            <>
+              <button onClick={handleResetFilters} style={{ marginRight: 10 }}>重置所有篩選</button>
+              <span>提示：點下篩選鈕開啟篩選視窗。</span>
+            </>
           )}
 
           {loading ? (
@@ -746,7 +778,7 @@ function App() {
               <table className="table table-bordered table-striped">
                 <thead>
                   <tr>
-                    <th>Stock</th>
+                    <th>股票代碼/名稱</th>
                     <th>最新股價</th>
                     <th>股息總額</th>
                     <th>當次殖利率</th>
@@ -802,7 +834,7 @@ function App() {
                 <tr>
                   <th style={{ position: 'relative' }}>
                     <span className="sortable" onClick={() => handleSort('stock_id')}>
-                      Stock
+                      股票代碼/名稱
                       <span className="sort-indicator">
                         {sortConfig.column === 'stock_id'
                           ? (sortConfig.direction === 'asc' ? '▲' : '▼')

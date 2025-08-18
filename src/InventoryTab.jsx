@@ -425,7 +425,7 @@ export default function InventoryTab() {
 
     return (
         <div className="App">
-            <p style={{ textAlign: 'left', marginBottom: 16 }}>
+            <p style={{ textAlign: 'left' }}>
                 這是一個免費網站，我們不會把你的資料存到後台或伺服器，所有的紀錄（像是你的設定或操作紀錄）都只會保存在你的瀏覽器裡。簡單說：你的資料只在你這台電腦，不會上傳，也不會被我們看到，請安心使用！
             </p>
 
@@ -497,24 +497,12 @@ export default function InventoryTab() {
             <div className="inventory-tables">
                 {showInventory ? (
                     // 目前庫存 (依股票彙總)
-                    <div style={{ width: "100%" }}>
-                        <div style={{ display: "flex", alignItems: "center", margin: "10px 0 0 0", justifyContent: 'space-between' }}>
-                            <h3>目前庫存 (依股票彙總)</h3>
+                    <>
+                        <div style={{ display: "flex", alignItems: "center", margin: "10px 0 0 0"}}>
+                            <h3 style={{marginRight: '20px'}}>目前庫存 (依股票彙總) </h3>
                             {/* Toggle button */}
-                            <button
-                                onClick={() => setShowInventory(v => !v)}
-                                style={{
-                                    padding: "6px 14px",
-                                    borderRadius: 6,
-                                    border: "1px solid #888",
-                                    background: showInventory ? "#ffe082" : "#81d4fa", // yellow when showing 庫存, blue when showing 歷史
-                                    color: "#000",
-                                    cursor: "pointer",
-                                    marginRight: 6
-                                }}
-                                title="切換列表顯示"
-                            >
-                                {showInventory ? '顯示：交易歷史' : '顯示：目前庫存'}
+                            <button onClick={() => setShowInventory(v => !v)} title="切換列表顯示">
+                                顯示：交易歷史
                             </button>
                         </div>
                         <div className="table-responsive">
@@ -547,11 +535,16 @@ export default function InventoryTab() {
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </>
                 ) : (
                     // 交易歷史
-                    <div style={{ width: "100%" }}>
-                        <h3 style={{ margin: '10px 0 8px' }}>交易歷史</h3>
+                    <>
+                        <div style={{ display: "flex", alignItems: "center", margin: "10px 0 0 0"}}>
+                            <h3 style={{marginRight: '20px'}}>交易歷史 </h3>
+                            <button onClick={() => setShowInventory(v => !v)} title="切換列表顯示">
+                                顯示：目前庫存
+                            </button>
+                        </div>
                         <div className="table-responsive">
                             <table className="table table-bordered table-striped" style={{ width: '100%' }}>
                                 <thead>
@@ -663,7 +656,7 @@ export default function InventoryTab() {
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </>
                 )}
             </div>
         </div>
