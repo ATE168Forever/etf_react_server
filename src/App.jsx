@@ -140,6 +140,7 @@ function ActionDropdown({
   openGroupModal,
   monthlyIncomeGoal,
   setMonthlyIncomeGoal,
+  showCalendar,
   onClose
 }) {
   const ref = useRef();
@@ -714,6 +715,7 @@ function App() {
                   openGroupModal={() => setShowGroupModal(true)}
                   monthlyIncomeGoal={monthlyIncomeGoal}
                   setMonthlyIncomeGoal={val => setMonthlyIncomeGoal(val)}
+                  showCalendar={showCalendar}
                   onClose={() => setShowActions(false)}
                 />
               )}
