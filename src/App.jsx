@@ -301,13 +301,14 @@ function App() {
     const fetchData = async () => {
       try {
         const { data: jsonData, cacheStatus, timestamp } = await fetchWithCache(`${API_HOST}/get_dividend`);
-        if (!Array.isArray(jsonData)) {
+        const arr = Array.isArray(jsonData) ? jsonData : jsonData?.items;
+        if (!Array.isArray(arr)) {
           throw new Error('Invalid data format');
         }
-        setData(jsonData);
+        setData(arr);
         setDividendCacheInfo({ cacheStatus, timestamp });
 
-        const yearSet = new Set(jsonData.map(item => new Date(item.dividend_date).getFullYear()));
+        const yearSet = new Set(arr.map(item => new Date(item.dividend_date).getFullYear()));
         const yearList = Array.from(yearSet).sort((a, b) => b - a);
         setYears(yearList);
         if (!yearSet.has(selectedYear)) setSelectedYear(yearList[0]);
