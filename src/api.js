@@ -36,7 +36,18 @@ export async function fetchWithCache(url) {
   if (response.status === 304) {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
-      return { data: JSON.parse(cached), cacheStatus: 'cached', timestamp: meta?.timestamp || null };
+      const etag = response.headers.get('ETag') || meta?.etag || null;
+      const lastModified = response.headers.get('Last-Modified') || meta?.lastModified || null;
+      const timestamp = new Date().toISOString();
+      try {
+        localStorage.setItem(
+          metaKey,
+          JSON.stringify({ etag, lastModified, timestamp })
+        );
+      } catch {
+        // ignore write errors
+      }
+      return { data: JSON.parse(cached), cacheStatus: 'cached', timestamp };
     }
     throw new Error('No cached data available');
   }
