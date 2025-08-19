@@ -39,9 +39,10 @@ const DEFAULT_WATCH_GROUPS = [
   }
 ];
 
-function getIncomeGoalInfo(dividend, price, goal) {
-  if (!price || dividend <= 0) return '';
-  const lotsNeeded = Math.ceil(goal / (dividend * 1000));
+function getIncomeGoalInfo(dividend, price, goal, freq = 12) {
+  if (!price || dividend <= 0 || freq <= 0) return '';
+  const annualDividend = dividend * freq;
+  const lotsNeeded = Math.ceil((goal * 12) / (annualDividend * 1000));
   const cost = Math.round(lotsNeeded * 1000 * price).toLocaleString();
   return `\n月報酬${goal.toLocaleString()}需: ${lotsNeeded}張\n成本: ${cost}元`;
 }
@@ -324,7 +325,8 @@ function App() {
 
   useEffect(() => {
     fetchWithCache(`${API_HOST}/get_stock_list`)
-      .then(({ data: list }) => {
+      .then(({ data }) => {
+        const list = Array.isArray(data) ? data : data?.items || [];
         const map = {};
         const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12 };
         list.forEach(s => {
@@ -815,7 +817,7 @@ function App() {
                     let lotsNeeded = '';
                     let cost = '';
                     if (price && dividendTotal > 0) {
-                      const lots = Math.ceil(monthlyIncomeGoal / (dividendTotal * 1000));
+                      const lots = Math.ceil((monthlyIncomeGoal * 12) / (dividendTotal * 1000));
                       lotsNeeded = lots;
                       cost = Math.round(lots * 1000 * price).toLocaleString();
                     }
@@ -968,7 +970,7 @@ function App() {
                           ? `${parseFloat(cell.dividend_yield).toFixed(1)}%`
                           : cell.dividend.toFixed(3);
                         const price = latestPrice[stock.stock_id]?.price;
-                        const extraInfo = getIncomeGoalInfo(cell.dividend, price, monthlyIncomeGoal);
+                        const extraInfo = getIncomeGoalInfo(cell.dividend, price, monthlyIncomeGoal, freq || 12);
                         return (
                           <td key={idx} className={idx === currentMonth ? 'current-month' : ''}>
                             <span
