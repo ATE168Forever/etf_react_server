@@ -11,7 +11,8 @@ export default function StockDetail({ stockId }) {
   // fetch stock basic info
   useEffect(() => {
     fetchWithCache(`${API_HOST}/get_stock_list`)
-      .then(({ data: list, cacheStatus, timestamp }) => {
+      .then(({ data, cacheStatus, timestamp }) => {
+        const list = Array.isArray(data) ? data : data?.items || [];
         const s = list.find(item => item.stock_id === stockId);
         setStock(s || {});
         setStockCacheInfo({ cacheStatus, timestamp });
