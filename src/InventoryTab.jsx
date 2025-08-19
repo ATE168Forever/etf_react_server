@@ -327,7 +327,10 @@ export default function InventoryTab() {
     useEffect(() => {
         fetchWithCache(`${API_HOST}/get_stock_list`)
             .then(({ data: list, cacheStatus, timestamp }) => {
-                setStockList(list);
+                const arr = Array.isArray(list)
+                    ? list
+                    : Array.isArray(list?.data) ? list.data : [];
+                setStockList(arr);
                 setCacheInfo({ cacheStatus, timestamp });
             })
             .catch(() => setStockList([]));
