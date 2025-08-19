@@ -301,6 +301,9 @@ function App() {
     const fetchData = async () => {
       try {
         const { data: jsonData, cacheStatus, timestamp } = await fetchWithCache(`${API_HOST}/get_dividend`);
+        if (!Array.isArray(jsonData)) {
+          throw new Error('Invalid data format');
+        }
         setData(jsonData);
         setDividendCacheInfo({ cacheStatus, timestamp });
 
@@ -433,7 +436,8 @@ function App() {
   };
 
   const { filteredData, stocks, stockOptions, dividendTable } = useMemo(() => {
-    const fData = data.filter(
+    const arr = Array.isArray(data) ? data : [];
+    const fData = arr.filter(
       item => new Date(item.dividend_date).getFullYear() === Number(selectedYear)
     );
     const stocks = [];
