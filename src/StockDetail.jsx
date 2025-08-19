@@ -23,7 +23,8 @@ export default function StockDetail({ stockId }) {
   useEffect(() => {
     fetchWithCache(`${API_HOST}/get_dividend`)
       .then(({ data, cacheStatus, timestamp }) => {
-        const arr = data.filter(item => item.stock_id === stockId);
+        const list = Array.isArray(data) ? data : data?.items || [];
+        const arr = list.filter(item => item.stock_id === stockId);
         arr.sort((a, b) => new Date(b.dividend_date) - new Date(a.dividend_date));
         setDividends(arr);
         setDividendCacheInfo({ cacheStatus, timestamp });
