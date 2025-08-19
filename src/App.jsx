@@ -712,7 +712,9 @@ function App() {
               ))}
             </select>
             <div style={{ display: 'inline-block', position: 'relative', marginLeft: 20 }}>
-              <button onClick={() => setShowActions(v => !v)}>更多功能</button>
+              {!showCalendar &&
+                <button onClick={() => setShowActions(v => !v)}>更多功能</button>
+              }
               {showActions && (
                 <ActionDropdown
                   openGroupModal={() => setShowGroupModal(true)}
