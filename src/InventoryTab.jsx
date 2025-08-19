@@ -250,6 +250,7 @@ export default function InventoryTab() {
     const [editForm, setEditForm] = useState({ date: '', quantity: '', price: '' });
     const [sellModal, setSellModal] = useState({ show: false, stock: null });
     const fileInputRef = useRef(null);
+    const [cacheInfo, setCacheInfo] = useState(null);
 
     const handleExport = useCallback(() => {
         const header = ['stock_id', 'date', 'quantity', 'type', 'price'];
@@ -325,7 +326,10 @@ export default function InventoryTab() {
 
     useEffect(() => {
         fetchWithCache(`${API_HOST}/get_stock_list`)
-            .then(list => setStockList(list))
+            .then(({ data: list, cacheStatus, timestamp }) => {
+                setStockList(list);
+                setCacheInfo({ cacheStatus, timestamp });
+            })
             .catch(() => setStockList([]));
     }, []);
 
@@ -428,6 +432,12 @@ export default function InventoryTab() {
             <p style={{ textAlign: 'left' }}>
                 這是一個免費網站，我們不會把你的資料存到後台或伺服器，所有的紀錄（像是你的設定或操作紀錄）都只會保存在你的瀏覽器裡。簡單說：你的資料只在你這台電腦，不會上傳，也不會被我們看到，請安心使用！
             </p>
+            {cacheInfo && (
+                <div style={{ textAlign: 'right', fontSize: 12 }}>
+                    快取: {cacheInfo.cacheStatus}
+                    {cacheInfo.timestamp ? ` (${new Date(cacheInfo.timestamp).toLocaleString()})` : ''}
+                </div>
+            )}
 
             <div style={{ textAlign: 'left', marginBottom: 0, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button

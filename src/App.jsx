@@ -295,11 +295,14 @@ function App() {
     };
   }, []);
 
+  const [dividendCacheInfo, setDividendCacheInfo] = useState(null);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const jsonData = await fetchWithCache(`${API_HOST}/get_dividend`);
+        const { data: jsonData, cacheStatus, timestamp } = await fetchWithCache(`${API_HOST}/get_dividend`);
         setData(jsonData);
+        setDividendCacheInfo({ cacheStatus, timestamp });
 
         const yearSet = new Set(jsonData.map(item => new Date(item.dividend_date).getFullYear()));
         const yearList = Array.from(yearSet).sort((a, b) => b - a);
@@ -317,7 +320,7 @@ function App() {
 
   useEffect(() => {
     fetchWithCache(`${API_HOST}/get_stock_list`)
-      .then(list => {
+      .then(({ data: list }) => {
         const map = {};
         const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12 };
         list.forEach(s => {
@@ -719,11 +722,11 @@ function App() {
                   onClose={() => setShowActions(false)}
                 />
               )}
-            </div>
-            <div style={{ display: 'inline-block', position: 'relative', marginLeft: 20 }}>
-              <button onClick={() => setShowDisplays(v => !v)}>更多顯示</button>
-              {showDisplays && (
-                <DisplayDropdown
+          </div>
+          <div style={{ display: 'inline-block', position: 'relative', marginLeft: 20 }}>
+            <button onClick={() => setShowDisplays(v => !v)}>更多顯示</button>
+            {showDisplays && (
+              <DisplayDropdown
                   toggleCalendar={() => setShowCalendar(v => !v)}
                   showCalendar={showCalendar}
                   toggleDiamond={() => setShowDiamondOnly(v => !v)}
@@ -737,6 +740,12 @@ function App() {
               )}
             </div>
           </div>
+          {dividendCacheInfo && (
+            <div style={{ textAlign: 'right', fontSize: 12 }}>
+              快取: {dividendCacheInfo.cacheStatus}
+              {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
+            </div>
+          )}
           {!showCalendar && (
             <>
               <button onClick={handleResetFilters} style={{ marginRight: 10 }}>重置所有篩選</button>
