@@ -1,21 +1,33 @@
 export async function fetchWithCache(url) {
+  const MAX_AGE = 2 * 60 * 60 * 1000; // 2 hours
   const cacheKey = `cache:data:${url}`;
   const metaKey = `cache:meta:${url}`;
   const headers = {};
   let meta;
+  let age = Infinity;
 
   try {
     const metaRaw = localStorage.getItem(metaKey);
     if (metaRaw) {
       meta = JSON.parse(metaRaw);
-      if (meta.etag) {
-        headers['If-None-Match'] = meta.etag;
-      } else if (meta.lastModified) {
-        headers['If-Modified-Since'] = meta.lastModified;
+      if (meta.timestamp) {
+        age = Date.now() - new Date(meta.timestamp).getTime();
+        if (age < MAX_AGE) {
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            return { data: JSON.parse(cached), cacheStatus: 'cached', timestamp: meta.timestamp };
+          }
+        }
       }
     }
   } catch {
     // ignore parse errors
+  }
+
+  if (meta?.etag && age < MAX_AGE) {
+    headers['If-None-Match'] = meta.etag;
+  } else if (meta?.lastModified && age < MAX_AGE) {
+    headers['If-Modified-Since'] = meta.lastModified;
   }
 
   const response = await fetch(url, { headers });

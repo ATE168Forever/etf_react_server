@@ -9,7 +9,9 @@ export function migrateTransactionHistory() {
     if (localVal) {
       return JSON.parse(localVal);
     }
-  } catch {}
+    } catch {
+      // ignore localStorage errors
+    }
 
   // fallback to cookie
   try {

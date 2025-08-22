@@ -1,5 +1,4 @@
 /* eslint-env jest */
-/* global test, expect */
 import { render, screen } from '@testing-library/react';
 import AboutTab from './AboutTab';
 
