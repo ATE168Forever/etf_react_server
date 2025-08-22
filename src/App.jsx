@@ -1,26 +1,16 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import InventoryTab from './InventoryTab';
 import UserDividendsTab from './UserDividendsTab';
 import AboutTab from './AboutTab';
-import DividendCalendar from './DividendCalendar';
+import ActionDropdown from './components/ActionDropdown';
+import DisplayDropdown from './components/DisplayDropdown';
+import DividendCalendar from './components/DividendCalendar';
+import StockTable from './components/StockTable';
 
 import './App.css';
 import NLHelper from './NLHelper';
 import { API_HOST } from './config';
 import { fetchWithCache } from './api';
-
-const MONTHS = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-];
-
-const freqNameMap = {
-  1: '年配',
-  2: '半年配',
-  4: '季配',
-  6: '雙月配',
-  12: '月配'
-};
 
 const DEFAULT_MONTHLY_GOAL = 10000;
 
@@ -45,174 +35,6 @@ function getIncomeGoalInfo(dividend, price, goal, freq = 12) {
   const lotsNeeded = Math.ceil((goal * 12) / (annualDividend * 1000));
   const cost = Math.round(lotsNeeded * 1000 * price).toLocaleString();
   return `\n月報酬${goal.toLocaleString()}需: ${lotsNeeded}張\n成本: ${cost}元`;
-}
-
-function useClickOutside(ref, handler) {
-  useEffect(() => {
-    const listener = (event) => {
-      if (!ref.current || ref.current.contains(event.target)) return;
-      handler(event);
-    };
-    document.addEventListener("mousedown", listener);
-    return () => document.removeEventListener("mousedown", listener);
-  }, [ref, handler]);
-}
-
-function FilterDropdown({ options, selected, setSelected, onClose }) {
-  const ref = useRef();
-  useClickOutside(ref, onClose);
-
-  const [tempSelected, setTempSelected] = useState(selected);
-  const [searchText, setSearchText] = useState('');
-
-  const filteredOptions = options.filter(opt =>
-    opt.label.toLowerCase().includes(searchText.trim().toLowerCase())
-  );
-
-  const handleCheck = (val) => {
-    setTempSelected(s =>
-      s.includes(val) ? s.filter(x => x !== val) : [...s, val]
-    );
-  };
-
-  const handleAll = () => {
-    const filteredValues = filteredOptions.map(o => o.value);
-    const allSelected =
-      filteredValues.length > 0 &&
-      filteredValues.every(v => tempSelected.includes(v)) &&
-      tempSelected.length === filteredValues.length;
-    setTempSelected(allSelected ? [] : filteredValues);
-  };
-
-  const handleApply = () => {
-    setSelected(tempSelected.filter(x => options.some(o => o.value === x)));
-    onClose();
-  };
-
-  const handleClear = () => {
-    setTempSelected([]);
-  };
-
-  return (
-    <div className="dropdown" ref={ref}>
-      <input
-        type="text"
-        className="dropdown-search"
-        value={searchText}
-        onChange={e => setSearchText(e.target.value)}
-        placeholder="搜尋..."
-        autoFocus
-      />
-      <div style={{ maxHeight: 180, overflowY: 'auto', marginTop: 6 }}>
-        <label className="dropdown-item">
-          <input
-            type="checkbox"
-            checked={
-              filteredOptions.length > 0 &&
-              filteredOptions.every(opt => tempSelected.includes(opt.value))
-            }
-            onChange={handleAll}
-          />
-          <span style={{ fontWeight: 'bold', marginLeft: 5 }}>全選</span>
-        </label>
-        <hr />
-        {filteredOptions.length === 0 && (
-          <div style={{ color: '#bbb', padding: '8px 0', fontSize: 13 }}>無符合選項</div>
-        )}
-        {filteredOptions.map(opt => (
-          <label key={opt.value} className="dropdown-item">
-            <input
-              type="checkbox"
-              checked={tempSelected.includes(opt.value)}
-              onChange={() => handleCheck(opt.value)}
-            /> {opt.label}
-          </label>
-        ))}
-      </div>
-      <div style={{ marginTop: 8, textAlign: 'right' }}>
-        <button className="dropdown-btn" onClick={handleClear}>清除</button>
-        <button className="dropdown-btn" style={{ marginLeft: 8 }} onClick={handleApply}>確定</button>
-      </div>
-    </div>
-  );
-}
-
-function ActionDropdown({
-  openGroupModal,
-  monthlyIncomeGoal,
-  setMonthlyIncomeGoal,
-  showCalendar,
-  onClose
-}) {
-  const ref = useRef();
-  useClickOutside(ref, onClose);
-
-  const handleClick = (action) => {
-    action();
-    onClose();
-  };
-
-  return (
-    <div className="action-dropdown" ref={ref}>
-      {!showCalendar && (
-        <>
-          <button onClick={() => handleClick(openGroupModal)}>建立觀察組合</button>
-          <div style={{ marginTop: 8, textAlign: 'left' }}>
-            <label>
-              預計月報酬：
-              <input
-                type="number"
-                value={monthlyIncomeGoal}
-                onChange={e => setMonthlyIncomeGoal(Number(e.target.value) || 0)}
-                style={{ width: 80, marginLeft: 4 }}
-              />
-            </label>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function DisplayDropdown({
-  toggleCalendar,
-  showCalendar,
-  toggleDiamond,
-  showDiamondOnly,
-  toggleDividendYield,
-  showDividendYield,
-  toggleAxis,
-  showInfoAxis,
-  onClose
-}) {
-  const ref = useRef();
-  useClickOutside(ref, onClose);
-
-  const handleClick = (action) => {
-    action();
-    onClose();
-  };
-
-  return (
-    <div className="action-dropdown" ref={ref}>
-      <button onClick={() => handleClick(toggleCalendar)}>
-        {showCalendar ? '顯示表格' : '顯示月曆'}
-      </button>
-      {!showCalendar && (
-        <>
-          <button onClick={() => handleClick(toggleDiamond)}>
-            {showDiamondOnly ? '顯示全部' : '顯示鑽石'}
-          </button>
-          <button onClick={() => handleClick(toggleDividendYield)}>
-            {showDividendYield ? '顯示配息' : '顯示殖利率'}
-          </button>
-          <button onClick={() => handleClick(toggleAxis)}>
-            {showInfoAxis ? '顯示月份' : '顯示資訊'}
-          </button>
-        </>
-      )}
-    </div>
-  );
 }
 
 function App() {
@@ -241,12 +63,8 @@ function App() {
   // Monthly income goal input
   const [monthlyIncomeGoal, setMonthlyIncomeGoal] = useState(DEFAULT_MONTHLY_GOAL);
 
-  // Sorting state
-  const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
-
   // Multi-select filters
   const [selectedStockIds, setSelectedStockIds] = useState([]);
-  const [showIdDropdown, setShowIdDropdown] = useState(false);
 
   // Watch groups
   const [watchGroups, setWatchGroups] = useState([]);
@@ -267,9 +85,7 @@ function App() {
   const handleResetFilters = () => {
     setSelectedStockIds([]);
     setMonthHasValue(Array(12).fill(false));
-    setShowIdDropdown(false);
     setShowDiamondOnly(false);
-    setSortConfig({ column: 'stock_id', direction: 'asc' });
     setShowAllStocks(false);
   };
 
@@ -575,46 +391,6 @@ function App() {
 
   const maxAnnualYield = Math.max(...Object.values(estAnnualYield), 0);
 
-  const sortedStocks = [...displayStocks].sort((a, b) => {
-    const dir = sortConfig.direction === 'asc' ? 1 : -1;
-    switch (sortConfig.column) {
-      case 'stock_id':
-        return a.stock_id.localeCompare(b.stock_id) * dir;
-      case 'stock_name':
-        return a.stock_name.localeCompare(b.stock_name) * dir;
-      case 'latest_price': {
-        const aPrice = parseFloat(latestPrice[a.stock_id]?.price) || 0;
-        const bPrice = parseFloat(latestPrice[b.stock_id]?.price) || 0;
-        return (aPrice - bPrice) * dir;
-      }
-      case 'total': {
-        const aTotal = showDividendYield ? (yieldSum[a.stock_id] || 0) : (totalPerStock[a.stock_id] || 0);
-        const bTotal = showDividendYield ? (yieldSum[b.stock_id] || 0) : (totalPerStock[b.stock_id] || 0);
-        return (aTotal - bTotal) * dir;
-      }
-      case 'annual_yield': {
-        const aYield = estAnnualYield[a.stock_id] || 0;
-        const bYield = estAnnualYield[b.stock_id] || 0;
-        return (aYield - bYield) * dir;
-      }
-      default: {
-        if (sortConfig.column?.startsWith('month')) {
-          const idx = Number(sortConfig.column.slice(5));
-          const aVal = showDividendYield
-            ? parseFloat(dividendTable[a.stock_id]?.[idx]?.dividend_yield) || 0
-            : dividendTable[a.stock_id]?.[idx]?.dividend || 0;
-          const bVal = showDividendYield
-            ? parseFloat(dividendTable[b.stock_id]?.[idx]?.dividend_yield) || 0
-            : dividendTable[b.stock_id]?.[idx]?.dividend || 0;
-          return (aVal - bVal) * dir;
-        }
-        return 0;
-      }
-    }
-  });
-
-  const limitedStocks = showAllStocks ? sortedStocks : sortedStocks.slice(0, 20);
-
   // Prepare events for calendar view
   const calendarEvents = filteredData
     .filter(item =>
@@ -790,215 +566,33 @@ function App() {
               </div>
               <DividendCalendar year={selectedYear} events={filteredCalendarEvents} />
             </>
-          ) : showInfoAxis ? (
-            <div className="table-responsive" style={{ overflowX: "auto", display: "block" }}>
-              {showAllStocks && (
-                <button onClick={() => setShowAllStocks(false)} style={{ marginBottom: 8 }}>預設</button>
-              )}
-              <table className="table table-bordered table-striped">
-                <thead>
-                  <tr>
-                    <th>股票代碼/名稱</th>
-                    <th>最新股價</th>
-                    <th>股息總額</th>
-                    <th>當次殖利率</th>
-                    <th>平均殖利率</th>
-                    <th>月報酬{monthlyIncomeGoal.toLocaleString()}需張數</th>
-                    <th>月報酬{monthlyIncomeGoal.toLocaleString()}需成本</th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  {limitedStocks.map(stock => {
-                    const price = latestPrice[stock.stock_id]?.price;
-                    const dividendTotal = totalPerStock[stock.stock_id] || 0;
-                    const avgYield = yieldCount[stock.stock_id] > 0
-                      ? (yieldSum[stock.stock_id] / yieldCount[stock.stock_id])
-                      : 0;
-                    let lotsNeeded = '';
-                    let cost = '';
-                    if (price && dividendTotal > 0) {
-                      const lots = Math.ceil((monthlyIncomeGoal * 12) / (dividendTotal * 1000));
-                      lotsNeeded = lots;
-                      cost = Math.round(lots * 1000 * price).toLocaleString();
-                    }
-                    const lastYield = latestYield[stock.stock_id]?.yield;
-                    return (
-                      <tr key={stock.stock_id + stock.stock_name}>
-                        <td>
-                          <a href={`/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
-                            {stock.stock_id} {stock.stock_name}
-                          </a>
-                        </td>
-                        <td>{price ?? ''}</td>
-                        <td>{dividendTotal > 0 ? dividendTotal.toFixed(3) : ''}</td>
-                        <td>{lastYield > 0 ? `${lastYield.toFixed(1)}%` : ''}</td>
-                        <td>{avgYield > 0 ? `${avgYield.toFixed(1)}%` : ''}</td>
-                        <td>{lotsNeeded}</td>
-                        <td>{cost && `${cost}元`}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {!showAllStocks && sortedStocks.length > 20 && (
-                <button className="more-btn" onClick={() => setShowAllStocks(true)} style={{ marginTop: 8 }}>更多+</button>
-              )}
-            </div>
           ) : (
-            <div className="table-responsive" style={{ minWidth: 1300 }}>
-              {showAllStocks && (
-                <button onClick={() => setShowAllStocks(false)} style={{ marginBottom: 8 }}>預設</button>
-              )}
-              <table className="table table-bordered table-striped">
-              <thead>
-                <tr>
-                  <th style={{ position: 'relative' }}>
-                    <span className="sortable" onClick={() => handleSort('stock_id')}>
-                      股票代碼/名稱
-                      <span className="sort-indicator">
-                        {sortConfig.column === 'stock_id'
-                          ? (sortConfig.direction === 'asc' ? '▲' : '▼')
-                          : '↕'}
-                      </span>
-                    </span>
-                    <span
-                      className="filter-btn"
-                      tabIndex={0}
-                      onClick={() => setShowIdDropdown(true)}
-                      title="依代號篩選"
-                    >
-                      🔎
-                    </span>
-                    {showIdDropdown && (
-                      <FilterDropdown
-                        options={stockOptions}
-                        selected={selectedStockIds}
-                        setSelected={setSelectedStockIds}
-                        onClose={() => setShowIdDropdown(false)}
-                      />
-                    )}
-                  </th>
-                  <th>
-                    <span className="sortable" onClick={() => handleSort('latest_price')}>
-                      最新<br></br>股價
-                      <span className="sort-indicator">
-                        {sortConfig.column === 'latest_price'
-                          ? (sortConfig.direction === 'asc' ? '▲' : '▼')
-                          : '↕'}
-                      </span>
-                    </span>
-                  </th>
-                  {MONTHS.map((m, idx) => (
-                    <th key={m} className={idx === currentMonth ? 'current-month' : ''}>
-                      <span className="sortable" onClick={() => handleSort(`month${idx}`)}>
-                        {m}
-                        <span className="sort-indicator">
-                          {sortConfig.column === `month${idx}`
-                            ? (sortConfig.direction === 'asc' ? '▲' : '▼')
-                            : '↕'}
-                        </span>
-                      </span>
-                      <br />
-                      <label style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
-                        <input
-                          type="checkbox"
-                          checked={monthHasValue[idx]}
-                          onChange={e => {
-                            const arr = [...monthHasValue];
-                            arr[idx] = e.target.checked;
-                            setMonthHasValue(arr);
-                          }}
-                        />&nbsp;配息
-                      </label>
-                    </th>
-                  ))}
-                  <th>
-                    <span className="sortable" onClick={() => handleSort('total')}>
-                      累積{showDividendYield ? '殖利率' : '股息'}
-                      <span className="sort-indicator">
-                        {sortConfig.column === 'total'
-                          ? (sortConfig.direction === 'asc' ? '▲' : '▼')
-                          : '↕'}
-                      </span>
-                    </span>
-                    {'/ '}
-                    <br></br>
-                    <span className="sortable" onClick={() => handleSort('annual_yield')}>
-                      預估殖利率
-                      <span className="sort-indicator">
-                        {sortConfig.column === 'annual_yield'
-                          ? (sortConfig.direction === 'asc' ? '▲' : '▼')
-                          : '↕'}
-                      </span>
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {limitedStocks.map(stock => {
-                  const totalVal = showDividendYield
-                    ? (yieldSum[stock.stock_id] > 0
-                      ? `${yieldSum[stock.stock_id].toFixed(1)}%`
-                      : '')
-                    : (totalPerStock[stock.stock_id] > 0
-                      ? totalPerStock[stock.stock_id].toFixed(1)
-                      : '');
-                  const annualVal = estAnnualYield[stock.stock_id] > 0 ? (
-                    <span
-                      title={`目前已累積殖利率: ${(yieldSum[stock.stock_id] || 0).toFixed(1)}%`}
-                    >
-                      {estAnnualYield[stock.stock_id].toFixed(1)}%
-                      {estAnnualYield[stock.stock_id] === maxAnnualYield && maxAnnualYield > 0 && (
-                        <span className="crown-icon" role="img" aria-label="crown">👑</span>
-                      )}
-                    </span>
-                  ) : '';
-                  return (
-                    <tr key={stock.stock_id + stock.stock_name}>
-                      <td>
-                        <a href={`/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
-                          {stock.stock_id} {stock.stock_name}
-                        </a>
-                      </td>
-                      <td>{latestPrice[stock.stock_id]?.price ?? ''}</td>
-                      {MONTHS.map((m, idx) => {
-                        const cell = dividendTable[stock.stock_id] && dividendTable[stock.stock_id][idx];
-                        if (!cell) return <td key={idx} className={idx === currentMonth ? 'current-month' : ''}></td>;
-                        const freq = freqMap[stock.stock_id];
-                        const perYield = cell.perYield || 0;
-                        const displayVal = showDividendYield
-                          ? `${parseFloat(cell.dividend_yield).toFixed(1)}%`
-                          : cell.dividend.toFixed(3);
-                        const price = latestPrice[stock.stock_id]?.price;
-                        const extraInfo = getIncomeGoalInfo(cell.dividend, price, monthlyIncomeGoal, freq || 12);
-                        return (
-                          <td key={idx} className={idx === currentMonth ? 'current-month' : ''}>
-                            <span
-                              title={`除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}%\n平均月殖利率: ${perYield.toFixed(2)}%\n配息頻率: ${freqNameMap[freq] || '不定期'}\n配息日期: ${cell.dividend_date}\n發放日期: ${cell.payment_date}${extraInfo}`}
-                            >
-                              {displayVal}
-                              {perYield === maxYieldPerMonth[idx] && maxYieldPerMonth[idx] > 0 && (
-                                <span className="diamond-icon" role="img" aria-label="diamond">💎</span>
-                              )}
-                            </span>
-                          </td>
-                        );
-                      })}
-                      <td>
-                        {totalVal}
-                        {totalVal && annualVal && ' / '}
-                        {annualVal}
-                      </td>
-                    </tr>
-                  );
-                })}
-                </tbody>
-              </table>
-              {!showAllStocks && sortedStocks.length > 20 && (
-                <button className="more-btn" onClick={() => setShowAllStocks(true)} style={{ marginTop: 8 }}>更多+</button>
-              )}
-            </div>
-          )}
+            <StockTable
+              stocks={displayStocks}
+              dividendTable={dividendTable}
+              totalPerStock={totalPerStock}
+              yieldSum={yieldSum}
+              yieldCount={yieldCount}
+              latestPrice={latestPrice}
+              latestYield={latestYield}
+              estAnnualYield={estAnnualYield}
+              maxAnnualYield={maxAnnualYield}
+              maxYieldPerMonth={maxYieldPerMonth}
+              stockOptions={stockOptions}
+              selectedStockIds={selectedStockIds}
+              setSelectedStockIds={setSelectedStockIds}
+              monthHasValue={monthHasValue}
+              setMonthHasValue={setMonthHasValue}
+              showDividendYield={showDividendYield}
+              currentMonth={currentMonth}
+              monthlyIncomeGoal={monthlyIncomeGoal}
+              showAllStocks={showAllStocks}
+              setShowAllStocks={setShowAllStocks}
+              showInfoAxis={showInfoAxis}
+              getIncomeGoalInfo={getIncomeGoalInfo}
+              freqMap={freqMap}
+            />
+          )
         </div>
       )}
       {tab === 'inventory' && <InventoryTab />}

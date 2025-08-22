@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { API_HOST } from './config';
-import DividendCalendar from './DividendCalendar';
+import DividendCalendar from './components/DividendCalendar';
 
 const MONTHS = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
