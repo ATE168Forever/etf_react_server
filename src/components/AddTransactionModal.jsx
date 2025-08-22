@@ -1,0 +1,72 @@
+import Select from 'react-select';
+import styles from './AddTransactionModal.module.css';
+
+export default function AddTransactionModal({ show, onClose, stockList, form, setForm, onSubmit }) {
+  if (!show) return null;
+  const options = stockList.map(s => ({
+    value: s.stock_id,
+    label: `${s.stock_id} - ${s.stock_name}${s.dividend_frequency ? '' : ' x'}`,
+    isDisabled: !s.dividend_frequency
+  }));
+  const selectedOption = options.find(o => o.value === form.stock_id) || null;
+
+  return (
+    <div className={styles.overlay}>
+      <div className={styles.modal}>
+        <h2 className={styles.title}>新增購買紀錄</h2>
+        <div className={styles.form}>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>股票：</label>
+            <div className={styles.inputWrapper}>
+              <Select
+                options={options}
+                value={selectedOption}
+                onChange={option => setForm(f => ({ ...f, stock_id: option ? option.value : '' }))}
+                placeholder="搜尋或選擇股票"
+                isClearable
+              />
+            </div>
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>購買日期：</label>
+            <input
+              type="date"
+              value={form.date}
+              data-testid="date-input"
+              onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+              className={styles.input}
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>數量（股）：</label>
+            <input
+              type="number"
+              min={1000}
+              value={form.quantity}
+              step={1000}
+              data-testid="quantity-input"
+              onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))}
+              className={styles.input}
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>價格（元）：</label>
+            <input
+              type="number"
+              min={0}
+              step={0.01}
+              value={form.price}
+              data-testid="price-input"
+              onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+              className={styles.input}
+            />
+          </div>
+        </div>
+        <div className={styles.buttonRow}>
+          <button onClick={onSubmit} className={styles.primaryButton}>儲存</button>
+          <button onClick={onClose} className={styles.secondaryButton}>關閉</button>
+        </div>
+      </div>
+    </div>
+  );
+}

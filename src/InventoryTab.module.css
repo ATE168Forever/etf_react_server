@@ -1,0 +1,38 @@
+.notice {
+  text-align: left;
+}
+
+.cacheInfo {
+  text-align: right;
+  font-size: 12px;
+}
+
+.topControls {
+  text-align: left;
+  margin-bottom: 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.button {
+  padding: 6px 18px;
+  border-radius: 6px;
+  border: 1px solid #888;
+  background: #e7f0fd;
+  cursor: pointer;
+}
+
+.tableHeader {
+  display: flex;
+  align-items: center;
+  margin: 10px 0 0 0;
+}
+
+.titleMargin {
+  margin-right: 20px;
+}
+
+.fullWidth {
+  width: 100%;
+}

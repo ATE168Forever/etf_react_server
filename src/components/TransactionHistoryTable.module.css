@@ -1,0 +1,15 @@
+.table {
+  width: 100%;
+}
+
+.operationCol {
+  width: 160px;
+}
+
+.smallInput {
+  width: 80px;
+}
+
+.actionButton {
+  margin-left: 6px;
+}
