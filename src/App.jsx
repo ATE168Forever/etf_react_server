@@ -11,6 +11,7 @@ import './App.css';
 import NLHelper from './NLHelper';
 import { API_HOST } from './config';
 import { fetchWithCache } from './api';
+import { getTomorrowDividendAlerts } from './dividendUtils';
 
 const DEFAULT_MONTHLY_GOAL = 10000;
 
@@ -47,6 +48,7 @@ function App() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [upcomingAlerts, setUpcomingAlerts] = useState([]);
 
   // Toggle table/calendar view
   const [showCalendar, setShowCalendar] = useState(false);
@@ -138,6 +140,10 @@ function App() {
     fetchData();
     // eslint-disable-next-line
   }, []);
+
+  useEffect(() => {
+    setUpcomingAlerts(getTomorrowDividendAlerts(data));
+  }, [data]);
 
   useEffect(() => {
     fetchWithCache(`${API_HOST}/get_stock_list`)
@@ -440,6 +446,15 @@ function App() {
         <h1 className="site-title">ETF Dividend Tracker</h1>
         <h2 className="slogan">compound interest is the most powerful force in the universe</h2>
       </header>
+      {upcomingAlerts.length > 0 && (
+        <div className="dividend-alert">
+          {upcomingAlerts.map(a => (
+            <div key={`${a.stock_id}-${a.type}`}>
+              {a.stock_name || a.stock_id} 明天即將{a.type === 'ex' ? '除息' : '配息'} 每股 {a.dividend} 元，預估領取 {Math.round(a.total).toLocaleString()} 元
+            </div>
+          ))}
+        </div>
+      )}
       <ul className="nav nav-tabs mb-1 justify-content-center">
         <li className="nav-item">
           <button
