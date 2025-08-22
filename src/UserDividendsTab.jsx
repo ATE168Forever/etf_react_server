@@ -1,27 +1,18 @@
 import { useState, useEffect } from 'react';
-import Cookies from 'js-cookie';
-import { API_HOST } from './config';
 import DividendCalendar from './components/DividendCalendar';
+import { readTransactionHistory } from './transactionStorage';
 
 const MONTHS = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ];
-const COOKIE_KEY = 'my_transaction_history';
-
 function getTransactionHistory() {
-    try {
-        const val = Cookies.get(COOKIE_KEY);
-        const list = val ? JSON.parse(val) : [];
-        return list.map(item => ({
-            stock_id: item.stock_id,
-            date: item.date || item.purchased_date,
-            quantity: item.quantity,
-            type: item.type || 'buy'
-        }));
-    } catch {
-        return [];
-    }
+    return readTransactionHistory().map(item => ({
+        stock_id: item.stock_id,
+        date: item.date || item.purchased_date,
+        quantity: item.quantity,
+        type: item.type || 'buy'
+    }));
 }
 
 export default function UserDividendsTab({ allDividendData, selectedYear }) {
