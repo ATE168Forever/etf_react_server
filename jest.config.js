@@ -4,5 +4,8 @@ export default {
   moduleFileExtensions: ['js', 'jsx'],
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest'
+  },
+  moduleNameMapper: {
+    '\\.(css|scss)$': '<rootDir>/test-style-mock.js'
   }
 };
