@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { API_HOST } from './config';
+import { fetchWithCache } from './api';
 
 function NLHelper() {
   const [query, setQuery] = useState('');
@@ -12,13 +13,10 @@ function NLHelper() {
     setLoading(true);
     setResponse('');
     try {
-      const res = await fetch(`${API_HOST}/nl_query?q=${encodeURIComponent(query)}`);
-      if (!res.ok) {
-        setResponse(`Error: ${res.status}`);
-      } else {
-        const data = await res.json();
-        setResponse(JSON.stringify(data, null, 2));
-      }
+      const { data } = await fetchWithCache(
+        `${API_HOST}/nl_query?q=${encodeURIComponent(query)}`
+      );
+      setResponse(JSON.stringify(data, null, 2));
     } catch (err) {
       setResponse('Error: ' + err.message);
     } finally {
