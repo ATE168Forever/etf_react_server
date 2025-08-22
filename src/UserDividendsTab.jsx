@@ -33,14 +33,28 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         }, 0);
     }
 
-    // 1. 只取有持股且該年有配息紀錄的資料
-    const filteredData = (allDividendData || []).filter(item => {
+    // 1. 取得持有股票清單（以年末持股為準）
+    const stockIdSet = new Set(history.map(h => h.stock_id));
+    const holdingIds = Array.from(stockIdSet).filter(id => getHolding(id, `${selectedYear}-12-31`) > 0);
+    const holdingIdSet = new Set(holdingIds);
+
+    // 建立股票代號到名稱的對應
+    const stockMap = {};
+    holdingIds.forEach(id => {
+        const info = (allDividendData || []).find(d => d.stock_id === id);
+        stockMap[id] = info?.stock_name || '';
+    });
+    const myStocks = holdingIds.map(id => ({ stock_id: id, stock_name: stockMap[id] }));
+
+    // 2. 只取有配息紀錄的資料
+    const dividendData = (allDividendData || []).filter(item => {
         const d = item.dividend_date;
-        return d && new Date(d).getFullYear() === Number(selectedYear) && getHolding(item.stock_id, d) > 0;
+        return d && new Date(d).getFullYear() === Number(selectedYear) &&
+            holdingIdSet.has(item.stock_id) && getHolding(item.stock_id, d) > 0;
     });
 
     // Events for calendar view
-    const calendarEvents = filteredData.flatMap(item => {
+    const calendarEvents = dividendData.flatMap(item => {
         const qty = getHolding(item.stock_id, item.dividend_date);
         const dividend = parseFloat(item.dividend);
         const amount = dividend * qty;
@@ -79,22 +93,12 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         return arr;
     });
 
-    // 2. 取唯一股票清單
-    const stockMap = {};
-    filteredData.forEach(item => {
-        stockMap[item.stock_id] = item.stock_name;
-    });
-    const myStocks = Object.entries(stockMap).map(([stock_id, stock_name]) => ({
-        stock_id,
-        stock_name
-    }));
-
     // 3. 建 monthlyDividendTable: stock_id => {month: cell}
     const dividendTable = {};
     myStocks.forEach(stock => {
         dividendTable[stock.stock_id] = {};
     });
-    filteredData.forEach(item => {
+    dividendData.forEach(item => {
         const thisDate = item.dividend_date;
         if (!thisDate) return;
         const month = new Date(thisDate).getMonth();
