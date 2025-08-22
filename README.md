@@ -2,15 +2,17 @@
 
 This project uses React + Vite. A Dockerfile is provided for serving the built app via Nginx.
 
-When working locally you will need to install dependencies before running lint or the development server:
+When working locally you will need to install dependencies before running lint or the development server. Use the included lockfile for reproducible installs:
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
-Running `pnpm install` populates the `node_modules` folder which ESLint relies on. Without it commands like `pnpm run lint` will fail with missing package errors.
+Running `pnpm install --frozen-lockfile` populates the `node_modules` folder based on `pnpm-lock.yaml` so everyone uses the same dependency versions. Without it commands like `pnpm run lint` will fail with missing package errors.
 
-To build and run the production image:
+The `pnpm-lock.yaml` file should be kept under version control to guarantee identical installs in CI/CD and local environments.
+
+To build and run the production image the Dockerfile also installs dependencies from the lockfile:
 
 ```bash
 docker build -t etf-view .

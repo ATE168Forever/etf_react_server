@@ -3,10 +3,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# 複製 package.json，安裝依賴
-COPY package.json ./
+# 複製 package.json 及鎖定檔後再安裝依賴，以利快取
+COPY package.json pnpm-lock.yaml ./
 
-RUN corepack enable && pnpm install
+RUN corepack enable && pnpm install --frozen-lockfile
 
 # 複製所有檔案
 COPY . .
