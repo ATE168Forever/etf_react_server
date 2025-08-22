@@ -592,7 +592,7 @@ function App() {
               getIncomeGoalInfo={getIncomeGoalInfo}
               freqMap={freqMap}
             />
-          )
+          )}
         </div>
       )}
       {tab === 'inventory' && <InventoryTab />}
