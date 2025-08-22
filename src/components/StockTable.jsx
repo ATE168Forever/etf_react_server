@@ -1,5 +1,5 @@
-import { useState, useMemo, forwardRef } from 'react';
-import { FixedSizeList as List } from 'react-window';
+import { useState, useMemo } from 'react';
+// Removed react-window virtualization to avoid invalid table markup
 import FilterDropdown from './FilterDropdown';
 
 const MONTHS = [
@@ -94,8 +94,7 @@ export default function StockTable({
 
   const limitedStocks = showAllStocks ? sortedStocks : sortedStocks.slice(0, 20);
 
-  const Row = ({ index, style }) => {
-    const stock = limitedStocks[index];
+  const Row = ({ stock }) => {
     const totalVal = showDividendYield
       ? (yieldSum[stock.stock_id] > 0 ? `${yieldSum[stock.stock_id].toFixed(1)}%` : '')
       : (totalPerStock[stock.stock_id] > 0 ? totalPerStock[stock.stock_id].toFixed(1) : '');
@@ -109,7 +108,7 @@ export default function StockTable({
     ) : '';
 
     return (
-      <tr style={style} key={stock.stock_id + stock.stock_name}>
+      <tr>
         <td>
           <a href={`/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
             {stock.stock_id} {stock.stock_name}
@@ -147,8 +146,6 @@ export default function StockTable({
       </tr>
     );
   };
-
-  const Tbody = forwardRef((props, ref) => <tbody ref={ref} {...props} />);
 
   if (showInfoAxis) {
     return (
@@ -298,15 +295,11 @@ export default function StockTable({
             </th>
           </tr>
         </thead>
-        <List
-          height={400}
-          itemCount={limitedStocks.length}
-          itemSize={35}
-          width="100%"
-          outerElementType={Tbody}
-        >
-          {Row}
-        </List>
+        <tbody>
+          {limitedStocks.map(stock => (
+            <Row key={stock.stock_id + stock.stock_name} stock={stock} />
+          ))}
+        </tbody>
       </table>
       {!showAllStocks && sortedStocks.length > 20 && (
         <button className="more-btn" onClick={() => setShowAllStocks(true)} style={{ marginTop: 8 }}>更多+</button>
