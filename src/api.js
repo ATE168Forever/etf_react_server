@@ -1,5 +1,6 @@
 export async function fetchWithCache(url) {
-  const MAX_AGE = 2 * 60 * 60 * 1000; // 2 hours
+  // const MAX_AGE = 2 * 60 * 60 * 1000; // 2 hours
+  const MAX_AGE = 0;
   const cacheKey = `cache:data:${url}`;
   const metaKey = `cache:meta:${url}`;
   const headers = {};
