@@ -443,7 +443,7 @@ function App() {
   return (
     <div className="container">
       <header className="mb-1 text-center">
-        <h1 className="site-title">ETF Dividend Tracker</h1>
+        <h1 className="site-title">Dividend Life</h1>
         <h2 className="slogan">compound interest is the most powerful force in the universe</h2>
       </header>
       {upcomingAlerts.length > 0 && (
