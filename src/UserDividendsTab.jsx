@@ -6,6 +6,7 @@ const MONTHS = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ];
+const MONTH_COL_WIDTH = 80;
 function getTransactionHistory() {
     return readTransactionHistory().map(item => ({
         stock_id: item.stock_id,
@@ -209,7 +210,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                             </span>
                         </th>
                         {MONTHS.map((m, idx) => (
-                            <th key={idx} className={idx === currentMonth ? 'current-month' : ''}>
+                            <th key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
                                 <span className="sortable" onClick={() => handleSort(`month${idx}`)}>
                                     {m}
                                     {sortConfig.column === `month${idx}` && (
@@ -239,10 +240,10 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                 <td>{stock.stock_id} {stock.stock_name}</td>
                                 {MONTHS.map((m, idx) => {
                                     const cell = dividendTable[stock.stock_id][idx];
-                                    if (!cell || !cell.dividend || !cell.quantity) return <td key={idx} className={idx === currentMonth ? 'current-month' : ''}></td>;
+                                    if (!cell || !cell.dividend || !cell.quantity) return <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}></td>;
                                     const total = cell.dividend * cell.quantity;
                                     return (
-                                        <td key={idx} className={idx === currentMonth ? 'current-month' : ''}>
+                                        <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
                                             <span
                                                 title={`持有數量: ${cell.quantity} 股 (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)\n每股配息: ${cell.dividend} 元\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`}
                                                 style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
@@ -270,7 +271,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                     <tr style={{ background: '#ffe066', fontWeight: 'bold' }}>
                         <td>月合計</td>
                         {totalPerMonth.map((total, idx) => (
-                            <td key={idx} className={idx === currentMonth ? 'current-month' : ''}>{total > 0 ? Math.round(total).toLocaleString() : ''}</td>
+                            <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>{total > 0 ? Math.round(total).toLocaleString() : ''}</td>
                         ))}
                         <td>
                             {grandTotal > 0 ? (
