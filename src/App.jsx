@@ -492,52 +492,58 @@ function App() {
       {tab === 'dividend' && (
         <div className="App">
           <h3>ETF 每月配息總表</h3>
-          <div style={{ marginBottom: 5 }}>
-            <label>年份：</label>
-            <select
-              value={selectedYear}
-              onChange={e => setSelectedYear(Number(e.target.value))}
-            >
-              {years.map(year => (
-                <option value={year} key={year}>{year}</option>
-              ))}
-            </select>
-            <label style={{ marginLeft: 20 }}>觀察組合：</label>
-            <select value={selectedGroup} onChange={handleGroupChange}>
-              <option value="">自選</option>
-              {watchGroups.map(g => (
-                <option key={g.name} value={g.name}>{g.name}</option>
-              ))}
-            </select>
-            <div style={{ display: 'inline-block', position: 'relative', marginLeft: 20 }}>
-              {!showCalendar &&
-                <button onClick={() => setShowActions(v => !v)}>更多功能</button>
-              }
-              {showActions && (
-                <ActionDropdown
-                  openGroupModal={() => setShowGroupModal(true)}
-                  monthlyIncomeGoal={monthlyIncomeGoal}
-                  setMonthlyIncomeGoal={val => setMonthlyIncomeGoal(val)}
-                  showCalendar={showCalendar}
-                  onClose={() => setShowActions(false)}
-                />
-              )}
-          </div>
-          <div style={{ display: 'inline-block', position: 'relative', marginLeft: 20 }}>
-            <button onClick={() => setShowDisplays(v => !v)}>更多顯示</button>
-            {showDisplays && (
-              <DisplayDropdown
-                  toggleCalendar={() => setShowCalendar(v => !v)}
-                  showCalendar={showCalendar}
-                  toggleDiamond={() => setShowDiamondOnly(v => !v)}
-                  showDiamondOnly={showDiamondOnly}
-                  toggleDividendYield={() => setShowDividendYield(v => !v)}
-                  showDividendYield={showDividendYield}
-                  toggleAxis={() => setShowInfoAxis(v => !v)}
-                  showInfoAxis={showInfoAxis}
-                  onClose={() => setShowDisplays(false)}
-                />
-              )}
+          <div className="dividend-controls">
+            <div className="control-pair">
+              <label>年份：</label>
+              <select
+                value={selectedYear}
+                onChange={e => setSelectedYear(Number(e.target.value))}
+              >
+                {years.map(year => (
+                  <option value={year} key={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+            <div className="control-pair">
+              <label>觀察組合：</label>
+              <select value={selectedGroup} onChange={handleGroupChange}>
+                <option value="">自選</option>
+                {watchGroups.map(g => (
+                  <option key={g.name} value={g.name}>{g.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="more-group">
+              <div className="more-item">
+                {!showCalendar &&
+                  <button onClick={() => setShowActions(v => !v)}>更多功能</button>
+                }
+                {showActions && (
+                  <ActionDropdown
+                    openGroupModal={() => setShowGroupModal(true)}
+                    monthlyIncomeGoal={monthlyIncomeGoal}
+                    setMonthlyIncomeGoal={val => setMonthlyIncomeGoal(val)}
+                    showCalendar={showCalendar}
+                    onClose={() => setShowActions(false)}
+                  />
+                )}
+              </div>
+              <div className="more-item">
+                <button onClick={() => setShowDisplays(v => !v)}>更多顯示</button>
+                {showDisplays && (
+                  <DisplayDropdown
+                    toggleCalendar={() => setShowCalendar(v => !v)}
+                    showCalendar={showCalendar}
+                    toggleDiamond={() => setShowDiamondOnly(v => !v)}
+                    showDiamondOnly={showDiamondOnly}
+                    toggleDividendYield={() => setShowDividendYield(v => !v)}
+                    showDividendYield={showDividendYield}
+                    toggleAxis={() => setShowInfoAxis(v => !v)}
+                    showInfoAxis={showInfoAxis}
+                    onClose={() => setShowDisplays(false)}
+                  />
+                )}
+              </div>
             </div>
           </div>
           {dividendCacheInfo && (

@@ -15,6 +15,11 @@
   flex-wrap: wrap;
 }
 
+.csvControls {
+  display: flex;
+  gap: 8px;
+}
+
 .button {
   padding: 6px 18px;
   border-radius: 6px;
