@@ -228,12 +228,14 @@ export default function InventoryTab() {
         >
           新增購買紀錄
         </button>
-        <button className={styles.button} onClick={handleExport}>
-          匯出 CSV
-        </button>
-        <button className={styles.button} onClick={handleImportClick}>
-          匯入 CSV
-        </button>
+        <div className={styles.csvControls}>
+          <button className={styles.button} onClick={handleExport}>
+            匯出 CSV
+          </button>
+          <button className={styles.button} onClick={handleImportClick}>
+            匯入 CSV
+          </button>
+        </div>
         <input
           type="file"
           accept=".csv"
