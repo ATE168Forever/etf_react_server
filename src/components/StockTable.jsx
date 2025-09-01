@@ -7,6 +7,8 @@ const MONTHS = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ];
 
+const NUM_COL_WIDTH = 80;
+
 const freqNameMap = {
   1: '年配',
   2: '半年配',
@@ -114,10 +116,10 @@ export default function StockTable({
             {stock.stock_id} {stock.stock_name}
           </a>
         </td>
-        <td>{latestPrice[stock.stock_id]?.price ?? ''}</td>
+        <td style={{ maxWidth: NUM_COL_WIDTH }}>{latestPrice[stock.stock_id]?.price ?? ''}</td>
         {MONTHS.map((m, idx) => {
           const cell = dividendTable[stock.stock_id] && dividendTable[stock.stock_id][idx];
-          if (!cell) return <td key={idx} className={idx === currentMonth ? 'current-month' : ''}></td>;
+          if (!cell) return <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ maxWidth: NUM_COL_WIDTH }}></td>;
           const freq = freqMap[stock.stock_id];
           const perYield = cell.perYield || 0;
           const displayVal = showDividendYield
@@ -126,7 +128,7 @@ export default function StockTable({
           const price = latestPrice[stock.stock_id]?.price;
           const extraInfo = getIncomeGoalInfo(cell.dividend, price, monthlyIncomeGoal, freq || 12);
           return (
-            <td key={idx} className={idx === currentMonth ? 'current-month' : ''}>
+            <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ maxWidth: NUM_COL_WIDTH }}>
               <span
                 title={`除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}%\n平均月殖利率: ${perYield.toFixed(2)}%\n配息頻率: ${freqNameMap[freq] || '不定期'}\n配息日期: ${cell.dividend_date}\n發放日期: ${cell.payment_date}${extraInfo}`}
               >
@@ -239,7 +241,7 @@ export default function StockTable({
                 />
               )}
             </th>
-            <th>
+            <th style={{ maxWidth: NUM_COL_WIDTH }}>
               <span className="sortable" onClick={() => handleSort('latest_price')}>
                 最新<br></br>股價
                 <span className="sort-indicator">
@@ -250,7 +252,7 @@ export default function StockTable({
               </span>
             </th>
             {MONTHS.map((m, idx) => (
-              <th key={m} className={idx === currentMonth ? 'current-month' : ''}>
+              <th key={m} className={idx === currentMonth ? 'current-month' : ''} style={{ maxWidth: NUM_COL_WIDTH }}>
                 <span className="sortable" onClick={() => handleSort(`month${idx}`)}>
                   {m}
                   <span className="sort-indicator">
