@@ -151,7 +151,7 @@ export default function StockTable({
 
   if (showInfoAxis) {
     return (
-      <div className="table-responsive" style={{ overflowX: 'auto', display: 'block' }}>
+      <div className="table-responsive">
         {showAllStocks && (
           <button onClick={() => setShowAllStocks(false)} style={{ marginBottom: 8 }}>預設</button>
         )}
@@ -208,11 +208,11 @@ export default function StockTable({
   }
 
   return (
-    <div className="table-responsive" style={{ minWidth: 1300 }}>
+    <div className="table-responsive">
       {showAllStocks && (
         <button onClick={() => setShowAllStocks(false)} style={{ marginBottom: 8 }}>預設</button>
       )}
-      <table className="table table-bordered table-striped">
+      <table className="table table-bordered table-striped" style={{ minWidth: 1300 }}>
         <thead>
           <tr>
             <th style={{ position: 'relative' }}>

@@ -84,24 +84,26 @@ export default function StockDetail({ stockId }) {
         以上連結皆為第三方外部網站，資料內容由各網站提供，本網站不對其內容的正確性與即時性負責。
       </p>
       {dividends.length > 0 && (
-        <table className="dividend-record">
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>配息金額</th>
-              <th>殖利率</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dividends.map(item => (
-              <tr key={item.dividend_date}>
-                <td>{item.dividend_date}</td>
-                <td>{item.dividend}</td>
-                <td>{item.dividend_yield}</td>
+        <div className="table-responsive">
+          <table className="dividend-record">
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>配息金額</th>
+                <th>殖利率</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {dividends.map(item => (
+                <tr key={item.dividend_date}>
+                  <td>{item.dividend_date}</td>
+                  <td>{item.dividend}</td>
+                  <td>{item.dividend_yield}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

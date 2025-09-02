@@ -400,8 +400,7 @@ button:active {
 .table-responsive {
   width: 100%;
   overflow-x: auto;
-  /* 可選: */
-  min-width: 550px;
+  -webkit-overflow-scrolling: touch;
 }
 
 @media (max-width: 576px) {
