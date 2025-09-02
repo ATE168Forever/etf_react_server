@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Cookies from 'js-cookie';
-import { API_HOST, GSHEET_URL } from './config';
+import { API_HOST, DEFAULT_GSHEET_URL } from './config';
 import { fetchWithCache } from './api';
 import { migrateTransactionHistory, saveTransactionHistory } from './transactionStorage';
 import AddTransactionModal from './components/AddTransactionModal';
@@ -25,6 +25,13 @@ export default function InventoryTab() {
   const [sellModal, setSellModal] = useState({ show: false, stock: null });
   const fileInputRef = useRef(null);
   const [cacheInfo, setCacheInfo] = useState(null);
+  const [gSheetUrl, setGSheetUrl] = useState(() => localStorage.getItem('gsheet_url') || DEFAULT_GSHEET_URL || '');
+
+  const handleGSheetUrlChange = e => {
+    const url = e.target.value;
+    setGSheetUrl(url);
+    localStorage.setItem('gsheet_url', url);
+  };
 
   const handleExport = useCallback(() => {
     const header = ['stock_id', 'date', 'quantity', 'type', 'price'];
@@ -85,12 +92,12 @@ export default function InventoryTab() {
   };
 
   const handleSyncGoogleSheet = useCallback(async () => {
-    if (!GSHEET_URL) {
+    if (!gSheetUrl) {
       alert('未設定 Google Sheet URL');
       return;
     }
     try {
-      const res = await fetch(GSHEET_URL, {
+      const res = await fetch(gSheetUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(transactionHistory)
@@ -103,7 +110,7 @@ export default function InventoryTab() {
     } catch {
       alert('同步失敗');
     }
-  }, [transactionHistory]);
+  }, [transactionHistory, gSheetUrl]);
 
   useEffect(() => {
     if (transactionHistory.length === 0) return;
@@ -256,11 +263,20 @@ export default function InventoryTab() {
           <button className={styles.button} onClick={handleImportClick}>
             匯入 CSV
           </button>
-          {GSHEET_URL && (
-            <button className={styles.button} onClick={handleSyncGoogleSheet}>
-              同步到 Google Sheet
-            </button>
-          )}
+          <input
+            type="text"
+            placeholder="Google Sheet URL"
+            value={gSheetUrl}
+            onChange={handleGSheetUrlChange}
+            className={styles.gsheetInput}
+          />
+          <button
+            className={styles.button}
+            onClick={handleSyncGoogleSheet}
+            disabled={!gSheetUrl}
+          >
+            同步到 Google Sheet
+          </button>
         </div>
         <input
           type="file"
