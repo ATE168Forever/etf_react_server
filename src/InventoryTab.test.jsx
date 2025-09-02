@@ -7,7 +7,7 @@ import { fetchWithCache } from './api';
 jest.mock('./api');
 jest.mock('./config', () => ({
   API_HOST: 'http://localhost',
-  GSHEET_URL: 'https://example.com/sync'
+  DEFAULT_GSHEET_URL: ''
 }));
 
 describe('InventoryTab interactions', () => {
@@ -41,6 +41,7 @@ describe('InventoryTab interactions', () => {
     ]));
     render(<InventoryTab />);
     await waitFor(() => screen.getByText('顯示：交易歷史'));
+    fireEvent.change(screen.getByPlaceholderText('Google Sheet URL'), { target: { value: 'https://example.com/sync' } });
     fireEvent.click(screen.getByText('同步到 Google Sheet'));
     await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
     expect(globalThis.fetch).toHaveBeenCalledWith(
