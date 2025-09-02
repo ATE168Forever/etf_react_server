@@ -29,3 +29,7 @@ Currently, two official plugins are available:
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## Google Sheet Sync
+
+Set `VITE_GSHEET_URL` to a Google Apps Script web app URL that accepts a POSTed JSON array of transactions. When this variable is present the "同步到 Google Sheet" button will appear in the inventory tab and send the current transaction history to that URL.
