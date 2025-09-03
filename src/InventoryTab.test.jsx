@@ -6,8 +6,7 @@ import { fetchWithCache } from './api';
 
 jest.mock('./api');
 jest.mock('./config', () => ({
-  API_HOST: 'http://localhost',
-  DEFAULT_GSHEET_URL: ''
+  API_HOST: 'http://localhost'
 }));
 
 describe('InventoryTab interactions', () => {
@@ -15,7 +14,6 @@ describe('InventoryTab interactions', () => {
     localStorage.clear();
     Cookies.remove('my_transaction_history');
     fetchWithCache.mockResolvedValue({ data: [{ stock_id: '0050', stock_name: 'Test ETF', dividend_frequency: 1 }] });
-    globalThis.fetch = jest.fn(() => Promise.resolve({ ok: true }));
   });
 
   test('edits existing transaction', async () => {
@@ -35,18 +33,4 @@ describe('InventoryTab interactions', () => {
     expect(saved[0].quantity).toBe(2000);
   });
 
-  test('syncs to Google Sheet', async () => {
-    localStorage.setItem('my_transaction_history', JSON.stringify([
-      { stock_id: '0050', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 }
-    ]));
-    render(<InventoryTab />);
-    await waitFor(() => screen.getByText('顯示：交易歷史'));
-    fireEvent.change(screen.getByPlaceholderText('Google Sheet URL'), { target: { value: 'https://example.com/sync' } });
-    fireEvent.click(screen.getByText('同步到 Google Sheet'));
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
-    expect(globalThis.fetch).toHaveBeenCalledWith(
-      'https://example.com/sync',
-      expect.objectContaining({ method: 'POST' })
-    );
-  });
 });

@@ -19,7 +19,7 @@ function ensureToken() {
   });
 }
 
-const KEYS = ["watchGroups", "gsheet_url", "my_transaction_history"];
+const KEYS = ["watchGroups", "my_transaction_history"];
 
 function snapshotLocal() {
   const local = {};
