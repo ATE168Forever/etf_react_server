@@ -25,13 +25,7 @@ export default function InventoryTab() {
   const [sellModal, setSellModal] = useState({ show: false, stock: null });
   const fileInputRef = useRef(null);
   const [cacheInfo, setCacheInfo] = useState(null);
-  const [gSheetUrl, setGSheetUrl] = useState(() => localStorage.getItem('gsheet_url') || DEFAULT_GSHEET_URL || '');
-
-  const handleGSheetUrlChange = e => {
-    const url = e.target.value;
-    setGSheetUrl(url);
-    localStorage.setItem('gsheet_url', url);
-  };
+  const gSheetUrl = localStorage.getItem('gsheet_url') || DEFAULT_GSHEET_URL || '';
 
   const handleExport = useCallback(() => {
     const header = ['stock_id', 'date', 'quantity', 'type', 'price'];
@@ -263,13 +257,6 @@ export default function InventoryTab() {
           <button className={styles.button} onClick={handleImportClick}>
             匯入 CSV
           </button>
-          <input
-            type="text"
-            placeholder="Google Sheet URL"
-            value={gSheetUrl}
-            onChange={handleGSheetUrlChange}
-            className={styles.gsheetInput}
-          />
           <button
             className={styles.button}
             onClick={handleSyncGoogleSheet}

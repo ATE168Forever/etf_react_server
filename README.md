@@ -36,4 +36,4 @@ If you are developing a production application, we recommend using TypeScript wi
 The About tab offers a one-click backup that saves encrypted app data to the user's Google Drive `appDataFolder`. This feature uses OAuth and does **not** require any URL configuration.
 
 ### Google Sheet sync
-To send transaction history to a Google Sheet, supply a Google Apps Script web app URL via the `VITE_GSHEET_URL` environment variable or enter it directly in the inventory tab. The inventory tab's "一鍵匯出" button posts the current data to that URL; leaving the field blank disables the export.
+To send transaction history to a Google Sheet, supply a Google Apps Script web app URL via the `VITE_GSHEET_URL` environment variable. The inventory tab's "一鍵匯出" button posts the current data to that URL; if `VITE_GSHEET_URL` is missing, the export button is disabled.
