@@ -32,4 +32,4 @@ If you are developing a production application, we recommend using TypeScript wi
 
 ## Google Sheet Sync
 
-Set `VITE_GSHEET_URL` to a Google Apps Script web app URL that accepts a POSTed JSON array of transactions. When this variable is present the "同步到 Google Sheet" button will appear in the inventory tab and send the current transaction history to that URL.
+Set `VITE_GSHEET_URL` to a Google Apps Script web app URL that accepts a POSTed JSON array of transactions. When this variable is present the "一鍵匯出" button will appear in the inventory tab and send the current transaction history to that URL.

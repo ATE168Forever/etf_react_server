@@ -275,7 +275,7 @@ export default function InventoryTab() {
             onClick={handleSyncGoogleSheet}
             disabled={!gSheetUrl}
           >
-            同步到 Google Sheet
+            一鍵匯出
           </button>
         </div>
         <input

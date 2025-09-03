@@ -42,7 +42,7 @@ describe('InventoryTab interactions', () => {
     render(<InventoryTab />);
     await waitFor(() => screen.getByText('顯示：交易歷史'));
     fireEvent.change(screen.getByPlaceholderText('Google Sheet URL'), { target: { value: 'https://example.com/sync' } });
-    fireEvent.click(screen.getByText('同步到 Google Sheet'));
+    fireEvent.click(screen.getByText('一鍵匯出'));
     await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
     expect(globalThis.fetch).toHaveBeenCalledWith(
       'https://example.com/sync',
