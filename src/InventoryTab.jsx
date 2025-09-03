@@ -7,6 +7,7 @@ import AddTransactionModal from './components/AddTransactionModal';
 import SellModal from './components/SellModal';
 import TransactionHistoryTable from './components/TransactionHistoryTable';
 import styles from './InventoryTab.module.css';
+import { exportToDrive, importFromDrive } from './driveSync';
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
 
@@ -25,6 +26,7 @@ export default function InventoryTab() {
   const [sellModal, setSellModal] = useState({ show: false, stock: null });
   const fileInputRef = useRef(null);
   const [cacheInfo, setCacheInfo] = useState(null);
+  const [showDataMenu, setShowDataMenu] = useState(false);
 
   const handleExport = useCallback(() => {
     const header = ['stock_id', 'date', 'quantity', 'type', 'price'];
@@ -81,6 +83,24 @@ export default function InventoryTab() {
   const handleImportClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
+    }
+  };
+
+  const handleExportClick = () => {
+    if (window.confirm('確定要匯出 CSV？')) {
+      handleExport();
+    }
+  };
+
+  const handleDriveExportClick = () => {
+    if (window.confirm('確定要一鍵匯出？')) {
+      exportToDrive();
+    }
+  };
+
+  const handleDriveImportClick = () => {
+    if (window.confirm('匯入後將覆蓋現有紀錄，是否一鍵匯入？')) {
+      importFromDrive();
     }
   };
 
@@ -229,14 +249,28 @@ export default function InventoryTab() {
         >
           新增購買紀錄
         </button>
-        <div className={styles.csvControls}>
-          <button className={styles.button} onClick={handleExport}>
-            匯出 CSV
-          </button>
-          <button className={styles.button} onClick={handleImportClick}>
-            匯入 CSV
-          </button>
-        </div>
+        <button
+          className={styles.button}
+          onClick={() => setShowDataMenu(!showDataMenu)}
+        >
+          存取資料
+        </button>
+        {showDataMenu && (
+          <div className={styles.csvControls}>
+            <button className={styles.button} onClick={handleExportClick}>
+              匯出 CSV
+            </button>
+            <button className={styles.button} onClick={handleDriveExportClick}>
+              一鍵匯出
+            </button>
+            <button className={styles.button} onClick={handleImportClick}>
+              匯入 CSV
+            </button>
+            <button className={styles.button} onClick={handleDriveImportClick}>
+              一鍵匯入
+            </button>
+          </div>
+        )}
         <input
           type="file"
           accept=".csv"
