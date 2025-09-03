@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Cookies from 'js-cookie';
-import { API_HOST, DEFAULT_GSHEET_URL } from './config';
+import { API_HOST } from './config';
 import { fetchWithCache } from './api';
 import { migrateTransactionHistory, saveTransactionHistory } from './transactionStorage';
 import AddTransactionModal from './components/AddTransactionModal';
@@ -25,7 +25,6 @@ export default function InventoryTab() {
   const [sellModal, setSellModal] = useState({ show: false, stock: null });
   const fileInputRef = useRef(null);
   const [cacheInfo, setCacheInfo] = useState(null);
-  const gSheetUrl = localStorage.getItem('gsheet_url') || DEFAULT_GSHEET_URL || '';
 
   const handleExport = useCallback(() => {
     const header = ['stock_id', 'date', 'quantity', 'type', 'price'];
@@ -85,26 +84,6 @@ export default function InventoryTab() {
     }
   };
 
-  const handleSyncGoogleSheet = useCallback(async () => {
-    if (!gSheetUrl) {
-      alert('未設定 Google Sheet URL');
-      return;
-    }
-    try {
-      const res = await fetch(gSheetUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(transactionHistory)
-      });
-      if (res.ok) {
-        alert('同步成功');
-      } else {
-        alert('同步失敗');
-      }
-    } catch {
-      alert('同步失敗');
-    }
-  }, [transactionHistory, gSheetUrl]);
 
   useEffect(() => {
     if (transactionHistory.length === 0) return;
@@ -256,13 +235,6 @@ export default function InventoryTab() {
           </button>
           <button className={styles.button} onClick={handleImportClick}>
             匯入 CSV
-          </button>
-          <button
-            className={styles.button}
-            onClick={handleSyncGoogleSheet}
-            disabled={!gSheetUrl}
-          >
-            一鍵匯出
           </button>
         </div>
         <input
