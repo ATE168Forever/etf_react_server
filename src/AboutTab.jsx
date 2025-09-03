@@ -1,4 +1,5 @@
 import React from 'react';
+import { exportToDrive, importFromDrive } from './driveSync';
 
 export default function AboutTab() {
   return (
@@ -14,6 +15,10 @@ export default function AboutTab() {
         Source code is available on GitHub. Feedback and contributions are
         welcome!
       </p>
+      <div style={{ marginTop: 20 }}>
+        <button onClick={exportToDrive}>一鍵匯出</button>
+        <button onClick={importFromDrive} style={{ marginLeft: 8 }}>一鍵匯入</button>
+      </div>
     </div>
   );
 }
