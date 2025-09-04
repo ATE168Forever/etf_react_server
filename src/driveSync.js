@@ -160,6 +160,7 @@ export async function importFromDrive() {
       if (v !== null && v !== undefined) localStorage.setItem(k, v);
     });
     alert("已匯入完成");
+    if (typeof window !== 'undefined') window.location.reload();
   } catch (err) {
     console.error(err);
     alert(`匯入失敗：${err.message || err}`);

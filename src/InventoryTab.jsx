@@ -75,7 +75,10 @@ export default function InventoryTab() {
         }
       }
       setTransactionHistory(list);
+      saveTransactionHistory(list);
       e.target.value = '';
+      alert('已匯入完成');
+      if (typeof window !== 'undefined') window.location.reload();
     };
     reader.readAsText(file);
   };
