@@ -235,12 +235,6 @@ export default function InventoryTab() {
       <p className={styles.notice}>
         這是一個免費網站，我們不會把你的資料存到後台或伺服器，所有的紀錄（像是你的設定或操作紀錄）都只會保存在你的瀏覽器裡。簡單說：你的資料只在你這台電腦，不會上傳，也不會被我們看到，請安心使用！
       </p>
-      {cacheInfo && (
-        <div className={styles.cacheInfo}>
-          快取: {cacheInfo.cacheStatus}
-          {cacheInfo.timestamp ? ` (${new Date(cacheInfo.timestamp).toLocaleString()})` : ''}
-        </div>
-      )}
 
       <div className={styles.topControls}>
         <button
@@ -283,6 +277,13 @@ export default function InventoryTab() {
         />
       </div>
 
+      {cacheInfo && (
+        <div className={styles.cacheInfo}>
+          快取: {cacheInfo.cacheStatus}
+          {cacheInfo.timestamp ? ` (${new Date(cacheInfo.timestamp).toLocaleString()})` : ''}
+        </div>
+      )}
+
       <AddTransactionModal
         show={showModal}
         onClose={() => setShowModal(false)}
@@ -302,7 +303,7 @@ export default function InventoryTab() {
         {showInventory ? (
           <>
             <div className={styles.tableHeader}>
-              <h3 className={styles.titleMargin}>目前庫存 (依股票彙總) </h3>
+              <h3 className={styles.titleMargin}>目前庫存</h3>
               <button
                 className={styles.button}
                 onClick={() => setShowInventory(false)}

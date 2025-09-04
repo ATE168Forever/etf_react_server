@@ -546,17 +546,17 @@ function App() {
               </div>
             </div>
           </div>
-          {dividendCacheInfo && (
-            <div style={{ textAlign: 'right', fontSize: 12 }}>
-              快取: {dividendCacheInfo.cacheStatus}
-              {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
-            </div>
-          )}
           {!showCalendar && (
             <>
               <button onClick={handleResetFilters} style={{ marginRight: 10 }}>重置所有篩選</button>
               <span>提示：點下篩選鈕開啟篩選視窗。</span>
             </>
+          )}
+          {dividendCacheInfo && (
+            <div style={{ textAlign: 'right', fontSize: 12 }}>
+              快取: {dividendCacheInfo.cacheStatus}
+              {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
+            </div>
           )}
 
           {loading ? (
@@ -625,8 +625,8 @@ function App() {
       }
       {tab === 'about' && <AboutTab />}
       <div className="contact-section">
-        <h3>Contact</h3>
-        <p>信箱：<a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a></p>
+        <h3>聯絡方式</h3>
+        <p>電子信箱：<a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a></p>
       </div>
       <div className="donation-section">
         <h3>分享小小的分紅</h3>
