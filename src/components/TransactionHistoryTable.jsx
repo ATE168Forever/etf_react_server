@@ -71,7 +71,7 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
                     )}
                   </td>
                   <td>{item.type === 'sell' ? '賣出' : '買入'}</td>
-                  <td>
+                  <td className={styles.operationCol}>
                     {isEditing ? (
                       <>
                         <button onClick={() => handleEditSave(idx)}>儲存</button>

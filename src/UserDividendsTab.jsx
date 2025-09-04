@@ -3,8 +3,8 @@ import DividendCalendar from './components/DividendCalendar';
 import { readTransactionHistory } from './transactionStorage';
 
 const MONTHS = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    '1月', '2月', '3月', '4月', '5月', '6月',
+    '7月', '8月', '9月', '10月', '11月', '12月'
 ];
 const MONTH_COL_WIDTH = 80;
 function getTransactionHistory() {
@@ -203,7 +203,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                     <tr>
                         <th>
                             <span className="sortable" onClick={() => handleSort('stock_id')}>
-                                Stock
+                                股票代碼/名稱
                                 {sortConfig.column === 'stock_id' && (
                                     <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
                                 )}
@@ -221,7 +221,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                         ))}
                         <th>
                             <span className="sortable" onClick={() => handleSort('total')}>
-                                Total
+                                總計
                                 {sortConfig.column === 'total' && (
                                     <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
                                 )}

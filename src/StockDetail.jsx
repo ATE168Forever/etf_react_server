@@ -34,11 +34,11 @@ export default function StockDetail({ stockId }) {
   }, [stockId]);
 
   if (!stock) {
-    return <div>Loading...</div>;
+    return <div>載入中...</div>;
   }
 
   if (!stock.stock_id) {
-    return <div style={{ padding: 20 }}>Stock not found.</div>;
+    return <div style={{ padding: 20 }}>找不到股票</div>;
   }
 
   const issuer = stock.issuer || stock.securities_firm || stock.broker;

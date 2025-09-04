@@ -214,7 +214,7 @@ export default function FintechLanding() {
         </div>
       </section>
 
-      <footer className="border-t border-[var(--border)]">
+      <footer className="border-t border-[var(--border)] bg-gray-100">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -222,9 +222,9 @@ export default function FintechLanding() {
               <span className="text-sm text-[var(--muted)]">© {new Date().getFullYear()} Aureo Fintech</span>
             </div>
             <div className="flex gap-5 text-sm text-[var(--muted)]">
-              <a href="#">Privacy</a>
-              <a href="#">Terms</a>
-              <a href="#">Security</a>
+              <a href="#">隱私</a>
+              <a href="#">條款</a>
+              <a href="#">安全</a>
             </div>
           </div>
         </div>

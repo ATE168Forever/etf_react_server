@@ -405,6 +405,13 @@ button:active {
   -webkit-overflow-scrolling: touch;
 }
 
+.table-responsive thead th {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+}
+
 @media (max-width: 576px) {
   .table td, .table th {
     padding: 0.3rem;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const DAY_NAMES = ['日','一','二','三','四','五','六'];
 
 export default function DividendCalendar({ year, events }) {
   const timeZone = 'Asia/Taipei';
@@ -36,9 +36,9 @@ export default function DividendCalendar({ year, events }) {
   const prevMonth = () => setMonth(m => (m === 0 ? 11 : m - 1));
   const nextMonth = () => setMonth(m => (m === 11 ? 0 : m + 1));
 
-  const monthTotal = events
-    .filter(e => new Date(e.date).getFullYear() === year && new Date(e.date).getMonth() === month)
-    .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const monthEvents = events.filter(e => new Date(e.date).getFullYear() === year && new Date(e.date).getMonth() === month);
+  const exTotal = monthEvents.filter(e => e.type === 'ex').reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const payTotal = monthEvents.filter(e => e.type === 'pay').reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
   return (
     <div className="calendar">
@@ -109,7 +109,7 @@ export default function DividendCalendar({ year, events }) {
         </tbody>
       </table>
       </div>
-      <div className="calendar-total">當月合計: {monthTotal.toFixed(1)}</div>
+      <div className="calendar-total">當月除息合計: {exTotal.toFixed(1)} / 發放合計: {payTotal.toFixed(1)}</div>
     </div>
   );
 }
