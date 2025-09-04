@@ -3,19 +3,41 @@ const CLIENT_ID = "966996991391-dishfmvmvkhtpjm86bcr146j7mbop4rk.apps.googleuser
 const SCOPE = "https://www.googleapis.com/auth/drive.appdata";
 
 let tokenClient;
+let accessToken;
+let tokenExpiry = 0;
+
 function ensureToken() {
   return new Promise((resolve, reject) => {
+    const now = Date.now();
+    if (accessToken && now < tokenExpiry - 60_000) {
+      resolve(accessToken);
+      return;
+    }
+
+    const handleResp = (resp) => {
+      if (resp?.access_token) {
+        accessToken = resp.access_token;
+        tokenExpiry = Date.now() + (resp.expires_in || 0) * 1000;
+        resolve(accessToken);
+      } else if (resp?.error === 'consent_required' || resp?.error === 'interaction_required') {
+        tokenClient.callback = handleResp;
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      } else {
+        reject(resp?.error || 'no access token');
+      }
+    };
+
     if (!tokenClient) {
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPE,
-        callback: (resp) => {
-          if (resp && resp.access_token) resolve(resp.access_token);
-          else reject("no access token");
-        },
+        callback: handleResp,
       });
+    } else {
+      tokenClient.callback = handleResp;
     }
-    tokenClient.requestAccessToken({ prompt: "consent" });
+
+    tokenClient.requestAccessToken({ prompt: '' });
   });
 }
 
@@ -109,29 +131,39 @@ async function downloadContent(accessToken, fileId) {
 export async function exportToDrive() {
   const pass = prompt("設定/輸入你的同步密碼（用來加密備份）");
   if (!pass) return;
-  const token = await ensureToken();
-  const snap = snapshotLocal();
-  const encrypted = await encryptJSON(snap, pass);
+  try {
+    const token = await ensureToken();
+    const snap = snapshotLocal();
+    const encrypted = await encryptJSON(snap, pass);
 
-  const existingId = await findBackupId(token);
-  if (existingId) await updateExisting(token, existingId, encrypted);
-  else await uploadNew(token, encrypted);
-  alert("已匯出到 Google Drive（appDataFolder）");
+    const existingId = await findBackupId(token);
+    if (existingId) await updateExisting(token, existingId, encrypted);
+    else await uploadNew(token, encrypted);
+    alert("已匯出到 Google Drive（appDataFolder）");
+  } catch (err) {
+    console.error(err);
+    alert(`匯出失敗：${err.message || err}`);
+  }
 }
 
 export async function importFromDrive() {
   const pass = prompt("輸入你的同步密碼（用來解密備份）");
   if (!pass) return;
-  const token = await ensureToken();
-  const fileId = await findBackupId(token);
-  if (!fileId) { alert("找不到備份檔"); return; }
-  const encrypted = await downloadContent(token, fileId);
-  const snap = await decryptJSON(encrypted, pass);
+  try {
+    const token = await ensureToken();
+    const fileId = await findBackupId(token);
+    if (!fileId) { alert("找不到備份檔"); return; }
+    const encrypted = await downloadContent(token, fileId);
+    const snap = await decryptJSON(encrypted, pass);
 
-  Object.entries(snap.local || {}).forEach(([k, v]) => {
-    if (v !== null && v !== undefined) localStorage.setItem(k, v);
-  });
-  alert("已匯入完成");
+    Object.entries(snap.local || {}).forEach(([k, v]) => {
+      if (v !== null && v !== undefined) localStorage.setItem(k, v);
+    });
+    alert("已匯入完成");
+  } catch (err) {
+    console.error(err);
+    alert(`匯入失敗：${err.message || err}`);
+  }
 }
 
 export default { exportToDrive, importFromDrive };
