@@ -35,6 +35,9 @@
 
 .card {
   padding: 2em;
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .read-the-docs {
@@ -46,9 +49,9 @@
 }
 
 .dividend-alert {
-  background: #333;
-  border: 1px solid #444;
-  color: #d4af37;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  color: #1f2937;
   padding: 8px;
   border-radius: 4px;
   margin-bottom: 12px;
@@ -65,12 +68,12 @@ tbody tr {
 }
 
 tbody tr:nth-child(even) {
-  background-color: #222;
+  background-color: #f3f4f6;
 }
 
 tbody tr:hover {
-  background-color: #333;
-  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.1);
+  background-color: #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 th,
@@ -83,7 +86,7 @@ td {
 }
 
 .current-month {
-  background: #333;
+  background: #e5e7eb;
 }
 
 .crown-icon {
@@ -125,15 +128,15 @@ td {
   z-index: 99;
   top: 30px;
   left: 0;
-  background: #222;
-  border: 1px solid #444;
-  box-shadow: 0 4px 18px rgba(255, 215, 0, 0.13);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1);
   padding: 12px 14px 8px 14px;
   border-radius: 8px;
   min-width: 140px;
   min-height: 40px;
   text-align: left;
-  color: #f5f5f5;
+  color: #1f2937;
 }
 
 .dropdown label {
@@ -154,20 +157,20 @@ td {
   font-size: 12px;
   padding: 2px 10px;
   border-radius: 6px;
-  border: 1px solid #666;
-  background: #222;
-  color: #d4af37;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #1f2937;
   margin-left: 0;
   cursor: pointer;
 }
 .dropdown-btn:hover {
-  background: #333;
+  background: #f3f4f6;
 }
 
 .dropdown hr {
   margin: 6px 0;
   border: none;
-  border-top: 1px solid #444;
+  border-top: 1px solid #e5e7eb;
 }
 
 /* Action dropdown for top controls */
@@ -176,9 +179,9 @@ td {
   z-index: 99;
   top: 36px;
   right: 0;
-  background: #222;
-  border: 1px solid #444;
-  box-shadow: 0 4px 18px rgba(255, 215, 0, 0.13);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1);
   padding: 10px;
   border-radius: 8px;
   min-width: 140px;
@@ -188,15 +191,15 @@ td {
   display: block;
   width: 100%;
   margin: 4px 0;
-  background: #222;
-  color: #d4af37;
-  border: 1px solid #666;
+  background: #fff;
+  color: #1f2937;
+  border: 1px solid #e5e7eb;
   font-size: 14px;
   text-align: left;
 }
 
 .action-dropdown button:hover {
-  background: #333;
+  background: #f3f4f6;
 }
 
 .slogan {
@@ -209,8 +212,8 @@ td {
 }
 
 table thead {
-  background: #111;
-  color: #ffd700;
+  background: #f3f4f6;
+  color: #1f2937;
 }
 
 .site-title {
@@ -218,8 +221,7 @@ table thead {
   font-weight: 600;
   text-align: center;
   margin-bottom: 8px;
-  color: #ffd700;
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+  color: #1f2937;
 }
 
 .contact-section,
@@ -229,17 +231,17 @@ table thead {
 }
 
 header {
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid #e5e7eb;
   margin-bottom: 1rem;
   padding: 20px 0;
-  background: linear-gradient(135deg, #444, #000);
-  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.1);
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.3s;
   border-radius: 12px;
 }
 
 header:hover {
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .contact-section a,
