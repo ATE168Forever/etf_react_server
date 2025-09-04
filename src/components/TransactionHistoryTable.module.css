@@ -13,3 +13,10 @@
 .actionButton {
   margin-left: 6px;
 }
+
+@media (max-width: 600px) {
+  .operationCol button {
+    width: 2em;
+    padding: 2px;
+  }
+}

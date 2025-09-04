@@ -626,21 +626,20 @@ function App() {
       {tab === 'about' && <AboutTab />}
       <div className="contact-section">
         <h3>Contact</h3>
-        <p>Email: <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a></p>
+        <p>信箱：<a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a></p>
       </div>
       <div className="donation-section">
-        <h3>Support This Project</h3>
+        <h3>分享小小的分紅</h3>
         <p>
-          If you like this project, consider
-          {' '}
+          如果你喜歡這個專案，歡迎
           <a
             href="https://www.buymeacoffee.com/example"
             target="_blank"
             rel="noreferrer"
           >
-            donating
+            贊助
           </a>
-          .
+          。
         </p>
       </div>
       <NLHelper />

@@ -316,8 +316,7 @@ export default function InventoryTab() {
                 <thead>
                   <tr>
                     <th style={{ width: 30 }}>#</th>
-                    <th>代碼</th>
-                    <th>名稱</th>
+                    <th>股票代碼/名稱</th>
                     <th>平均股價</th>
                     <th>總數量</th>
                     <th>操作</th>
@@ -329,8 +328,7 @@ export default function InventoryTab() {
                     : inventoryList.map((item, idx) => (
                         <tr key={idx}>
                           <td>{idx + 1}</td>
-                          <td>{item.stock_id}</td>
-                          <td>{item.stock_name}</td>
+                          <td>{item.stock_id} {item.stock_name}</td>
                           <td>{item.avg_price.toFixed(2)}</td>
                           <td>{item.total_quantity} ({(item.total_quantity / 1000).toFixed(3).replace(/\.0+$/, '')} 張)</td>
                           <td>
