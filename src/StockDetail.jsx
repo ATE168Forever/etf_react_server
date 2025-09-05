@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { API_HOST } from './config';
 import { fetchWithCache } from './api';
+import './App.css';
 
 export default function StockDetail({ stockId }) {
   const [stock, setStock] = useState(null);
   const [dividends, setDividends] = useState([]);
   const [stockCacheInfo, setStockCacheInfo] = useState(null);
-  const [dividendCacheInfo, setDividendCacheInfo] = useState(null);
 
   // fetch stock basic info
   useEffect(() => {
@@ -23,12 +23,11 @@ export default function StockDetail({ stockId }) {
   // fetch dividend records
   useEffect(() => {
     fetchWithCache(`${API_HOST}/get_dividend`)
-      .then(({ data, cacheStatus, timestamp }) => {
+      .then(({ data }) => {
         const list = Array.isArray(data) ? data : data?.items || [];
         const arr = list.filter(item => item.stock_id === stockId);
         arr.sort((a, b) => new Date(b.dividend_date) - new Date(a.dividend_date));
         setDividends(arr);
-        setDividendCacheInfo({ cacheStatus, timestamp });
       })
       .catch(() => setDividends([]));
   }, [stockId]);
@@ -50,14 +49,8 @@ export default function StockDetail({ stockId }) {
       <h1>{stock.stock_id} {stock.stock_name}</h1>
       {stockCacheInfo && (
         <div style={{ textAlign: 'right', fontSize: 12 }}>
-          基本資料快取: {stockCacheInfo.cacheStatus}
+          資料快取: {stockCacheInfo.cacheStatus}
           {stockCacheInfo.timestamp ? ` (${new Date(stockCacheInfo.timestamp).toLocaleString()})` : ''}
-        </div>
-      )}
-      {dividendCacheInfo && (
-        <div style={{ textAlign: 'right', fontSize: 12 }}>
-          配息資料快取: {dividendCacheInfo.cacheStatus}
-          {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
         </div>
       )}
       <p>配息頻率: {stock.dividend_frequency || '-'}</p>
@@ -65,7 +58,7 @@ export default function StockDetail({ stockId }) {
       <p>發行券商: {issuer || '-'}</p>
       <p>
         官網: {website ? (
-          <a href={website} target="_blank" rel="noreferrer">{website}</a>
+          <a href={website} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all' }}>{website}</a>
         ) : (
           '-'
         )}

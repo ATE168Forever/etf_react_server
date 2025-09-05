@@ -10,6 +10,17 @@
   --accent-gold-hover: #ffd700;
   --accent-green: #2f9e44;
 
+  /* Bootstrap color variables */
+  --bs-body-color: var(--color-text);
+  --bs-body-bg: var(--color-bg);
+  --bs-table-bg: var(--color-card-bg);
+  --bs-table-striped-bg: var(--color-row-even);
+  --bs-table-striped-color: var(--color-text);
+  --bs-table-hover-bg: var(--color-hover);
+  --bs-table-hover-color: var(--color-text);
+  --bs-table-color: var(--color-text);
+  --bs-table-border-color: var(--color-border);
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;

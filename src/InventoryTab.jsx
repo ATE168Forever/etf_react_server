@@ -329,7 +329,11 @@ export default function InventoryTab() {
                     ? <tr><td colSpan={4}>尚無庫存</td></tr>
                     : inventoryList.map((item, idx) => (
                         <tr key={idx}>
-                          <td className="stock-col">{item.stock_id} {item.stock_name}</td>
+                          <td className="stock-col">
+                            <a href={`https://etflife.org/stock/${item.stock_id}`} target="_blank" rel="noreferrer">
+                              {item.stock_id} {item.stock_name}
+                            </a>
+                          </td>
                           <td>{item.avg_price.toFixed(2)}</td>
                           <td>{item.total_quantity} ({(item.total_quantity / 1000).toFixed(3).replace(/\.0+$/, '')} 張)</td>
                           <td>

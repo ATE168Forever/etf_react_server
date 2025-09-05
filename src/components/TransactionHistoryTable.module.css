@@ -3,7 +3,7 @@
 }
 
 .operationCol {
-  width: 160px;
+  width: 140px;
 }
 
 .smallInput {
@@ -14,9 +14,13 @@
   margin-left: 6px;
 }
 
-@media (max-width: 600px) {
-  .operationCol button {
-    width: 2em;
-    padding: 2px;
-  }
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.operationCol button {
+  width: 60px;
+  padding: 2px;
+  white-space: nowrap;
 }
