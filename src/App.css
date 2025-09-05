@@ -61,6 +61,13 @@ table {
   width: 100%;
   margin-top: 20px;
   overflow: visible !important;
+  --bs-table-bg: var(--color-card-bg);
+  --bs-table-striped-bg: var(--color-row-even);
+  --bs-table-striped-color: var(--color-text);
+  --bs-table-hover-bg: var(--color-hover);
+  --bs-table-hover-color: var(--color-text);
+  --bs-table-color: var(--color-text);
+  --bs-table-border-color: var(--color-border);
 }
 
 tbody tr {
@@ -251,7 +258,7 @@ header:hover {
 
 button {
   background: var(--accent-gold);
-  color: #000;
+  color: var(--color-text);
   border: none;
   border-radius: 6px;
   font-weight: 500;
@@ -263,7 +270,7 @@ button {
 button:hover,
 button:focus {
   background: var(--accent-gold-hover);
-  color: #000;
+  color: var(--color-text);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
 }
@@ -439,10 +446,10 @@ button:active {
 /* Stock detail page */
 .stock-detail {
   padding: 20px;
-  background: #222;
+  background: var(--color-card-bg);
   border-radius: 8px;
   line-height: 1.6;
-  color: #f5f5f5;
+  color: var(--color-text);
 }
 
 .stock-detail h1 {
@@ -459,7 +466,7 @@ button:active {
 }
 
 .stock-detail .link-list a {
-  color: #d4af37;
+  color: var(--accent-gold);
 }
 
 .stock-detail .link-list a:hover {
@@ -469,7 +476,8 @@ button:active {
 .stock-detail .disclaimer {
   margin-top: 8px;
   font-size: 13px;
-  color: #bbb;
+  color: var(--color-text);
+  opacity: 0.8;
 }
 
 /* Modal */

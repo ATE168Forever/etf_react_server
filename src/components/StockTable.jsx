@@ -112,7 +112,7 @@ export default function StockTable({
     return (
       <tr>
         <td className="stock-col">
-          <a href={`/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
+          <a href={`https://etflife.org/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
             {stock.stock_id} {stock.stock_name}
           </a>
         </td>
@@ -185,7 +185,7 @@ export default function StockTable({
               return (
                 <tr key={stock.stock_id + stock.stock_name}>
                   <td className="stock-col">
-                    <a href={`/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
+                    <a href={`https://etflife.org/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
                       {stock.stock_id} {stock.stock_name}
                     </a>
                   </td>

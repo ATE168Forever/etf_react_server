@@ -52,6 +52,6 @@
 }
 
 .sellButton {
-  min-width: 48px;
+  width: 60px;
   white-space: nowrap;
 }

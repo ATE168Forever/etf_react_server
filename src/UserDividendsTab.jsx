@@ -237,7 +237,11 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                     ) : (
                         sortedStocks.map(stock => (
                             <tr key={stock.stock_id + stock.stock_name}>
-                                <td className="stock-col">{stock.stock_id} {stock.stock_name}</td>
+                                <td className="stock-col">
+                                    <a href={`https://etflife.org/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
+                                        {stock.stock_id} {stock.stock_name}
+                                    </a>
+                                </td>
                                 {MONTHS.map((m, idx) => {
                                     const cell = dividendTable[stock.stock_id][idx];
                                     if (!cell || !cell.dividend || !cell.quantity) return <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}></td>;

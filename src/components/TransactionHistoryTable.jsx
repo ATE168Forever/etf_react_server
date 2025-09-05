@@ -24,7 +24,11 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
               const name = item.stock_name || stock.stock_name || '';
               return (
                 <tr key={idx}>
-                  <td className="stock-col">{item.stock_id} {name}</td>
+                  <td className="stock-col">
+                    <a href={`https://etflife.org/stock/${item.stock_id}`} target="_blank" rel="noreferrer">
+                      {item.stock_id} {name}
+                    </a>
+                  </td>
                   <td>
                     {isEditing ? (
                       <input
@@ -71,29 +75,31 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
                   </td>
                   <td>{item.type === 'sell' ? '賣出' : '買入'}</td>
                   <td className={styles.operationCol}>
-                    {isEditing ? (
-                      <>
-                        <button onClick={() => handleEditSave(idx)}>儲存</button>
-                        <button onClick={() => setEditingIdx(null)} className={styles.actionButton}>取消</button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => {
-                            setEditingIdx(idx);
-                            setEditForm({ date: item.date, quantity: item.quantity, price: item.price });
-                          }}
-                        >
-                          修改
-                        </button>
-                        <button
-                          onClick={() => handleDelete(idx)}
-                          className={styles.actionButton}
-                        >
-                          刪除
-                        </button>
-                      </>
-                    )}
+                    <div className={styles.actions}>
+                      {isEditing ? (
+                        <>
+                          <button onClick={() => handleEditSave(idx)}>儲存</button>
+                          <button onClick={() => setEditingIdx(null)} className={styles.actionButton}>取消</button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => {
+                              setEditingIdx(idx);
+                              setEditForm({ date: item.date, quantity: item.quantity, price: item.price });
+                            }}
+                          >
+                            修改
+                          </button>
+                          <button
+                            onClick={() => handleDelete(idx)}
+                            className={styles.actionButton}
+                          >
+                            刪除
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
