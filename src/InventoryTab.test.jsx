@@ -23,7 +23,7 @@ describe('InventoryTab interactions', () => {
     render(<InventoryTab />);
     await waitFor(() => screen.getByText('顯示：交易歷史'));
     fireEvent.click(screen.getByText('顯示：交易歷史'));
-    await screen.findByText('0050');
+    await screen.findByText(/0050/);
     fireEvent.click(screen.getByText('修改'));
     const qtyInput = screen.getByDisplayValue('1000');
     fireEvent.change(qtyInput, { target: { value: '2000' } });

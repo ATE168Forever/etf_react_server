@@ -51,6 +51,7 @@ export default function DividendCalendar({ year, events }) {
         <span><span className="legend-box legend-ex"></span>除息日</span>
         <span style={{ marginLeft: 8 }}><span className="legend-box legend-pay"></span>發放日</span>
       </div>
+      <div className="calendar-total">當月除息合計: {exTotal.toFixed(1)} / 發放合計: {payTotal.toFixed(1)}</div>
       <div className="table-responsive">
       <table className="calendar-grid">
         <thead>
@@ -109,7 +110,6 @@ export default function DividendCalendar({ year, events }) {
         </tbody>
       </table>
       </div>
-      <div className="calendar-total">當月除息合計: {exTotal.toFixed(1)} / 發放合計: {payTotal.toFixed(1)}</div>
     </div>
   );
 }
