@@ -77,6 +77,16 @@ function App() {
   const [showDisplays, setShowDisplays] = useState(false);
   const [showAllStocks, setShowAllStocks] = useState(false);
 
+  // Theme
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
   const [editingGroupIndex, setEditingGroupIndex] = useState(null);
   const [groupNameInput, setGroupNameInput] = useState('');
   const [groupIdsInput, setGroupIdsInput] = useState('');
@@ -541,6 +551,8 @@ function App() {
                     showDividendYield={showDividendYield}
                     toggleAxis={() => setShowInfoAxis(v => !v)}
                     showInfoAxis={showInfoAxis}
+                    toggleTheme={toggleTheme}
+                    theme={theme}
                     onClose={() => setShowDisplays(false)}
                   />
                 )}

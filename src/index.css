@@ -1,15 +1,36 @@
 :root {
+  --color-text: #1f2937;
+  --color-bg: #f9fafb;
+  --color-card-bg: #fff;
+  --color-border: #e5e7eb;
+  --color-row-even: #f3f4f6;
+  --color-hover: #e5e7eb;
+  --color-header-bg: #f3f4f6;
+  --accent-gold: #d4af37;
+  --accent-gold-hover: #ffd700;
+  --accent-green: #2f9e44;
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color: #1f2937;
-  background-color: #f9fafb;
+  color: var(--color-text);
+  background-color: var(--color-bg);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-theme='dark'] {
+  --color-text: #f9fafb;
+  --color-bg: #111827;
+  --color-card-bg: #1f2937;
+  --color-border: #374151;
+  --color-row-even: #1f2937;
+  --color-hover: #374151;
+  --color-header-bg: #374151;
 }
 
 html {
@@ -18,11 +39,11 @@ html {
 
 a {
   font-weight: 500;
-  color: #d4af37;
+  color: var(--accent-gold);
   text-decoration: inherit;
 }
 a:hover {
-  color: #ffd700;
+  color: var(--accent-gold-hover);
 }
 body {
   margin: 0;
@@ -30,8 +51,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   animation: fade-in 0.4s ease-in-out;
-  background-color: #f9fafb;
-  color: #1f2937;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 
 
