@@ -1,6 +1,13 @@
-/* global google */
-const CLIENT_ID = "966996991391-dishfmvmvkhtpjm86bcr146j7mbop4rk.apps.googleusercontent.com";
-const SCOPE = "https://www.googleapis.com/auth/drive.appdata";
+/* global google, process */
+let CLIENT_ID = process.env?.VITE_GOOGLE_CLIENT_ID;
+let SCOPE = process.env?.VITE_GOOGLE_SCOPE;
+try {
+  const env = new Function('return import.meta.env')();
+  CLIENT_ID = env.VITE_GOOGLE_CLIENT_ID;
+  SCOPE = env.VITE_GOOGLE_SCOPE;
+} catch {
+  // import.meta.env is not available (e.g., in tests)
+}
 
 let tokenClient;
 let accessToken;
