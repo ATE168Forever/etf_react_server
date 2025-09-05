@@ -1,0 +1,19 @@
+.tableHeader {
+    display: flex;
+    align-items: center;
+    margin: 10px 0 0 0;
+    /* gap: 12px; */
+}
+
+.cacheInfo {
+    /* text-align: right;
+    font-size: 12px; */
+    margin-left: auto;          /* ✅ 把快取推到最右側 */
+    align-self: flex-end;    /* ⬇️ move this item to bottom */
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    white-space: nowrap;
+    font-size: 12px;
+    color: var(--muted-foreground, #6b7280);
+}

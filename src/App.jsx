@@ -8,6 +8,7 @@ import DividendCalendar from './components/DividendCalendar';
 import StockTable from './components/StockTable';
 
 import './App.css';
+import styles from './App.module.css';
 import NLHelper from './NLHelper';
 import { API_HOST } from './config';
 import { fetchWithCache } from './api';
@@ -546,18 +547,20 @@ function App() {
               </div>
             </div>
           </div>
-          {!showCalendar && (
-            <>
-              <button onClick={handleResetFilters} style={{ marginRight: 10 }}>重置所有篩選</button>
-              <span>提示：點下篩選鈕開啟篩選視窗。</span>
-            </>
-          )}
-          {dividendCacheInfo && (
-            <div style={{ textAlign: 'right', fontSize: 12 }}>
-              快取: {dividendCacheInfo.cacheStatus}
-              {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
-            </div>
-          )}
+          <div className={styles.tableHeader}>
+            {!showCalendar && (
+              <>
+                <button onClick={handleResetFilters} style={{ marginRight: 10 }}>重置所有篩選</button>
+                <span>提示：點下篩選鈕開啟篩選視窗。</span>
+              </>
+            )}
+            {dividendCacheInfo && (
+              <div className={styles.cacheInfo}>
+                快取: {dividendCacheInfo.cacheStatus}
+                {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
+              </div>
+            )}
+          </div>
 
           {loading ? (
             <p>Loading...</p>
@@ -624,23 +627,25 @@ function App() {
         />
       }
       {tab === 'about' && <AboutTab />}
-      <div className="contact-section">
-        <h3>聯絡方式</h3>
-        <p>電子信箱：<a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a></p>
-      </div>
-      <div className="donation-section">
-        <h3>分享小小的分紅</h3>
-        <p>
-          如果你喜歡這個專案，歡迎
-          <a
-            href="https://www.buymeacoffee.com/example"
-            target="_blank"
-            rel="noreferrer"
-          >
-            贊助
-          </a>
-          。
-        </p>
+      <div style={{ backgroundColor: '#f5f5f5', padding: '12px 16px', borderRadius: 8 }}>
+        <div className="contact-section">
+          <h3>聯絡方式</h3>
+          <p>電子信箱：<a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a></p>
+        </div>
+        <div className="donation-section">
+          <h3>分享小小的分紅</h3>
+          <p>
+            如果你喜歡這個專案，歡迎
+            <a
+              href="https://www.buymeacoffee.com/ginatbean"
+              target="_blank"
+              rel="noreferrer"
+            >
+              贊助
+            </a>
+            。
+          </p>
+        </div>
       </div>
       <NLHelper />
       {showGroupModal && (

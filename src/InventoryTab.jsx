@@ -277,13 +277,6 @@ export default function InventoryTab() {
         />
       </div>
 
-      {cacheInfo && (
-        <div className={styles.cacheInfo}>
-          快取: {cacheInfo.cacheStatus}
-          {cacheInfo.timestamp ? ` (${new Date(cacheInfo.timestamp).toLocaleString()})` : ''}
-        </div>
-      )}
-
       <AddTransactionModal
         show={showModal}
         onClose={() => setShowModal(false)}
@@ -311,7 +304,16 @@ export default function InventoryTab() {
               >
                 顯示：交易歷史
               </button>
+              
+              {cacheInfo && (
+                <div className={styles.cacheInfo}>
+                  快取: {cacheInfo.cacheStatus}
+                  {cacheInfo.timestamp ? ` (${new Date(cacheInfo.timestamp).toLocaleString()})` : ''}
+                </div>
+              )}
             </div>
+
+
             <div className="table-responsive">
               <table className={`table table-bordered table-striped ${styles.fullWidth}`}>
                 <thead>

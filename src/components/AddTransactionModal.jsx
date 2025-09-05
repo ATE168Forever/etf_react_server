@@ -31,6 +31,7 @@ export default function AddTransactionModal({ show, onClose, stockList, form, se
                 }}
                 placeholder="搜尋或選擇股票"
                 isClearable
+                styles={selectStyles}                     // ⬅️ apply custom styles
               />
             </div>
           </div>
