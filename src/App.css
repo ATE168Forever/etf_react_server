@@ -424,6 +424,11 @@ button:active {
   z-index: 3;
 }
 
+.stock-col {
+  width: 140px;
+  min-width: 140px;
+}
+
 @media (max-width: 576px) {
   .table td, .table th {
     padding: 0.3rem;

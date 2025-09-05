@@ -21,7 +21,14 @@ export default function AddTransactionModal({ show, onClose, stockList, form, se
               <Select
                 options={options}
                 value={selectedOption}
-                onChange={option => setForm(f => ({ ...f, stock_id: option ? option.value : '' }))}
+                onChange={option => {
+                  const stock = stockList.find(s => s.stock_id === (option ? option.value : ''));
+                  setForm(f => ({
+                    ...f,
+                    stock_id: option ? option.value : '',
+                    stock_name: stock ? stock.stock_name : ''
+                  }));
+                }}
                 placeholder="搜尋或選擇股票"
                 isClearable
               />

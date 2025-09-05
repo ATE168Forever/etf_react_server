@@ -19,7 +19,7 @@ export default function InventoryTab() {
   const [stockList, setStockList] = useState([]);
   const [transactionHistory, setTransactionHistory] = useState(() => migrateTransactionHistory());
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ stock_id: '', date: getToday(), quantity: '', price: '' });
+  const [form, setForm] = useState({ stock_id: '', stock_name: '', date: getToday(), quantity: '', price: '' });
   const [showInventory, setShowInventory] = useState(true);
   const [editingIdx, setEditingIdx] = useState(null);
   const [editForm, setEditForm] = useState({ date: '', quantity: '', price: '' });
@@ -148,7 +148,7 @@ export default function InventoryTab() {
       const s = stockList.find(x => x.stock_id === item.stock_id) || {};
       inventoryMap[item.stock_id] = {
         stock_id: item.stock_id,
-        stock_name: s.stock_name || '',
+        stock_name: s.stock_name || item.stock_name || '',
         total_quantity: 0,
         total_cost: 0
       };
@@ -188,7 +188,7 @@ export default function InventoryTab() {
         type: 'buy'
       }
     ]);
-    setForm({ stock_id: '', date: getToday(), quantity: '', price: '' });
+    setForm({ stock_id: '', stock_name: '', date: getToday(), quantity: '', price: '' });
     setShowModal(false);
   };
 
@@ -225,7 +225,7 @@ export default function InventoryTab() {
     }
     setTransactionHistory([
       ...transactionHistory,
-      { stock_id, date: getToday(), quantity: Number(qty), type: 'sell' }
+      { stock_id, stock_name: stock.stock_name, date: getToday(), quantity: Number(qty), type: 'sell' }
     ]);
     setSellModal({ show: false, stock: null });
   };
@@ -240,7 +240,7 @@ export default function InventoryTab() {
         <button
           className={styles.button}
           onClick={() => {
-            setForm({ stock_id: '', date: getToday(), quantity: '', price: '' });
+            setForm({ stock_id: '', stock_name: '', date: getToday(), quantity: '', price: '' });
             setShowModal(true);
           }}
         >
@@ -316,7 +316,7 @@ export default function InventoryTab() {
               <table className={`table table-bordered table-striped ${styles.fullWidth}`}>
                 <thead>
                   <tr>
-                    <th>股票代碼/名稱</th>
+                    <th className="stock-col">股票代碼/名稱</th>
                     <th>平均股價</th>
                     <th>總數量</th>
                     <th>操作</th>
@@ -327,7 +327,7 @@ export default function InventoryTab() {
                     ? <tr><td colSpan={4}>尚無庫存</td></tr>
                     : inventoryList.map((item, idx) => (
                         <tr key={idx}>
-                          <td>{item.stock_id} {item.stock_name || (stockList.find(s => s.stock_id === item.stock_id)?.stock_name || '')}</td>
+                          <td className="stock-col">{item.stock_id} {item.stock_name}</td>
                           <td>{item.avg_price.toFixed(2)}</td>
                           <td>{item.total_quantity} ({(item.total_quantity / 1000).toFixed(3).replace(/\.0+$/, '')} 張)</td>
                           <td>
