@@ -3,12 +3,12 @@ import React from 'react';
 export default function AboutTab() {
   return (
     <div className="container" style={{ maxWidth: 800 }}>
-      <h1 className="mt-4">關於這個專案</h1>
+      <h1 className="mt-4">關於本站</h1>
       <p>
-        本網站提供 ETF 配息資訊的統整，以及簡易的持股追蹤工具。所有資料僅供參考，並非投資建議。
+        哈囉～這裡是個幫你整理 ETF 配息的小天地，也附上簡單的持股追蹤工具。資料僅供參考，不構成投資建議唷！
       </p>
       <p>
-        原始碼已開放在 GitHub，歡迎提供回饋與貢獻！
+        這個網站只是作者的趣味小作品，原始碼暫時沒有公開，如果有任何想法或發現 bug，歡迎輕鬆留言給我～
       </p>
     </div>
   );

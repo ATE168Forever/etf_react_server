@@ -6,7 +6,7 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
       <table className={`table table-bordered table-striped ${styles.table}`}>
         <thead>
           <tr>
-            <th>股票代碼/名稱</th>
+            <th className="stock-col">股票代碼/名稱</th>
             <th>交易日期</th>
             <th>數量(股)</th>
             <th>價格(元)</th>
@@ -21,9 +21,10 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
             transactionHistory.map((item, idx) => {
               const stock = stockList.find(s => s.stock_id === item.stock_id) || {};
               const isEditing = editingIdx === idx;
+              const name = item.stock_name || stock.stock_name || '';
               return (
                 <tr key={idx}>
-                  <td>{item.stock_id} {stock.stock_name || ''}</td>
+                  <td className="stock-col">{item.stock_id} {name}</td>
                   <td>
                     {isEditing ? (
                       <input

@@ -111,7 +111,7 @@ export default function StockTable({
 
     return (
       <tr>
-        <td>
+        <td className="stock-col">
           <a href={`/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
             {stock.stock_id} {stock.stock_name}
           </a>
@@ -158,7 +158,7 @@ export default function StockTable({
         <table className="table table-bordered table-striped">
           <thead>
             <tr>
-              <th>股票代碼/名稱</th>
+              <th className="stock-col">股票代碼/名稱</th>
               <th>最新股價</th>
               <th>股息總額</th>
               <th>當次殖利率</th>
@@ -184,7 +184,7 @@ export default function StockTable({
               const lastYield = latestYield[stock.stock_id]?.yield;
               return (
                 <tr key={stock.stock_id + stock.stock_name}>
-                  <td>
+                  <td className="stock-col">
                     <a href={`/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
                       {stock.stock_id} {stock.stock_name}
                     </a>
@@ -215,7 +215,7 @@ export default function StockTable({
       <table className="table table-bordered table-striped" style={{ minWidth: 1300 }}>
         <thead>
           <tr>
-            <th style={{ position: 'relative' }}>
+            <th className="stock-col">
               <span className="sortable" onClick={() => handleSort('stock_id')}>
                 股票代碼/名稱
                 <span className="sort-indicator">

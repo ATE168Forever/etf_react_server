@@ -201,7 +201,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
             <table className="table table-bordered table-striped">
                 <thead>
                     <tr>
-                        <th>
+                        <th className="stock-col">
                             <span className="sortable" onClick={() => handleSort('stock_id')}>
                                 股票代碼/名稱
                                 {sortConfig.column === 'stock_id' && (
@@ -237,7 +237,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                     ) : (
                         sortedStocks.map(stock => (
                             <tr key={stock.stock_id + stock.stock_name}>
-                                <td>{stock.stock_id} {stock.stock_name}</td>
+                                <td className="stock-col">{stock.stock_id} {stock.stock_name}</td>
                                 {MONTHS.map((m, idx) => {
                                     const cell = dividendTable[stock.stock_id][idx];
                                     if (!cell || !cell.dividend || !cell.quantity) return <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}></td>;
