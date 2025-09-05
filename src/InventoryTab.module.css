@@ -41,3 +41,8 @@
 .fullWidth {
   width: 100%;
 }
+
+.sellButton {
+  min-width: 48px;
+  white-space: nowrap;
+}

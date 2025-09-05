@@ -316,7 +316,6 @@ export default function InventoryTab() {
               <table className={`table table-bordered table-striped ${styles.fullWidth}`}>
                 <thead>
                   <tr>
-                    <th style={{ width: 30 }}>#</th>
                     <th>股票代碼/名稱</th>
                     <th>平均股價</th>
                     <th>總數量</th>
@@ -325,15 +324,14 @@ export default function InventoryTab() {
                 </thead>
                 <tbody>
                   {inventoryList.length === 0
-                    ? <tr><td colSpan={5}>尚無庫存</td></tr>
+                    ? <tr><td colSpan={4}>尚無庫存</td></tr>
                     : inventoryList.map((item, idx) => (
                         <tr key={idx}>
-                          <td>{idx + 1}</td>
-                          <td>{item.stock_id} {item.stock_name}</td>
+                          <td>{item.stock_id} {item.stock_name || (stockList.find(s => s.stock_id === item.stock_id)?.stock_name || '')}</td>
                           <td>{item.avg_price.toFixed(2)}</td>
                           <td>{item.total_quantity} ({(item.total_quantity / 1000).toFixed(3).replace(/\.0+$/, '')} 張)</td>
                           <td>
-                            <button onClick={() => setSellModal({ show: true, stock: item })}>賣出</button>
+                            <button className={styles.sellButton} onClick={() => setSellModal({ show: true, stock: item })}>賣出</button>
                           </td>
                         </tr>
                       ))}

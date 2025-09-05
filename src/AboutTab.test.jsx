@@ -5,6 +5,6 @@ import AboutTab from './AboutTab';
 test('renders about heading', () => {
   render(<AboutTab />);
   expect(
-    screen.getByRole('heading', { name: /About This Project/i })
+    screen.getByRole('heading', { name: /關於這個專案/ })
   ).toBeInTheDocument();
 });
