@@ -41,7 +41,7 @@ function getIncomeGoalInfo(dividend, price, goal, freq = 12) {
 
 function App() {
   // Tab state
-  const [tab, setTab] = useState('dividend');
+  const [tab, setTab] = useState('mydividend');
 
   // All your existing states for dividend page...
   const [data, setData] = useState([]);
@@ -469,6 +469,14 @@ function App() {
       <ul className="nav nav-tabs mb-1 justify-content-center">
         <li className="nav-item">
           <button
+            className={`nav-link${tab === 'mydividend' ? ' active' : ''}`}
+            onClick={() => setTab('mydividend')}
+          >
+            我的配息
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
             className={`nav-link${tab === 'dividend' ? ' active' : ''}`}
             onClick={() => setTab('dividend')}
           >
@@ -481,14 +489,6 @@ function App() {
             onClick={() => setTab('inventory')}
           >
             庫存管理
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link${tab === 'mydividend' ? ' active' : ''}`}
-            onClick={() => setTab('mydividend')}
-          >
-            我的配息
           </button>
         </li>
         <li className="nav-item">
