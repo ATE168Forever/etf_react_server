@@ -20,6 +20,13 @@ describe('InventoryTab interactions', () => {
     fetchWithCache.mockResolvedValue({ data: [{ stock_id: '0050', stock_name: 'Test ETF', dividend_frequency: 1 }] });
   });
 
+  test('opens add transaction modal', async () => {
+    render(<InventoryTab />);
+    const openBtn = screen.getByRole('button', { name: '新增購買紀錄' });
+    fireEvent.click(openBtn);
+    await screen.findByRole('heading', { name: '新增購買紀錄' });
+  });
+
   test('edits existing transaction', async () => {
     localStorage.setItem('my_transaction_history', JSON.stringify([
       { stock_id: '0050', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 }
