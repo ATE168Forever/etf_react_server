@@ -27,6 +27,7 @@ export default function InventoryTab() {
   const fileInputRef = useRef(null);
   const [cacheInfo, setCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
+  const [latestPrices, setLatestPrices] = useState({});
 
   const handleExport = useCallback(() => {
     const header = ['stock_id', 'date', 'quantity', 'type', 'price'];
@@ -139,6 +140,33 @@ export default function InventoryTab() {
   }, []);
 
   useEffect(() => {
+    fetchWithCache(`${API_HOST}/get_dividend`)
+      .then(({ data }) => {
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data?.items)
+              ? data.items
+              : [];
+        const priceMap = {};
+        list.forEach(item => {
+          const price = parseFloat(item.last_close_price);
+          if (!item.stock_id || Number.isNaN(price)) return;
+          if (!priceMap[item.stock_id] || new Date(item.dividend_date) > new Date(priceMap[item.stock_id].date)) {
+            priceMap[item.stock_id] = { price, date: item.dividend_date };
+          }
+        });
+        const prices = {};
+        Object.keys(priceMap).forEach(id => {
+          prices[id] = priceMap[id].price;
+        });
+        setLatestPrices(prices);
+      })
+      .catch(() => setLatestPrices({}));
+  }, []);
+
+  useEffect(() => {
     saveTransactionHistory(transactionHistory);
   }, [transactionHistory]);
 
@@ -174,6 +202,10 @@ export default function InventoryTab() {
     .map(i => ({ ...i, avg_price: i.total_cost / i.total_quantity }));
 
   const totalInvestment = inventoryList.reduce((sum, item) => sum + item.total_cost, 0);
+  const totalValue = inventoryList.reduce(
+    (sum, item) => sum + item.total_quantity * (latestPrices[item.stock_id] || 0),
+    0
+  );
 
   const handleAdd = () => {
     if (!form.stock_id || !form.date || !form.quantity || !form.price) {
@@ -316,7 +348,18 @@ export default function InventoryTab() {
             )}
 
             <div className={styles.totalInvestment}>
-              目前總投資金額：{totalInvestment.toFixed(2)}
+              總投資金額：
+              {totalInvestment.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </div>
+            <div className={styles.totalInvestment}>
+              目前總價值：
+              {totalValue.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
             </div>
 
             <div className="table-responsive">
