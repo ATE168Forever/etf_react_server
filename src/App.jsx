@@ -639,7 +639,7 @@ function App() {
         />
       }
       {tab === 'about' && <AboutTab />}
-      <div style={{ backgroundColor: '#f5f5f5', padding: '12px 16px', borderRadius: 8 }}>
+      <div className="contact-wrapper">
         <div className="contact-section">
           <h3>聯絡方式</h3>
           <p>電子信箱：<a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a></p>
