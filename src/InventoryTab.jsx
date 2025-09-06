@@ -173,6 +173,8 @@ export default function InventoryTab() {
     .filter(i => i.total_quantity > 0)
     .map(i => ({ ...i, avg_price: i.total_cost / i.total_quantity }));
 
+  const totalInvestment = inventoryList.reduce((sum, item) => sum + item.total_cost, 0);
+
   const handleAdd = () => {
     if (!form.stock_id || !form.date || !form.quantity || !form.price) {
       alert('請輸入完整資料');
@@ -312,6 +314,10 @@ export default function InventoryTab() {
                 {cacheInfo.timestamp ? ` (${new Date(cacheInfo.timestamp).toLocaleString()})` : ''}
               </div>
             )}
+
+            <div className={styles.totalInvestment}>
+              目前總投資金額：{totalInvestment.toFixed(2)}
+            </div>
 
             <div className="table-responsive">
               <table className={`table table-bordered table-striped ${styles.fullWidth}`}>

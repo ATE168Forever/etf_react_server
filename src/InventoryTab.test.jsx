@@ -27,6 +27,15 @@ describe('InventoryTab interactions', () => {
     await screen.findByRole('heading', { name: '新增購買紀錄' });
   });
 
+  test('displays total investment amount', async () => {
+    localStorage.setItem('my_transaction_history', JSON.stringify([
+      { stock_id: '0050', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 }
+    ]));
+    render(<InventoryTab />);
+    await waitFor(() => screen.getByText('顯示：交易歷史'));
+    expect(screen.getByText('目前總投資金額：10000.00')).toBeInTheDocument();
+  });
+
   test('edits existing transaction', async () => {
     localStorage.setItem('my_transaction_history', JSON.stringify([
       { stock_id: '0050', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 }
