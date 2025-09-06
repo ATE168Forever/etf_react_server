@@ -1,6 +1,53 @@
 import React from 'react';
 
 export default function FaqTab() {
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: '殖利率是怎麼算的？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'TTM 殖利率為過去 12 個月實際配息總額除以最新價格；年度預估殖利率為今年已公告或預估的配息除以最新價格，以發行商公告為準。'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: '公告日、除息日、發放日差在哪？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: '公告日為公開配息資訊的日期；除息日起買進者不享有本次配息；發放日為實際匯入或入帳時間，不同市場規則可能不同。'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: '配息頻率如何定義？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: '我們依過去紀錄大致分成月配、季配、半年配和年配；若發行商突然調整，分類可能會暫時跟不上。'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: '資料多久更新一次？是否有延遲？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: '更新頻率取決於資料來源，部分數值可能延遲 15 分鐘或更久，若有重大更正將儘快同步。'
+        }
+      },
+      {
+        '@type': 'Question',
+        name: '為什麼我的實際入帳與網站計算不同？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: '稅費、匯率、零股或持有數量變動、券商入帳時間等因素都會影響，請以券商對帳單為準。'
+        }
+      }
+    ]
+  };
+
   return (
     <div className="container" style={{ maxWidth: 800 }}>
       <h1 className="mt-4">常見問題（FAQ）</h1>
@@ -104,6 +151,10 @@ export default function FaqTab() {
           若有開放 API，會提供文件與金鑰申請流程；商務合作歡迎寄信到 <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a>。
         </li>
       </ol>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
     </div>
   );
 }
