@@ -35,3 +35,7 @@ If you are developing a production application, we recommend using TypeScript wi
 ### Google Drive backup
 The About tab offers a one-click backup that saves encrypted app data to the user's Google Drive `appDataFolder`. This feature uses OAuth and does **not** require any URL configuration.
 
+## Copyright
+
+© 2025 GiantBean. All rights reserved.
+
