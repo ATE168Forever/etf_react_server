@@ -2,11 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import InventoryTab from './InventoryTab';
 import UserDividendsTab from './UserDividendsTab';
 import AboutTab from './AboutTab';
-import DisclaimerTab from './DisclaimerTab';
-import PrivacyPolicyTab from './PrivacyPolicyTab';
-import TermsOfServiceTab from './TermsOfServiceTab';
-import GuideTab from './GuideTab';
-import FaqTab from './FaqTab';
 import ActionDropdown from './components/ActionDropdown';
 import DisplayDropdown from './components/DisplayDropdown';
 import DividendCalendar from './components/DividendCalendar';
@@ -498,50 +493,10 @@ function App() {
         </li>
         <li className="nav-item">
           <button
-            className={`nav-link${tab === 'guide' ? ' active' : ''}`}
-            onClick={() => setTab('guide')}
-          >
-            使用說明
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link${tab === 'faq' ? ' active' : ''}`}
-            onClick={() => setTab('faq')}
-          >
-            常見問題
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
             className={`nav-link${tab === 'about' ? ' active' : ''}`}
             onClick={() => setTab('about')}
           >
             關於本站
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link${tab === 'disclaimer' ? ' active' : ''}`}
-            onClick={() => setTab('disclaimer')}
-          >
-            免責聲明
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link${tab === 'terms' ? ' active' : ''}`}
-            onClick={() => setTab('terms')}
-          >
-            服務條款
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link${tab === 'privacy' ? ' active' : ''}`}
-            onClick={() => setTab('privacy')}
-          >
-            隱私權政策
           </button>
         </li>
       </ul>
@@ -677,18 +632,13 @@ function App() {
         </div>
       )}
       {tab === 'inventory' && <InventoryTab />}
-      {tab === 'mydividend' &&
+      {tab === 'mydividend' && (
         <UserDividendsTab
           allDividendData={data}
           selectedYear={selectedYear}
         />
-      }
-      {tab === 'guide' && <GuideTab />}
-      {tab === 'faq' && <FaqTab />}
+      )}
       {tab === 'about' && <AboutTab />}
-      {tab === 'disclaimer' && <DisclaimerTab />}
-      {tab === 'terms' && <TermsOfServiceTab />}
-      {tab === 'privacy' && <PrivacyPolicyTab />}
       <div className="contact-wrapper">
         <div className="contact-section">
           <h3>聯絡方式</h3>
