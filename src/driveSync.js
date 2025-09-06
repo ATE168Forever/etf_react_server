@@ -1,6 +1,6 @@
-/* global google, process */
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const SCOPE = import.meta.env.VITE_GOOGLE_SCOPE;
+/* global google */
+let CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+let SCOPE = import.meta.env.VITE_GOOGLE_SCOPE;
 try {
   const env = new Function('return import.meta.env')();
   CLIENT_ID = env.VITE_GOOGLE_CLIENT_ID;
