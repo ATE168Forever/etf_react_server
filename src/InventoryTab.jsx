@@ -304,15 +304,14 @@ export default function InventoryTab() {
               >
                 顯示：交易歷史
               </button>
-              
-              {cacheInfo && (
-                <div className={styles.cacheInfo}>
-                  快取: {cacheInfo.cacheStatus}
-                  {cacheInfo.timestamp ? ` (${new Date(cacheInfo.timestamp).toLocaleString()})` : ''}
-                </div>
-              )}
             </div>
-
+            
+            {cacheInfo && (
+              <div className={styles.cacheInfo}>
+                快取: {cacheInfo.cacheStatus}
+                {cacheInfo.timestamp ? ` (${new Date(cacheInfo.timestamp).toLocaleString()})` : ''}
+              </div>
+            )}
 
             <div className="table-responsive">
               <table className={`table table-bordered table-striped ${styles.fullWidth}`}>

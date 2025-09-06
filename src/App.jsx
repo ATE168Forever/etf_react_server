@@ -454,7 +454,7 @@ function App() {
   return (
     <div className="container">
       <header className="mb-1 text-center">
-        <h1 className="site-title">Dividend Life</h1>
+        <h1 className="site-title">股息人生</h1>
         <h2 className="slogan">compound interest is the most powerful force in the universe</h2>
       </header>
       {upcomingAlerts.length > 0 && (
@@ -566,13 +566,13 @@ function App() {
                 <span>提示：點下篩選鈕開啟篩選視窗。</span>
               </>
             )}
-            {dividendCacheInfo && (
-              <div className={styles.cacheInfo}>
-                快取: {dividendCacheInfo.cacheStatus}
-                {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
-              </div>
-            )}
           </div>
+          {dividendCacheInfo && (
+            <div className={styles.cacheInfo}>
+              快取: {dividendCacheInfo.cacheStatus}
+              {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
+            </div>
+          )}
 
           {loading ? (
             <p>Loading...</p>

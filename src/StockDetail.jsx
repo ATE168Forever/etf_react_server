@@ -49,7 +49,7 @@ export default function StockDetail({ stockId }) {
       <h1>{stock.stock_id} {stock.stock_name}</h1>
       {stockCacheInfo && (
         <div style={{ textAlign: 'right', fontSize: 12 }}>
-          資料快取: {stockCacheInfo.cacheStatus}
+          快取: {stockCacheInfo.cacheStatus}
           {stockCacheInfo.timestamp ? ` (${new Date(stockCacheInfo.timestamp).toLocaleString()})` : ''}
         </div>
       )}
