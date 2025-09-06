@@ -3,6 +3,8 @@ import InventoryTab from './InventoryTab';
 import UserDividendsTab from './UserDividendsTab';
 import AboutTab from './AboutTab';
 import DisclaimerTab from './DisclaimerTab';
+import PrivacyPolicyTab from './PrivacyPolicyTab';
+import TermsOfServiceTab from './TermsOfServiceTab';
 import GuideTab from './GuideTab';
 import FaqTab from './FaqTab';
 import ActionDropdown from './components/ActionDropdown';
@@ -526,6 +528,22 @@ function App() {
             免責聲明
           </button>
         </li>
+        <li className="nav-item">
+          <button
+            className={`nav-link${tab === 'terms' ? ' active' : ''}`}
+            onClick={() => setTab('terms')}
+          >
+            服務條款
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            className={`nav-link${tab === 'privacy' ? ' active' : ''}`}
+            onClick={() => setTab('privacy')}
+          >
+            隱私權政策
+          </button>
+        </li>
       </ul>
       {tab === 'dividend' && (
         <div className="App">
@@ -669,6 +687,8 @@ function App() {
       {tab === 'faq' && <FaqTab />}
       {tab === 'about' && <AboutTab />}
       {tab === 'disclaimer' && <DisclaimerTab />}
+      {tab === 'terms' && <TermsOfServiceTab />}
+      {tab === 'privacy' && <PrivacyPolicyTab />}
       <div className="contact-wrapper">
         <div className="contact-section">
           <h3>聯絡方式</h3>
