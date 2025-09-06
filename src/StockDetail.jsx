@@ -1,38 +1,52 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { API_HOST } from './config';
-import { fetchWithCache } from './api';
 import './App.css';
 
 export default function StockDetail({ stockId }) {
-  const [stock, setStock] = useState(null);
-  const [dividends, setDividends] = useState([]);
-  const [stockCacheInfo, setStockCacheInfo] = useState(null);
+  const { data: stockList = [], isLoading: stockLoading, dataUpdatedAt: stockUpdatedAt } = useQuery({
+    queryKey: ['stockList'],
+    queryFn: async () => {
+      const res = await fetch(`${API_HOST}/get_stock_list`);
+      const data = await res.json();
+      return Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data?.items)
+            ? data.items
+            : [];
+    },
+    staleTime: 2 * 60 * 60 * 1000,
+  });
 
-  // fetch stock basic info
-  useEffect(() => {
-    fetchWithCache(`${API_HOST}/get_stock_list`)
-      .then(({ data, cacheStatus, timestamp }) => {
-        const list = Array.isArray(data) ? data : data?.items || [];
-        const s = list.find(item => item.stock_id === stockId);
-        setStock(s || {});
-        setStockCacheInfo({ cacheStatus, timestamp });
-      })
-      .catch(() => setStock({}));
-  }, [stockId]);
+  const { data: dividendList = [], isLoading: dividendLoading } = useQuery({
+    queryKey: ['dividend'],
+    queryFn: async () => {
+      const res = await fetch(`${API_HOST}/get_dividend`);
+      const data = await res.json();
+      return Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data?.items)
+            ? data.items
+            : [];
+    },
+    staleTime: 2 * 60 * 60 * 1000,
+  });
 
-  // fetch dividend records
-  useEffect(() => {
-    fetchWithCache(`${API_HOST}/get_dividend`)
-      .then(({ data }) => {
-        const list = Array.isArray(data) ? data : data?.items || [];
-        const arr = list.filter(item => item.stock_id === stockId);
-        arr.sort((a, b) => new Date(b.dividend_date) - new Date(a.dividend_date));
-        setDividends(arr);
-      })
-      .catch(() => setDividends([]));
-  }, [stockId]);
+  const stock = useMemo(() => {
+    return stockList.find(item => item.stock_id === stockId) || {};
+  }, [stockList, stockId]);
 
-  if (!stock) {
+  const dividends = useMemo(() => {
+    const arr = dividendList.filter(item => item.stock_id === stockId);
+    arr.sort((a, b) => new Date(b.dividend_date) - new Date(a.dividend_date));
+    return arr;
+  }, [dividendList, stockId]);
+
+  if (stockLoading || dividendLoading) {
     return <div>載入中...</div>;
   }
 
@@ -47,10 +61,9 @@ export default function StockDetail({ stockId }) {
   return (
     <div className="stock-detail">
       <h1>{stock.stock_id} {stock.stock_name}</h1>
-      {stockCacheInfo && (
+      {stockUpdatedAt && (
         <div style={{ textAlign: 'right', fontSize: 12 }}>
-          快取: {stockCacheInfo.cacheStatus}
-          {stockCacheInfo.timestamp ? ` (${new Date(stockCacheInfo.timestamp).toLocaleString()})` : ''}
+          資料更新時間: {new Date(stockUpdatedAt).toLocaleString()}
         </div>
       )}
       <p>配息頻率: {stock.dividend_frequency || '-'}</p>
@@ -83,7 +96,7 @@ export default function StockDetail({ stockId }) {
               <tr>
                 <th>日期</th>
                 <th>配息金額</th>
-                <th>殖利率</th>
+                <th>利率</th>
               </tr>
             </thead>
             <tbody>
