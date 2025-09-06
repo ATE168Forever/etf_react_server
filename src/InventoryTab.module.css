@@ -56,3 +56,9 @@
   width: 60px;
   white-space: nowrap;
 }
+
+.totalInvestment {
+  text-align: right;
+  font-weight: bold;
+  margin: 4px 0;
+}
