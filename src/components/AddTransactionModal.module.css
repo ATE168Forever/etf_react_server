@@ -72,8 +72,8 @@
 
 .primaryButton {
   padding: 7px 26px;
-  background: #1e70b8;
-  color: #fff;
+  background: var(--accent-gold);
+  color: var(--color-text);
   border: none;
   border-radius: 6px;
   font-weight: 600;
