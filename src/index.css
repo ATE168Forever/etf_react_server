@@ -92,3 +92,12 @@ h1 {
   }
 }
 
+
+.site-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
