@@ -11,7 +11,7 @@ import './App.css';
 import styles from './App.module.css';
 import NLHelper from './NLHelper';
 import { API_HOST } from './config';
-import { fetchWithCache } from './api';
+import { fetchWithCache, clearCache } from './api';
 import { getTomorrowDividendAlerts } from './dividendUtils';
 
 const DEFAULT_MONTHLY_GOAL = 10000;
@@ -105,6 +105,7 @@ function App() {
   useEffect(() => {
     const callUpdate = () => {
       fetch(`${API_HOST}/update_dividend`).finally(() => {
+        clearCache(`${API_HOST}/get_dividend`);
         window.location.reload();
       });
     };

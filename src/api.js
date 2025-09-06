@@ -66,3 +66,12 @@ export async function fetchWithCache(url) {
 
   throw new Error(`HTTP error! status: ${response.status}`);
 }
+
+export function clearCache(url) {
+  try {
+    localStorage.removeItem(`cache:data:${url}`);
+    localStorage.removeItem(`cache:meta:${url}`);
+  } catch {
+    // ignore errors
+  }
+}
