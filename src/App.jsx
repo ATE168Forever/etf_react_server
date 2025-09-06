@@ -3,6 +3,7 @@ import InventoryTab from './InventoryTab';
 import UserDividendsTab from './UserDividendsTab';
 import AboutTab from './AboutTab';
 import DisclaimerTab from './DisclaimerTab';
+import GuideTab from './GuideTab';
 import ActionDropdown from './components/ActionDropdown';
 import DisplayDropdown from './components/DisplayDropdown';
 import DividendCalendar from './components/DividendCalendar';
@@ -494,6 +495,14 @@ function App() {
         </li>
         <li className="nav-item">
           <button
+            className={`nav-link${tab === 'guide' ? ' active' : ''}`}
+            onClick={() => setTab('guide')}
+          >
+            使用說明
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
             className={`nav-link${tab === 'about' ? ' active' : ''}`}
             onClick={() => setTab('about')}
           >
@@ -647,6 +656,7 @@ function App() {
           selectedYear={selectedYear}
         />
       }
+      {tab === 'guide' && <GuideTab />}
       {tab === 'about' && <AboutTab />}
       {tab === 'disclaimer' && <DisclaimerTab />}
       <div className="contact-wrapper">
