@@ -17,7 +17,15 @@ describe('InventoryTab interactions', () => {
   beforeEach(() => {
     localStorage.clear();
     Cookies.remove('my_transaction_history');
-    fetchWithCache.mockResolvedValue({ data: [{ stock_id: '0050', stock_name: 'Test ETF', dividend_frequency: 1 }] });
+    fetchWithCache.mockImplementation((url) => {
+      if (url.endsWith('/get_stock_list')) {
+        return Promise.resolve({ data: [{ stock_id: '0050', stock_name: 'Test ETF', dividend_frequency: 1 }] });
+      }
+      if (url.endsWith('/get_dividend')) {
+        return Promise.resolve({ data: [{ stock_id: '0050', dividend_date: '2024-01-02', last_close_price: 20 }] });
+      }
+      return Promise.resolve({ data: [] });
+    });
   });
 
   test('opens add transaction modal', async () => {
@@ -27,13 +35,14 @@ describe('InventoryTab interactions', () => {
     await screen.findByRole('heading', { name: '新增購買紀錄' });
   });
 
-  test('displays total investment amount', async () => {
+  test('displays total investment amount and value', async () => {
     localStorage.setItem('my_transaction_history', JSON.stringify([
       { stock_id: '0050', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 }
     ]));
     render(<InventoryTab />);
-    await waitFor(() => screen.getByText('顯示：交易歷史'));
-    expect(screen.getByText('目前總投資金額：10000.00')).toBeInTheDocument();
+    await screen.findByText('顯示：交易歷史');
+    expect(await screen.findByText('總投資金額：10,000.00')).toBeInTheDocument();
+    expect(await screen.findByText('目前總價值：20,000.00')).toBeInTheDocument();
   });
 
   test('edits existing transaction', async () => {
