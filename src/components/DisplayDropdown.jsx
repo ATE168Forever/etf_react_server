@@ -10,8 +10,6 @@ export default function DisplayDropdown({
   showDividendYield,
   toggleAxis,
   showInfoAxis,
-  toggleTheme,
-  theme,
   onClose
 }) {
   const ref = useRef();
@@ -40,9 +38,6 @@ export default function DisplayDropdown({
           </button>
         </>
       )}
-      <button onClick={() => handleClick(toggleTheme)}>
-        {theme === 'dark' ? '切換為亮色主題' : '切換為暗色主題'}
-      </button>
     </div>
   );
 }

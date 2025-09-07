@@ -239,8 +239,14 @@ table thead {
 
 .contact-wrapper {
   background: var(--color-card-bg);
-  padding: 12px 16px;
+  padding: 8px 12px;
   border-radius: 8px;
+  max-width: 400px;
+  margin: 20px auto;
+}
+
+.theme-section {
+  margin-top: 8px;
 }
 
 header {
