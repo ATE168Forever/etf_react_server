@@ -681,6 +681,11 @@ function App() {
       )}
       {tab === 'about' && <AboutTab />}
       <div className="contact-wrapper">
+        <div className="theme-section">
+          <button onClick={toggleTheme}>
+            {theme === 'dark' ? '切換為亮色主題' : '切換為暗色主題'}
+          </button>
+        </div>
         <div className="contact-section">
           <h3>聯絡方式</h3>
           <p>電子信箱：<a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a></p>
@@ -698,11 +703,6 @@ function App() {
             </a>
             。
           </p>
-        </div>
-        <div className="theme-section">
-          <button onClick={toggleTheme}>
-            {theme === 'dark' ? '切換為亮色主題' : '切換為暗色主題'}
-          </button>
         </div>
       </div>
       <NLHelper />

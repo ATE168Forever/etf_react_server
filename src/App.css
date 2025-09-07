@@ -233,7 +233,6 @@ table thead {
 
 .contact-section,
 .donation-section {
-  margin-top: 40px;
   text-align: center;
 }
 
@@ -246,7 +245,7 @@ table thead {
 }
 
 .theme-section {
-  margin-top: 8px;
+  margin-top: 1px;
 }
 
 header {
