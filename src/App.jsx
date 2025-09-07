@@ -6,6 +6,7 @@ import ActionDropdown from './components/ActionDropdown';
 import DisplayDropdown from './components/DisplayDropdown';
 import DividendCalendar from './components/DividendCalendar';
 import StockTable from './components/StockTable';
+import Footer from './components/Footer';
 
 import './App.css';
 import styles from './App.module.css';
@@ -712,6 +713,7 @@ function App() {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   );
 }
