@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="256" viewBox="0 0 1000 256" fill="none">
+  <title>Dividend Life – Concept B</title>
+  <g transform="translate(0,0)">
+    <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+  <title>ETF Life – Concept B Icon</title>
+  <!-- Infinity curve -->
+  <path d="M48 128 C48 88 100 88 128 128 C156 168 208 168 208 128 C208 88 156 88 128 128 C100 168 48 168 48 128 Z"
+        fill="none" stroke="#12B886" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Arrow head at right loop -->
+  <path d="M188 118 L212 128 L194 142 Z" fill="#12B886"/>
+</svg>
+  </g>
+  <text x="300" y="150" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Arial, 'Noto Sans TC', 'PingFang TC'" font-size="76" font-weight="800" fill="#FFFFFF">Dividend Life</text>
+  <text x="300" y="190" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Arial, 'Noto Sans TC', 'PingFang TC'" font-size="28" font-weight="500" fill="#FFFFFF" opacity="0.75">etflife.org</text>
+</svg>
