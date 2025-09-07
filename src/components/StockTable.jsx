@@ -17,6 +17,15 @@ const freqNameMap = {
   12: '月配'
 };
 
+const EXTRA_FILTER_OPTIONS = [
+  { value: 'yield10', label: '預估殖利率≥10%' },
+  { value: 'freq12', label: '月配' },
+  { value: 'freq6', label: '雙月配' },
+  { value: 'freq4', label: '季配' },
+  { value: 'freq2', label: '半年配' },
+  { value: 'freq1', label: '年配' }
+];
+
 export default function StockTable({
   stocks,
   dividendTable,
@@ -40,10 +49,13 @@ export default function StockTable({
   setShowAllStocks,
   showInfoAxis,
   getIncomeGoalInfo,
-  freqMap
+  freqMap,
+  extraFilters,
+  setExtraFilters
 }) {
   const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
   const [showIdDropdown, setShowIdDropdown] = useState(false);
+  const [showExtraDropdown, setShowExtraDropdown] = useState(false);
 
   const handleSort = (column) => {
     setSortConfig(prev => {
@@ -117,6 +129,7 @@ export default function StockTable({
           </a>
         </td>
         <td style={{ width: NUM_COL_WIDTH }}>{latestPrice[stock.stock_id]?.price ?? ''}</td>
+        <td style={{ width: NUM_COL_WIDTH }}></td>
         {MONTHS.map((m, idx) => {
           const cell = dividendTable[stock.stock_id] && dividendTable[stock.stock_id][idx];
           if (!cell) return <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: NUM_COL_WIDTH }}></td>;
@@ -201,7 +214,13 @@ export default function StockTable({
           </tbody>
         </table>
         {!showAllStocks && sortedStocks.length > 20 && (
-          <button className="more-btn" onClick={() => setShowAllStocks(true)} style={{ marginTop: 8 }}>更多+</button>
+          <button
+            className="more-btn"
+            onClick={() => setShowAllStocks(true)}
+            style={{ marginTop: 8, display: 'block', marginLeft: 'auto', marginRight: 'auto' }}
+          >
+            更多+
+          </button>
         )}
       </div>
     );
@@ -212,7 +231,7 @@ export default function StockTable({
       {showAllStocks && (
         <button onClick={() => setShowAllStocks(false)} style={{ marginBottom: 8 }}>預設</button>
       )}
-      <table className="table table-bordered table-striped" style={{ minWidth: 1300 }}>
+      <table className="table table-bordered table-striped" style={{ minWidth: 1380 }}>
         <thead>
           <tr>
             <th className="stock-col">
@@ -250,6 +269,25 @@ export default function StockTable({
                     : '↕'}
                 </span>
               </span>
+            </th>
+            <th style={{ width: NUM_COL_WIDTH }}>
+              <span>篩選</span>
+              <span
+                className="filter-btn"
+                tabIndex={0}
+                onClick={() => setShowExtraDropdown(true)}
+                title="額外篩選"
+              >
+                🔎
+              </span>
+              {showExtraDropdown && (
+                <FilterDropdown
+                  options={EXTRA_FILTER_OPTIONS}
+                  selected={extraFilters}
+                  setSelected={setExtraFilters}
+                  onClose={() => setShowExtraDropdown(false)}
+                />
+              )}
             </th>
             {MONTHS.map((m, idx) => (
               <th key={m} className={idx === currentMonth ? 'current-month' : ''} style={{ width: NUM_COL_WIDTH }}>
@@ -304,7 +342,13 @@ export default function StockTable({
         </tbody>
       </table>
       {!showAllStocks && sortedStocks.length > 20 && (
-        <button className="more-btn" onClick={() => setShowAllStocks(true)} style={{ marginTop: 8 }}>更多+</button>
+        <button
+          className="more-btn"
+          onClick={() => setShowAllStocks(true)}
+          style={{ marginTop: 8, display: 'block', marginLeft: 'auto', marginRight: 'auto' }}
+        >
+          更多+
+        </button>
       )}
     </div>
   );

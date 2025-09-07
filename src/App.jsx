@@ -69,6 +69,7 @@ function App() {
 
   // Multi-select filters
   const [selectedStockIds, setSelectedStockIds] = useState([]);
+  const [extraFilters, setExtraFilters] = useState([]);
 
   // Watch groups
   const [watchGroups, setWatchGroups] = useState([]);
@@ -101,6 +102,7 @@ function App() {
     setMonthHasValue(Array(12).fill(false));
     setShowDiamondOnly(false);
     setShowAllStocks(false);
+    setExtraFilters([]);
   };
 
   useEffect(() => {
@@ -336,6 +338,27 @@ function App() {
     for (let m = 0; m < 12; ++m) {
       if (monthHasValue[m]) {
         if (!dividendTable[stock.stock_id] || !dividendTable[stock.stock_id][m]) return false;
+      }
+    }
+    if (extraFilters.length) {
+      const freqFilters = extraFilters
+        .filter(f => f.startsWith('freq'))
+        .map(f => Number(f.slice(4)));
+      if (freqFilters.length && !freqFilters.includes(freqMap[stock.stock_id])) return false;
+      if (extraFilters.includes('yield10')) {
+        let total = 0;
+        let count = 0;
+        for (let i = 0; i < 12; i++) {
+          const cell = dividendTable[stock.stock_id]?.[i];
+          const y = parseFloat(cell?.dividend_yield) || 0;
+          if (y > 0) {
+            total += y;
+            count += 1;
+          }
+        }
+        const freq = [1, 2, 4, 6, 12].includes(freqMap[stock.stock_id]) ? freqMap[stock.stock_id] : count;
+        const avg = count > 0 ? total / count : 0;
+        if (avg * freq < 10) return false;
       }
     }
     return true;
@@ -629,6 +652,8 @@ function App() {
               showInfoAxis={showInfoAxis}
               getIncomeGoalInfo={getIncomeGoalInfo}
               freqMap={freqMap}
+              extraFilters={extraFilters}
+              setExtraFilters={setExtraFilters}
             />
           )}
         </div>
