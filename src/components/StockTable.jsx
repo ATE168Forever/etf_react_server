@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 // Removed react-window virtualization to avoid invalid table markup
 import FilterDropdown from './FilterDropdown';
+import AdvancedFilterDropdown from './AdvancedFilterDropdown';
 
 const MONTHS = [
   '1月', '2月', '3月', '4月', '5月', '6月',
@@ -16,15 +17,6 @@ const freqNameMap = {
   6: '雙月配',
   12: '月配'
 };
-
-const EXTRA_FILTER_OPTIONS = [
-  { value: 'yield10', label: '預估殖利率≥10%' },
-  { value: 'freq12', label: '月配' },
-  { value: 'freq6', label: '雙月配' },
-  { value: 'freq4', label: '季配' },
-  { value: 'freq2', label: '半年配' },
-  { value: 'freq1', label: '年配' }
-];
 
 export default function StockTable({
   stocks,
@@ -270,24 +262,23 @@ export default function StockTable({
                 </span>
               </span>
             </th>
-            <th style={{ width: NUM_COL_WIDTH }}>
-              <span
-                className="filter-btn"
-                tabIndex={0}
-                onClick={() => setShowExtraDropdown(true)}
-                title="額外篩選"
-              >
-                🔎
-              </span>
-              {showExtraDropdown && (
-                <FilterDropdown
-                  options={EXTRA_FILTER_OPTIONS}
-                  selected={extraFilters}
-                  setSelected={setExtraFilters}
-                  onClose={() => setShowExtraDropdown(false)}
-                />
-              )}
-            </th>
+              <th style={{ width: NUM_COL_WIDTH }}>
+                <span
+                  className="filter-btn"
+                  tabIndex={0}
+                  onClick={() => setShowExtraDropdown(true)}
+                  title="進階篩選"
+                >
+                  🔎
+                </span>
+                {showExtraDropdown && (
+                  <AdvancedFilterDropdown
+                    filters={extraFilters}
+                    setFilters={setExtraFilters}
+                    onClose={() => setShowExtraDropdown(false)}
+                  />
+                )}
+              </th>
             {MONTHS.map((m, idx) => (
               <th key={m} className={idx === currentMonth ? 'current-month' : ''} style={{ width: NUM_COL_WIDTH }}>
                 <span className="sortable" onClick={() => handleSort(`month${idx}`)}>
