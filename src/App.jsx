@@ -10,6 +10,8 @@ import Footer from './components/Footer';
 
 import './App.css';
 import styles from './App.module.css';
+import dividendLogoDark from './assets/conceptB-Dividend-Life-dark.svg';
+import dividendLogoLight from './assets/conceptB-Dividend-Life-light.svg';
 import NLHelper from './NLHelper';
 import { API_HOST } from './config';
 import { fetchWithCache, clearCache } from './api';
@@ -494,10 +496,13 @@ function App() {
 
   return (
     <div className="container">
-      <header className="mb-1 text-center">
-        <h1 className="site-title">股息人生</h1>
-        <h2 className="slogan">compound interest is the most powerful force in the universe</h2>
-      </header>
+    <header className="mb-1 text-center">
+      <img
+        src={theme === 'dark' ? dividendLogoDark : dividendLogoLight}
+        alt="股息人生"
+        className="site-logo"
+      />
+    </header>
       {upcomingAlerts.length > 0 && (
         <div className="dividend-alert">
           {upcomingAlerts.map(a => (
