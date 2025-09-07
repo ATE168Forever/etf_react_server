@@ -2,21 +2,46 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    # 如果專案放在子資料夾，統一在那裡執行
+    defaults:
+      run:
+        working-directory: etf_react_server
+
     steps:
+      - name: Checkout
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run build
+          cache: pnpm
+          # 如果 lockfile 不存在也沒關係，快取只是盡力
+          cache-dependency-path: etf_react_server/pnpm-lock.yaml
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false  # 我們自己控制安裝參數
+
+      - name: Install deps (lockfile-aware)
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "Lockfile found -> pnpm install --frozen-lockfile"
+            pnpm install --frozen-lockfile
+          else
+            echo "No lockfile -> pnpm install --no-frozen-lockfile"
+            pnpm install --no-frozen-lockfile
+          fi
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test (optional)
+        run: pnpm test --if-present
