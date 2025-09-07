@@ -34,7 +34,7 @@
 }
 
 .site-logo {
-  height: 120px;
+  height: 180px;
   width: auto;
 }
 
@@ -255,8 +255,8 @@ table thead {
 
 header {
   border-bottom: 1px solid var(--color-border);
-  margin-bottom: 1rem;
-  padding: 20px 0;
+  /* margin-bottom: 1rem; */
+  /* padding: 10px 0; */
   background: var(--color-card-bg);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.3s;

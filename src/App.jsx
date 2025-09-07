@@ -10,8 +10,8 @@ import Footer from './components/Footer';
 
 import './App.css';
 import styles from './App.module.css';
-import dividendLogoDark from './assets/conceptB-Dividend-Life-dark.svg';
-import dividendLogoLight from './assets/conceptB-Dividend-Life-light.svg';
+import dividendLogoDark from './assets/conceptB-ETF-Life-dark.svg';
+import dividendLogoLight from './assets/conceptB-ETF-Life-light.svg';
 import NLHelper from './NLHelper';
 import { API_HOST } from './config';
 import { fetchWithCache, clearCache } from './api';
@@ -688,7 +688,7 @@ function App() {
       <div className="contact-wrapper">
         <div className="theme-section">
           <button onClick={toggleTheme}>
-            {theme === 'dark' ? '切換為亮色主題' : '切換為暗色主題'}
+            {theme === 'dark' ? '亮色主題' : '暗色主題'}
           </button>
         </div>
         <div className="contact-section">
@@ -696,9 +696,8 @@ function App() {
           <p>電子信箱：<a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a></p>
         </div>
         <div className="donation-section">
-          <h3>分享小小的分紅</h3>
           <p>
-            如果你喜歡這個專案，歡迎
+            喜歡這個專案嗎？歡迎請作者喝杯咖啡 ☕ <br></br>
             <a
               href="https://www.buymeacoffee.com/ginatbean"
               target="_blank"
@@ -706,7 +705,6 @@ function App() {
             >
               贊助
             </a>
-            。
           </p>
         </div>
       </div>

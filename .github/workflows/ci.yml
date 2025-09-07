@@ -1,5 +1,4 @@
 name: CI
-
 on:
   push:
   pull_request:
@@ -7,8 +6,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    # 專案在子資料夾就設定 working-directory
     defaults:
       run:
         working-directory: etf_react_server
@@ -17,27 +14,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
-          # 這個路徑是相對於 repo 根目錄（非 working-directory）
           cache-dependency-path: etf_react_server/pnpm-lock.yaml
+
+      - name: Enable Corepack (use pnpm version from package.json)
+        run: corepack enable
+
+      - name: Setup pnpm (no explicit version here)
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
 
       - name: Install deps (lockfile-aware)
         run: |
           if [ -f pnpm-lock.yaml ]; then
-            echo "Lockfile found -> pnpm install --frozen-lockfile"
             pnpm install --frozen-lockfile
           else
-            echo "No lockfile -> pnpm install --no-frozen-lockfile"
             pnpm install --no-frozen-lockfile
           fi
 
