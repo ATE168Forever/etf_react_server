@@ -185,7 +185,7 @@ td {
   position: absolute;
   z-index: 99;
   top: 36px;
-  right: 0;
+  left: 0;
   background: var(--color-card-bg);
   border: 1px solid var(--color-border);
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1);
@@ -614,4 +614,11 @@ button:active {
 
 .more-group .more-item {
   position: relative;
+}
+
+@media (max-width: 576px) {
+  .more-group {
+    width: 100%;
+    justify-content: center;
+  }
 }

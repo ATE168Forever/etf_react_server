@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { API_HOST } from './config';
 import './App.css';
+import Footer from './components/Footer';
 
 export default function StockDetail({ stockId }) {
   const { data: stockList = [], isLoading: stockLoading, dataUpdatedAt: stockUpdatedAt } = useQuery({
@@ -59,7 +60,8 @@ export default function StockDetail({ stockId }) {
   const startDate = stock.dividend_start_date || stock.first_dividend_date;
 
   return (
-    <div className="stock-detail">
+    <>
+      <div className="stock-detail">
       <h1>{stock.stock_id} {stock.stock_name}</h1>
       {stockUpdatedAt && (
         <div style={{ textAlign: 'right', fontSize: 12 }}>
@@ -112,6 +114,8 @@ export default function StockDetail({ stockId }) {
         </div>
       )}
     </div>
+    <Footer />
+    </>
   );
 }
 
