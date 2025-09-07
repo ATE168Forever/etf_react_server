@@ -24,7 +24,7 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose })
   };
 
   return (
-    <div className="dropdown" ref={ref} style={{ padding: 8 }}>
+    <div className="dropdown" ref={ref} style={{ padding: 8, zIndex: 1000 }}>
       <div className="dropdown-section">
         <label>
           預估殖利率 ≥
