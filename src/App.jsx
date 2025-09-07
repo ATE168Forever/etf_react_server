@@ -592,8 +592,6 @@ function App() {
                     showDividendYield={showDividendYield}
                     toggleAxis={() => setShowInfoAxis(v => !v)}
                     showInfoAxis={showInfoAxis}
-                    toggleTheme={toggleTheme}
-                    theme={theme}
                     onClose={() => setShowDisplays(false)}
                   />
                 )}
@@ -700,6 +698,11 @@ function App() {
             </a>
             。
           </p>
+        </div>
+        <div className="theme-section">
+          <button onClick={toggleTheme}>
+            {theme === 'dark' ? '切換為亮色主題' : '切換為暗色主題'}
+          </button>
         </div>
       </div>
       <NLHelper />
