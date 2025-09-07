@@ -685,29 +685,6 @@ function App() {
         />
       )}
       {tab === 'about' && <AboutTab />}
-      <div className="contact-wrapper">
-        <div className="theme-section">
-          <button onClick={toggleTheme}>
-            {theme === 'dark' ? '亮色主題' : '暗色主題'}
-          </button>
-        </div>
-        <div className="contact-section">
-          <h3>聯絡方式</h3>
-          <p>電子信箱：<a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a></p>
-        </div>
-        <div className="donation-section">
-          <p>
-            喜歡這個專案嗎？歡迎請作者喝杯咖啡 ☕ <br></br>
-            <a
-              href="https://www.buymeacoffee.com/ginatbean"
-              target="_blank"
-              rel="noreferrer"
-            >
-              贊助
-            </a>
-          </p>
-        </div>
-      </div>
       <NLHelper />
       {showGroupModal && (
         <div className="modal-overlay">
@@ -760,7 +737,7 @@ function App() {
           </div>
         </div>
       )}
-      <Footer />
+      <Footer theme={theme} toggleTheme={toggleTheme} />
     </div>
   );
 }

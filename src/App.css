@@ -236,23 +236,6 @@ table thead {
   color: var(--color-text);
 }
 
-.contact-section,
-.donation-section {
-  text-align: center;
-}
-
-.contact-wrapper {
-  background: var(--color-card-bg);
-  padding: 8px 12px;
-  border-radius: 8px;
-  max-width: 400px;
-  margin: 20px auto;
-}
-
-.theme-section {
-  margin-top: 1px;
-}
-
 header {
   border-bottom: 1px solid var(--color-border);
   /* margin-bottom: 1rem; */
@@ -265,11 +248,6 @@ header {
 
 header:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.contact-section a,
-.donation-section a {
-  color: var(--accent-gold);
 }
 
 button {
