@@ -263,6 +263,7 @@ export default function StockTable({
               </span>
             </th>
               <th style={{ width: NUM_COL_WIDTH, zIndex: showExtraDropdown ? 1000 : undefined }}>
+                篩選
                 <span
                   className="filter-btn"
                   tabIndex={0}
