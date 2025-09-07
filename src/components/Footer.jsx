@@ -6,9 +6,16 @@ export default function Footer({ theme, toggleTheme }) {
     <footer className="footer">
       <div className="footer-content">
         <div className="theme-toggle">
-          <button onClick={toggleTheme}>
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              toggleTheme();
+            }}
+            className="theme-toggle-link"
+          >
             {theme === 'dark' ? '亮色主題' : '暗色主題'}
-          </button>
+          </a>
         </div>
         <div className="contact-section">
           <h3>聯絡方式</h3>
@@ -23,7 +30,7 @@ export default function Footer({ theme, toggleTheme }) {
             href="https://www.buymeacoffee.com/ginatbean"
             target="_blank"
             rel="noreferrer"
-            className="donate-button"
+            className="donate-link"
           >
             贊助
           </a>

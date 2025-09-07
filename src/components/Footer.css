@@ -16,35 +16,17 @@
   margin-bottom: 1rem;
 }
 
+.theme-toggle-link {
+  cursor: pointer;
+}
+
 .donation-section {
   margin-top: 0.5rem;
 }
 
-.donate-button {
+.donate-link {
   display: inline-block;
   margin-top: 0.5rem;
-  background: var(--accent-gold);
-  color: var(--color-text);
-  border: none;
-  border-radius: 6px;
-  font-weight: 500;
-  padding: 6px 14px;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
-}
-
-.donate-button:hover,
-.donate-button:focus {
-  background: var(--accent-gold-hover);
-  color: var(--color-text);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
-}
-
-.donate-button:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.2);
 }
 
 .copyright {
