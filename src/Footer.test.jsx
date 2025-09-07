@@ -4,7 +4,7 @@ import Footer from './components/Footer.jsx';
 test('renders contact info and dynamic copyright', () => {
   const year = new Date().getFullYear();
   render(<Footer theme="dark" toggleTheme={() => {}} />);
-  expect(screen.getByRole('button', { name: '亮色主題' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: '亮色主題' })).toBeInTheDocument();
   expect(screen.getByText('聯絡方式')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: '贊助' })).toBeInTheDocument();
   expect(
