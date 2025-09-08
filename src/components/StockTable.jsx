@@ -157,9 +157,6 @@ export default function StockTable({
   if (showInfoAxis) {
     return (
       <div className="table-responsive">
-        {showAllStocks && (
-          <button onClick={() => setShowAllStocks(false)} style={{ marginBottom: 8 }}>預設</button>
-        )}
         <table className="table table-bordered table-striped">
           <thead>
             <tr>
@@ -205,13 +202,13 @@ export default function StockTable({
             })}
           </tbody>
         </table>
-        {!showAllStocks && sortedStocks.length > 20 && (
+        {sortedStocks.length > 20 && (
           <button
             className="more-btn"
-            onClick={() => setShowAllStocks(true)}
+            onClick={() => setShowAllStocks(v => !v)}
             style={{ marginTop: 8, display: 'block', marginLeft: 'auto', marginRight: 'auto' }}
           >
-            更多+
+            {showAllStocks ? '隱藏-' : '更多+'}
           </button>
         )}
       </div>
@@ -220,9 +217,6 @@ export default function StockTable({
 
   return (
     <div className="table-responsive">
-      {showAllStocks && (
-        <button onClick={() => setShowAllStocks(false)} style={{ marginBottom: 8 }}>預設</button>
-      )}
       <table className="table table-bordered table-striped" style={{ minWidth: 1380 }}>
         <thead>
           <tr>
@@ -332,13 +326,13 @@ export default function StockTable({
           ))}
         </tbody>
       </table>
-      {!showAllStocks && sortedStocks.length > 20 && (
+      {sortedStocks.length > 20 && (
         <button
           className="more-btn"
-          onClick={() => setShowAllStocks(true)}
+          onClick={() => setShowAllStocks(v => !v)}
           style={{ marginTop: 8, display: 'block', marginLeft: 'auto', marginRight: 'auto' }}
         >
-          更多+
+          {showAllStocks ? '隱藏-' : '更多+'}
         </button>
       )}
     </div>
