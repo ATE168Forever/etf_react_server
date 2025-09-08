@@ -99,9 +99,9 @@ td {
 }
 
 .current-month {
-  background: rgba(255, 224, 102, 0.4);
+  background-color: rgba(255, 224, 102, 0.4) !important;
   font-weight: bold;
-  color: #d62828;
+  color: #d62828 !important;
 }
 
 .crown-icon {
