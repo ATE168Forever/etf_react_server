@@ -43,7 +43,10 @@ export default function HomeTab() {
           ))}
         </ul>
       </section>
-      <section className="mt-4" style={{ background: '#f5f5f5', padding: 16, borderRadius: 4 }}>
+      <section
+        className="mt-4"
+        style={{ background: 'var(--color-row-even)', padding: 16, borderRadius: 4 }}
+      >
         <h2>ETF 小知識</h2>
         <p style={{ margin: 0 }}>{stats.tip}</p>
       </section>
