@@ -37,6 +37,15 @@ export default function StockDetail({ stockId }) {
     staleTime: 2 * 60 * 60 * 1000,
   });
 
+  const { data: returns = {}, isLoading: returnsLoading } = useQuery({
+    queryKey: ['returns', stockId],
+    queryFn: async () => {
+      const res = await fetch(`${API_HOST}/get_returns?stock_id=${stockId}`);
+      return await res.json();
+    },
+    staleTime: 2 * 60 * 60 * 1000,
+  });
+
   const stock = useMemo(() => {
     return stockList.find(item => item.stock_id === stockId) || {};
   }, [stockList, stockId]);
@@ -47,7 +56,7 @@ export default function StockDetail({ stockId }) {
     return arr;
   }, [dividendList, stockId]);
 
-  if (stockLoading || dividendLoading) {
+  if (stockLoading || dividendLoading || returnsLoading) {
     return <div>載入中...</div>;
   }
 
@@ -79,6 +88,36 @@ export default function StockDetail({ stockId }) {
         )}
       </p>
       <p>開始配息日期: {startDate || '-'}</p>
+      {returns.stock_id && (
+        <div className="table-responsive">
+          <table className="dividend-record">
+            <thead>
+              <tr>
+                <th></th>
+                <th>價格報酬</th>
+                <th>總報酬</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>近1月</td>
+                <td>{returns.price_return_1m}%</td>
+                <td>{returns.total_return_1m}%</td>
+              </tr>
+              <tr>
+                <td>近3月</td>
+                <td>{returns.price_return_3m}%</td>
+                <td>{returns.total_return_3m}%</td>
+              </tr>
+              <tr>
+                <td>近1年</td>
+                <td>{returns.price_return_1y}%</td>
+                <td>{returns.total_return_1y}%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
       <ul className="link-list">
         <li>資料來源：<a href={`https://www.cmoney.tw/etf/tw/${stockId}/intro`} target="_blank" rel="noreferrer">CMoney ETF介紹</a>（外部網站）</li>
         <li>資料來源：<a href={`https://www.moneydj.com/etf/x/basic/basic0003.xdjhtm?etfid=${stockId}.tw`} target="_blank" rel="noreferrer">MoneyDJ 基本資料</a>（外部網站）</li>
