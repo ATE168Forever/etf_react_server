@@ -3,7 +3,7 @@ import React from 'react';
 export default function DisclaimerTab() {
   return (
     <div className="container" style={{ maxWidth: 800 }}>
-      <h1 className="mt-4">免責聲明（完整版）</h1>
+      <h1 className="mt-4">免責聲明</h1>
 
       <h2>資訊性質</h2>
       <p>

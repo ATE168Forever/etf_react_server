@@ -1,44 +1,36 @@
+# .github/workflows/ci.yml
 name: CI
+
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: etf_react_server
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      # 1. Checkout source
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      # 2. Install Node and set up pnpm cache
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: etf_react_server/pnpm-lock.yaml
 
-      - name: Enable Corepack (use pnpm version from package.json)
-        run: corepack enable
-
-      - name: Setup pnpm (no explicit version here)
-        uses: pnpm/action-setup@v4
+      # 3. Enable pnpm via Corepack (ensures pnpm is on PATH)
+      - uses: pnpm/action-setup@v4
         with:
-          run_install: false
+          version: 9
+          run_install: true
 
-      - name: Install deps (lockfile-aware)
-        run: |
-          if [ -f pnpm-lock.yaml ]; then
-            pnpm install --frozen-lockfile
-          else
-            pnpm install --no-frozen-lockfile
-          fi
+      # 4. Install dependencies
+      - run: pnpm install
 
-      - name: Build
-        run: pnpm build
+      # 5. (Optional) Build your project
+      - run: pnpm run build
 
-      - name: Test (optional)
-        run: pnpm test --if-present
+      # 6. Run tests or other steps
+      - run: pnpm test

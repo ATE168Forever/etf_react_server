@@ -28,14 +28,6 @@ export default function FaqTab() {
           '@type': 'Answer',
           text: '我們依過去紀錄大致分成月配、季配、半年配和年配；若發行商突然調整，分類可能會暫時跟不上。'
         }
-      },
-      {
-        '@type': 'Question',
-        name: '為什麼我的實際入帳與網站計算不同？',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: '稅費、匯率、零股或持有數量變動、券商入帳時間等因素都會影響，請以券商對帳單為準。'
-        }
       }
     ]
   };
@@ -68,11 +60,6 @@ export default function FaqTab() {
           <strong>配息頻率如何定義？</strong>
           <br />
           我們依過去紀錄大致分成月配、季配、半年配和年配；如果發行商突然調整，分類可能會暫時跟不上。
-        </li>
-        <li>
-          <strong>為什麼我的實際入帳與網站計算不同？</strong>
-          <br />
-          稅費、匯率、零股或持有數量變動、券商入帳時間…這些都會影響，請以券商對帳單為準。
         </li>
         <li>
           <strong>槓桿／反向 ETF 有收錄嗎？</strong>

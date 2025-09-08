@@ -12,7 +12,7 @@ export default function GuideTab() {
         <li>
           <strong>搜尋與篩選</strong>
           <br />
-          在首頁或清單頁輸入代號／名稱，搭配篩選器（市場、配息頻率、殖利率區間、規模、主題等）就能迅速縮小範圍。
+          在首頁或清單頁輸入代號／名稱，搭配篩選器（市場、配息頻率、殖利率區間、規模等）就能迅速縮小範圍。
         </li>
         <li>
           <strong>ETF 詳細頁</strong>
