@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import InventoryTab from './InventoryTab';
 import UserDividendsTab from './UserDividendsTab';
 import AboutTab from './AboutTab';
+import HomeTab from './HomeTab';
 import ActionDropdown from './components/ActionDropdown';
 import DisplayDropdown from './components/DisplayDropdown';
 import DividendCalendar from './components/DividendCalendar';
@@ -44,7 +45,7 @@ function getIncomeGoalInfo(dividend, price, goal, freq = 12) {
 
 function App() {
   // Tab state
-  const [tab, setTab] = useState('mydividend');
+  const [tab, setTab] = useState('home');
 
   // All your existing states for dividend page...
   const [data, setData] = useState([]);
@@ -516,6 +517,14 @@ function App() {
       <ul className="nav nav-tabs mb-1 justify-content-center">
         <li className="nav-item">
           <button
+            className={`nav-link${tab === 'home' ? ' active' : ''}`}
+            onClick={() => setTab('home')}
+          >
+            首頁
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
             className={`nav-link${tab === 'mydividend' ? ' active' : ''}`}
             onClick={() => setTab('mydividend')}
           >
@@ -547,6 +556,7 @@ function App() {
           </button>
         </li>
       </ul>
+      {tab === 'home' && <HomeTab />}
       {tab === 'dividend' && (
         <div className="App">
           <h3>ETF 每月配息總表</h3>
