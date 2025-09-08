@@ -99,7 +99,8 @@ td {
 }
 
 .current-month {
-  background: var(--color-hover);
+  background: rgba(255, 224, 102, 0.4);
+  font-weight: bold;
 }
 
 .crown-icon {
