@@ -19,7 +19,8 @@ function getTransactionHistory() {
 export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const [history, setHistory] = useState([]);
     const [showCalendar, setShowCalendar] = useState(false);
-    const currentMonth = new Date().getMonth();
+    const timeZone = 'Asia/Taipei';
+    const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
     const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
     useEffect(() => {
         setHistory(getTransactionHistory());
