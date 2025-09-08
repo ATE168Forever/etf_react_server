@@ -101,6 +101,7 @@ td {
 .current-month {
   background: rgba(255, 224, 102, 0.4);
   font-weight: bold;
+  color: #d62828;
 }
 
 .crown-icon {
