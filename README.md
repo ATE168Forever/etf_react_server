@@ -30,11 +30,6 @@ Currently, two official plugins are available:
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
 
-## Data Export
-
-### Google Drive backup
-The About tab offers a one-click backup that saves encrypted app data to the user's Google Drive `appDataFolder`. This feature uses OAuth and does **not** require any URL configuration.
-
 ## Copyright
 
 © 2025 GiantBean. All rights reserved.

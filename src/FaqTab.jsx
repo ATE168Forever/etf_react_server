@@ -15,10 +15,10 @@ export default function FaqTab() {
       },
       {
         '@type': 'Question',
-        name: '公告日、除息日、發放日差在哪？',
+        name: '除息日和發放日差在哪？',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: '公告日為公開配息資訊的日期；除息日起買進者不享有本次配息；發放日為實際匯入或入帳時間，不同市場規則可能不同。'
+          text: '除息日起買進者不享有本次配息；發放日為實際匯入或入帳時間，不同市場規則可能不同。'
         }
       },
       {
@@ -27,14 +27,6 @@ export default function FaqTab() {
         acceptedAnswer: {
           '@type': 'Answer',
           text: '我們依過去紀錄大致分成月配、季配、半年配和年配；若發行商突然調整，分類可能會暫時跟不上。'
-        }
-      },
-      {
-        '@type': 'Question',
-        name: '資料多久更新一次？是否有延遲？',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: '更新頻率取決於資料來源，部分數值可能延遲 15 分鐘或更久，若有重大更正將儘快同步。'
         }
       },
       {
@@ -65,10 +57,9 @@ export default function FaqTab() {
           每個頁面都會註明採用的指標，ETF 的配息習慣可能不同，最後還是以發行商公告為準。
         </li>
         <li>
-          <strong>公告日、除息日、發放日差在哪？</strong>
+          <strong>除息日和發放日差在哪？</strong>
           <br />
           <ul>
-            <li>公告日：發行機構公開配息資訊的那天。</li>
             <li>除息日：從這天（含）買進就不享有這次配息啦。</li>
             <li>發放日：實際匯到你帳上的時間，不同市場可能有 T+N 差異。</li>
           </ul>
@@ -77,11 +68,6 @@ export default function FaqTab() {
           <strong>配息頻率如何定義？</strong>
           <br />
           我們依過去紀錄大致分成月配、季配、半年配和年配；如果發行商突然調整，分類可能會暫時跟不上。
-        </li>
-        <li>
-          <strong>資料多久更新一次？是否有延遲？</strong>
-          <br />
-          會盡量即時同步，但還是取決於資料來源；部分數值可能延遲 15 分鐘或更久，若有重大更正會儘快更新。
         </li>
         <li>
           <strong>為什麼我的實際入帳與網站計算不同？</strong>
@@ -100,55 +86,12 @@ export default function FaqTab() {
         </li>
       </ol>
 
-      <h2>帳號、隱私與安全</h2>
-      <ol start={8}>
-        <li>
-          <strong>我的個人股息資料如何保存？</strong>
-          <br />
-          只用來生成你專屬的報表與統計，詳情見《隱私權政策》。你也能隨時匯出或刪除。
-        </li>
-        <li>
-          <strong>如何刪除帳號或請求資料刪除？</strong>
-          <br />
-          在「設定 → 帳號」操作，或寄信到 <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a> 告訴我們。
-        </li>
-        <li>
-          <strong>是否提供雙重驗證（2FA）？</strong>
-          <br />
-          若已提供，可在「設定 → 安全性」開啟；還沒有的話，未來版本也會補上。
-        </li>
-      </ol>
-
-      <h2>功能使用</h2>
-      <ol start={11}>
-        <li>
-          <strong>如何快速導入歷史紀錄？</strong>
-          <br />
-          下載 CSV 範本照欄位填寫，再到「投資組合 → 匯入」上傳，三步驟搞定。
-        </li>
-        <li>
-          <strong>可以設定除息／發放提醒嗎？</strong>
-          <br />
-          若有開放通知功能，請在「設定 → 通知」開啟 Email 或推播提醒。
-        </li>
+      <h2>聯絡我們</h2>
+      <ol start={7}>
         <li>
           <strong>如何報告錯誤或建議新功能？</strong>
           <br />
-          右下角「意見反饋」歡迎點下去，也可寄信到 <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a>；若是資料更正，記得附上連結或佐證。
-        </li>
-      </ol>
-
-      <h2>收費與合作（如有）</h2>
-      <ol start={14}>
-        <li>
-          <strong>是否有付費方案或贊助？</strong>
-          <br />
-          如果有 Premium 或贊助方案，會在《方案與價格》頁清楚說明功能差異與取消方式。
-        </li>
-        <li>
-          <strong>是否提供 API？</strong>
-          <br />
-          若有開放 API，會提供文件與金鑰申請流程；商務合作歡迎寄信到 <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a>。
+          歡迎寄信到 <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a>；若是資料更正，記得附上連結或佐證。
         </li>
       </ol>
       <script
