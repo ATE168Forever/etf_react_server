@@ -8,10 +8,6 @@ jest.mock('./api');
 jest.mock('./config', () => ({
   API_HOST: 'http://localhost'
 }));
-jest.mock('./driveSync', () => ({
-  exportToDrive: jest.fn(),
-  importFromDrive: jest.fn()
-}));
 
 describe('InventoryTab interactions', () => {
   beforeEach(() => {

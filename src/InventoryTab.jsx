@@ -7,7 +7,6 @@ import AddTransactionModal from './components/AddTransactionModal';
 import SellModal from './components/SellModal';
 import TransactionHistoryTable from './components/TransactionHistoryTable';
 import styles from './InventoryTab.module.css';
-import { exportToDrive, importFromDrive } from './driveSync';
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
 
@@ -96,17 +95,6 @@ export default function InventoryTab() {
     }
   };
 
-  const handleDriveExportClick = () => {
-    if (window.confirm('確定要一鍵匯出？')) {
-      exportToDrive();
-    }
-  };
-
-  const handleDriveImportClick = () => {
-    if (window.confirm('匯入後將覆蓋現有紀錄，是否一鍵匯入？')) {
-      importFromDrive();
-    }
-  };
 
 
   useEffect(() => {
@@ -291,14 +279,8 @@ export default function InventoryTab() {
             <button className={styles.button} onClick={handleExportClick}>
               匯出 CSV
             </button>
-            <button className={styles.button} onClick={handleDriveExportClick}>
-              一鍵匯出
-            </button>
             <button className={styles.button} onClick={handleImportClick}>
               匯入 CSV
-            </button>
-            <button className={styles.button} onClick={handleDriveImportClick}>
-              一鍵匯入
             </button>
           </div>
         )}

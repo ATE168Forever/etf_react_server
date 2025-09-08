@@ -89,7 +89,7 @@ export default function StockDetail({ stockId }) {
         <li>資料來源：<a href={`https://www.stockq.org/etf/${stockId}.php`} target="_blank" rel="noreferrer">StockQ ETF資料</a>（外部網站）</li>
       </ul>
       <p className="disclaimer">
-        以上連結皆為第三方外部網站，資料內容由各網站提供，本網站不對其內容的正確性與即時性負責。
+        以上連結皆為第三方外部網站，資料內容由各網站提供，本網站不對其正確性負責。
       </p>
       {dividends.length > 0 && (
         <div className="table-responsive">
