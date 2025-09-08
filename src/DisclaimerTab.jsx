@@ -69,7 +69,6 @@ export default function DisclaimerTab() {
         我們可能隨時更新這份免責聲明與相關政策，更新後會在頁面公告或透過系統訊息通知。
       </p>
 
-      <h2>聯絡方式</h2>
       <p>
         如果你對資料正確性或權利有疑問，歡迎寫信到
         <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a>

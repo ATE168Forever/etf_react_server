@@ -18,14 +18,13 @@ export default function Footer({ theme, toggleTheme }) {
           </a>
         </div>
         <div className="contact-section">
-          <h3>聯絡方式</h3>
           <p>
             電子信箱：
             <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a>
           </p>
         </div>
         <div className="donation-section">
-          <p>喜歡這個專案嗎？請作者喝杯咖啡 ☕</p>
+          喜歡這個專案嗎？請作者喝杯咖啡 ☕ 
           <a
             href="https://www.buymeacoffee.com/ginatbean"
             target="_blank"

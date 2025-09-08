@@ -13,7 +13,7 @@
 }
 
 .theme-toggle {
-  margin-bottom: 1rem;
+  margin-bottom: 5px;
 }
 
 .theme-toggle-link {
@@ -26,7 +26,7 @@
 
 .donate-link {
   display: inline-block;
-  margin-top: 0.5rem;
+  margin-left: 3px;
 }
 
 .copyright {
