@@ -98,7 +98,8 @@ function App() {
   // Month value existence filters
   const [monthHasValue, setMonthHasValue] = useState(Array(12).fill(false));
   const [freqMap, setFreqMap] = useState({});
-  const currentMonth = new Date().getMonth();
+  const timeZone = 'Asia/Taipei';
+  const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
   const handleResetFilters = (keepIds = false) => {
       if (!keepIds) setSelectedStockIds([]);
       setMonthHasValue(Array(12).fill(false));
