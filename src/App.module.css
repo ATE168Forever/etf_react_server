@@ -3,6 +3,7 @@
     align-items: center;
     margin: 10px 0 0 0;
     /* gap: 12px; */
+    flex-wrap: wrap;
 }
 
 .cacheInfo {
