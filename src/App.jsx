@@ -99,8 +99,8 @@ function App() {
   const [monthHasValue, setMonthHasValue] = useState(Array(12).fill(false));
   const [freqMap, setFreqMap] = useState({});
   const currentMonth = new Date().getMonth();
-  const handleResetFilters = () => {
-      setSelectedStockIds([]);
+  const handleResetFilters = (keepIds = false) => {
+      if (!keepIds) setSelectedStockIds([]);
       setMonthHasValue(Array(12).fill(false));
       setShowDiamondOnly(false);
       setShowAllStocks(false);
@@ -218,7 +218,7 @@ function App() {
 
   const handleGroupChange = (e) => {
     const name = e.target.value;
-    handleResetFilters();
+    handleResetFilters(true);
     setSelectedGroup(name);
     const group = watchGroups.find(g => g.name === name);
     if (group) {
