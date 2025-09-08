@@ -209,6 +209,14 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                 )}
                             </span>
                         </th>
+                        <th>
+                            <span className="sortable" onClick={() => handleSort('total')}>
+                                總計
+                                {sortConfig.column === 'total' && (
+                                    <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
+                                )}
+                            </span>
+                        </th>
                         {MONTHS.map((m, idx) => (
                             <th key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
                                 <span className="sortable" onClick={() => handleSort(`month${idx}`)}>
@@ -219,14 +227,6 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                 </span>
                             </th>
                         ))}
-                        <th>
-                            <span className="sortable" onClick={() => handleSort('total')}>
-                                總計
-                                {sortConfig.column === 'total' && (
-                                    <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
-                                )}
-                            </span>
-                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -242,6 +242,18 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                         {stock.stock_id} {stock.stock_name}
                                     </a>
                                 </td>
+                                <td>{totalPerStock[stock.stock_id] > 0 ? (() => {
+                                    const avgYield = monthsCount[stock.stock_id] > 0 ? totalYield[stock.stock_id] / monthsCount[stock.stock_id] : 0;
+                                    const estAnnual = avgYield * 12;
+                                    return (
+                                        <span
+                                            title={`最新收盤價: ${latestClosePrice[stock.stock_id]?.price || '-'}\n加總殖利率: ${totalYield[stock.stock_id].toFixed(1)}%\n預估年化殖利率: ${estAnnual.toFixed(1)}%`}
+                                            style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
+                                        >
+                                            {Math.round(totalPerStock[stock.stock_id]).toLocaleString()}
+                                        </span>
+                                    );
+                                })() : ''}</td>
                                 {MONTHS.map((m, idx) => {
                                     const cell = dividendTable[stock.stock_id][idx];
                                     if (!cell || !cell.dividend || !cell.quantity) return <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}></td>;
@@ -257,26 +269,11 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                         </td>
                                     );
                                 })}
-                                <td>{totalPerStock[stock.stock_id] > 0 ? (() => {
-                                    const avgYield = monthsCount[stock.stock_id] > 0 ? totalYield[stock.stock_id] / monthsCount[stock.stock_id] : 0;
-                                    const estAnnual = avgYield * 12;
-                                    return (
-                                        <span
-                                            title={`最新收盤價: ${latestClosePrice[stock.stock_id]?.price || '-'}\n加總殖利率: ${totalYield[stock.stock_id].toFixed(1)}%\n預估年化殖利率: ${estAnnual.toFixed(1)}%`}
-                                            style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
-                                        >
-                                            {Math.round(totalPerStock[stock.stock_id]).toLocaleString()}
-                                        </span>
-                                    );
-                                })() : ''}</td>
                             </tr>
                         ))
                     )}
                     <tr style={{ background: '#ffe066', fontWeight: 'bold' }}>
                         <td>月合計</td>
-                        {totalPerMonth.map((total, idx) => (
-                            <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>{total > 0 ? Math.round(total).toLocaleString() : ''}</td>
-                        ))}
                         <td>
                             {grandTotal > 0 ? (
                                 <span
@@ -287,6 +284,9 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                 </span>
                             ) : ''}
                         </td>
+                        {totalPerMonth.map((total, idx) => (
+                            <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>{total > 0 ? Math.round(total).toLocaleString() : ''}</td>
+                        ))}
                     </tr>
                 </tbody>
             </table>
