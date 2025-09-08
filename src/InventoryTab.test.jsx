@@ -14,10 +14,13 @@ describe('InventoryTab interactions', () => {
     localStorage.clear();
     Cookies.remove('my_transaction_history');
     fetchWithCache.mockImplementation((url) => {
-      if (url.endsWith('/get_stock_list')) {
-        return Promise.resolve({ data: [{ stock_id: '0050', stock_name: 'Test ETF', dividend_frequency: 1 }] });
+      if (url.includes('/get_stock_list')) {
+        if (url.includes('page=1')) {
+          return Promise.resolve({ data: [{ stock_id: '0050', stock_name: 'Test ETF', dividend_frequency: 1 }] });
+        }
+        return Promise.resolve({ data: [] });
       }
-      if (url.endsWith('/get_dividend')) {
+      if (url.includes('/get_dividend')) {
         return Promise.resolve({ data: [{ stock_id: '0050', dividend_date: '2024-01-02', last_close_price: 20 }] });
       }
       return Promise.resolve({ data: [] });
