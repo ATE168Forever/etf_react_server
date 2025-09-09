@@ -204,6 +204,7 @@ export default function InventoryTab() {
         if (JSON.stringify(list) !== JSON.stringify(transactionHistory)) {
           setTransactionHistory(list);
           saveTransactionHistory(list);
+          alert('已自動從 Google Drive 匯入資料');
         }
       } catch (err) {
         console.error('Drive auto import failed', err);
@@ -224,6 +225,7 @@ export default function InventoryTab() {
       try {
         await exportTransactionsToDrive(transactionHistory);
         Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
+        alert('已自動匯出到 Google Drive');
       } catch (err) {
         console.error('Drive auto export failed', err);
       }
@@ -403,16 +405,21 @@ export default function InventoryTab() {
             )}
 
             <div className={styles.totalInvestment}>
-              總投資金額：
-              {totalInvestment.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              })} / 
-              目前總價值：
-              {totalValue.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              })}
+              <span>
+                總投資金額：
+                {totalInvestment.toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </span>
+              {' / '}
+              <span>
+                目前總價值：
+                {totalValue.toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </span>
             </div>
 
             <div className="table-responsive">
