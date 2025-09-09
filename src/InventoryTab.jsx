@@ -3,6 +3,7 @@ import Cookies from 'js-cookie';
 import { API_HOST } from './config';
 import { fetchWithCache } from './api';
 import { migrateTransactionHistory, saveTransactionHistory } from './transactionStorage';
+import { exportTransactionsToDrive, importTransactionsFromDrive } from './googleDrive';
 import AddTransactionModal from './components/AddTransactionModal';
 import SellModal from './components/SellModal';
 import TransactionHistoryTable from './components/TransactionHistoryTable';
@@ -27,6 +28,7 @@ export default function InventoryTab() {
   const [cacheInfo, setCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [latestPrices, setLatestPrices] = useState({});
+  const isFirstRender = useRef(true);
 
   const handleExport = useCallback(() => {
     const header = ['stock_id', 'date', 'quantity', 'type', 'price'];
@@ -94,8 +96,6 @@ export default function InventoryTab() {
       handleExport();
     }
   };
-
-
 
   useEffect(() => {
     if (transactionHistory.length === 0) return;
@@ -181,7 +181,53 @@ export default function InventoryTab() {
   }, []);
 
   useEffect(() => {
+    if (process.env.NODE_ENV === 'test') return;
+    const syncFromDrive = async () => {
+      try {
+        const text = await importTransactionsFromDrive();
+        if (!text) return;
+        const lines = text.trim().split(/\r?\n/);
+        if (lines.length <= 1) return;
+        const [header, ...rows] = lines;
+        const fields = header.split(',');
+        const list = rows.map(line => {
+          const cols = line.split(',');
+          const obj = {};
+          fields.forEach((f, idx) => {
+            obj[f] = cols[idx];
+          });
+          obj.quantity = Number(obj.quantity);
+          if (obj.price) obj.price = Number(obj.price);
+          return obj;
+        });
+        if (JSON.stringify(list) !== JSON.stringify(transactionHistory)) {
+          setTransactionHistory(list);
+          saveTransactionHistory(list);
+        }
+      } catch (err) {
+        console.error('Drive auto import failed', err);
+      }
+    };
+    syncFromDrive();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     saveTransactionHistory(transactionHistory);
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (process.env.NODE_ENV === 'test') return;
+    const syncDrive = async () => {
+      try {
+        await exportTransactionsToDrive(transactionHistory);
+        Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
+      } catch (err) {
+        console.error('Drive auto export failed', err);
+      }
+    };
+    syncDrive();
   }, [transactionHistory]);
 
   const inventoryMap = {};
