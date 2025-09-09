@@ -55,8 +55,8 @@ function App() {
   const [error, setError] = useState(null);
   const [upcomingAlerts, setUpcomingAlerts] = useState([]);
 
-  // Toggle table/calendar view
-  const [showCalendar, setShowCalendar] = useState(false);
+  // Toggle calendar visibility
+  const [showCalendar, setShowCalendar] = useState(true);
 
   // Filter which event types to show on calendar
   const [calendarFilter, setCalendarFilter] = useState('ex');
@@ -583,25 +583,58 @@ function App() {
             </div>
             <div className="more-group">
               <div className="more-item">
-                {!showCalendar &&
-                  <button onClick={() => setShowActions(v => !v)}>更多功能</button>
-                }
+                <button onClick={() => setShowActions(v => !v)}>更多功能</button>
                 {showActions && (
                   <ActionDropdown
                     openGroupModal={() => setShowGroupModal(true)}
                     monthlyIncomeGoal={monthlyIncomeGoal}
                     setMonthlyIncomeGoal={val => setMonthlyIncomeGoal(val)}
-                    showCalendar={showCalendar}
                     onClose={() => setShowActions(false)}
                   />
                 )}
               </div>
-              <div className="more-item">
+            </div>
+          </div>
+          <button onClick={() => setShowCalendar(v => !v)} style={{ marginTop: 10 }}>
+            {showCalendar ? '隱藏月曆' : '顯示月曆'}
+          </button>
+
+          {loading ? (
+            <p>Loading...</p>
+          ) : error ? (
+            <p>Error: {error.message}</p>
+          ) : (
+            <>
+              {showCalendar && (
+                <>
+                  <div style={{ margin: '10px 0' }}>
+                    <button
+                      onClick={() => setCalendarFilter('ex')}
+                      style={{ fontWeight: calendarFilter === 'ex' ? 'bold' : 'normal' }}
+                    >
+                      除息日
+                    </button>
+                    <button
+                      onClick={() => setCalendarFilter('pay')}
+                      style={{ fontWeight: calendarFilter === 'pay' ? 'bold' : 'normal', marginLeft: 6 }}
+                    >
+                      發放日
+                    </button>
+                    <button
+                      onClick={() => setCalendarFilter('both')}
+                      style={{ fontWeight: calendarFilter === 'both' ? 'bold' : 'normal', marginLeft: 6 }}
+                    >
+                      除息/發放日
+                    </button>
+                  </div>
+                  <DividendCalendar year={selectedYear} events={filteredCalendarEvents} />
+                </>
+              )}
+
+              <div className="more-item" style={{ marginTop: 10 }}>
                 <button onClick={() => setShowDisplays(v => !v)}>更多顯示</button>
                 {showDisplays && (
                   <DisplayDropdown
-                    toggleCalendar={() => setShowCalendar(v => !v)}
-                    showCalendar={showCalendar}
                     toggleDiamond={() => setShowDiamondOnly(v => !v)}
                     showDiamondOnly={showDiamondOnly}
                     toggleDividendYield={() => setShowDividendYield(v => !v)}
@@ -612,79 +645,47 @@ function App() {
                   />
                 )}
               </div>
-            </div>
-          </div>
-          <div className={styles.tableHeader}>
-            {!showCalendar && (
-              <>
+
+              <div className={styles.tableHeader}>
                 <button onClick={handleResetFilters} style={{ marginRight: 10 }}>重置所有篩選</button>
                 <span>提示：點下篩選鈕開啟篩選視窗。</span>
-              </>
-            )}
-          </div>
-          {dividendCacheInfo && (
-            <div className={styles.cacheInfo}>
-              快取: {dividendCacheInfo.cacheStatus}
-              {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
-            </div>
-          )}
-
-          {loading ? (
-            <p>Loading...</p>
-          ) : error ? (
-            <p>Error: {error.message}</p>
-          ) : showCalendar ? (
-            <>
-              <div style={{ marginBottom: 5 }}>
-                <button
-                  onClick={() => setCalendarFilter('ex')}
-                  style={{ fontWeight: calendarFilter === 'ex' ? 'bold' : 'normal' }}
-                >
-                  除息日
-                </button>
-                <button
-                  onClick={() => setCalendarFilter('pay')}
-                  style={{ fontWeight: calendarFilter === 'pay' ? 'bold' : 'normal', marginLeft: 6 }}
-                >
-                  發放日
-                </button>
-                <button
-                  onClick={() => setCalendarFilter('both')}
-                  style={{ fontWeight: calendarFilter === 'both' ? 'bold' : 'normal', marginLeft: 6 }}
-                >
-                  除息/發放日
-                </button>
               </div>
-              <DividendCalendar year={selectedYear} events={filteredCalendarEvents} />
+
+              {dividendCacheInfo && (
+                <div className={styles.cacheInfo}>
+                  快取: {dividendCacheInfo.cacheStatus}
+                  {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
+                </div>
+              )}
+
+              <StockTable
+                stocks={displayStocks}
+                dividendTable={dividendTable}
+                totalPerStock={totalPerStock}
+                yieldSum={yieldSum}
+                yieldCount={yieldCount}
+                latestPrice={latestPrice}
+                latestYield={latestYield}
+                estAnnualYield={estAnnualYield}
+                maxAnnualYield={maxAnnualYield}
+                maxYieldPerMonth={maxYieldPerMonth}
+                stockOptions={stockOptions}
+                selectedStockIds={selectedStockIds}
+                setSelectedStockIds={setSelectedStockIds}
+                monthHasValue={monthHasValue}
+                setMonthHasValue={setMonthHasValue}
+                showDividendYield={showDividendYield}
+                currentMonth={currentMonth}
+                monthlyIncomeGoal={monthlyIncomeGoal}
+                showAllStocks={showAllStocks}
+                setShowAllStocks={setShowAllStocks}
+                showInfoAxis={showInfoAxis}
+                getIncomeGoalInfo={getIncomeGoalInfo}
+                freqMap={freqMap}
+                extraFilters={extraFilters}
+                setExtraFilters={setExtraFilters}
+              />
             </>
-          ) : (
-            <StockTable
-              stocks={displayStocks}
-              dividendTable={dividendTable}
-              totalPerStock={totalPerStock}
-              yieldSum={yieldSum}
-              yieldCount={yieldCount}
-              latestPrice={latestPrice}
-              latestYield={latestYield}
-              estAnnualYield={estAnnualYield}
-              maxAnnualYield={maxAnnualYield}
-              maxYieldPerMonth={maxYieldPerMonth}
-              stockOptions={stockOptions}
-              selectedStockIds={selectedStockIds}
-              setSelectedStockIds={setSelectedStockIds}
-              monthHasValue={monthHasValue}
-              setMonthHasValue={setMonthHasValue}
-              showDividendYield={showDividendYield}
-              currentMonth={currentMonth}
-              monthlyIncomeGoal={monthlyIncomeGoal}
-              showAllStocks={showAllStocks}
-              setShowAllStocks={setShowAllStocks}
-              showInfoAxis={showInfoAxis}
-              getIncomeGoalInfo={getIncomeGoalInfo}
-              freqMap={freqMap}
-              extraFilters={extraFilters}
-              setExtraFilters={setExtraFilters}
-            />
           )}
         </div>
       )}

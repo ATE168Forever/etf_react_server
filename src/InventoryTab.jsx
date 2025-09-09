@@ -1,3 +1,4 @@
+/* global process */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Cookies from 'js-cookie';
 import { API_HOST } from './config';
