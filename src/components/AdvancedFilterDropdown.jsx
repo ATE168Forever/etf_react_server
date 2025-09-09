@@ -15,7 +15,7 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose })
   };
 
   const handleClear = () => {
-    setTemp({ minYield: '', freq: [], upcomingWithin: '' });
+    setTemp({ minYield: '', freq: [], upcomingWithin: '', diamond: false });
   };
 
   const handleApply = () => {
@@ -47,6 +47,16 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose })
             /> {opt.l}
           </label>
         ))}
+      </div>
+      <hr />
+      <div className="dropdown-section">
+        <label className="dropdown-item">
+          <input
+            type="checkbox"
+            checked={temp.diamond}
+            onChange={e => setTemp({ ...temp, diamond: e.target.checked })}
+          /> 只顯示鑽石
+        </label>
       </div>
       <hr />
       <div className="dropdown-section">

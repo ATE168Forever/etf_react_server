@@ -60,8 +60,6 @@ function App() {
   // Filter which event types to show on calendar
   const [calendarFilter, setCalendarFilter] = useState('ex');
 
-  // Filter to show only rows with diamond
-  const [showDiamondOnly, setShowDiamondOnly] = useState(false);
   // Toggle between showing dividend or dividend yield
   const [showDividendYield, setShowDividendYield] = useState(false);
   // Toggle axis between months and info categories
@@ -71,7 +69,7 @@ function App() {
 
     // Multi-select filters
     const [selectedStockIds, setSelectedStockIds] = useState([]);
-    const [extraFilters, setExtraFilters] = useState({ minYield: '', freq: [], upcomingWithin: '' });
+    const [extraFilters, setExtraFilters] = useState({ minYield: '', freq: [], upcomingWithin: '', diamond: false });
 
   // Watch groups
   const [watchGroups, setWatchGroups] = useState([]);
@@ -102,9 +100,8 @@ function App() {
   const handleResetFilters = (keepIds = false) => {
       if (!keepIds) setSelectedStockIds([]);
       setMonthHasValue(Array(12).fill(false));
-      setShowDiamondOnly(false);
       setShowAllStocks(false);
-      setExtraFilters({ minYield: '', freq: [], upcomingWithin: '' });
+      setExtraFilters({ minYield: '', freq: [], upcomingWithin: '', diamond: false });
   };
 
   useEffect(() => {
@@ -399,7 +396,7 @@ function App() {
     });
   };
 
-  const displayStocks = showDiamondOnly
+  const displayStocks = extraFilters.diamond
     ? filteredStocks.filter(stock => {
         for (let m = 0; m < 12; m++) {
           const cell = dividendTable[stock.stock_id]?.[m];
@@ -621,11 +618,9 @@ function App() {
               )}
 
               <div className="more-item" style={{ marginTop: 10 }}>
-                <button onClick={() => setShowDisplays(v => !v)}>更多顯示</button>
+                <button onClick={() => setShowDisplays(v => !v)}>其他顯示</button>
                 {showDisplays && (
                   <DisplayDropdown
-                    toggleDiamond={() => setShowDiamondOnly(v => !v)}
-                    showDiamondOnly={showDiamondOnly}
                     toggleDividendYield={() => setShowDividendYield(v => !v)}
                     showDividendYield={showDividendYield}
                     toggleAxis={() => setShowInfoAxis(v => !v)}
