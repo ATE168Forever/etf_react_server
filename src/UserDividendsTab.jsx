@@ -19,6 +19,7 @@ function getTransactionHistory() {
 export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const [history, setHistory] = useState([]);
     const [showTable, setShowTable] = useState(true);
+    const [showCalendar, setShowCalendar] = useState(true);
     const timeZone = 'Asia/Taipei';
     const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
     const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
@@ -195,9 +196,12 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 <button onClick={() => setShowTable(v => !v)}>
                     {showTable ? '隱藏表格' : '顯示表格'}
                 </button>
+                <button style={{ marginLeft: '8px' }} onClick={() => setShowCalendar(v => !v)}>
+                    {showCalendar ? '隱藏月曆' : '顯示月曆'}
+                </button>
             </div>
 
-            <DividendCalendar year={selectedYear} events={calendarEvents} />
+            {showCalendar && <DividendCalendar year={selectedYear} events={calendarEvents} />}
 
             {showTable && (
             <div className="table-responsive">
