@@ -3,7 +3,6 @@ import InventoryTab from './InventoryTab';
 import UserDividendsTab from './UserDividendsTab';
 import AboutTab from './AboutTab';
 import HomeTab from './HomeTab';
-import ActionDropdown from './components/ActionDropdown';
 import DisplayDropdown from './components/DisplayDropdown';
 import DividendCalendar from './components/DividendCalendar';
 import StockTable from './components/StockTable';
@@ -78,7 +77,6 @@ function App() {
   const [watchGroups, setWatchGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState('');
   const [showGroupModal, setShowGroupModal] = useState(false);
-  const [showActions, setShowActions] = useState(false);
   const [showDisplays, setShowDisplays] = useState(false);
   const [showAllStocks, setShowAllStocks] = useState(false);
 
@@ -571,20 +569,10 @@ function App() {
                   <option value={year} key={year}>{year}</option>
                 ))}
               </select>
-              <div className="more-item">
-                <button onClick={() => setShowActions(v => !v)}>更多功能</button>
-                {showActions && (
-                  <ActionDropdown
-                    openGroupModal={() => setShowGroupModal(true)}
-                    monthlyIncomeGoal={monthlyIncomeGoal}
-                    setMonthlyIncomeGoal={val => setMonthlyIncomeGoal(val)}
-                    onClose={() => setShowActions(false)}
-                  />
-                )}
-              </div>
             </div>
             <div className="control-pair">
               <label>觀察組合：</label>
+              <button onClick={() => setShowGroupModal(true)} style={{ marginLeft: 4 }}>建立</button>
               <select value={selectedGroup} onChange={handleGroupChange}>
                 <option value="">自選</option>
                 {watchGroups.map(g => (
@@ -656,6 +644,20 @@ function App() {
                 <div className={styles.cacheInfo}>
                   快取: {dividendCacheInfo.cacheStatus}
                   {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
+                </div>
+              )}
+
+              {showInfoAxis && (
+                <div style={{ margin: '10px 0' }}>
+                  <label>
+                    預計月報酬：
+                    <input
+                      type="number"
+                      value={monthlyIncomeGoal}
+                      onChange={e => setMonthlyIncomeGoal(Number(e.target.value) || 0)}
+                      style={{ width: 80, marginLeft: 4 }}
+                    />
+                  </label>
                 </div>
               )}
 
