@@ -43,9 +43,9 @@ export default function DividendCalendar({ year, events }) {
   return (
     <div className="calendar">
       <div className="calendar-header">
-        <button onClick={prevMonth}>◀</button>
+        <button onClick={prevMonth} style={{ all: 'unset',  }}>◀</button>
         <span>{year} {MONTH_NAMES[month]}</span>
-        <button onClick={nextMonth}>▶</button>
+        <button onClick={nextMonth} style={{ all: 'unset',  }}>▶</button>
       </div>
       <div className="calendar-legend">
         <span><span className="legend-box legend-ex"></span>除息日</span>

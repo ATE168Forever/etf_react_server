@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { API_HOST } from './config';
 
 export default function HomeTab() {
   const [stats, setStats] = useState({ milestones: [], latest: [], tip: '' });
 
   useEffect(() => {
     let cancelled = false;
-    fetch('http://127.0.0.1:8001/site_stats')
+    fetch(`${API_HOST}/site_stats`)
       .then(res => res.json())
       .then(data => {
         if (!cancelled) {
