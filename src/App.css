@@ -323,7 +323,7 @@ button:active {
 .calendar-grid td {
   border: 1px solid var(--color-border);
   width: 14.28%;
-  height: 100px;
+  height: 80px;
   vertical-align: top;
   position: relative;
   background: var(--color-card-bg);
@@ -402,7 +402,7 @@ button:active {
 
   .calendar-grid th,
   .calendar-grid td {
-    height: 80px;
+    height: 60px;
   }
 
   .inventory-tables {
