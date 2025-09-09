@@ -18,7 +18,6 @@ function getTransactionHistory() {
 
 export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const [history, setHistory] = useState([]);
-    const [showTable, setShowTable] = useState(true);
     const [showCalendar, setShowCalendar] = useState(true);
     const timeZone = 'Asia/Taipei';
     const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
@@ -193,17 +192,13 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 <h3>{selectedYear} 配息總覽</h3>
             </div>
             <div style={{ margin: '10px 0' }}>
-                <button onClick={() => setShowTable(v => !v)}>
-                    {showTable ? '隱藏表格' : '顯示表格'}
-                </button>
-                <button style={{ marginLeft: '8px' }} onClick={() => setShowCalendar(v => !v)}>
+                <button onClick={() => setShowCalendar(v => !v)}>
                     {showCalendar ? '隱藏月曆' : '顯示月曆'}
                 </button>
             </div>
 
             {showCalendar && <DividendCalendar year={selectedYear} events={calendarEvents} />}
 
-            {showTable && (
             <div className="table-responsive">
             <table className="table table-bordered table-striped">
                 <thead>
@@ -298,12 +293,9 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 </tbody>
             </table>
             </div>
-            )}
-            {showTable && (
-                <p style={{ fontSize: 12, marginTop: 8, color: '#666' }}>
-                    提示：滑鼠移到數字可看持股、每股配息及日期、價格與殖利率細節。
-                </p>
-            )}
+            <p style={{ fontSize: 12, marginTop: 8, color: '#666' }}>
+                提示：滑鼠移到數字可看持股、每股配息及日期、價格與殖利率細節。
+            </p>
         </div>
     );
 }
