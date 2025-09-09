@@ -604,19 +604,6 @@ button:active {
   gap: 4px;
 }
 
-.more-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .more-item {
   position: relative;
-}
-
-@media (max-width: 576px) {
-  .more-group {
-    width: 100%;
-    justify-content: center;
-  }
 }
