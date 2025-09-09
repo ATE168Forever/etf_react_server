@@ -593,7 +593,11 @@ function App() {
               </select>
             </div>
           </div>
-          <button onClick={() => setShowCalendar(v => !v)} style={{ marginTop: 10 }}>
+          <button
+            className="more-btn"
+            onClick={() => setShowCalendar(v => !v)}
+            style={{ marginTop: 10 }}
+          >
             {showCalendar ? '隱藏月曆' : '顯示月曆'}
           </button>
 
