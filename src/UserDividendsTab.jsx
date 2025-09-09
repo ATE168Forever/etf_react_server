@@ -192,7 +192,10 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 <h3>{selectedYear} 配息總覽</h3>
             </div>
             <div style={{ margin: '10px 0' }}>
-                <button onClick={() => setShowCalendar(v => !v)}>
+                <button
+                    className="more-btn"
+                    onClick={() => setShowCalendar(v => !v)}
+                >
                     {showCalendar ? '隱藏月曆' : '顯示月曆'}
                 </button>
             </div>
