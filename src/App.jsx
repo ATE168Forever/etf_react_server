@@ -594,7 +594,6 @@ function App() {
             </div>
           </div>
           <button
-            className="more-btn"
             onClick={() => setShowCalendar(v => !v)}
             style={{ marginTop: 10 }}
           >

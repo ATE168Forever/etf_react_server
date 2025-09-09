@@ -407,9 +407,7 @@ export default function InventoryTab() {
               {totalInvestment.toLocaleString('en-US', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
-              })}
-            </div>
-            <div className={styles.totalInvestment}>
+              })} / 
               目前總價值：
               {totalValue.toLocaleString('en-US', {
                 minimumFractionDigits: 2,
