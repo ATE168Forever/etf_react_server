@@ -571,17 +571,6 @@ function App() {
                   <option value={year} key={year}>{year}</option>
                 ))}
               </select>
-            </div>
-            <div className="control-pair">
-              <label>觀察組合：</label>
-              <select value={selectedGroup} onChange={handleGroupChange}>
-                <option value="">自選</option>
-                {watchGroups.map(g => (
-                  <option key={g.name} value={g.name}>{g.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="more-group">
               <div className="more-item">
                 <button onClick={() => setShowActions(v => !v)}>更多功能</button>
                 {showActions && (
@@ -593,6 +582,15 @@ function App() {
                   />
                 )}
               </div>
+            </div>
+            <div className="control-pair">
+              <label>觀察組合：</label>
+              <select value={selectedGroup} onChange={handleGroupChange}>
+                <option value="">自選</option>
+                {watchGroups.map(g => (
+                  <option key={g.name} value={g.name}>{g.name}</option>
+                ))}
+              </select>
             </div>
           </div>
           <button onClick={() => setShowCalendar(v => !v)} style={{ marginTop: 10 }}>
