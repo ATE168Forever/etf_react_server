@@ -2,8 +2,6 @@ import { useRef } from 'react';
 import useClickOutside from './useClickOutside';
 
 export default function DisplayDropdown({
-  toggleDiamond,
-  showDiamondOnly,
   toggleDividendYield,
   showDividendYield,
   toggleAxis,
@@ -19,16 +17,13 @@ export default function DisplayDropdown({
   };
 
   return (
-    <div className="action-dropdown" ref={ref}>
-      <button onClick={() => handleClick(toggleDiamond)}>
-        {showDiamondOnly ? '顯示全部' : '顯示鑽石'}
-      </button>
-      <button onClick={() => handleClick(toggleDividendYield)}>
-        {showDividendYield ? '顯示配息' : '顯示殖利率'}
-      </button>
-      <button onClick={() => handleClick(toggleAxis)}>
-        {showInfoAxis ? '顯示月份' : '顯示資訊'}
-      </button>
-    </div>
+      <div className="action-dropdown" ref={ref}>
+        <button onClick={() => handleClick(toggleDividendYield)}>
+          {showDividendYield ? '顯示配息' : '顯示殖利率'}
+        </button>
+        <button onClick={() => handleClick(toggleAxis)}>
+          {showInfoAxis ? '顯示月份' : '顯示資訊'}
+        </button>
+      </div>
   );
 }
