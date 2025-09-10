@@ -1,4 +1,2 @@
 /* global process */
-export const API_HOST =
-  (typeof process !== 'undefined' && process.env?.VITE_API_HOST) ||
-  'https://api.etflife.org';
+export const API_HOST = import.meta.env.VITE_API_HOST
