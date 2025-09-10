@@ -48,8 +48,14 @@ export default function InventoryTab() {
     const reader = new FileReader();
     reader.onload = event => {
       const text = event.target.result;
-      const list = transactionsFromCsv(text);
-      if (list.length === 0) {
+      const imported = transactionsFromCsv(text).map(item => {
+        const stock = stockList.find(s => s.stock_id === item.stock_id);
+        return {
+          ...item,
+          stock_name: stock ? stock.stock_name : item.stock_name || ''
+        };
+      });
+      if (imported.length === 0) {
         e.target.value = '';
         return;
       }
@@ -59,8 +65,8 @@ export default function InventoryTab() {
           return;
         }
       }
-      setTransactionHistory(list);
-      saveTransactionHistory(list);
+      setTransactionHistory(imported);
+      saveTransactionHistory(imported);
       e.target.value = '';
       alert('已匯入完成');
       if (typeof window !== 'undefined') window.location.reload();
@@ -104,8 +110,15 @@ export default function InventoryTab() {
           return;
         }
       }
-      setTransactionHistory(list);
-      saveTransactionHistory(list);
+      const enriched = list.map(item => {
+        const stock = stockList.find(s => s.stock_id === item.stock_id);
+        return {
+          ...item,
+          stock_name: item.stock_name || (stock ? stock.stock_name : '')
+        };
+      });
+      setTransactionHistory(enriched);
+      saveTransactionHistory(enriched);
       alert('已從 Google Drive 匯入資料');
       if (typeof window !== 'undefined') window.location.reload();
     } catch (err) {
@@ -207,7 +220,7 @@ export default function InventoryTab() {
       const s = stockList.find(x => x.stock_id === item.stock_id) || {};
       inventoryMap[item.stock_id] = {
         stock_id: item.stock_id,
-        stock_name: s.stock_name || '',
+        stock_name: s.stock_name || item.stock_name || '',
         total_quantity: 0,
         total_cost: 0
       };
@@ -247,6 +260,7 @@ export default function InventoryTab() {
       ...transactionHistory,
       {
         stock_id: form.stock_id,
+        stock_name: form.stock_name,
         date: form.date,
         quantity: Number(form.quantity),
         price: Number(form.price),
@@ -290,7 +304,7 @@ export default function InventoryTab() {
     }
     setTransactionHistory([
       ...transactionHistory,
-      { stock_id, date: getToday(), quantity: Number(qty), type: 'sell' }
+      { stock_id, stock_name: stock.stock_name, date: getToday(), quantity: Number(qty), type: 'sell' }
     ]);
     setSellModal({ show: false, stock: null });
   };
