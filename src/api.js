@@ -30,7 +30,17 @@ export async function fetchWithCache(url) {
     headers['If-Modified-Since'] = meta.lastModified;
   }
 
-  const response = await fetch(url, { headers });
+  let response;
+  try {
+    response = await fetch(url, { headers });
+  } catch (err) {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      return { data: JSON.parse(cached), cacheStatus: 'stale', timestamp: meta?.timestamp || null };
+    }
+    throw err;
+  }
+
   if (response.status === 200) {
     const data = await response.json();
     const etag = response.headers.get('ETag');
@@ -62,6 +72,11 @@ export async function fetchWithCache(url) {
       return { data: JSON.parse(cached), cacheStatus: 'cached', timestamp };
     }
     throw new Error('No cached data available');
+  }
+
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
+    return { data: JSON.parse(cached), cacheStatus: 'stale', timestamp: meta?.timestamp || null };
   }
 
   throw new Error(`HTTP error! status: ${response.status}`);
