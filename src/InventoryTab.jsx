@@ -4,6 +4,7 @@ import { API_HOST } from './config';
 import { fetchWithCache } from './api';
 import { migrateTransactionHistory, saveTransactionHistory } from './transactionStorage';
 import { exportTransactionsToDrive, importTransactionsFromDrive } from './googleDrive';
+import { encodeCsvCode, decodeCsvCode } from './csvUtils';
 import AddTransactionModal from './components/AddTransactionModal';
 import SellModal from './components/SellModal';
 import TransactionHistoryTable from './components/TransactionHistoryTable';
@@ -31,7 +32,9 @@ export default function InventoryTab() {
 
   const handleExport = useCallback(() => {
     const header = ['stock_id'];
-    const rows = Array.from(new Set(transactionHistory.map(item => item.stock_id)));
+    const rows = Array.from(
+      new Set(transactionHistory.map(item => encodeCsvCode(item.stock_id)))
+    );
     const csv = [header.join(','), ...rows].join('\n');
     const blob = new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -52,13 +55,15 @@ export default function InventoryTab() {
       const lines = text.trim().split(/\r?\n/);
       if (lines.length <= 1) return;
       const [, ...rows] = lines;
-      const list = rows.filter(line => line.trim()).map(code => ({
-        stock_id: code.trim(),
-        date: getToday(),
-        quantity: 0,
-        type: 'buy',
-        price: ''
-      }));
+      const list = rows
+        .filter(line => line.trim())
+        .map(code => ({
+          stock_id: decodeCsvCode(code),
+          date: getToday(),
+          quantity: 0,
+          type: 'buy',
+          price: ''
+        }));
       if (transactionHistory.length > 0) {
         if (!window.confirm('匯入後將覆蓋現有紀錄，是否繼續？')) {
           e.target.value = '';
