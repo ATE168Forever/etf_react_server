@@ -30,15 +30,9 @@ export default function InventoryTab() {
   const [latestPrices, setLatestPrices] = useState({});
 
   const handleExport = useCallback(() => {
-    const header = ['stock_id', 'date', 'quantity', 'type', 'price'];
-    const rows = transactionHistory.map(item => [
-      item.stock_id,
-      item.date,
-      item.quantity,
-      item.type,
-      item.price ?? ''
-    ]);
-    const csv = [header, ...rows].map(r => r.join(',')).join('\n');
+    const header = ['stock_id'];
+    const rows = Array.from(new Set(transactionHistory.map(item => item.stock_id)));
+    const csv = [header.join(','), ...rows].join('\n');
     const blob = new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -57,18 +51,14 @@ export default function InventoryTab() {
       const text = event.target.result;
       const lines = text.trim().split(/\r?\n/);
       if (lines.length <= 1) return;
-      const [header, ...rows] = lines;
-      const fields = header.split(',');
-      const list = rows.map(line => {
-        const cols = line.split(',');
-        const obj = {};
-        fields.forEach((f, idx) => {
-          obj[f] = cols[idx];
-        });
-        obj.quantity = Number(obj.quantity);
-        if (obj.price) obj.price = Number(obj.price);
-        return obj;
-      });
+      const [, ...rows] = lines;
+      const list = rows.filter(line => line.trim()).map(code => ({
+        stock_id: code.trim(),
+        date: getToday(),
+        quantity: 0,
+        type: 'buy',
+        price: ''
+      }));
       if (transactionHistory.length > 0) {
         if (!window.confirm('匯入後將覆蓋現有紀錄，是否繼續？')) {
           e.target.value = '';
@@ -99,7 +89,8 @@ export default function InventoryTab() {
   const handleDriveExport = async () => {
     if (!window.confirm('確定要匯出到 Google Drive？')) return;
     try {
-      await exportTransactionsToDrive(transactionHistory);
+      const codes = Array.from(new Set(transactionHistory.map(item => item.stock_id)));
+      await exportTransactionsToDrive(codes);
       Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
       alert('已匯出到 Google Drive');
     } catch (err) {
@@ -110,25 +101,18 @@ export default function InventoryTab() {
 
   const handleDriveImport = async () => {
     try {
-      const text = await importTransactionsFromDrive();
-      if (!text) {
+      const codes = await importTransactionsFromDrive();
+      if (!codes || codes.length === 0) {
         alert('未找到備份檔案');
         return;
       }
-      const lines = text.trim().split(/\r?\n/);
-      if (lines.length <= 1) return;
-      const [header, ...rows] = lines;
-      const fields = header.split(',');
-      const list = rows.map(line => {
-        const cols = line.split(',');
-        const obj = {};
-        fields.forEach((f, idx) => {
-          obj[f] = cols[idx];
-        });
-        obj.quantity = Number(obj.quantity);
-        if (obj.price) obj.price = Number(obj.price);
-        return obj;
-      });
+      const list = codes.map(code => ({
+        stock_id: code,
+        date: getToday(),
+        quantity: 0,
+        type: 'buy',
+        price: ''
+      }));
       if (transactionHistory.length > 0) {
         if (!window.confirm('匯入後將覆蓋現有紀錄，是否繼續？')) {
           return;
