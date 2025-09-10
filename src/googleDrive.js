@@ -47,14 +47,14 @@ function toCsv(list) {
     item.type,
     item.price ?? ''
   ]);
-  return [header, ...rows].map(r => r.join(',')).join('\n');
+  return '\ufeff' + [header, ...rows].map(r => r.join(',')).join('\n');
 }
 
 export async function exportTransactionsToDrive(list) {
   await initDrive();
   await ensureSignedIn();
   const csv = toCsv(list);
-  const file = new Blob([csv], { type: 'text/csv' });
+  const file = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const metadata = { name: 'inventory_backup.csv', mimeType: 'text/csv' };
   const accessToken = window.gapi.auth.getToken().access_token;
   const form = new FormData();
