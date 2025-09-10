@@ -1,3 +1,5 @@
+import { encodeCsvCode, decodeCsvCode } from './csvUtils';
+
 const CLIENT_ID = typeof window !== 'undefined' && window.GOOGLE_CLIENT_ID ? window.GOOGLE_CLIENT_ID : '';
 const API_KEY = typeof window !== 'undefined' && window.GOOGLE_API_KEY ? window.GOOGLE_API_KEY : '';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
@@ -40,14 +42,14 @@ async function ensureSignedIn() {
 
 function toCsv(codes) {
   const header = ['stock_id'];
-  return '\ufeff' + [header.join(','), ...codes].join('\n');
+  return '\ufeff' + [header.join(','), ...codes.map(encodeCsvCode)].join('\n');
 }
 
 function fromCsv(text) {
   const lines = text.trim().split(/\r?\n/);
   if (lines.length <= 1) return [];
   const [, ...rows] = lines;
-  return rows.filter(line => line.trim()).map(code => code.trim());
+  return rows.filter(line => line.trim()).map(code => decodeCsvCode(code));
 }
 
 export async function exportTransactionsToDrive(codes) {
