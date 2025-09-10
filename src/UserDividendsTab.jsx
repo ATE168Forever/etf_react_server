@@ -40,7 +40,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const holdingIds = Array.from(stockIdSet).filter(id => getHolding(id, `${selectedYear}-12-31`) > 0);
     const holdingIdSet = new Set(holdingIds);
 
-    // 建立股票代號到名稱的對應
+    // 建立股票代號到名稱的對應（名稱由 tw_stock_id 提供）
     const stockMap = {};
     holdingIds.forEach(id => {
         const info = (allDividendData || []).find(d => d.stock_id === id);
