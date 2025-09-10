@@ -184,6 +184,27 @@ export default function InventoryTab() {
   }, []);
 
   useEffect(() => {
+    if (stockList.length === 0) return;
+    setTransactionHistory(prev => {
+      let changed = false;
+      const updated = prev.map(item => {
+        if (item.stock_name) return item;
+        const stock = stockList.find(s => s.stock_id === item.stock_id);
+        if (stock?.stock_name) {
+          changed = true;
+          return { ...item, stock_name: stock.stock_name };
+        }
+        return item;
+      });
+      if (changed) {
+        saveTransactionHistory(updated);
+        return updated;
+      }
+      return prev;
+    });
+  }, [stockList]);
+
+  useEffect(() => {
     fetchWithCache(`${API_HOST}/get_dividend`)
       .then(({ data }) => {
         const list = Array.isArray(data)
