@@ -1,6 +1,12 @@
 /* eslint-env jest */
 import { render, screen } from '@testing-library/react';
 import HomeTab from './HomeTab';
+import { fetchWithCache } from './api';
+
+jest.mock('./api');
+jest.mock('./config', () => ({
+  API_HOST: 'http://localhost'
+}));
 
 const mockData = {
   milestones: [
@@ -16,9 +22,7 @@ const mockData = {
 };
 
 beforeEach(() => {
-  globalThis.fetch = jest.fn().mockResolvedValue({
-    json: jest.fn().mockResolvedValue(mockData)
-  });
+  fetchWithCache.mockResolvedValue({ data: mockData });
 });
 
 afterEach(() => {

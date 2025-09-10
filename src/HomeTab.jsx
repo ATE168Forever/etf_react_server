@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { API_HOST } from './config';
+import { fetchWithCache } from './api';
 
 export default function HomeTab() {
   const [stats, setStats] = useState({ milestones: [], latest: [], tip: '' });
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_HOST}/site_stats`)
-      .then(res => res.json())
-      .then(data => {
+    fetchWithCache(`${API_HOST}/site_stats`, 4 * 60 * 60 * 1000)
+      .then(({ data }) => {
         if (!cancelled) {
           setStats({
             milestones: Array.isArray(data?.milestones) ? data.milestones : [],

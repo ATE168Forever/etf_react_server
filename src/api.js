@@ -1,5 +1,5 @@
-export async function fetchWithCache(url) {
-  const MAX_AGE = 2 * 60 * 60 * 1000; // 2 hours
+export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
+  // maxAge controls how long to reuse cached data before revalidating
   const cacheKey = `cache:data:${url}`;
   const metaKey = `cache:meta:${url}`;
   const headers = {};
@@ -12,7 +12,7 @@ export async function fetchWithCache(url) {
       meta = JSON.parse(metaRaw);
       if (meta.timestamp) {
         age = Date.now() - new Date(meta.timestamp).getTime();
-        if (age < MAX_AGE) {
+        if (age < maxAge) {
           const cached = localStorage.getItem(cacheKey);
           if (cached) {
             return { data: JSON.parse(cached), cacheStatus: 'cached', timestamp: meta.timestamp };
@@ -24,9 +24,9 @@ export async function fetchWithCache(url) {
     // ignore parse errors
   }
 
-  if (meta?.etag && age < MAX_AGE) {
+  if (meta?.etag && age < maxAge) {
     headers['If-None-Match'] = meta.etag;
-  } else if (meta?.lastModified && age < MAX_AGE) {
+  } else if (meta?.lastModified && age < maxAge) {
     headers['If-Modified-Since'] = meta.lastModified;
   }
 
