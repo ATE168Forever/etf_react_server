@@ -1,10 +1,16 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { API_HOST } from './config';
 import './App.css';
 import Footer from './components/Footer';
 
 export default function StockDetail({ stockId }) {
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+  const toggleTheme = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'));
   const { data: stockList = [], isLoading: stockLoading, dataUpdatedAt: stockUpdatedAt } = useQuery({
     queryKey: ['stockList'],
     queryFn: async () => {
@@ -92,11 +98,11 @@ export default function StockDetail({ stockId }) {
         <div className="table-responsive">
           <table className="dividend-record">
             <thead>
-              <tr>
-                <th></th>
-                <th>價格報酬</th>
-                <th>總報酬</th>
-              </tr>
+                <tr>
+                  <th></th>
+                  <th>價差(不含息)</th>
+                  <th>績效(含息)</th>
+                </tr>
             </thead>
             <tbody>
               <tr>
@@ -153,7 +159,7 @@ export default function StockDetail({ stockId }) {
         </div>
       )}
     </div>
-    <Footer />
+    <Footer theme={theme} toggleTheme={toggleTheme} />
     </>
   );
 }
