@@ -618,7 +618,7 @@ function App() {
               )}
 
               <div className="more-item" style={{ marginTop: 10 }}>
-                <button onClick={() => setShowDisplays(v => !v)}>其他顯示</button>
+                <button onClick={() => setShowDisplays(v => !v)} style={{ marginRight: 10 }}>其他顯示</button>
                 {showDisplays && (
                   <DisplayDropdown
                     toggleDividendYield={() => setShowDividendYield(v => !v)}
@@ -628,9 +628,9 @@ function App() {
                     onClose={() => setShowDisplays(false)}
                   />
                 )}
-              </div>
+              {/* </div> */}
 
-              <div className={styles.tableHeader}>
+              {/* <div className={styles.tableHeader}> */}
                 <button onClick={handleResetFilters} style={{ marginRight: 10 }}>重置所有篩選</button>
                 <span>提示：點下篩選鈕開啟篩選視窗。</span>
               </div>
