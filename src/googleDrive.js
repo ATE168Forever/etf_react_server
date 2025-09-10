@@ -1,4 +1,4 @@
-import { encodeCsvCode, decodeCsvCode } from './csvUtils';
+import { transactionsToCsv, transactionsFromCsv } from './csvUtils';
 
 const CLIENT_ID = typeof window !== 'undefined' && window.GOOGLE_CLIENT_ID ? window.GOOGLE_CLIENT_ID : '';
 const API_KEY = typeof window !== 'undefined' && window.GOOGLE_API_KEY ? window.GOOGLE_API_KEY : '';
@@ -40,22 +40,10 @@ async function ensureSignedIn() {
   }
 }
 
-function toCsv(codes) {
-  const header = ['stock_id'];
-  return '\ufeff' + [header.join(','), ...codes.map(encodeCsvCode)].join('\n');
-}
-
-function fromCsv(text) {
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length <= 1) return [];
-  const [, ...rows] = lines;
-  return rows.filter(line => line.trim()).map(code => decodeCsvCode(code));
-}
-
-export async function exportTransactionsToDrive(codes) {
+export async function exportTransactionsToDrive(list) {
   await initDrive();
   await ensureSignedIn();
-  const csv = toCsv(codes);
+  const csv = transactionsToCsv(list);
   const file = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const metadata = { name: 'inventory_backup.csv', mimeType: 'text/csv' };
   const accessToken = window.gapi.auth.getToken().access_token;
@@ -79,5 +67,5 @@ export async function importTransactionsFromDrive() {
   if (!list.result.files || list.result.files.length === 0) return null;
   const fileId = list.result.files[0].id;
   const file = await window.gapi.client.drive.files.get({ fileId, alt: 'media' });
-  return fromCsv(file.body);
+  return transactionsFromCsv(file.body);
 }
