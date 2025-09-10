@@ -70,9 +70,7 @@ export default function StockDetail({ stockId }) {
     return <div style={{ padding: 20 }}>找不到股票</div>;
   }
 
-  const issuer = stock.issuer || stock.securities_firm || stock.broker;
-  const website = stock.website || stock.official_site || stock.official_website;
-  const startDate = stock.dividend_start_date || stock.first_dividend_date;
+  const website = stock.website;
 
   return (
     <>
@@ -85,7 +83,8 @@ export default function StockDetail({ stockId }) {
       )}
       <p>配息頻率: {stock.dividend_frequency || '-'}</p>
       <p>保管銀行: {stock.custodian || '-'}</p>
-      <p>發行券商: {issuer || '-'}</p>
+      <p>發行券商: {stock.issuer || '-'}</p>
+      <p>ETF規模: {stock.assets || '-'}</p>
       <p>
         官網: {website ? (
           <a href={website} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all' }}>{website}</a>
@@ -93,7 +92,7 @@ export default function StockDetail({ stockId }) {
           '-'
         )}
       </p>
-      <p>開始配息日期: {startDate || '-'}</p>
+      <p>上市日期: {stock.listing_date || '-'}</p>
       {returns.stock_id && (
         <div className="table-responsive">
           <table className="dividend-record">
