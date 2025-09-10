@@ -21,7 +21,7 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
             transactionHistory.map((item, idx) => {
               const stock = stockList.find(s => s.stock_id === item.stock_id) || {};
               const isEditing = editingIdx === idx;
-              const name = item.stock_name || stock.stock_name || '';
+              const name = stock.stock_name || '';
               return (
                 <tr key={idx}>
                   <td className="stock-col">

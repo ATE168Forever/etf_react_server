@@ -1,4 +1,3 @@
-/* global process */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Cookies from 'js-cookie';
 import { API_HOST } from './config';
@@ -238,7 +237,7 @@ export default function InventoryTab() {
       const s = stockList.find(x => x.stock_id === item.stock_id) || {};
       inventoryMap[item.stock_id] = {
         stock_id: item.stock_id,
-        stock_name: s.stock_name || item.stock_name || '',
+        stock_name: s.stock_name || '',
         total_quantity: 0,
         total_cost: 0
       };
@@ -277,7 +276,7 @@ export default function InventoryTab() {
     setTransactionHistory([
       ...transactionHistory,
       {
-        ...form,
+        stock_id: form.stock_id,
         date: form.date,
         quantity: Number(form.quantity),
         price: Number(form.price),
@@ -321,7 +320,7 @@ export default function InventoryTab() {
     }
     setTransactionHistory([
       ...transactionHistory,
-      { stock_id, stock_name: stock.stock_name, date: getToday(), quantity: Number(qty), type: 'sell' }
+      { stock_id, date: getToday(), quantity: Number(qty), type: 'sell' }
     ]);
     setSellModal({ show: false, stock: null });
   };
