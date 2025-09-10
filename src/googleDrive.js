@@ -31,6 +31,13 @@ export async function initDrive() {
   initialized = true;
 }
 
+async function ensureSignedIn() {
+  const auth = window.gapi.auth2.getAuthInstance();
+  if (!auth.isSignedIn.get()) {
+    await auth.signIn();
+  }
+}
+
 function toCsv(list) {
   const header = ['stock_id', 'date', 'quantity', 'type', 'price'];
   const rows = list.map(item => [
@@ -45,6 +52,7 @@ function toCsv(list) {
 
 export async function exportTransactionsToDrive(list) {
   await initDrive();
+  await ensureSignedIn();
   const csv = toCsv(list);
   const file = new Blob([csv], { type: 'text/csv' });
   const metadata = { name: 'inventory_backup.csv', mimeType: 'text/csv' };
@@ -61,6 +69,7 @@ export async function exportTransactionsToDrive(list) {
 
 export async function importTransactionsFromDrive() {
   await initDrive();
+  await ensureSignedIn();
   const list = await window.gapi.client.drive.files.list({
     q: "name='inventory_backup.csv' and trashed=false",
     fields: 'files(id)'

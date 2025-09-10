@@ -29,7 +29,6 @@ export default function InventoryTab() {
   const [cacheInfo, setCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [latestPrices, setLatestPrices] = useState({});
-  const isFirstRender = useRef(true);
 
   const handleExport = useCallback(() => {
     const header = ['stock_id', 'date', 'quantity', 'type', 'price'];
@@ -95,6 +94,54 @@ export default function InventoryTab() {
   const handleExportClick = () => {
     if (window.confirm('確定要匯出 CSV？')) {
       handleExport();
+    }
+  };
+
+  const handleDriveExport = async () => {
+    if (!window.confirm('確定要匯出到 Google Drive？')) return;
+    try {
+      await exportTransactionsToDrive(transactionHistory);
+      Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
+      alert('已匯出到 Google Drive');
+    } catch (err) {
+      console.error('Drive manual export failed', err);
+      alert('匯出到 Google Drive 失敗');
+    }
+  };
+
+  const handleDriveImport = async () => {
+    try {
+      const text = await importTransactionsFromDrive();
+      if (!text) {
+        alert('未找到備份檔案');
+        return;
+      }
+      const lines = text.trim().split(/\r?\n/);
+      if (lines.length <= 1) return;
+      const [header, ...rows] = lines;
+      const fields = header.split(',');
+      const list = rows.map(line => {
+        const cols = line.split(',');
+        const obj = {};
+        fields.forEach((f, idx) => {
+          obj[f] = cols[idx];
+        });
+        obj.quantity = Number(obj.quantity);
+        if (obj.price) obj.price = Number(obj.price);
+        return obj;
+      });
+      if (transactionHistory.length > 0) {
+        if (!window.confirm('匯入後將覆蓋現有紀錄，是否繼續？')) {
+          return;
+        }
+      }
+      setTransactionHistory(list);
+      saveTransactionHistory(list);
+      alert('已從 Google Drive 匯入資料');
+      if (typeof window !== 'undefined') window.location.reload();
+    } catch (err) {
+      console.error('Drive manual import failed', err);
+      alert('匯入 Google Drive 失敗');
     }
   };
 
@@ -182,55 +229,7 @@ export default function InventoryTab() {
   }, []);
 
   useEffect(() => {
-    if (process.env.NODE_ENV === 'test') return;
-    const syncFromDrive = async () => {
-      try {
-        const text = await importTransactionsFromDrive();
-        if (!text) return;
-        const lines = text.trim().split(/\r?\n/);
-        if (lines.length <= 1) return;
-        const [header, ...rows] = lines;
-        const fields = header.split(',');
-        const list = rows.map(line => {
-          const cols = line.split(',');
-          const obj = {};
-          fields.forEach((f, idx) => {
-            obj[f] = cols[idx];
-          });
-          obj.quantity = Number(obj.quantity);
-          if (obj.price) obj.price = Number(obj.price);
-          return obj;
-        });
-        if (JSON.stringify(list) !== JSON.stringify(transactionHistory)) {
-          setTransactionHistory(list);
-          saveTransactionHistory(list);
-          alert('已自動從 Google Drive 匯入資料');
-        }
-      } catch (err) {
-        console.error('Drive auto import failed', err);
-      }
-    };
-    syncFromDrive();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
     saveTransactionHistory(transactionHistory);
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    if (process.env.NODE_ENV === 'test') return;
-    const syncDrive = async () => {
-      try {
-        await exportTransactionsToDrive(transactionHistory);
-        Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
-        alert('已自動匯出到 Google Drive');
-      } catch (err) {
-        console.error('Drive auto export failed', err);
-      }
-    };
-    syncDrive();
   }, [transactionHistory]);
 
   const inventoryMap = {};
@@ -356,6 +355,12 @@ export default function InventoryTab() {
             </button>
             <button className={styles.button} onClick={handleImportClick}>
               匯入 CSV
+            </button>
+            <button className={styles.button} onClick={handleDriveExport}>
+              匯出 Google Drive
+            </button>
+            <button className={styles.button} onClick={handleDriveImport}>
+              匯入 Google Drive
             </button>
           </div>
         )}
