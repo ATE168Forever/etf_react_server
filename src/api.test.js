@@ -50,5 +50,20 @@ describe('fetchWithCache', () => {
     expect(result.cacheStatus).toBe('fresh');
     expect(result.timestamp).toBe(new Date('2024-01-01T02:01:00Z').toISOString());
   });
+
+  test('falls back to stale cache on fetch error', async () => {
+    jest.useFakeTimers();
+    const timestamp = new Date('2024-01-01T00:00:00Z').toISOString();
+    jest.setSystemTime(new Date('2024-01-01T03:00:00Z'));
+    localStorage.setItem(cacheKey, JSON.stringify({ value: 1 }));
+    localStorage.setItem(metaKey, JSON.stringify({ timestamp }));
+
+    globalThis.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
+
+    const result = await fetchWithCache(URL);
+
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ data: { value: 1 }, cacheStatus: 'stale', timestamp });
+  });
 });
 
