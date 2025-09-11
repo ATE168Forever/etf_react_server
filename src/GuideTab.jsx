@@ -7,7 +7,7 @@ export default function GuideTab() {
       <p>
         以下說明目前提供的公開資訊瀏覽功能，先玩玩現有功能，未來有新工具再慢慢上線囉。
       </p>
-      <h5>瀏覽 ETF 與配息資訊</h5>
+      <h4>瀏覽 ETF 與配息資訊</h4>
       <ol>
         <li>
           <strong>搜尋與篩選</strong>
