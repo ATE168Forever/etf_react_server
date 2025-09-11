@@ -613,7 +613,7 @@ function App() {
                       除息/發放日
                     </button>
                   </div>
-                  <DividendCalendar year={selectedYear} events={filteredCalendarEvents} />
+                  <DividendCalendar year={selectedYear} events={filteredCalendarEvents} showTotals={false} />
                 </>
               )}
 

@@ -3,7 +3,7 @@ import { useState } from 'react';
 const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 const DAY_NAMES = ['日','一','二','三','四','五','六'];
 
-export default function DividendCalendar({ year, events }) {
+export default function DividendCalendar({ year, events, showTotals = true }) {
   const timeZone = 'Asia/Taipei';
   const nowStr = new Date().toLocaleDateString('en-CA', { timeZone });
   const [month, setMonth] = useState(Number(nowStr.slice(5, 7)) - 1);
@@ -54,7 +54,7 @@ export default function DividendCalendar({ year, events }) {
           <span>{year} {MONTH_NAMES[month]}</span>
           <button onClick={nextMonth} style={{ all: 'unset' }}>▶</button>
         </div>
-        {(exTotal > 0 || payTotal > 0) && (
+        {showTotals && (exTotal > 0 || payTotal > 0) && (
           <div className="calendar-summary">
             <span>除息: {Math.round(exTotal).toLocaleString()}</span>
             <span style={{ marginLeft: 8 }}>發放: {Math.round(payTotal).toLocaleString()}</span>
