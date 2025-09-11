@@ -40,6 +40,18 @@ VITE_DROPBOX_APP_KEY=your_app_key
 
 Restart the development server after updating the file. The application will prompt for Dropbox authorization when using the data menu to import or export.
 
+## OneDrive Backup
+
+To enable OneDrive import and export, create an Azure application with Microsoft Graph permissions (e.g. `Files.ReadWrite`).
+Set your app's redirect URI to your site's origin. Then add the client ID and desired scopes to a `.env` file:
+
+```
+VITE_ONEDRIVE_CLIENT_ID=your_client_id
+VITE_ONEDRIVE_SCOPES=Files.ReadWrite
+```
+
+Restart the development server after updating the file. Use the data menu to authorize and transfer backups with OneDrive.
+
 ## Copyright
 
 © 2025 GiantBean. All rights reserved.

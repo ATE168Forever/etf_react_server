@@ -5,6 +5,7 @@ import { fetchWithCache } from './api';
 import { migrateTransactionHistory, saveTransactionHistory } from './transactionStorage';
 import { exportTransactionsToDrive, importTransactionsFromDrive } from './googleDrive';
 import { exportTransactionsToDropbox, importTransactionsFromDropbox } from './dropbox';
+import { exportTransactionsToOneDrive, importTransactionsFromOneDrive } from './oneDrive';
 import { transactionsToCsv, transactionsFromCsv } from './csvUtils';
 import AddTransactionModal from './components/AddTransactionModal';
 import SellModal from './components/SellModal';
@@ -166,6 +167,47 @@ export default function InventoryTab() {
     } catch (err) {
       console.error('Dropbox manual import failed', err);
       alert('匯入 Dropbox 失敗');
+    }
+  };
+
+  const handleOneDriveExport = async () => {
+    if (!window.confirm('確定要匯出到 OneDrive？')) return;
+    try {
+      await exportTransactionsToOneDrive(transactionHistory);
+      Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
+      alert('已匯出到 OneDrive');
+    } catch (err) {
+      console.error('OneDrive manual export failed', err);
+      alert('匯出到 OneDrive 失敗');
+    }
+  };
+
+  const handleOneDriveImport = async () => {
+    try {
+      const list = await importTransactionsFromOneDrive();
+      if (!list || list.length === 0) {
+        alert('未找到備份檔案');
+        return;
+      }
+      if (transactionHistory.length > 0) {
+        if (!window.confirm('匯入後將覆蓋現有紀錄，是否繼續？')) {
+          return;
+        }
+      }
+      const enriched = list.map(item => {
+        const stock = stockList.find(s => s.stock_id === item.stock_id);
+        return {
+          ...item,
+          stock_name: item.stock_name || (stock ? stock.stock_name : '')
+        };
+      });
+      setTransactionHistory(enriched);
+      saveTransactionHistory(enriched);
+      alert('已從 OneDrive 匯入資料');
+      if (typeof window !== 'undefined') window.location.reload();
+    } catch (err) {
+      console.error('OneDrive manual import failed', err);
+      alert('匯入 OneDrive 失敗');
     }
   };
 
@@ -414,6 +456,12 @@ export default function InventoryTab() {
               <button className={styles.button} onClick={handleDropboxImport}>
                 匯入 Dropbox
               </button>
+            <button className={styles.button} onClick={handleOneDriveExport}>
+              匯出 OneDrive
+            </button>
+            <button className={styles.button} onClick={handleOneDriveImport}>
+              匯入 OneDrive
+            </button>
             </div>
           )}
         <input
