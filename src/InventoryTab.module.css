@@ -25,17 +25,27 @@
 
 
 .dataDropdown button {
-  display: inline-block;
-  width: auto;
-  margin: 0 0 0 4px;
+  width: 60px;
+  margin: 0;
   text-align: center;
 }
 
 .dataRow {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   margin: 4px 0;
+}
+
+.dataLabel {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 4px;
 }
 
 .button {

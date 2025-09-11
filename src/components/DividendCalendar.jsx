@@ -36,9 +36,6 @@ export default function DividendCalendar({ year, events }) {
   const prevMonth = () => setMonth(m => (m === 0 ? 11 : m - 1));
   const nextMonth = () => setMonth(m => (m === 11 ? 0 : m + 1));
 
-  const monthEvents = events.filter(e => new Date(e.date).getFullYear() === year && new Date(e.date).getMonth() === month);
-  const exTotal = monthEvents.filter(e => e.type === 'ex').reduce((sum, e) => sum + Number(e.amount || 0), 0);
-  const payTotal = monthEvents.filter(e => e.type === 'pay').reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
   return (
     <div className="calendar">
@@ -51,7 +48,6 @@ export default function DividendCalendar({ year, events }) {
         <span><span className="legend-box legend-ex"></span>除息日</span>
         <span style={{ marginLeft: 8 }}><span className="legend-box legend-pay"></span>發放日</span>
       </div>
-      <div className="calendar-total">當月除息合計: {exTotal.toFixed(1)} / 發放合計: {payTotal.toFixed(1)}</div>
       <div className="table-responsive">
       <table className="calendar-grid">
         <thead>
