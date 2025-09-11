@@ -11,6 +11,7 @@ import { transactionsToCsv, transactionsFromCsv } from './csvUtils';
 import AddTransactionModal from './components/AddTransactionModal';
 import SellModal from './components/SellModal';
 import TransactionHistoryTable from './components/TransactionHistoryTable';
+import DataDropdown from './components/DataDropdown';
 import styles from './InventoryTab.module.css';
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
@@ -472,46 +473,29 @@ export default function InventoryTab() {
         >
           新增購買紀錄
         </button>
-        <button
-          className={styles.button}
-          onClick={() => setShowDataMenu(!showDataMenu)}
-        >
-          存取資料
-        </button>
-        {showDataMenu && (
-          <div className={styles.csvControls}>
-            <button className={styles.button} onClick={handleExportClick}>
-              匯出 CSV
-            </button>
-            <button className={styles.button} onClick={handleImportClick}>
-              匯入 CSV
-            </button>
-            <button className={styles.button} onClick={handleDriveExport}>
-              匯出 Google Drive
-            </button>
-              <button className={styles.button} onClick={handleDriveImport}>
-                匯入 Google Drive
-              </button>
-              <button className={styles.button} onClick={handleDropboxExport}>
-                匯出 Dropbox
-              </button>
-              <button className={styles.button} onClick={handleDropboxImport}>
-                匯入 Dropbox
-              </button>
-            <button className={styles.button} onClick={handleOneDriveExport}>
-              匯出 OneDrive
-            </button>
-            <button className={styles.button} onClick={handleOneDriveImport}>
-              匯入 OneDrive
-            </button>
-            <button className={styles.button} onClick={handleICloudExport}>
-              匯出 iCloud Drive
-            </button>
-            <button className={styles.button} onClick={handleICloudImport}>
-              匯入 iCloud Drive
-            </button>
-            </div>
+        <div className="more-item">
+          <button
+            className={styles.button}
+            onClick={() => setShowDataMenu(v => !v)}
+          >
+            存取資料
+          </button>
+          {showDataMenu && (
+            <DataDropdown
+              onClose={() => setShowDataMenu(false)}
+              handleImportClick={handleImportClick}
+              handleExportClick={handleExportClick}
+              handleDriveImport={handleDriveImport}
+              handleDriveExport={handleDriveExport}
+              handleDropboxImport={handleDropboxImport}
+              handleDropboxExport={handleDropboxExport}
+              handleOneDriveImport={handleOneDriveImport}
+              handleOneDriveExport={handleOneDriveExport}
+              handleICloudImport={handleICloudImport}
+              handleICloudExport={handleICloudExport}
+            />
           )}
+        </div>
         <input
           type="file"
           accept=".csv"

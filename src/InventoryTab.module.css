@@ -23,9 +23,19 @@
   flex-wrap: wrap;
 }
 
-.csvControls {
+
+.dataDropdown button {
+  display: inline-block;
+  width: auto;
+  margin: 0 0 0 4px;
+  text-align: center;
+}
+
+.dataRow {
   display: flex;
+  align-items: center;
   gap: 8px;
+  margin: 4px 0;
 }
 
 .button {
