@@ -223,6 +223,20 @@ td {
   background: var(--color-row-even);
 }
 
+.silver-button-container button {
+  background: linear-gradient(#e0e0e0, #bcbcbc);
+  color: #000;
+  border: 1px solid #d4af37;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 4px;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+.silver-button-container button:hover {
+  background: linear-gradient(#bcbcbc, #e0e0e0);
+}
+
 .slogan {
   font-size: 1.4rem;
   margin-top: 0;

@@ -17,7 +17,7 @@ export default function DisplayDropdown({
   };
 
   return (
-      <div className="action-dropdown" ref={ref}>
+      <div className="action-dropdown silver-button-container" ref={ref}>
         <button onClick={() => handleClick(toggleDividendYield)}>
           {showDividendYield ? '顯示配息' : '顯示殖利率'}
         </button>

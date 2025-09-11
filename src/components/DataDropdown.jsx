@@ -24,7 +24,7 @@ export default function DataDropdown({
   };
 
   return (
-    <div className={`action-dropdown ${styles.dataDropdown}`} ref={ref}>
+    <div className={`action-dropdown silver-button-container ${styles.dataDropdown}`} ref={ref}>
       <div className={styles.dataRow}>
         <span className={styles.dataLabel}>CSV</span>
         <div className={styles.buttonGroup}>
