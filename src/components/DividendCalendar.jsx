@@ -56,8 +56,8 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
         </div>
         {showTotals && (exTotal > 0 || payTotal > 0) && (
           <div className="calendar-summary">
-            <span>除息: {Math.round(exTotal).toLocaleString()}</span>
-            <span style={{ marginLeft: 8 }}>發放: {Math.round(payTotal).toLocaleString()}</span>
+            <div>除息金額: {Math.round(exTotal).toLocaleString()}</div>
+            <span style={{ marginLeft: 8 }}>發放金額: {Math.round(payTotal).toLocaleString()}</span>
           </div>
         )}
       </div>
