@@ -52,6 +52,14 @@ VITE_ONEDRIVE_SCOPES=Files.ReadWrite
 
 Restart the development server after updating the file. Use the data menu to authorize and transfer backups with OneDrive.
 
+## iCloud Drive Backup
+
+The application can also import and export inventory records through the browser's file
+pickers. On macOS or iOS, ensure you are signed in to iCloud and have iCloud Drive
+enabled. When choosing **匯出 iCloud Drive** the browser will ask where to save
+`inventory_backup.csv`; select iCloud Drive to store the file. Use **匯入 iCloud Drive**
+to open the picker again and select the backup file from iCloud Drive.
+
 ## Copyright
 
 © 2025 GiantBean. All rights reserved.
