@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 // Removed react-window virtualization to avoid invalid table markup
 import FilterDropdown from './FilterDropdown';
 import AdvancedFilterDropdown from './AdvancedFilterDropdown';
+import { API_HOST } from '../config';
 
 const MONTHS = [
   '1月', '2月', '3月', '4月', '5月', '6月',
@@ -116,7 +117,7 @@ export default function StockTable({
     return (
       <tr>
         <td className="stock-col">
-          <a href={`https://etflife.org/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
+          <a href={`${API_HOST}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
             {stock.stock_id} {stock.stock_name}
           </a>
         </td>
@@ -187,7 +188,7 @@ export default function StockTable({
               return (
                 <tr key={stock.stock_id + stock.stock_name}>
                   <td className="stock-col">
-                    <a href={`https://etflife.org/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
+                    <a href={`${API_HOST}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
                       {stock.stock_id} {stock.stock_name}
                     </a>
                   </td>

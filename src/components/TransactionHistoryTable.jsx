@@ -1,4 +1,5 @@
 import styles from './TransactionHistoryTable.module.css';
+import { API_HOST } from '../config';
 
 export default function TransactionHistoryTable({ transactionHistory, stockList, editingIdx, editForm, setEditForm, setEditingIdx, handleEditSave, handleDelete }) {
   return (
@@ -25,7 +26,7 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
               return (
                 <tr key={idx}>
                   <td className="stock-col">
-                    <a href={`https://etflife.org/stock/${item.stock_id}`} target="_blank" rel="noreferrer">
+                    <a href={`${API_HOST}/stock/${item.stock_id}`} target="_blank" rel="noreferrer">
                       {item.stock_id} {name}
                     </a>
                   </td>

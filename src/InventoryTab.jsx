@@ -575,7 +575,7 @@ export default function InventoryTab() {
                     : inventoryList.map((item, idx) => (
                         <tr key={idx}>
                           <td className="stock-col">
-                            <a href={`https://etflife.org/stock/${item.stock_id}`} target="_blank" rel="noreferrer">
+                            <a href={`${API_HOST}/stock/${item.stock_id}`} target="_blank" rel="noreferrer">
                               {item.stock_id} {item.stock_name}
                             </a>
                           </td>
