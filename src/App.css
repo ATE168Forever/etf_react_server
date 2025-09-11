@@ -369,12 +369,6 @@ button:active {
   color: #0d6efd;
   cursor: pointer;
 }
-.calendar-total {
-  margin-top: 8px;
-  text-align: right;
-  font-weight: bold;
-}
-
 /* .inventory-tables {
   display: flex;
   gap: 24px;
