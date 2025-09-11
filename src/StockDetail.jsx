@@ -75,7 +75,7 @@ export default function StockDetail({ stockId }) {
   return (
     <>
       <div className="stock-detail">
-      <h1>{stock.stock_id} {stock.stock_name}</h1>
+      <h3>{stock.stock_id} {stock.stock_name}</h3>
       {stockUpdatedAt && (
         <div style={{ textAlign: 'right', fontSize: 12 }}>
           資料更新時間: {new Date(stockUpdatedAt).toLocaleString()}

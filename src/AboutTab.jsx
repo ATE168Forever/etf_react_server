@@ -9,7 +9,7 @@ export default function AboutTab() {
   return (
     <>
       <div className="container" style={{ maxWidth: 800 }}>
-        <h1 className="mt-4">關於本站</h1>
+        <h3 className="mt-4">關於本站</h3>
         <p>
           這裡是個幫你整理 ETF 配息的小天地，也附上簡單的持股追蹤工具。資料僅供參考，不構成投資建議唷！
         </p>

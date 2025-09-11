@@ -41,7 +41,7 @@ export default function AddTransactionModal({ show, onClose, stockList, form, se
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        <h2 className={styles.title}>新增購買紀錄</h2>
+        <h5 className={styles.title}>新增購買紀錄</h5>
         <div className={styles.form}>
           <div className={styles.formGroup}>
             <label className={styles.label}>股票：</label>

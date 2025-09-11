@@ -34,9 +34,9 @@ export default function FaqTab() {
 
   return (
     <div className="container" style={{ maxWidth: 800 }}>
-      <h1 className="mt-4">常見問題（FAQ）</h1>
+      <h3 className="mt-4">常見問題（FAQ）</h3>
 
-      <h2>資料與計算</h2>
+      <h5>資料與計算</h5>
       <ol>
         <li>
           <strong>殖利率是怎麼算的？</strong>
@@ -73,7 +73,7 @@ export default function FaqTab() {
         </li>
       </ol>
 
-      <h2>聯絡我們</h2>
+      <h5>聯絡我們</h5>
       <ol start={7}>
         <li>
           <strong>如何報告錯誤或建議新功能？</strong>

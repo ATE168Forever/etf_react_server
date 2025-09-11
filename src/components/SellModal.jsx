@@ -10,7 +10,7 @@ export default function SellModal({ show, stock, onClose, onSubmit }) {
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        <h2 className={styles.title}>賣出股票</h2>
+        <h5 className={styles.title}>賣出股票</h5>
         <p className={styles.text}>股票：{stock.stock_id} - {stock.stock_name}</p>
         <div className={styles.formGroup}>
           <label className={styles.label}>賣出數量：</label>

@@ -463,10 +463,6 @@ button:active {
   color: var(--color-text);
 }
 
-.stock-detail h1 {
-  margin-top: 0;
-}
-
 .stock-detail .link-list {
   list-style: none;
   padding-left: 0;

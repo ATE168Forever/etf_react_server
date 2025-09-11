@@ -542,14 +542,13 @@ export default function InventoryTab() {
             )}
 
             <div className={styles.totalInvestment}>
-              <span>
+              <div>
                 總投資金額：
                 {totalInvestment.toLocaleString('en-US', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
                 })}
-              </span>
-              {' / '}
+              </div>
               <span>
                 目前總價值：
                 {totalValue.toLocaleString('en-US', {
