@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App.jsx'
 import StockDetail from './StockDetail.jsx'
+import CookieConsent from './components/CookieConsent.jsx'
 
 const path = window.location.pathname;
 const match = path.match(/^\/stock\/(\w+)/);
@@ -13,6 +14,7 @@ const queryClient = new QueryClient();
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
+      <CookieConsent />
       {stockId ? <StockDetail stockId={stockId} /> : <App />}
     </QueryClientProvider>
   </StrictMode>,
