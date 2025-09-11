@@ -4,7 +4,6 @@ import UserDividendsTab from './UserDividendsTab';
 import { readTransactionHistory } from './transactionStorage';
 
 jest.mock('./transactionStorage');
-jest.mock('./components/DividendCalendar', () => () => null);
 jest.mock('./config', () => ({ API_HOST: '' }));
 
 test('displays stock id and dynamic name from dividend data', async () => {
@@ -18,4 +17,30 @@ test('displays stock id and dynamic name from dividend data', async () => {
 
   render(<UserDividendsTab allDividendData={allDividendData} selectedYear={2024} />);
   expect(await screen.findByText('0050 Test ETF')).toBeInTheDocument();
+});
+
+test('calendar defaults to showing both ex and payment events', async () => {
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const [year, month] = nowStr.split('-');
+  readTransactionHistory.mockReturnValue([
+    { stock_id: 'AAA', date: `${year}-01-01`, quantity: 1000, type: 'buy' }
+  ]);
+  const data = [
+    {
+      stock_id: 'AAA',
+      stock_name: 'AAA',
+      dividend: '1',
+      dividend_date: `${year}-${month}-05`,
+      payment_date: `${year}-${month}-15`,
+      dividend_yield: '1',
+      last_close_price: '10'
+    }
+  ];
+
+  render(<UserDividendsTab allDividendData={data} selectedYear={Number(year)} />);
+
+  expect(await screen.findByText('除息: 1,000')).toBeInTheDocument();
+  expect(await screen.findByText('發放: 1,000')).toBeInTheDocument();
+  const bothBtn = screen.getByRole('button', { name: '除息/發放日' });
+  expect(bothBtn).toHaveStyle({ fontWeight: 'bold' });
 });

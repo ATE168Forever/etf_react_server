@@ -10,6 +10,15 @@ export default function DividendCalendar({ year, events }) {
   const [expandedDates, setExpandedDates] = useState({});
   const todayStr = nowStr;
 
+  const monthStr = String(month + 1).padStart(2, '0');
+  const monthEvents = events.filter(e => e.date.startsWith(`${year}-${monthStr}`));
+  const exTotal = monthEvents
+    .filter(e => e.type === 'ex')
+    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const payTotal = monthEvents
+    .filter(e => e.type === 'pay')
+    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const startDay = firstDay.getDay();
@@ -40,9 +49,17 @@ export default function DividendCalendar({ year, events }) {
   return (
     <div className="calendar">
       <div className="calendar-header">
-        <button onClick={prevMonth} style={{ all: 'unset',  }}>◀</button>
-        <span>{year} {MONTH_NAMES[month]}</span>
-        <button onClick={nextMonth} style={{ all: 'unset',  }}>▶</button>
+        <div className="calendar-nav">
+          <button onClick={prevMonth} style={{ all: 'unset' }}>◀</button>
+          <span>{year} {MONTH_NAMES[month]}</span>
+          <button onClick={nextMonth} style={{ all: 'unset' }}>▶</button>
+        </div>
+        {(exTotal > 0 || payTotal > 0) && (
+          <div className="calendar-summary">
+            <span>除息: {Math.round(exTotal).toLocaleString()}</span>
+            <span style={{ marginLeft: 8 }}>發放: {Math.round(payTotal).toLocaleString()}</span>
+          </div>
+        )}
       </div>
       <div className="calendar-legend">
         <span><span className="legend-box legend-ex"></span>除息日</span>

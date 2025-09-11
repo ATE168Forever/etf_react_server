@@ -58,7 +58,7 @@ function App() {
   const [showCalendar, setShowCalendar] = useState(true);
 
   // Filter which event types to show on calendar
-  const [calendarFilter, setCalendarFilter] = useState('ex');
+  const [calendarFilter, setCalendarFilter] = useState('both');
 
   // Toggle between showing dividend or dividend yield
   const [showDividendYield, setShowDividendYield] = useState(false);
