@@ -19,6 +19,7 @@ function getTransactionHistory() {
 export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const [history, setHistory] = useState([]);
     const [showCalendar, setShowCalendar] = useState(true);
+    const [calendarFilter, setCalendarFilter] = useState('ex');
     const timeZone = 'Asia/Taipei';
     const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
     const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
@@ -94,6 +95,10 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         }
         return arr;
     });
+
+    const filteredCalendarEvents = calendarEvents.filter(ev =>
+        calendarFilter === 'both' || ev.type === calendarFilter
+    );
 
     // 3. 建 monthlyDividendTable: stock_id => {month: cell}
     const dividendTable = {};
@@ -199,7 +204,31 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 </button>
             </div>
 
-            {showCalendar && <DividendCalendar year={selectedYear} events={calendarEvents} />}
+            {showCalendar && (
+                <>
+                    <div style={{ margin: '10px 0' }}>
+                        <button
+                            onClick={() => setCalendarFilter('ex')}
+                            style={{ fontWeight: calendarFilter === 'ex' ? 'bold' : 'normal' }}
+                        >
+                            除息日
+                        </button>
+                        <button
+                            onClick={() => setCalendarFilter('pay')}
+                            style={{ fontWeight: calendarFilter === 'pay' ? 'bold' : 'normal', marginLeft: 6 }}
+                        >
+                            發放日
+                        </button>
+                        <button
+                            onClick={() => setCalendarFilter('both')}
+                            style={{ fontWeight: calendarFilter === 'both' ? 'bold' : 'normal', marginLeft: 6 }}
+                        >
+                            除息/發放日
+                        </button>
+                    </div>
+                    <DividendCalendar year={selectedYear} events={filteredCalendarEvents} />
+                </>
+            )}
 
             <div className="table-responsive">
             <table className="table table-bordered table-striped">
