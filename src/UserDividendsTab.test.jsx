@@ -5,6 +5,7 @@ import { readTransactionHistory } from './transactionStorage';
 
 jest.mock('./transactionStorage');
 jest.mock('./components/DividendCalendar', () => () => null);
+jest.mock('./config', () => ({ API_HOST: '' }));
 
 test('displays stock id and dynamic name from dividend data', async () => {
   readTransactionHistory.mockReturnValue([

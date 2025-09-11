@@ -7,7 +7,7 @@ import PrivacyPolicyTab from './PrivacyPolicyTab';
 
 export default function AboutTab() {
   return (
-    <>
+    <div className="about-tab">
       <div className="container" style={{ maxWidth: 800 }}>
         <h3 className="mt-4">關於本站</h3>
         <p>
@@ -22,6 +22,6 @@ export default function AboutTab() {
       <DisclaimerTab />
       <TermsOfServiceTab />
       <PrivacyPolicyTab />
-    </>
+    </div>
   );
 }

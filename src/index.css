@@ -95,3 +95,7 @@ body {
   color: var(--color-text);
   font-size: 0.9rem;
 }
+
+.about-tab h4 {
+  text-decoration: underline;
+}
