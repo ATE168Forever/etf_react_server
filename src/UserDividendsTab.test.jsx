@@ -39,8 +39,8 @@ test('calendar defaults to showing both ex and payment events', async () => {
 
   render(<UserDividendsTab allDividendData={data} selectedYear={Number(year)} />);
 
-  expect(await screen.findByText('除息: 1,000')).toBeInTheDocument();
-  expect(await screen.findByText('發放: 1,000')).toBeInTheDocument();
+  expect(await screen.findByText('除息金額: 1,000')).toBeInTheDocument();
+  expect(await screen.findByText('發放金額: 1,000')).toBeInTheDocument();
   const bothBtn = screen.getByRole('button', { name: '除息/發放日' });
   expect(bothBtn).toHaveStyle({ fontWeight: 'bold' });
 });

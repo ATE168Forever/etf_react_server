@@ -58,6 +58,7 @@ function App() {
   const [showCalendar, setShowCalendar] = useState(true);
 
   // Filter which event types to show on calendar
+  // Default to displaying both ex-dividend and payment dates
   const [calendarFilter, setCalendarFilter] = useState('both');
 
   // Toggle between showing dividend or dividend yield

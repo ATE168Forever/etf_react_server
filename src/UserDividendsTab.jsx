@@ -20,6 +20,7 @@ function getTransactionHistory() {
 export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const [history, setHistory] = useState([]);
     const [showCalendar, setShowCalendar] = useState(true);
+    // Default to showing both ex-dividend and payment events
     const [calendarFilter, setCalendarFilter] = useState('both');
     const timeZone = 'Asia/Taipei';
     const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
