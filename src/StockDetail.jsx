@@ -3,8 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { API_HOST } from './config';
 import './App.css';
 import Footer from './components/Footer';
+import { useLanguage } from './i18n';
 
 export default function StockDetail({ stockId }) {
+  const { lang } = useLanguage();
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -62,11 +64,11 @@ export default function StockDetail({ stockId }) {
   }, [dividendList, stockId]);
 
   if (stockLoading || dividendLoading || returnsLoading) {
-    return <div>載入中...</div>;
+    return <div>{lang === 'en' ? 'Loading...' : '載入中...'}</div>;
   }
 
   if (!stock.stock_id) {
-    return <div style={{ padding: 20 }}>找不到股票</div>;
+    return <div style={{ padding: 20 }}>{lang === 'en' ? 'Stock not found' : '找不到股票'}</div>;
   }
 
   const website = stock.website;
@@ -77,44 +79,44 @@ export default function StockDetail({ stockId }) {
       <h3>{stock.stock_id} {stock.stock_name}</h3>
       {stockUpdatedAt && (
         <div style={{ textAlign: 'right', fontSize: 12 }}>
-          資料更新時間: {new Date(stockUpdatedAt).toLocaleString()}
+          {lang === 'en' ? 'Data updated at:' : '資料更新時間:'} {new Date(stockUpdatedAt).toLocaleString()}
         </div>
       )}
-      <p>配息頻率: {stock.dividend_frequency || '-'}</p>
-      <p>保管銀行: {stock.custodian || '-'}</p>
-      <p>發行券商: {stock.issuer || '-'}</p>
-      <p>ETF規模: {stock.assets || '-'}</p>
+      <p>{lang === 'en' ? 'Dividend frequency:' : '配息頻率:'} {stock.dividend_frequency || '-'}</p>
+      <p>{lang === 'en' ? 'Custodian bank:' : '保管銀行:'} {stock.custodian || '-'}</p>
+      <p>{lang === 'en' ? 'Issuer:' : '發行券商:'} {stock.issuer || '-'}</p>
+      <p>{lang === 'en' ? 'ETF size:' : 'ETF規模:'} {stock.assets || '-'}</p>
       <p>
-        官網: {website ? (
+        {lang === 'en' ? 'Website:' : '官網:'} {website ? (
           <a href={website} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all' }}>{website}</a>
         ) : (
           '-'
         )}
       </p>
-      <p>上市日期: {stock.listing_date || '-'}</p>
+      <p>{lang === 'en' ? 'Listing date:' : '上市日期:'} {stock.listing_date || '-'}</p>
       {returns.stock_id && (
         <div className="table-responsive">
           <table className="dividend-record">
             <thead>
                 <tr>
                   <th></th>
-                  <th>價差(不含息)</th>
-                  <th>績效(含息)</th>
+                  <th>{lang === 'en' ? 'Price Return (ex-div)' : '價差(不含息)'}</th>
+                  <th>{lang === 'en' ? 'Total Return (incl. div)' : '績效(含息)'}</th>
                 </tr>
             </thead>
             <tbody>
               <tr>
-                <td>近1月</td>
+                <td>{lang === 'en' ? '1M' : '近1月'}</td>
                 <td>{returns.price_return_1m}%</td>
                 <td>{returns.total_return_1m}%</td>
               </tr>
               <tr>
-                <td>近3月</td>
+                <td>{lang === 'en' ? '3M' : '近3月'}</td>
                 <td>{returns.price_return_3m}%</td>
                 <td>{returns.total_return_3m}%</td>
               </tr>
               <tr>
-                <td>近1年</td>
+                <td>{lang === 'en' ? '1Y' : '近1年'}</td>
                 <td>{returns.price_return_1y}%</td>
                 <td>{returns.total_return_1y}%</td>
               </tr>
@@ -123,25 +125,27 @@ export default function StockDetail({ stockId }) {
         </div>
       )}
       <ul className="link-list">
-        <li>資料來源：<a href={`https://www.cmoney.tw/etf/tw/${stockId}/intro`} target="_blank" rel="noreferrer">CMoney ETF介紹</a>（外部網站）</li>
-        <li>資料來源：<a href={`https://www.moneydj.com/etf/x/basic/basic0003.xdjhtm?etfid=${stockId}.tw`} target="_blank" rel="noreferrer">MoneyDJ 基本資料</a>（外部網站）</li>
-        <li>資料來源：<a href={`https://goodinfo.tw/tw/StockDetail.asp?STOCK_ID=${stockId}`} target="_blank" rel="noreferrer">Goodinfo 股市資訊</a>（外部網站）</li>
-        <li>資料來源：<a href={`https://tw.stock.yahoo.com/quote/${stockId}.TW`} target="_blank" rel="noreferrer">Yahoo 股價</a>（外部網站）</li>
-        <li>資料來源：<a href={`https://histock.tw/stock/${stockId}`} target="_blank" rel="noreferrer">HiStock 個股資訊</a>（外部網站）</li>
-        <li>資料來源：<a href={`https://www.cnyes.com/twstock/${stockId}`} target="_blank" rel="noreferrer">鉅亨網 個股資訊</a>（外部網站）</li>
-        <li>資料來源：<a href={`https://www.stockq.org/etf/${stockId}.php`} target="_blank" rel="noreferrer">StockQ ETF資料</a>（外部網站）</li>
+        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.cmoney.tw/etf/tw/${stockId}/intro`} target="_blank" rel="noreferrer">{lang === 'en' ? 'CMoney ETF Intro' : 'CMoney ETF介紹'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
+        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.moneydj.com/etf/x/basic/basic0003.xdjhtm?etfid=${stockId}.tw`} target="_blank" rel="noreferrer">{lang === 'en' ? 'MoneyDJ Basic Info' : 'MoneyDJ 基本資料'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
+        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://goodinfo.tw/tw/StockDetail.asp?STOCK_ID=${stockId}`} target="_blank" rel="noreferrer">{lang === 'en' ? 'Goodinfo Stock Info' : 'Goodinfo 股市資訊'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
+        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://tw.stock.yahoo.com/quote/${stockId}.TW`} target="_blank" rel="noreferrer">{lang === 'en' ? 'Yahoo Price' : 'Yahoo 股價'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
+        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://histock.tw/stock/${stockId}`} target="_blank" rel="noreferrer">{lang === 'en' ? 'HiStock Info' : 'HiStock 個股資訊'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
+        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.cnyes.com/twstock/${stockId}`} target="_blank" rel="noreferrer">{lang === 'en' ? 'Cnyes Stock Info' : '鉅亨網 個股資訊'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
+        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.stockq.org/etf/${stockId}.php`} target="_blank" rel="noreferrer">{lang === 'en' ? 'StockQ ETF Data' : 'StockQ ETF資料'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
       </ul>
       <p className="disclaimer">
-        以上連結皆為第三方外部網站，資料內容由各網站提供，本網站不對其正確性負責。
+        {lang === 'en'
+          ? 'The above links are third-party sites. Data is provided by those sites and we are not responsible for its accuracy.'
+          : '以上連結皆為第三方外部網站，資料內容由各網站提供，本網站不對其正確性負責。'}
       </p>
       {dividends.length > 0 && (
         <div className="table-responsive">
           <table className="dividend-record">
             <thead>
               <tr>
-                <th>日期</th>
-                <th>配息金額</th>
-                <th>利率</th>
+                <th>{lang === 'en' ? 'Date' : '日期'}</th>
+                <th>{lang === 'en' ? 'Dividend' : '配息金額'}</th>
+                <th>{lang === 'en' ? 'Yield' : '利率'}</th>
               </tr>
             </thead>
             <tbody>

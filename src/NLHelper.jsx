@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { API_HOST } from './config';
 import { fetchWithCache } from './api';
+import { useLanguage } from './i18n';
 
 function NLHelper() {
+  const { lang } = useLanguage();
   const [query, setQuery] = useState('');
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,10 +34,10 @@ function NLHelper() {
         <textarea
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="輸入查詢..."
+          placeholder={lang === 'en' ? 'Enter query...' : '輸入查詢...'}
         />
         <button onClick={handleSubmit} disabled={loading}>
-          {loading ? '查詢中...' : '送出'}
+          {loading ? (lang === 'en' ? 'Searching...' : '查詢中...') : (lang === 'en' ? 'Submit' : '送出')}
         </button>
         <pre className="nl-helper-response">{response}</pre>
       </div>
