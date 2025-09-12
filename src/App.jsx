@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { LanguageContext, translations } from './i18n';
 import InventoryTab from './InventoryTab';
 import UserDividendsTab from './UserDividendsTab';
 import AboutTab from './AboutTab';
@@ -88,6 +89,13 @@ function App() {
   }, [theme]);
 
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
+  // Language
+  const [lang, setLang] = useState(() => localStorage.getItem('lang') || 'zh');
+  useEffect(() => {
+    localStorage.setItem('lang', lang);
+  }, [lang]);
+  const t = useMemo(() => (key) => translations[lang][key] || key, [lang]);
 
   const [editingGroupIndex, setEditingGroupIndex] = useState(null);
   const [groupNameInput, setGroupNameInput] = useState('');
@@ -493,6 +501,7 @@ function App() {
 
 
   return (
+    <LanguageContext.Provider value={{ lang, setLang, t }}>
     <div className="container">
     <header className="mb-1 text-center">
       <img
@@ -516,7 +525,7 @@ function App() {
             className={`nav-link${tab === 'home' ? ' active' : ''}`}
             onClick={() => setTab('home')}
           >
-            首頁
+            {t('home')}
           </button>
         </li>
         <li className="nav-item">
@@ -524,7 +533,7 @@ function App() {
             className={`nav-link${tab === 'mydividend' ? ' active' : ''}`}
             onClick={() => setTab('mydividend')}
           >
-            我的配息
+            {t('mydividend')}
           </button>
         </li>
         <li className="nav-item">
@@ -532,7 +541,7 @@ function App() {
             className={`nav-link${tab === 'dividend' ? ' active' : ''}`}
             onClick={() => setTab('dividend')}
           >
-            ETF 配息查詢
+            {t('dividend')}
           </button>
         </li>
         <li className="nav-item">
@@ -540,7 +549,7 @@ function App() {
             className={`nav-link${tab === 'inventory' ? ' active' : ''}`}
             onClick={() => setTab('inventory')}
           >
-            庫存管理
+            {t('inventory')}
           </button>
         </li>
         <li className="nav-item">
@@ -548,7 +557,7 @@ function App() {
             className={`nav-link${tab === 'about' ? ' active' : ''}`}
             onClick={() => setTab('about')}
           >
-            關於本站
+            {t('about')}
           </button>
         </li>
       </ul>
@@ -750,6 +759,7 @@ function App() {
       )}
       <Footer theme={theme} toggleTheme={toggleTheme} />
     </div>
+    </LanguageContext.Provider>
   );
 }
 

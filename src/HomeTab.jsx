@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { API_HOST } from './config';
 import { fetchWithCache } from './api';
+import { useLanguage } from './i18n';
 
 export default function HomeTab() {
   const [stats, setStats] = useState({ milestones: [], latest: [], tip: '' });
+  const { t } = useLanguage();
 
   useEffect(() => {
     let cancelled = false;
@@ -26,7 +28,7 @@ export default function HomeTab() {
   return (
     <div className="container" style={{ maxWidth: 800 }}>
       <section className="mt-4">
-        <h5>本站數據概況</h5>
+        <h5>{t('site_stats')}</h5>
         <div style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'center', marginTop: 16 }}>
           {stats.milestones.map((m, idx) => (
             <div key={idx} style={{ flex: 1 }}>
@@ -37,7 +39,7 @@ export default function HomeTab() {
         </div>
       </section>
       <section className="mt-4">
-        <h5>最新收錄</h5>
+        <h5>{t('latest')}</h5>
         <ul>
           {stats.latest.map((item, idx) => (
             <li key={idx}>{item}</li>
@@ -48,7 +50,7 @@ export default function HomeTab() {
         className="mt-4"
         style={{ background: 'var(--color-row-even)', padding: 16, borderRadius: 4 }}
       >
-        <h5>ETF 小知識</h5>
+        <h5>{t('etf_tips')}</h5>
         <p style={{ margin: 0 }}>{stats.tip}</p>
       </section>
     </div>

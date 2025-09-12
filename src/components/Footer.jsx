@@ -1,7 +1,9 @@
 import './Footer.css';
+import { useLanguage } from '../i18n';
 
 export default function Footer({ theme, toggleTheme }) {
   const year = new Date().getFullYear();
+  const { lang, setLang, t } = useLanguage();
   return (
     <footer className="footer">
       <div className="footer-content">
@@ -14,24 +16,28 @@ export default function Footer({ theme, toggleTheme }) {
             }}
             className="theme-toggle-link"
           >
-            {theme === 'dark' ? '亮色主題' : '暗色主題'}
+            {theme === 'dark' ? t('light_theme') : t('dark_theme')}
           </a>
+          <div className="language-toggle">
+            <button onClick={() => setLang('zh')} disabled={lang === 'zh'}>中</button>
+            <button onClick={() => setLang('en')} disabled={lang === 'en'}>英</button>
+          </div>
         </div>
         <div className="contact-section">
           <p>
-            電子信箱：
+            {t('email_label')}
             <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a>
           </p>
         </div>
         <div className="donation-section">
-          喜歡這個專案嗎？請作者喝杯咖啡 ☕ 
+          {t('donate_prompt')}
           <a
             href="https://www.buymeacoffee.com/ginatbean"
             target="_blank"
             rel="noreferrer"
             className="donate-link"
           >
-            贊助
+            {t('donate')}
           </a>
         </div>
       </div>

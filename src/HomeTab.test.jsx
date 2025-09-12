@@ -2,6 +2,7 @@
 import { render, screen } from '@testing-library/react';
 import HomeTab from './HomeTab';
 import { fetchWithCache } from './api';
+import { LanguageContext, translations } from './i18n';
 
 jest.mock('./api');
 jest.mock('./config', () => ({
@@ -29,23 +30,32 @@ afterEach(() => {
   jest.resetAllMocks();
 });
 
+const renderWithLang = (lang = 'zh') => {
+  const t = (key) => translations[lang][key];
+  return render(
+    <LanguageContext.Provider value={{ lang, setLang: () => {}, t }}>
+      <HomeTab />
+    </LanguageContext.Provider>
+  );
+};
+
 test('renders data milestones section', async () => {
-  render(<HomeTab />);
-  await screen.findByText('本站數據概況');
+  renderWithLang();
+  await screen.findByText(translations.zh.site_stats);
   expect(await screen.findByText('301')).toBeInTheDocument();
 });
 
 test('renders latest updates section', async () => {
-  render(<HomeTab />);
-  await screen.findByText('最新收錄');
+  renderWithLang();
+  await screen.findByText(translations.zh.latest);
   expect(
     await screen.findByText('✅ 已更新 2025 年 9 月最新配息數據')
   ).toBeInTheDocument();
 });
 
 test('renders knowledge section', async () => {
-  render(<HomeTab />);
-  await screen.findByText('ETF 小知識');
+  renderWithLang();
+  await screen.findByText(translations.zh.etf_tips);
   expect(
     await screen.findByText(
       '高股息 ETF 不代表報酬率高，還需要考慮殖利率與價格變化。'
