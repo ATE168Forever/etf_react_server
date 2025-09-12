@@ -10,7 +10,6 @@ export default function StockDetail({ stockId }) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
-  const toggleTheme = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'));
   const { data: stockList = [], isLoading: stockLoading, dataUpdatedAt: stockUpdatedAt } = useQuery({
     queryKey: ['stockList'],
     queryFn: async () => {
@@ -158,7 +157,7 @@ export default function StockDetail({ stockId }) {
         </div>
       )}
     </div>
-    <Footer theme={theme} toggleTheme={toggleTheme} />
+    <Footer theme={theme} setTheme={setTheme} />
     </>
   );
 }

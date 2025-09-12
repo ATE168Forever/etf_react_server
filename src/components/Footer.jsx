@@ -1,26 +1,44 @@
 import './Footer.css';
 import { useLanguage } from '../i18n';
 
-export default function Footer({ theme, toggleTheme }) {
+export default function Footer({ theme, setTheme }) {
   const year = new Date().getFullYear();
   const { lang, setLang, t } = useLanguage();
   return (
     <footer className="footer">
       <div className="footer-content">
         <div className="theme-toggle">
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              toggleTheme();
-            }}
-            className="theme-toggle-link"
-          >
-            {theme === 'dark' ? t('light_theme') : t('dark_theme')}
-          </a>
+          <div className="theme-buttons">
+            {t('theme')}：
+            <button
+              className={theme === 'light' ? 'btn-selected' : 'btn-unselected'}
+              onClick={() => setTheme('light')}
+            >
+              {t('light')}
+            </button>
+            /
+            <button
+              className={theme === 'dark' ? 'btn-selected' : 'btn-unselected'}
+              onClick={() => setTheme('dark')}
+            >
+              {t('dark')}
+            </button>
+          </div>
           <div className="language-toggle">
-            <button onClick={() => setLang('zh')} disabled={lang === 'zh'}>中</button>
-            <button onClick={() => setLang('en')} disabled={lang === 'en'}>英</button>
+            {t('language')}：
+            <button
+              className={lang === 'zh' ? 'btn-selected' : 'btn-unselected'}
+              onClick={() => setLang('zh')}
+            >
+              {t('chinese')}
+            </button>
+            /
+            <button
+              className={lang === 'en' ? 'btn-selected' : 'btn-unselected'}
+              onClick={() => setLang('en')}
+            >
+              {t('english')}
+            </button>
           </div>
         </div>
         <div className="contact-section">

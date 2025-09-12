@@ -19,15 +19,15 @@
   align-items: flex-end;
 }
 
-.theme-toggle-link {
-  cursor: pointer;
-}
-
 .language-toggle {
   margin-top: 4px;
 }
 
 .language-toggle button {
+  margin-left: 4px;
+}
+
+.theme-buttons button {
   margin-left: 4px;
 }
 

@@ -22,5 +22,5 @@ test('calendar defaults to showing both ex and payment events', async () => {
   const dividendTab = screen.getByRole('button', { name: 'ETF 配息查詢' });
   fireEvent.click(dividendTab);
   const bothBtn = await screen.findByRole('button', { name: '除息/發放日' });
-  expect(bothBtn).toHaveStyle({ fontWeight: 'bold' });
+  expect(bothBtn).toHaveClass('btn-selected');
 });

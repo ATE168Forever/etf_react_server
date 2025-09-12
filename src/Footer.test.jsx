@@ -8,11 +8,13 @@ test('renders contact info and dynamic copyright', () => {
   const t = (key) => translations[lang][key];
   render(
     <LanguageContext.Provider value={{ lang, setLang: () => {}, t }}>
-      <Footer theme="dark" toggleTheme={() => {}} />
+      <Footer theme="dark" setTheme={() => {}} />
     </LanguageContext.Provider>
   );
-  expect(screen.getByRole('link', { name: t('light_theme') })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: '英' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: t('light') })).toBeInTheDocument();
+  const darkBtn = screen.getByRole('button', { name: t('dark') });
+  expect(darkBtn).toHaveClass('btn-selected');
+  expect(screen.getByRole('button', { name: t('english') })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: t('donate') })).toBeInTheDocument();
   expect(
     screen.getByText(`© ${year} ETF Life. All rights reserved.`)

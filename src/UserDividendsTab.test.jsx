@@ -42,5 +42,5 @@ test('calendar defaults to showing both ex and payment events', async () => {
   expect(await screen.findByText('除息金額: 1,000')).toBeInTheDocument();
   expect(await screen.findByText('發放金額: 1,000')).toBeInTheDocument();
   const bothBtn = screen.getByRole('button', { name: '除息/發放日' });
-  expect(bothBtn).toHaveStyle({ fontWeight: 'bold' });
+  expect(bothBtn).toHaveClass('btn-selected');
 });
