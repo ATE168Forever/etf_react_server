@@ -2,8 +2,12 @@ import { createContext, useContext } from 'react';
 
 export const translations = {
   zh: {
-    light_theme: '亮色主題',
-    dark_theme: '暗色主題',
+    theme: '主題',
+    light: '亮',
+    dark: '暗',
+    language: '語言',
+    chinese: '中文',
+    english: 'English',
     email_label: '電子信箱：',
     donate_prompt: '喜歡這個專案嗎？請作者喝杯咖啡 ☕',
     donate: '贊助',
@@ -17,8 +21,12 @@ export const translations = {
     about: '關於本站'
   },
   en: {
-    light_theme: 'Light Theme',
-    dark_theme: 'Dark Theme',
+    theme: 'Theme',
+    light: 'Light',
+    dark: 'Dark',
+    language: 'Language',
+    chinese: 'Chinese',
+    english: 'English',
     email_label: 'Email:',
     donate_prompt: 'Enjoy this project? Buy the author a coffee ☕',
     donate: 'Donate',

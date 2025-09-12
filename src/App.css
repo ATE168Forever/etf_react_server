@@ -618,3 +618,12 @@ button:active {
 .more-item {
   position: relative;
 }
+
+/* Selected/unselected button styles */
+.btn-selected {
+  font-weight: bold;
+}
+
+.btn-unselected {
+  opacity: 0.6;
+}

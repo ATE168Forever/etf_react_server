@@ -211,19 +211,21 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                     <div style={{ margin: '10px 0' }}>
                         <button
                             onClick={() => setCalendarFilter('ex')}
-                            style={{ fontWeight: calendarFilter === 'ex' ? 'bold' : 'normal' }}
+                            className={calendarFilter === 'ex' ? 'btn-selected' : 'btn-unselected'}
                         >
                             除息日
                         </button>
                         <button
                             onClick={() => setCalendarFilter('pay')}
-                            style={{ fontWeight: calendarFilter === 'pay' ? 'bold' : 'normal', marginLeft: 6 }}
+                            className={calendarFilter === 'pay' ? 'btn-selected' : 'btn-unselected'}
+                            style={{ marginLeft: 6 }}
                         >
                             發放日
                         </button>
                         <button
                             onClick={() => setCalendarFilter('both')}
-                            style={{ fontWeight: calendarFilter === 'both' ? 'bold' : 'normal', marginLeft: 6 }}
+                            className={calendarFilter === 'both' ? 'btn-selected' : 'btn-unselected'}
+                            style={{ marginLeft: 6 }}
                         >
                             除息/發放日
                         </button>
