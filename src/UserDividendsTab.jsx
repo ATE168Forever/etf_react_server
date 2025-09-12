@@ -2,11 +2,8 @@ import { useState, useEffect } from 'react';
 import DividendCalendar from './components/DividendCalendar';
 import { readTransactionHistory } from './transactionStorage';
 import { API_HOST } from './config';
+import { useLanguage } from './i18n';
 
-const MONTHS = [
-    '1月', '2月', '3月', '4月', '5月', '6月',
-    '7月', '8月', '9月', '10月', '11月', '12月'
-];
 const MONTH_COL_WIDTH = 80;
 function getTransactionHistory() {
     return readTransactionHistory().map(item => ({
@@ -18,6 +15,10 @@ function getTransactionHistory() {
 }
 
 export default function UserDividendsTab({ allDividendData, selectedYear }) {
+    const { lang } = useLanguage();
+    const MONTHS = lang === 'en'
+        ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        : ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
     const [history, setHistory] = useState([]);
     const [showCalendar, setShowCalendar] = useState(true);
     // Default to showing both ex-dividend and payment events
@@ -196,13 +197,13 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     return (
         <div className="App" style={{ margin: '0 auto' }}>
             <div style={{ display: "flex", alignItems: "center", margin: "10px 0 0 0", gap: "8px"}}>
-                <h3>{selectedYear} 配息總覽</h3>
+                <h3>{selectedYear} {lang === 'en' ? 'Dividend Overview' : '配息總覽'}</h3>
             </div>
             <div style={{ margin: '10px 0' }}>
                 <button
                     onClick={() => setShowCalendar(v => !v)}
                 >
-                    {showCalendar ? '隱藏月曆' : '顯示月曆'}
+                    {showCalendar ? (lang === 'en' ? 'Hide Calendar' : '隱藏月曆') : (lang === 'en' ? 'Show Calendar' : '顯示月曆')}
                 </button>
             </div>
 
@@ -213,21 +214,21 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                             onClick={() => setCalendarFilter('ex')}
                             className={calendarFilter === 'ex' ? 'btn-selected' : 'btn-unselected'}
                         >
-                            除息日
+                            {lang === 'en' ? 'Ex-dividend Date' : '除息日'}
                         </button>
                         <button
                             onClick={() => setCalendarFilter('pay')}
                             className={calendarFilter === 'pay' ? 'btn-selected' : 'btn-unselected'}
                             style={{ marginLeft: 6 }}
                         >
-                            發放日
+                            {lang === 'en' ? 'Payment Date' : '發放日'}
                         </button>
                         <button
                             onClick={() => setCalendarFilter('both')}
                             className={calendarFilter === 'both' ? 'btn-selected' : 'btn-unselected'}
                             style={{ marginLeft: 6 }}
                         >
-                            除息/發放日
+                            {lang === 'en' ? 'Ex/Paid Date' : '除息/發放日'}
                         </button>
                     </div>
                     <DividendCalendar year={selectedYear} events={filteredCalendarEvents} showTotals />
@@ -240,7 +241,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                     <tr>
                         <th className="stock-col">
                             <span className="sortable" onClick={() => handleSort('stock_id')}>
-                                股票代碼/名稱
+                                {lang === 'en' ? 'Ticker/Name' : '股票代碼/名稱'}
                                 {sortConfig.column === 'stock_id' && (
                                     <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
                                 )}
@@ -248,7 +249,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                         </th>
                         <th>
                             <span className="sortable" onClick={() => handleSort('total')}>
-                                總計
+                                {lang === 'en' ? 'Total' : '總計'}
                                 {sortConfig.column === 'total' && (
                                     <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
                                 )}
@@ -269,7 +270,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 <tbody>
                     {sortedStocks.length === 0 ? (
                         <tr>
-                            <td colSpan={14}>尚無庫存，請先新增交易紀錄</td>
+                            <td colSpan={14}>{lang === 'en' ? 'No holdings, please add transactions first' : '尚無庫存，請先新增交易紀錄'}</td>
                         </tr>
                     ) : (
                         sortedStocks.map(stock => (
@@ -284,7 +285,9 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                     const estAnnual = avgYield * 12;
                                     return (
                                         <span
-                                            title={`最新收盤價: ${latestClosePrice[stock.stock_id]?.price || '-'}\n加總殖利率: ${totalYield[stock.stock_id].toFixed(1)}%\n預估年化殖利率: ${estAnnual.toFixed(1)}%`}
+                                            title={lang === 'en'
+                                                ? `Latest close: ${latestClosePrice[stock.stock_id]?.price || '-'}\nSum yield: ${totalYield[stock.stock_id].toFixed(1)}%\nEst. annual yield: ${estAnnual.toFixed(1)}%`
+                                                : `最新收盤價: ${latestClosePrice[stock.stock_id]?.price || '-'}\n加總殖利率: ${totalYield[stock.stock_id].toFixed(1)}%\n預估年化殖利率: ${estAnnual.toFixed(1)}%`}
                                             style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
                                         >
                                             {Math.round(totalPerStock[stock.stock_id]).toLocaleString()}
@@ -298,7 +301,9 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                     return (
                                         <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
                                             <span
-                                                title={`持有數量: ${cell.quantity} 股 (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)\n每股配息: ${cell.dividend} 元\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`}
+                                                title={lang === 'en'
+                                                    ? `Shares held: ${cell.quantity} (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} lots)\nDividend per share: ${cell.dividend} \nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
+                                                    : `持有數量: ${cell.quantity} 股 (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)\n每股配息: ${cell.dividend} 元\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`}
                                                 style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
                                             >
                                                 {total > 0 ? Math.round(total).toLocaleString() : ''}
@@ -310,11 +315,13 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                         ))
                     )}
                     <tr style={{ background: '#ffe066', fontWeight: 'bold' }}>
-                        <td>月合計</td>
+                        <td>{lang === 'en' ? 'Monthly Total' : '月合計'}</td>
                         <td>
                             {grandTotal > 0 ? (
                                 <span
-                                    title={`每月平均領取: ${Math.round(avgPerMonth).toLocaleString()}`}
+                                    title={lang === 'en'
+                                        ? `Average per month: ${Math.round(avgPerMonth).toLocaleString()}`
+                                        : `每月平均領取: ${Math.round(avgPerMonth).toLocaleString()}`}
                                     style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
                                 >
                                     {Math.round(grandTotal).toLocaleString()}
@@ -329,7 +336,9 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
             </table>
             </div>
             <p style={{ fontSize: 12, marginTop: 8, color: '#666' }}>
-                提示：滑鼠移到數字可看持股、每股配息及日期、價格與殖利率細節。
+                {lang === 'en'
+                    ? 'Tip: hover numbers to see holdings, per-share dividends, dates, prices and yield details.'
+                    : '提示：滑鼠移到數字可看持股、每股配息及日期、價格與殖利率細節。'}
             </p>
         </div>
     );
