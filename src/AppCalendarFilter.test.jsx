@@ -14,7 +14,7 @@ jest.mock('./config', () => ({ API_HOST: '' }));
 import App from './App';
 
 beforeAll(() => {
-  global.fetch = jest.fn(() => Promise.resolve({}));
+  globalThis.fetch = jest.fn(() => Promise.resolve({}));
 });
 
 test('calendar defaults to showing both ex and payment events', async () => {
