@@ -14,10 +14,21 @@
 
 .theme-toggle {
   margin-bottom: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 .theme-toggle-link {
   cursor: pointer;
+}
+
+.language-toggle {
+  margin-top: 4px;
+}
+
+.language-toggle button {
+  margin-left: 4px;
 }
 
 .donation-section {
