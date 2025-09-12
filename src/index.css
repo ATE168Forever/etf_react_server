@@ -96,6 +96,10 @@ body {
   font-size: 0.9rem;
 }
 
-.about-tab h4 {
+.about-tab h3 {
   text-decoration: underline;
+}
+
+.about-tab h4 {
+  text-decoration: none;
 }
