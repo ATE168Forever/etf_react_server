@@ -1,15 +1,20 @@
 import { useState } from 'react';
 import { useLanguage } from '../i18n';
 
-const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-const DAY_NAMES = ['日','一','二','三','四','五','六'];
-
 export default function DividendCalendar({ year, events, showTotals = true }) {
   const timeZone = 'Asia/Taipei';
   const nowStr = new Date().toLocaleDateString('en-CA', { timeZone });
   const [month, setMonth] = useState(Number(nowStr.slice(5, 7)) - 1);
   const [expandedDates, setExpandedDates] = useState({});
   const todayStr = nowStr;
+
+  const { lang, t } = useLanguage();
+  const MONTH_NAMES = lang === 'zh'
+    ? ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
+    : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAY_NAMES = lang === 'zh'
+    ? ['日','一','二','三','四','五','六']
+    : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
   const monthStr = String(month + 1).padStart(2, '0');
   const monthEvents = events.filter(e => e.date.startsWith(`${year}-${monthStr}`));
@@ -23,7 +28,6 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const startDay = firstDay.getDay();
-  const { lang, setLang, t } = useLanguage();
 
   const weeks = [];
   let day = 1 - startDay;
@@ -64,8 +68,8 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
         )}
       </div>
       <div className="calendar-legend">
-        <span><span className="legend-box legend-ex"></span>除息日</span>
-        <span style={{ marginLeft: 8 }}><span className="legend-box legend-pay"></span>發放日</span>
+        <span><span className="legend-box legend-ex"></span>{t('ex_dividend_date')}</span>
+        <span style={{ marginLeft: 8 }}><span className="legend-box legend-pay"></span>{t('payment_date')}</span>
       </div>
       <div className="table-responsive">
       <table className="calendar-grid">
@@ -86,9 +90,10 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
                         const lotText = ev.quantity != null
                           ? (ev.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')
                           : '';
+                        const currency = lang === 'en' ? 'NT$' : '元';
                         const tooltip = ev.quantity != null
-                          ? `持有數量: ${ev.quantity} 股 (${lotText} 張)\n每股配息: ${ev.dividend} 元\n應收股息: ${Number(ev.amount).toFixed(1)} 元\n除息前一天收盤價: ${ev.last_close_price}\n當次殖利率: ${ev.dividend_yield}%\n配息日期: ${ev.dividend_date || '-'}\n發放日期: ${ev.payment_date || '-'}`
-                          : `每股配息: ${Number(ev.amount).toFixed(3)} 元\n除息前一天收盤價: ${ev.last_close_price}\n當次殖利率: ${ev.dividend_yield}%\n配息日期: ${ev.dividend_date || '-'}\n發放日期: ${ev.payment_date || '-'}`;
+                          ? `${t('quantity')}: ${ev.quantity} ${lang === 'en' ? 'shares' : '股'} (${lotText} ${lang === 'en' ? 'lots' : '張'})\n${t('per_share_dividend')}: ${ev.dividend} ${currency}\n${t('dividend_receivable')}: ${Number(ev.amount).toFixed(1)} ${currency}\n${t('prev_close')}: ${ev.last_close_price}\n${t('current_yield')}: ${ev.dividend_yield}%\n${t('dividend_date')}: ${ev.dividend_date || '-'}\n${t('payment_date')}: ${ev.payment_date || '-'}`
+                          : `${t('per_share_dividend')}: ${Number(ev.amount).toFixed(3)} ${currency}\n${t('prev_close')}: ${ev.last_close_price}\n${t('current_yield')}: ${ev.dividend_yield}%\n${t('dividend_date')}: ${ev.dividend_date || '-'}\n${t('payment_date')}: ${ev.payment_date || '-'}`;
                         return (
                           <div
                             key={j}
@@ -105,7 +110,7 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
                           className="more-btn"
                           onClick={() => setExpandedDates(prev => ({ ...prev, [d.dateStr]: true }))}
                         >
-                          更多+
+                          {t('more')}+
                         </button>
                       )}
                       {expandedDates[d.dateStr] && d.events.length > 1 && (
@@ -113,7 +118,7 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
                           className="more-btn"
                           onClick={() => setExpandedDates(prev => ({ ...prev, [d.dateStr]: false }))}
                         >
-                          隱藏-
+                          {t('hide')}-
                         </button>
                       )}
                     </div>
