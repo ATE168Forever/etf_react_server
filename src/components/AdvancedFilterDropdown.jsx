@@ -1,9 +1,11 @@
 import { useState, useRef } from 'react';
 import useClickOutside from './useClickOutside';
+import { useLanguage } from '../i18n';
 
 export default function AdvancedFilterDropdown({ filters, setFilters, onClose }) {
   const ref = useRef();
   useClickOutside(ref, onClose);
+  const { lang } = useLanguage();
 
   const [temp, setTemp] = useState(filters);
 
@@ -27,7 +29,7 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose })
     <div className="dropdown" ref={ref} style={{ padding: 8, zIndex: 9999 }}>
       <div className="dropdown-section">
         <label>
-          預估殖利率 ≥
+          {lang === 'en' ? 'Estimated yield ≥' : '預估殖利率 ≥'}
           <input
             type="number"
             value={temp.minYield}
@@ -38,13 +40,13 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose })
       </div>
       <hr />
       <div className="dropdown-section" style={{ maxHeight: 100, overflowY: 'auto' }}>
-        {[{ v: 12, l: '月配' }, { v: 6, l: '雙月配' }, { v: 4, l: '季配' }, { v: 2, l: '半年配' }, { v: 1, l: '年配' }].map(opt => (
+        {[{ v: 12, zh: '月配', en: 'Monthly' }, { v: 6, zh: '雙月配', en: 'Bimonthly' }, { v: 4, zh: '季配', en: 'Quarterly' }, { v: 2, zh: '半年配', en: 'Semi-annual' }, { v: 1, zh: '年配', en: 'Annual' }].map(opt => (
           <label key={opt.v} className="dropdown-item">
             <input
               type="checkbox"
               checked={temp.freq.includes(opt.v)}
               onChange={() => toggleFreq(opt.v)}
-            /> {opt.l}
+            /> {lang === 'en' ? opt.en : opt.zh}
           </label>
         ))}
       </div>
@@ -55,24 +57,24 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose })
             type="checkbox"
             checked={temp.diamond}
             onChange={e => setTemp({ ...temp, diamond: e.target.checked })}
-          /> 只顯示鑽石
+          /> {lang === 'en' ? 'Show only diamonds' : '只顯示鑽石'}
         </label>
       </div>
       <hr />
       <div className="dropdown-section">
         <label>
-          即將除息/發息：未來
+          {lang === 'en' ? 'Upcoming ex/payout within' : '即將除息/發息：未來'}
           <input
             type="number"
             value={temp.upcomingWithin}
             onChange={e => setTemp({ ...temp, upcomingWithin: e.target.value })}
             style={{ width: 60, margin: '0 4px' }}
-          />天內
+          />{lang === 'en' ? 'days' : '天內'}
         </label>
       </div>
       <div style={{ marginTop: 8, textAlign: 'right' }}>
-        <button className="dropdown-btn" onClick={handleClear}>清除</button>
-        <button className="dropdown-btn" style={{ marginLeft: 8 }} onClick={handleApply}>確定</button>
+        <button className="dropdown-btn" onClick={handleClear}>{lang === 'en' ? 'Clear' : '清除'}</button>
+        <button className="dropdown-btn" style={{ marginLeft: 8 }} onClick={handleApply}>{lang === 'en' ? 'Apply' : '確定'}</button>
       </div>
     </div>
   );

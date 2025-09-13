@@ -1,9 +1,11 @@
 import { useState, useRef } from 'react';
 import useClickOutside from './useClickOutside';
+import { useLanguage } from '../i18n';
 
 export default function FilterDropdown({ options, selected, setSelected, onClose }) {
   const ref = useRef();
   useClickOutside(ref, onClose);
+  const { lang } = useLanguage();
 
   const [tempSelected, setTempSelected] = useState(selected);
   const [searchText, setSearchText] = useState('');
@@ -43,7 +45,7 @@ export default function FilterDropdown({ options, selected, setSelected, onClose
         className="dropdown-search"
         value={searchText}
         onChange={e => setSearchText(e.target.value)}
-        placeholder="搜尋..."
+        placeholder={lang === 'en' ? 'Search...' : '搜尋...'}
         autoFocus
       />
       <div style={{ maxHeight: 180, overflowY: 'auto', marginTop: 6 }}>
@@ -56,11 +58,13 @@ export default function FilterDropdown({ options, selected, setSelected, onClose
             }
             onChange={handleAll}
           />
-          <span style={{ fontWeight: 'bold', marginLeft: 5 }}>全選</span>
+          <span style={{ fontWeight: 'bold', marginLeft: 5 }}>{lang === 'en' ? 'Select All' : '全選'}</span>
         </label>
         <hr />
         {filteredOptions.length === 0 && (
-          <div style={{ color: '#bbb', padding: '8px 0', fontSize: 13 }}>無符合選項</div>
+          <div style={{ color: '#bbb', padding: '8px 0', fontSize: 13 }}>
+            {lang === 'en' ? 'No matching options' : '無符合選項'}
+          </div>
         )}
         {filteredOptions.map(opt => (
           <label key={opt.value} className="dropdown-item">
@@ -73,8 +77,8 @@ export default function FilterDropdown({ options, selected, setSelected, onClose
         ))}
       </div>
       <div style={{ marginTop: 8, textAlign: 'right' }}>
-        <button className="dropdown-btn" onClick={handleClear}>清除</button>
-        <button className="dropdown-btn" style={{ marginLeft: 8 }} onClick={handleApply}>確定</button>
+        <button className="dropdown-btn" onClick={handleClear}>{lang === 'en' ? 'Clear' : '清除'}</button>
+        <button className="dropdown-btn" style={{ marginLeft: 8 }} onClick={handleApply}>{lang === 'en' ? 'Apply' : '確定'}</button>
       </div>
     </div>
   );
