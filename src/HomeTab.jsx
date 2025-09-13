@@ -5,11 +5,11 @@ import { useLanguage } from './i18n';
 
 export default function HomeTab() {
   const [stats, setStats] = useState({ milestones: [], latest: [], tip: '' });
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   useEffect(() => {
     let cancelled = false;
-    fetchWithCache(`${API_HOST}/site_stats`, 4 * 60 * 60 * 1000)
+    fetchWithCache(`${API_HOST}/site_stats?en=${lang === 'en'}`, 4 * 60 * 60 * 1000)
       .then(({ data }) => {
         if (!cancelled) {
           setStats({
@@ -23,7 +23,7 @@ export default function HomeTab() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [lang]);
 
   return (
     <div className="container" style={{ maxWidth: 800 }}>
