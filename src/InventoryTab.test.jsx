@@ -15,10 +15,7 @@ describe('InventoryTab interactions', () => {
     Cookies.remove('my_transaction_history');
     fetchWithCache.mockImplementation((url) => {
       if (url.includes('/get_stock_list')) {
-        if (url.includes('page=1')) {
-          return Promise.resolve({ data: [{ stock_id: '0050', stock_name: 'Test ETF', dividend_frequency: 1 }] });
-        }
-        return Promise.resolve({ data: [] });
+        return Promise.resolve({ data: [{ stock_id: '0050', stock_name: 'Test ETF', dividend_frequency: 1 }] });
       }
       if (url.includes('/get_dividend')) {
         return Promise.resolve({ data: [{ stock_id: '0050', dividend_date: '2024-01-02', last_close_price: 20 }] });
@@ -29,7 +26,7 @@ describe('InventoryTab interactions', () => {
 
   test('opens add transaction modal', async () => {
     render(<InventoryTab />);
-    const openBtn = screen.getByRole('button', { name: '新增購買紀錄' });
+    const openBtn = await screen.findByRole('button', { name: '新增購買' });
     fireEvent.click(openBtn);
     await screen.findByRole('heading', { name: '新增購買紀錄' });
   });
