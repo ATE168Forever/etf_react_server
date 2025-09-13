@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import styles from './SellModal.module.css';
+import { useLanguage } from '../i18n';
 
 export default function SellModal({ show, stock, onClose, onSubmit }) {
+  const { lang } = useLanguage();
   const [quantity, setQuantity] = useState(1);
   useEffect(() => {
     if (stock) setQuantity(stock.total_quantity);
@@ -10,10 +12,10 @@ export default function SellModal({ show, stock, onClose, onSubmit }) {
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        <h5 className={styles.title}>賣出股票</h5>
-        <p className={styles.text}>股票：{stock.stock_id} - {stock.stock_name}</p>
+        <h5 className={styles.title}>{lang === 'en' ? 'Sell Stock' : '賣出股票'}</h5>
+        <p className={styles.text}>{lang === 'en' ? 'Stock:' : '股票：'}{stock.stock_id} - {stock.stock_name}</p>
         <div className={styles.formGroup}>
-          <label className={styles.label}>賣出數量：</label>
+          <label className={styles.label}>{lang === 'en' ? 'Sell Quantity:' : '賣出數量：'}</label>
           <input
             type="number"
             min={1}
@@ -31,8 +33,8 @@ export default function SellModal({ show, stock, onClose, onSubmit }) {
           />
         </div>
         <div className={styles.buttonRow}>
-          <button onClick={() => { onSubmit(stock.stock_id, quantity); }} className={styles.primaryButton}>確認</button>
-          <button onClick={onClose} className={styles.secondaryButton}>關閉</button>
+          <button onClick={() => { onSubmit(stock.stock_id, quantity); }} className={styles.primaryButton}>{lang === 'en' ? 'Confirm' : '確認'}</button>
+          <button onClick={onClose} className={styles.secondaryButton}>{lang === 'en' ? 'Close' : '關閉'}</button>
         </div>
       </div>
     </div>

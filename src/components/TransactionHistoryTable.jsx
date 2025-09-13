@@ -1,23 +1,25 @@
 import styles from './TransactionHistoryTable.module.css';
 import { API_HOST } from '../config';
+import { useLanguage } from '../i18n';
 
 export default function TransactionHistoryTable({ transactionHistory, stockList, editingIdx, editForm, setEditForm, setEditingIdx, handleEditSave, handleDelete }) {
+  const { lang } = useLanguage();
   return (
     <div className="table-responsive">
       <table className={`table table-bordered table-striped ${styles.table}`}>
         <thead>
           <tr>
-            <th className="stock-col">股票代碼/名稱</th>
-            <th>交易日期</th>
-            <th>數量(股)</th>
-            <th>價格(元)</th>
-            <th>類型</th>
-            <th className={styles.operationCol}>操作</th>
+            <th className="stock-col">{lang === 'en' ? 'Stock Code/Name' : '股票代碼/名稱'}</th>
+            <th>{lang === 'en' ? 'Transaction Date' : '交易日期'}</th>
+            <th>{lang === 'en' ? 'Quantity (shares)' : '數量(股)'}</th>
+            <th>{lang === 'en' ? 'Price(NT$)' : '價格(元)'}</th>
+            <th>{lang === 'en' ? 'Type' : '類型'}</th>
+            <th className={styles.operationCol}>{lang === 'en' ? 'Actions' : '操作'}</th>
           </tr>
         </thead>
         <tbody>
           {transactionHistory.length === 0 ? (
-            <tr><td colSpan={6}>尚無交易紀錄</td></tr>
+            <tr><td colSpan={6}>{lang === 'en' ? 'No transaction records' : '尚無交易紀錄'}</td></tr>
           ) : (
             transactionHistory.map((item, idx) => {
               const stock = stockList.find(s => s.stock_id === item.stock_id) || {};
@@ -53,7 +55,7 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
                       />
                     ) : (
                       <>
-                        {item.quantity} ({(item.quantity / 1000).toFixed(3).replace(/\.0+$/, '')} 張)
+                        {item.quantity} ({(item.quantity / 1000).toFixed(3).replace(/\.0+$/, '')} {lang === 'en' ? 'lots' : '張'})
                       </>
                     )}
                   </td>
@@ -74,13 +76,13 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
                       '-'
                     )}
                   </td>
-                  <td>{item.type === 'sell' ? '賣出' : '買入'}</td>
+                  <td>{item.type === 'sell' ? (lang === 'en' ? 'Sell' : '賣出') : (lang === 'en' ? 'Buy' : '買入')}</td>
                   <td className={styles.operationCol}>
                     <div className={styles.actions}>
                       {isEditing ? (
                         <>
-                          <button onClick={() => handleEditSave(idx)}>儲存</button>
-                          <button onClick={() => setEditingIdx(null)} className={styles.actionButton}>取消</button>
+                          <button onClick={() => handleEditSave(idx)}>{lang === 'en' ? 'Save' : '儲存'}</button>
+                          <button onClick={() => setEditingIdx(null)} className={styles.actionButton}>{lang === 'en' ? 'Cancel' : '取消'}</button>
                         </>
                       ) : (
                         <>
@@ -90,13 +92,13 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
                               setEditForm({ date: item.date, quantity: item.quantity, price: item.price });
                             }}
                           >
-                            修改
+                            {lang === 'en' ? 'Edit' : '修改'}
                           </button>
                           <button
                             onClick={() => handleDelete(idx)}
                             className={styles.actionButton}
                           >
-                            刪除
+                            {lang === 'en' ? 'Delete' : '刪除'}
                           </button>
                         </>
                       )}
