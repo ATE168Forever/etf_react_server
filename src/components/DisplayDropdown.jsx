@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import useClickOutside from './useClickOutside';
+import { useLanguage } from '../i18n';
 
 export default function DisplayDropdown({
   toggleDividendYield,
@@ -10,6 +11,7 @@ export default function DisplayDropdown({
 }) {
   const ref = useRef();
   useClickOutside(ref, onClose);
+  const { lang } = useLanguage();
 
   const handleClick = (action) => {
     action();
@@ -19,10 +21,10 @@ export default function DisplayDropdown({
   return (
       <div className="action-dropdown silver-button-container" ref={ref}>
         <button onClick={() => handleClick(toggleDividendYield)}>
-          {showDividendYield ? '顯示配息' : '顯示殖利率'}
+          {showDividendYield ? (lang === 'en' ? 'Show Dividends' : '顯示配息') : (lang === 'en' ? 'Show Yield' : '顯示殖利率')}
         </button>
         <button onClick={() => handleClick(toggleAxis)}>
-          {showInfoAxis ? '顯示月份' : '顯示資訊'}
+          {showInfoAxis ? (lang === 'en' ? 'Show Months' : '顯示月份') : (lang === 'en' ? 'Show Info' : '顯示資訊')}
         </button>
       </div>
   );

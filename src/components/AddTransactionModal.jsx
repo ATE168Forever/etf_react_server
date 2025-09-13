@@ -1,5 +1,6 @@
 import Select from 'react-select';
 import styles from './AddTransactionModal.module.css';
+import { useLanguage } from '../i18n';
 
 const selectStyles = {
   control: provided => ({
@@ -30,6 +31,7 @@ const selectStyles = {
 };
 
 export default function AddTransactionModal({ show, onClose, stockList, form, setForm, onSubmit }) {
+  const { lang } = useLanguage();
   if (!show) return null;
   const options = stockList.map(s => ({
     value: s.stock_id,
@@ -41,10 +43,10 @@ export default function AddTransactionModal({ show, onClose, stockList, form, se
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        <h5 className={styles.title}>新增購買紀錄</h5>
+        <h5 className={styles.title}>{lang === 'en' ? 'Add Purchase Record' : '新增購買紀錄'}</h5>
         <div className={styles.form}>
           <div className={styles.formGroup}>
-            <label className={styles.label}>股票：</label>
+            <label className={styles.label}>{lang === 'en' ? 'Stock:' : '股票：'}</label>
             <div className={styles.inputWrapper}>
               <Select
                 options={options}
@@ -57,14 +59,14 @@ export default function AddTransactionModal({ show, onClose, stockList, form, se
                     stock_name: stock ? stock.stock_name : ''
                   }));
                 }}
-                placeholder="搜尋或選擇股票"
+                placeholder={lang === 'en' ? 'Search or select stock' : '搜尋或選擇股票'}
                 isClearable
                 styles={selectStyles}                     // ⬅️ apply custom styles
               />
             </div>
           </div>
           <div className={styles.formGroup}>
-            <label className={styles.label}>購買日期：</label>
+            <label className={styles.label}>{lang === 'en' ? 'Purchase Date:' : '購買日期：'}</label>
             <input
               type="date"
               value={form.date}
@@ -74,7 +76,7 @@ export default function AddTransactionModal({ show, onClose, stockList, form, se
             />
           </div>
           <div className={styles.formGroup}>
-            <label className={styles.label}>數量（股）：</label>
+            <label className={styles.label}>{lang === 'en' ? 'Quantity (shares):' : '數量（股）：'}</label>
             <input
               type="number"
               min={1000}
@@ -86,7 +88,7 @@ export default function AddTransactionModal({ show, onClose, stockList, form, se
             />
           </div>
           <div className={styles.formGroup}>
-            <label className={styles.label}>價格（元）：</label>
+            <label className={styles.label}>{lang === 'en' ? 'Price (NT$):' : '價格（元）：'}</label>
             <input
               type="number"
               min={0}
@@ -99,8 +101,8 @@ export default function AddTransactionModal({ show, onClose, stockList, form, se
           </div>
         </div>
         <div className={styles.buttonRow}>
-          <button onClick={onSubmit} className={styles.primaryButton}>儲存</button>
-          <button onClick={onClose} className={styles.secondaryButton}>關閉</button>
+          <button onClick={onSubmit} className={styles.primaryButton}>{lang === 'en' ? 'Save' : '儲存'}</button>
+          <button onClick={onClose} className={styles.secondaryButton}>{lang === 'en' ? 'Close' : '關閉'}</button>
         </div>
       </div>
     </div>
