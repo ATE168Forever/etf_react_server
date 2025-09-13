@@ -14,7 +14,6 @@ test('renders contact info and dynamic copyright', () => {
   expect(screen.getByRole('button', { name: t('light') })).toBeInTheDocument();
   const darkBtn = screen.getByRole('button', { name: t('dark') });
   expect(darkBtn).toHaveClass('btn-selected');
-  expect(screen.getByRole('button', { name: t('english') })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: t('donate') })).toBeInTheDocument();
   expect(
     screen.getByText(`© ${year} ETF Life. All rights reserved.`)

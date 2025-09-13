@@ -21,10 +21,10 @@ export default function Footer({ theme, setTheme }) {
           <div className="language-control">
             {t('language')}：
             <button className={['less-style', lang === 'zh' ? 'btn-selected':'btn-unselected'].join(' ')}
-                    onClick={() => setLang('zh')}>{t('chinese')}</button>
+                    onClick={() => setLang('zh')}>中文</button>
             /
             <button className={['less-style', lang === 'en' ? 'btn-selected':'btn-unselected'].join(' ')}
-                    onClick={() => setLang('en')}>{t('english')}</button>
+                    onClick={() => setLang('en')}>English</button>
           </div>
         </div>
         {/* 資訊區：聯絡 + 贊助 */}
