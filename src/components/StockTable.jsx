@@ -3,21 +3,9 @@ import { useState, useMemo } from 'react';
 import FilterDropdown from './FilterDropdown';
 import AdvancedFilterDropdown from './AdvancedFilterDropdown';
 import { API_HOST } from '../config';
-
-const MONTHS = [
-  '1月', '2月', '3月', '4月', '5月', '6月',
-  '7月', '8月', '9月', '10月', '11月', '12月'
-];
+import { useLanguage } from '../i18n';
 
 const NUM_COL_WIDTH = 80;
-
-const freqNameMap = {
-  1: '年配',
-  2: '半年配',
-  4: '季配',
-  6: '雙月配',
-  12: '月配'
-};
 
 export default function StockTable({
   stocks,
@@ -49,6 +37,13 @@ export default function StockTable({
   const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
   const [showIdDropdown, setShowIdDropdown] = useState(false);
   const [showExtraDropdown, setShowExtraDropdown] = useState(false);
+  const { lang, t } = useLanguage();
+  const MONTHS = lang === 'zh'
+    ? ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+    : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const freqNameMap = lang === 'zh'
+    ? { 1: '年配', 2: '半年配', 4: '季配', 6: '雙月配', 12: '月配' }
+    : { 1: 'Annual', 2: 'Semi-annual', 4: 'Quarterly', 6: 'Bimonthly', 12: 'Monthly' };
 
   const handleSort = (column) => {
     setSortConfig(prev => {
@@ -106,7 +101,7 @@ export default function StockTable({
       ? (yieldSum[stock.stock_id] > 0 ? `${yieldSum[stock.stock_id].toFixed(1)}%` : '')
       : (totalPerStock[stock.stock_id] > 0 ? totalPerStock[stock.stock_id].toFixed(1) : '');
     const annualVal = estAnnualYield[stock.stock_id] > 0 ? (
-      <span title={`目前已累積殖利率: ${(yieldSum[stock.stock_id] || 0).toFixed(1)}%`}>
+      <span title={`${lang === 'zh' ? '目前已累積殖利率' : 'Accumulated yield so far'}: ${(yieldSum[stock.stock_id] || 0).toFixed(1)}%`}>
         {estAnnualYield[stock.stock_id].toFixed(1)}%
         {estAnnualYield[stock.stock_id] === maxAnnualYield && maxAnnualYield > 0 && (
           <span className="crown-icon" role="img" aria-label="crown">👑</span>
@@ -136,7 +131,7 @@ export default function StockTable({
           return (
             <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: NUM_COL_WIDTH }}>
               <span
-                title={`除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}%\n平均月殖利率: ${perYield.toFixed(2)}%\n配息頻率: ${freqNameMap[freq] || '不定期'}\n配息日期: ${cell.dividend_date}\n發放日期: ${cell.payment_date}${extraInfo}`}
+                title={`${t('prev_close')}: ${cell.last_close_price}\n${t('current_yield')}: ${cell.dividend_yield}%\n${t('avg_month_yield')}: ${perYield.toFixed(2)}%\n${t('payout_frequency')}: ${freqNameMap[freq] || t('irregular')}\n${t('dividend_date')}: ${cell.dividend_date}\n${t('payment_date')}: ${cell.payment_date}${extraInfo}`}
               >
                 {displayVal}
                 {perYield === maxYieldPerMonth[idx] && maxYieldPerMonth[idx] > 0 && (
@@ -161,13 +156,13 @@ export default function StockTable({
         <table className="table table-bordered table-striped">
           <thead>
             <tr>
-              <th className="stock-col">股票代碼/名稱</th>
-              <th>最新股價</th>
-              <th>股息總額</th>
-              <th>當次殖利率</th>
-              <th>平均殖利率</th>
-              <th>月報酬{monthlyIncomeGoal.toLocaleString()}需張數</th>
-              <th>月報酬{monthlyIncomeGoal.toLocaleString()}需成本</th>
+              <th className="stock-col">{t('stock_code_name')}</th>
+              <th>{t('latest_price')}</th>
+              <th>{t('dividend_total')}</th>
+              <th>{t('current_yield')}</th>
+              <th>{t('average_yield')}</th>
+              <th>{lang === 'zh' ? `月報酬${monthlyIncomeGoal.toLocaleString()}需張數` : `Lots for ${monthlyIncomeGoal.toLocaleString()} monthly income`}</th>
+              <th>{lang === 'zh' ? `月報酬${monthlyIncomeGoal.toLocaleString()}需成本` : `Cost for ${monthlyIncomeGoal.toLocaleString()} monthly income`}</th>
             </tr>
           </thead>
           <tbody>
@@ -197,7 +192,7 @@ export default function StockTable({
                   <td>{lastYield > 0 ? `${lastYield.toFixed(1)}%` : ''}</td>
                   <td>{avgYield > 0 ? `${avgYield.toFixed(1)}%` : ''}</td>
                   <td>{lotsNeeded}</td>
-                  <td>{cost && `${cost}元`}</td>
+                  <td>{cost && (lang === 'en' ? `NT$${cost}` : `${cost}元`)}</td>
                 </tr>
               );
             })}
@@ -209,7 +204,7 @@ export default function StockTable({
             onClick={() => setShowAllStocks(v => !v)}
             style={{ marginTop: 8, display: 'block', marginLeft: 'auto', marginRight: 'auto' }}
           >
-            {showAllStocks ? '隱藏-' : '更多+'}
+            {showAllStocks ? `${t('hide')}-` : `${t('more')}+`}
           </button>
         )}
       </div>
@@ -223,7 +218,7 @@ export default function StockTable({
           <tr>
             <th className="stock-col">
               <span className="sortable" onClick={() => handleSort('stock_id')}>
-                股票代碼/名稱
+                {t('stock_code_name')}
                 <span className="sort-indicator">
                   {sortConfig.column === 'stock_id'
                     ? (sortConfig.direction === 'asc' ? '▲' : '▼')
@@ -234,7 +229,7 @@ export default function StockTable({
                 className="filter-btn"
                 tabIndex={0}
                 onClick={() => setShowIdDropdown(true)}
-                title="依代號篩選"
+                title={t('filter_by_id')}
               >
                 🔎
               </span>
@@ -249,7 +244,7 @@ export default function StockTable({
             </th>
             <th style={{ width: NUM_COL_WIDTH }}>
               <span className="sortable" onClick={() => handleSort('latest_price')}>
-                最新<br></br>股價
+                {lang === 'zh' ? <>最新<br></br>股價</> : <>Latest<br></br>Price</>}
                 <span className="sort-indicator">
                   {sortConfig.column === 'latest_price'
                     ? (sortConfig.direction === 'asc' ? '▲' : '▼')
@@ -258,12 +253,12 @@ export default function StockTable({
               </span>
             </th>
               <th style={{ width: NUM_COL_WIDTH, zIndex: showExtraDropdown ? 9999 : undefined }}>
-                篩選
+                {t('filter')}
                 <span
                   className="filter-btn"
                   tabIndex={0}
                   onClick={() => setShowExtraDropdown(true)}
-                  title="進階篩選"
+                  title={t('advanced_filter')}
                 >
                   🔎
                 </span>
@@ -295,13 +290,13 @@ export default function StockTable({
                       arr[idx] = e.target.checked;
                       setMonthHasValue(arr);
                     }}
-                  />&nbsp;配息
+                  />&nbsp;{t('payout')}
                 </label>
               </th>
             ))}
             <th>
               <span className="sortable" onClick={() => handleSort('total')}>
-                累積{showDividendYield ? '殖利率' : '股息'}
+                {showDividendYield ? t('total_yield') : t('total_dividend')}
                 <span className="sort-indicator">
                   {sortConfig.column === 'total'
                     ? (sortConfig.direction === 'asc' ? '▲' : '▼')
@@ -311,7 +306,7 @@ export default function StockTable({
               {'/ '}
               <br></br>
               <span className="sortable" onClick={() => handleSort('annual_yield')}>
-                預估殖利率
+                {t('estimated_yield')}
                 <span className="sort-indicator">
                   {sortConfig.column === 'annual_yield'
                     ? (sortConfig.direction === 'asc' ? '▲' : '▼')
@@ -333,7 +328,7 @@ export default function StockTable({
           onClick={() => setShowAllStocks(v => !v)}
           style={{ marginTop: 8, display: 'block', marginLeft: 'auto', marginRight: 'auto' }}
         >
-          {showAllStocks ? '隱藏-' : '更多+'}
+          {showAllStocks ? `${t('hide')}-` : `${t('more')}+`}
         </button>
       )}
     </div>
