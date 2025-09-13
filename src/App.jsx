@@ -577,7 +577,7 @@ function App() {
       {tab === 'home' && <HomeTab />}
       {tab === 'dividend' && (
         <div className="App">
-          <h3>{lang === 'en' ? 'ETF Monthly Dividend Summary' : 'ETF 每月配息總表'}</h3>
+          <h3>{lang === 'en' ? 'Monthly Dividend Summary' : '每月配息總表'}</h3>
           <div className="dividend-controls">
             <div className="control-pair">
               <label>{lang === 'en' ? 'Year:' : '年份：'}</label>

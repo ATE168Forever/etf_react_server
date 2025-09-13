@@ -1,51 +1,57 @@
 .footer {
   margin-top: 2rem;
   padding: 1rem 0;
-  /* padding: 0.1rem 0; */
   background: var(--color-card-bg);
   color: var(--color-text);
   border-top: 1px solid var(--color-border);
   text-align: center;
 }
 
+/* 包含控制區與資訊區的容器 */
 .footer-content {
-  max-width: 600px;
+  max-width: 800px;      /* 擴大寬度 */
   margin: 0 auto;
-}
-
-.theme-toggle {
-  /* margin-bottom: 5px; */
   display: flex;
   flex-direction: column;
-  /* align-items: flex-end; */
+  align-items: center;
 }
 
-.language-toggle {
-  /* margin-top: 4px; */
-  margin-top: 0.1rem;
-
+/* 控制區：主題/語言 */
+.controls {
+  display: flex;
+  flex-wrap: wrap;        /* 小螢幕換行 */
+  justify-content: center;
+  /* gap: 0.5rem 1rem;       水平及垂直間距 */
+  /* gap: 0.1rem 0.1rem;       水平及垂直間距 */
 }
-
-.language-toggle button {
+.theme-control,
+.language-control {
+  display: flex;
+  align-items: center;
+}
+.theme-control button,
+.language-control button {
   margin-left: 4px;
 }
 
-.theme-buttons button {
-  margin-left: 4px;
-}
-
-.donation-section {
+/* 資訊區：聯絡 + 贊助 */
+.info {
   /* margin-top: 0.5rem; */
-  margin-top: 0.1rem;
+  display: flex;
+  flex-wrap: wrap;
+  /* gap: 0.5rem; */
+  justify-content: center;
 }
-
-.donate-link {
-  display: inline-block;
-  margin-left: 3px;
+.info .donation {
+  margin-left: 0.5rem;
 }
-
-.copyright {
-  /* margin-top: 1rem; */
-  margin-top: 0.1rem;
-  font-size: 0.9rem;
+@media (min-width: 768px) {
+  .footer-content {
+    flex-direction: row;   /* 桌機寬度時橫向排列 */
+    justify-content: space-between;
+    align-items: center;
+  }
+  .info {
+    margin-top: 0;
+  }
 }
