@@ -540,7 +540,7 @@ function App() {
             className={`nav-link${tab === 'dividend' ? ' active' : ''}`}
             onClick={() => setTab('dividend')}
           >
-            {t('dividend')}
+            {t('dividend_search')}
           </button>
         </li>
         <li className="nav-item">

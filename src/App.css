@@ -284,12 +284,22 @@ button {
   transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
 }
 
+button.less-style {
+  padding: 0; /* override only padding */
+  background-color: transparent;
+}
+
 button:hover,
 button:focus {
   background: var(--accent-gold-hover);
   color: var(--color-text);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
+}
+
+button:hover.less-style,
+button:focus.less-style {
+  background: transparent;
 }
 
 button:active {

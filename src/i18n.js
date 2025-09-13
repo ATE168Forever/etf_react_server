@@ -17,8 +17,12 @@ export const translations = {
     home: '首頁',
     inventory: '庫存管理',
     mydividend: '我的配息',
-    dividend: 'ETF 配息查詢',
-    about: '關於本站'
+    dividend_search: 'ETF 配息查詢',
+    about: '關於本站',
+    dividend: '除息金額',
+    payment: '發放金額',
+    ex_dividend_date: '除息日',
+    payment_date: '發放日'
   },
   en: {
     theme: 'Theme',
@@ -36,8 +40,10 @@ export const translations = {
     home: 'Home',
     inventory: 'Inventory',
     mydividend: 'My Dividends',
-    dividend: 'Dividend Search',
-    about: 'About'
+    dividend_search: 'Dividend Search',
+    about: 'About',
+    dividend: 'Dividend',
+    payment: 'Payment'
   }
 };
 

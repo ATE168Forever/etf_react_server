@@ -11,14 +11,14 @@ export default function Footer({ theme, setTheme }) {
           <div className="theme-buttons">
             {t('theme')}：
             <button
-              className={theme === 'light' ? 'btn-selected' : 'btn-unselected'}
+              className={[theme === 'light' ? 'btn-selected' : 'btn-unselected', 'less-style'].join(' ')}
               onClick={() => setTheme('light')}
             >
               {t('light')}
             </button>
             /
             <button
-              className={theme === 'dark' ? 'btn-selected' : 'btn-unselected'}
+              className={[theme === 'dark' ? 'btn-selected' : 'btn-unselected', 'less-style'].join(' ')}
               onClick={() => setTheme('dark')}
             >
               {t('dark')}
@@ -27,14 +27,14 @@ export default function Footer({ theme, setTheme }) {
           <div className="language-toggle">
             {t('language')}：
             <button
-              className={lang === 'zh' ? 'btn-selected' : 'btn-unselected'}
+              className={[lang === 'zh' ? 'btn-selected' : 'btn-unselected', 'less-style'].join(' ')}
               onClick={() => setLang('zh')}
             >
               {t('chinese')}
             </button>
             /
             <button
-              className={lang === 'en' ? 'btn-selected' : 'btn-unselected'}
+              className={[lang === 'en' ? 'btn-selected' : 'btn-unselected', 'less-style'].join(' ')}
               onClick={() => setLang('en')}
             >
               {t('english')}
@@ -42,10 +42,8 @@ export default function Footer({ theme, setTheme }) {
           </div>
         </div>
         <div className="contact-section">
-          <p>
             {t('email_label')}
             <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a>
-          </p>
         </div>
         <div className="donation-section">
           {t('donate_prompt')}

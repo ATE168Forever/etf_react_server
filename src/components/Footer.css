@@ -1,6 +1,7 @@
 .footer {
   margin-top: 2rem;
   padding: 1rem 0;
+  /* padding: 0.1rem 0; */
   background: var(--color-card-bg);
   color: var(--color-text);
   border-top: 1px solid var(--color-border);
@@ -13,14 +14,16 @@
 }
 
 .theme-toggle {
-  margin-bottom: 5px;
+  /* margin-bottom: 5px; */
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  /* align-items: flex-end; */
 }
 
 .language-toggle {
-  margin-top: 4px;
+  /* margin-top: 4px; */
+  margin-top: 0.1rem;
+
 }
 
 .language-toggle button {
@@ -32,7 +35,8 @@
 }
 
 .donation-section {
-  margin-top: 0.5rem;
+  /* margin-top: 0.5rem; */
+  margin-top: 0.1rem;
 }
 
 .donate-link {
@@ -41,6 +45,7 @@
 }
 
 .copyright {
-  margin-top: 1rem;
+  /* margin-top: 1rem; */
+  margin-top: 0.1rem;
   font-size: 0.9rem;
 }

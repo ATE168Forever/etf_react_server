@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '../i18n';
 
 const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 const DAY_NAMES = ['日','一','二','三','四','五','六'];
@@ -22,6 +23,7 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const startDay = firstDay.getDay();
+  const { lang, setLang, t } = useLanguage();
 
   const weeks = [];
   let day = 1 - startDay;
@@ -56,8 +58,8 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
         </div>
         {showTotals && (exTotal > 0 || payTotal > 0) && (
           <div className="calendar-summary">
-            <div>除息金額: {Math.round(exTotal).toLocaleString()}</div>
-            <span style={{ marginLeft: 8 }}>發放金額: {Math.round(payTotal).toLocaleString()}</span>
+            <div>{t('dividend')}: {Math.round(exTotal).toLocaleString()}</div>
+            <span style={{ marginLeft: 8 }}>{t('payment')}: {Math.round(payTotal).toLocaleString()}</span>
           </div>
         )}
       </div>
