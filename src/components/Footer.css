@@ -28,6 +28,7 @@
 .language-control {
   display: flex;
   align-items: center;
+  margin-left: 1rem;
 }
 .theme-control button,
 .language-control button {

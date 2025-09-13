@@ -67,7 +67,7 @@ export default function InventoryTab() {
       confirmDeleteRecord: '確定要刪除此筆紀錄？',
       sellExceeds: '賣出數量不得超過庫存',
       notice: '這是一個免費網站，我們不會把你的資料存到後台或伺服器，所有的紀錄（像是你的設定或操作紀錄）都只會保存在你的瀏覽器裡。簡單說：你的資料只在你這台電腦，不會上傳，也不會被我們看到，請安心使用！',
-      addRecord: '新增購買紀錄',
+      addRecord: '新增購買',
       dataAccess: '存取資料',
       currentInventory: '目前庫存',
       showHistory: '顯示：交易歷史',
@@ -114,21 +114,21 @@ export default function InventoryTab() {
       confirmDeleteRecord: 'Delete this record?',
       sellExceeds: 'Sell quantity cannot exceed inventory',
       notice: 'This is a free website; we do not store your data on servers. All records stay in your browser. In short, your data remains on your computer and is not uploaded or seen by us.',
-      addRecord: 'Add Purchase Record',
+      addRecord: 'Add Purchase',
       dataAccess: 'Data Access',
-      currentInventory: 'Current Inventory',
-      showHistory: 'Show: Transaction History',
+      currentInventory: 'Inventory',
+      showHistory: 'Show: Transaction',
       cache: 'Cache',
       totalInvestment: 'Total Investment:',
-      totalValue: 'Current Total Value:',
+      totalValue: 'Total Value:',
       stockCodeName: 'Stock Code/Name',
       avgPrice: 'Average Price',
       totalQuantity: 'Total Quantity',
       actions: 'Actions',
       noInventory: 'No inventory',
       sell: 'Sell',
-      transactionHistory: 'Transaction History ',
-      showInventory: 'Show: Current Inventory'
+      transactionHistory: 'Transaction ',
+      showInventory: 'Show: Inventory'
     }
   };
   const msg = text[lang];
