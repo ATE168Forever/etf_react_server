@@ -35,12 +35,14 @@ const DEFAULT_WATCH_GROUPS = [
   }
 ];
 
-function getIncomeGoalInfo(dividend, price, goal, freq = 12) {
+function calcIncomeGoalInfo(dividend, price, goal, freq = 12, lang = 'zh') {
   if (!price || dividend <= 0 || freq <= 0) return '';
   const annualDividend = dividend * freq;
   const lotsNeeded = Math.ceil((goal * 12) / (annualDividend * 1000));
   const cost = Math.round(lotsNeeded * 1000 * price).toLocaleString();
-  return `\n月報酬${goal.toLocaleString()}需: ${lotsNeeded}張\n成本: ${cost}元`;
+  return lang === 'en'
+    ? `\nTo reach a monthly return of ${goal.toLocaleString()}, you need ${lotsNeeded} lots\nCost: ${cost}`
+    : `\n月報酬${goal.toLocaleString()}需: ${lotsNeeded}張\n成本: ${cost}元`;
 }
 
 function App() {
@@ -105,6 +107,16 @@ function App() {
   const [freqMap, setFreqMap] = useState({});
   const timeZone = 'Asia/Taipei';
   const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
+  const getIncomeGoalInfo = (dividend, price, goal, freq = 12) =>
+    calcIncomeGoalInfo(dividend, price, goal, freq, lang);
+  const renderGroupName = (name) => {
+    const map = {
+      '現金流導向（月月配息）': lang === 'en' ? 'Cash Flow Focus (Monthly Dividends)' : '現金流導向（月月配息）',
+      '穩健成長 + 配息': lang === 'en' ? 'Steady Growth + Dividends' : '穩健成長 + 配息',
+      '簡化操作（季配息）': lang === 'en' ? 'Simplified Operation (Quarterly Dividends)' : '簡化操作（季配息）'
+    };
+    return map[name] || name;
+  };
   const handleResetFilters = (keepIds = false) => {
       if (!keepIds) setSelectedStockIds([]);
       setMonthHasValue(Array(12).fill(false));
@@ -272,7 +284,7 @@ function App() {
   };
 
   const handleDeleteGroup = (idx) => {
-    if (!window.confirm('確定刪除?')) return;
+    if (!window.confirm(lang === 'en' ? 'Delete this group?' : '確定刪除?')) return;
     const group = watchGroups[idx];
     const newGroups = watchGroups.filter((_, i) => i !== idx);
     saveGroups(newGroups);
@@ -505,7 +517,7 @@ function App() {
     <header className="mb-1 text-center">
       <img
         src={theme === 'dark' ? dividendLogoDark : dividendLogoLight}
-        alt="股息人生"
+        alt={lang === 'en' ? 'ETF Life' : '股息人生'}
         className="site-logo"
       />
     </header>
@@ -513,7 +525,9 @@ function App() {
         <div className="dividend-alert">
           {upcomingAlerts.map(a => (
             <div key={`${a.stock_id}-${a.type}`}>
-              {a.stock_name || a.stock_id} 明天即將{a.type === 'ex' ? '除息' : '配息'} 每股 {a.dividend} 元，預估領取 {Math.round(a.total).toLocaleString()} 元
+              {lang === 'en'
+                ? `${a.stock_name || a.stock_id} will ${a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'} tomorrow. ${a.dividend} per share, estimated ${Math.round(a.total).toLocaleString()}`
+                : `${a.stock_name || a.stock_id} 明天即將${a.type === 'ex' ? '除息' : '配息'} 每股 ${a.dividend} 元，預估領取 ${Math.round(a.total).toLocaleString()} 元`}
             </div>
           ))}
         </div>
@@ -563,10 +577,10 @@ function App() {
       {tab === 'home' && <HomeTab />}
       {tab === 'dividend' && (
         <div className="App">
-          <h3>ETF 每月配息總表</h3>
+          <h3>{lang === 'en' ? 'ETF Monthly Dividend Summary' : 'ETF 每月配息總表'}</h3>
           <div className="dividend-controls">
             <div className="control-pair">
-              <label>年份：</label>
+              <label>{lang === 'en' ? 'Year:' : '年份：'}</label>
               <select
                 value={selectedYear}
                 onChange={e => setSelectedYear(Number(e.target.value))}
@@ -577,12 +591,12 @@ function App() {
               </select>
             </div>
             <div className="control-pair">
-              <label>觀察組合：</label>
-              <button onClick={() => setShowGroupModal(true)} style={{ marginLeft: 4 }}>建立</button>
+              <label>{lang === 'en' ? 'Watch Group:' : '觀察組合：'}</label>
+              <button onClick={() => setShowGroupModal(true)} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Create' : '建立'}</button>
               <select value={selectedGroup} onChange={handleGroupChange}>
-                <option value="">自選</option>
+                <option value="">{lang === 'en' ? 'Custom' : '自選'}</option>
                 {watchGroups.map(g => (
-                  <option key={g.name} value={g.name}>{g.name}</option>
+                  <option key={g.name} value={g.name}>{renderGroupName(g.name)}</option>
                 ))}
               </select>
             </div>
@@ -591,7 +605,9 @@ function App() {
             onClick={() => setShowCalendar(v => !v)}
             style={{ marginTop: 10 }}
           >
-            {showCalendar ? '隱藏月曆' : '顯示月曆'}
+            {showCalendar
+              ? (lang === 'en' ? 'Hide Calendar' : '隱藏月曆')
+              : (lang === 'en' ? 'Show Calendar' : '顯示月曆')}
           </button>
 
           {loading ? (
@@ -607,21 +623,21 @@ function App() {
                       onClick={() => setCalendarFilter('ex')}
                       className={calendarFilter === 'ex' ? 'btn-selected' : 'btn-unselected'}
                     >
-                      除息日
+                      {lang === 'en' ? 'Ex-dividend Date' : '除息日'}
                     </button>
                     <button
                       onClick={() => setCalendarFilter('pay')}
                       className={calendarFilter === 'pay' ? 'btn-selected' : 'btn-unselected'}
                       style={{ marginLeft: 6 }}
                     >
-                      發放日
+                      {lang === 'en' ? 'Payment Date' : '發放日'}
                     </button>
                     <button
                       onClick={() => setCalendarFilter('both')}
                       className={calendarFilter === 'both' ? 'btn-selected' : 'btn-unselected'}
                       style={{ marginLeft: 6 }}
                     >
-                      除息/發放日
+                      {lang === 'en' ? 'Ex/Payout Date' : '除息/發放日'}
                     </button>
                   </div>
                   <DividendCalendar year={selectedYear} events={filteredCalendarEvents} showTotals={false} />
@@ -629,7 +645,9 @@ function App() {
               )}
 
               <div className="more-item" style={{ marginTop: 10 }}>
-                <button onClick={() => setShowDisplays(v => !v)} style={{ marginRight: 10 }}>其他顯示</button>
+                <button onClick={() => setShowDisplays(v => !v)} style={{ marginRight: 10 }}>
+                  {lang === 'en' ? 'Other Options' : '其他顯示'}
+                </button>
                 {showDisplays && (
                   <DisplayDropdown
                     toggleDividendYield={() => setShowDividendYield(v => !v)}
@@ -642,13 +660,15 @@ function App() {
               {/* </div> */}
 
               {/* <div className={styles.tableHeader}> */}
-                <button onClick={handleResetFilters} style={{ marginRight: 10 }}>重置所有篩選</button>
-                <span>提示：點下篩選鈕開啟篩選視窗。</span>
+                <button onClick={handleResetFilters} style={{ marginRight: 10 }}>
+                  {lang === 'en' ? 'Reset All Filters' : '重置所有篩選'}
+                </button>
+                <span>{lang === 'en' ? 'Tip: Click the filter button to open the filter window.' : '提示：點下篩選鈕開啟篩選視窗。'}</span>
               </div>
 
               {dividendCacheInfo && (
                 <div className={styles.cacheInfo}>
-                  快取: {dividendCacheInfo.cacheStatus}
+                  {lang === 'en' ? 'Cache' : '快取'}: {dividendCacheInfo.cacheStatus}
                   {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
                 </div>
               )}
@@ -656,7 +676,7 @@ function App() {
               {showInfoAxis && (
                 <div style={{ margin: '10px 0' }}>
                   <label>
-                    預計月報酬：
+                    {lang === 'en' ? 'Estimated Monthly Income:' : '預計月報酬：'}
                     <input
                       type="number"
                       value={monthlyIncomeGoal}
@@ -710,16 +730,16 @@ function App() {
       {showGroupModal && (
         <div className="modal-overlay">
           <div className="custom-modal">
-            <h3>觀察組合</h3>
+            <h3>{lang === 'en' ? 'Watch Groups' : '觀察組合'}</h3>
             <div style={{ marginBottom: 10 }}>
-              <button onClick={handleAddGroup}>新增組合</button>
+              <button onClick={handleAddGroup}>{lang === 'en' ? 'Add Group' : '新增組合'}</button>
             </div>
             {editingGroupIndex !== null && (
               <div style={{ marginBottom: 10 }}>
                 <div>
                   <input
                     type="text"
-                    placeholder="組合名稱"
+                    placeholder={lang === 'en' ? 'Group Name' : '組合名稱'}
                     value={groupNameInput}
                     onChange={e => setGroupNameInput(e.target.value)}
                   />
@@ -727,7 +747,7 @@ function App() {
                 <div>
                   <input
                     type="text"
-                    placeholder="ETF ID，以逗號分隔"
+                    placeholder={lang === 'en' ? 'ETF IDs, comma separated' : 'ETF ID，以逗號分隔'}
                     value={groupIdsInput}
                     onChange={e => setGroupIdsInput(e.target.value)}
                     style={{
@@ -736,24 +756,24 @@ function App() {
                     }}
                   />
                 </div>
-                <button onClick={handleSaveGroup} style={{ marginLeft: 4 }}>儲存</button>
-                <button onClick={handleCancelEditGroup} style={{ marginLeft: 4 }}>取消</button>
+                <button onClick={handleSaveGroup} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Save' : '儲存'}</button>
+                <button onClick={handleCancelEditGroup} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Cancel' : '取消'}</button>
               </div>
             )}
             {watchGroups.map((g, idx) => (
               <div key={idx} style={{ marginBottom: 8 }}>
                 <div>
-                  <strong style={isGroupModified(g) ? { color: 'red' } : {}}>{g.name}</strong>: {renderGroupIds(g)}
+                  <strong style={isGroupModified(g) ? { color: 'red' } : {}}>{renderGroupName(g.name)}</strong>: {renderGroupIds(g)}
                 </div>
                 <div style={{ marginTop: 4 }}>
-                  <button onClick={() => handleEditGroup(idx)}>修改</button>
-                  <button onClick={() => handleDeleteGroup(idx)} style={{ marginLeft: 4 }}>刪除</button>
+                  <button onClick={() => handleEditGroup(idx)}>{lang === 'en' ? 'Edit' : '修改'}</button>
+                  <button onClick={() => handleDeleteGroup(idx)} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Delete' : '刪除'}</button>
                 </div>
               </div>
             ))}
-            {watchGroups.length === 0 && <p style={{ fontSize: 14 }}>尚無組合</p>}
+            {watchGroups.length === 0 && <p style={{ fontSize: 14 }}>{lang === 'en' ? 'No groups yet' : '尚無組合'}</p>}
             <div style={{ textAlign: 'right', marginTop: 12 }}>
-              <button onClick={() => setShowGroupModal(false)}>關閉</button>
+              <button onClick={() => setShowGroupModal(false)}>{lang === 'en' ? 'Close' : '關閉'}</button>
             </div>
           </div>
         </div>
