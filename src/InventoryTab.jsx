@@ -13,6 +13,7 @@ import SellModal from './components/SellModal';
 import TransactionHistoryTable from './components/TransactionHistoryTable';
 import DataDropdown from './components/DataDropdown';
 import styles from './InventoryTab.module.css';
+import { useLanguage } from './i18n';
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
 
@@ -33,6 +34,104 @@ export default function InventoryTab() {
   const [cacheInfo, setCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [latestPrices, setLatestPrices] = useState({});
+  const { lang } = useLanguage();
+  const text = {
+    zh: {
+      importOverwrite: '匯入後將覆蓋現有紀錄，是否繼續？',
+      importDone: '已匯入完成',
+      exportCsvConfirm: '確定要匯出 CSV？',
+      exportDriveConfirm: '確定要匯出到 Google Drive？',
+      exportDriveSuccess: '已匯出到 Google Drive',
+      exportDriveFail: '匯出到 Google Drive 失敗',
+      noBackupFound: '未找到備份檔案',
+      importDriveSuccess: '已從 Google Drive 匯入資料',
+      importDriveFail: '匯入 Google Drive 失敗',
+      exportDropboxConfirm: '確定要匯出到 Dropbox？',
+      exportDropboxSuccess: '已匯出到 Dropbox',
+      exportDropboxFail: '匯出到 Dropbox 失敗',
+      importDropboxSuccess: '已從 Dropbox 匯入資料',
+      importDropboxFail: '匯入 Dropbox 失敗',
+      exportOneDriveConfirm: '確定要匯出到 OneDrive？',
+      exportOneDriveSuccess: '已匯出到 OneDrive',
+      exportOneDriveFail: '匯出到 OneDrive 失敗',
+      importOneDriveSuccess: '已從 OneDrive 匯入資料',
+      importOneDriveFail: '匯入 OneDrive 失敗',
+      exportICloudConfirm: '確定要匯出到 iCloud Drive？',
+      exportICloudSuccess: '已匯出到 iCloud Drive',
+      exportICloudFail: '匯出到 iCloud Drive 失敗',
+      importICloudSuccess: '已從 iCloud Drive 匯入資料',
+      importICloudFail: '匯入 iCloud Drive 失敗',
+      backupPrompt: '距離上次備份已超過30天，是否匯出 CSV 備份？',
+      inputRequired: '請輸入完整資料',
+      invalidNumbers: '請輸入有效數字、價格和日期',
+      confirmDeleteRecord: '確定要刪除此筆紀錄？',
+      sellExceeds: '賣出數量不得超過庫存',
+      notice: '這是一個免費網站，我們不會把你的資料存到後台或伺服器，所有的紀錄（像是你的設定或操作紀錄）都只會保存在你的瀏覽器裡。簡單說：你的資料只在你這台電腦，不會上傳，也不會被我們看到，請安心使用！',
+      addRecord: '新增購買紀錄',
+      dataAccess: '存取資料',
+      currentInventory: '目前庫存',
+      showHistory: '顯示：交易歷史',
+      cache: '快取',
+      totalInvestment: '總投資金額：',
+      totalValue: '目前總價值：',
+      stockCodeName: '股票代碼/名稱',
+      avgPrice: '平均股價',
+      totalQuantity: '總數量',
+      actions: '操作',
+      noInventory: '尚無庫存',
+      sell: '賣出',
+      transactionHistory: '交易歷史 ',
+      showInventory: '顯示：目前庫存'
+    },
+    en: {
+      importOverwrite: 'Import will overwrite existing records. Continue?',
+      importDone: 'Import completed',
+      exportCsvConfirm: 'Export CSV?',
+      exportDriveConfirm: 'Export to Google Drive?',
+      exportDriveSuccess: 'Exported to Google Drive',
+      exportDriveFail: 'Export to Google Drive failed',
+      noBackupFound: 'Backup file not found',
+      importDriveSuccess: 'Imported data from Google Drive',
+      importDriveFail: 'Import from Google Drive failed',
+      exportDropboxConfirm: 'Export to Dropbox?',
+      exportDropboxSuccess: 'Exported to Dropbox',
+      exportDropboxFail: 'Export to Dropbox failed',
+      importDropboxSuccess: 'Imported data from Dropbox',
+      importDropboxFail: 'Import from Dropbox failed',
+      exportOneDriveConfirm: 'Export to OneDrive?',
+      exportOneDriveSuccess: 'Exported to OneDrive',
+      exportOneDriveFail: 'Export to OneDrive failed',
+      importOneDriveSuccess: 'Imported data from OneDrive',
+      importOneDriveFail: 'Import from OneDrive failed',
+      exportICloudConfirm: 'Export to iCloud Drive?',
+      exportICloudSuccess: 'Exported to iCloud Drive',
+      exportICloudFail: 'Export to iCloud Drive failed',
+      importICloudSuccess: 'Imported data from iCloud Drive',
+      importICloudFail: 'Import from iCloud Drive failed',
+      backupPrompt: 'It has been over 30 days since last backup. Export CSV backup?',
+      inputRequired: 'Please enter all fields',
+      invalidNumbers: 'Please enter valid numbers, price and date',
+      confirmDeleteRecord: 'Delete this record?',
+      sellExceeds: 'Sell quantity cannot exceed inventory',
+      notice: 'This is a free website; we do not store your data on servers. All records stay in your browser. In short, your data remains on your computer and is not uploaded or seen by us.',
+      addRecord: 'Add Purchase Record',
+      dataAccess: 'Data Access',
+      currentInventory: 'Current Inventory',
+      showHistory: 'Show: Transaction History',
+      cache: 'Cache',
+      totalInvestment: 'Total Investment:',
+      totalValue: 'Current Total Value:',
+      stockCodeName: 'Stock Code/Name',
+      avgPrice: 'Average Price',
+      totalQuantity: 'Total Quantity',
+      actions: 'Actions',
+      noInventory: 'No inventory',
+      sell: 'Sell',
+      transactionHistory: 'Transaction History ',
+      showInventory: 'Show: Current Inventory'
+    }
+  };
+  const msg = text[lang];
 
   const handleExport = useCallback(() => {
     const csv = transactionsToCsv(transactionHistory);
@@ -64,7 +163,7 @@ export default function InventoryTab() {
         return;
       }
       if (transactionHistory.length > 0) {
-        if (!window.confirm('匯入後將覆蓋現有紀錄，是否繼續？')) {
+        if (!window.confirm(msg.importOverwrite)) {
           e.target.value = '';
           return;
         }
@@ -72,7 +171,7 @@ export default function InventoryTab() {
       setTransactionHistory(imported);
       saveTransactionHistory(imported);
       e.target.value = '';
-      alert('已匯入完成');
+      alert(msg.importDone);
       if (typeof window !== 'undefined') window.location.reload();
     };
     reader.readAsText(file, 'utf-8');
@@ -85,20 +184,20 @@ export default function InventoryTab() {
   };
 
   const handleExportClick = () => {
-    if (window.confirm('確定要匯出 CSV？')) {
+    if (window.confirm(msg.exportCsvConfirm)) {
       handleExport();
     }
   };
 
   const handleDriveExport = async () => {
-    if (!window.confirm('確定要匯出到 Google Drive？')) return;
+    if (!window.confirm(msg.exportDriveConfirm)) return;
     try {
       await exportTransactionsToDrive(transactionHistory);
       Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
-      alert('已匯出到 Google Drive');
+      alert(msg.exportDriveSuccess);
     } catch (err) {
       console.error('Drive manual export failed', err);
-      alert('匯出到 Google Drive 失敗');
+      alert(msg.exportDriveFail);
     }
   };
 
@@ -106,11 +205,11 @@ export default function InventoryTab() {
     try {
       const list = await importTransactionsFromDrive();
       if (!list || list.length === 0) {
-        alert('未找到備份檔案');
+        alert(msg.noBackupFound);
         return;
       }
       if (transactionHistory.length > 0) {
-        if (!window.confirm('匯入後將覆蓋現有紀錄，是否繼續？')) {
+        if (!window.confirm(msg.importOverwrite)) {
           return;
         }
       }
@@ -123,23 +222,23 @@ export default function InventoryTab() {
       });
       setTransactionHistory(enriched);
       saveTransactionHistory(enriched);
-      alert('已從 Google Drive 匯入資料');
+      alert(msg.importDriveSuccess);
       if (typeof window !== 'undefined') window.location.reload();
     } catch (err) {
       console.error('Drive manual import failed', err);
-      alert('匯入 Google Drive 失敗');
+      alert(msg.importDriveFail);
     }
   };
 
   const handleDropboxExport = async () => {
-    if (!window.confirm('確定要匯出到 Dropbox？')) return;
+    if (!window.confirm(msg.exportDropboxConfirm)) return;
     try {
       await exportTransactionsToDropbox(transactionHistory);
       Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
-      alert('已匯出到 Dropbox');
+      alert(msg.exportDropboxSuccess);
     } catch (err) {
       console.error('Dropbox manual export failed', err);
-      alert('匯出到 Dropbox 失敗');
+      alert(msg.exportDropboxFail);
     }
   };
 
@@ -147,11 +246,11 @@ export default function InventoryTab() {
     try {
       const list = await importTransactionsFromDropbox();
       if (!list || list.length === 0) {
-        alert('未找到備份檔案');
+        alert(msg.noBackupFound);
         return;
       }
       if (transactionHistory.length > 0) {
-        if (!window.confirm('匯入後將覆蓋現有紀錄，是否繼續？')) {
+        if (!window.confirm(msg.importOverwrite)) {
           return;
         }
       }
@@ -164,23 +263,23 @@ export default function InventoryTab() {
       });
       setTransactionHistory(enriched);
       saveTransactionHistory(enriched);
-      alert('已從 Dropbox 匯入資料');
+      alert(msg.importDropboxSuccess);
       if (typeof window !== 'undefined') window.location.reload();
     } catch (err) {
       console.error('Dropbox manual import failed', err);
-      alert('匯入 Dropbox 失敗');
+      alert(msg.importDropboxFail);
     }
   };
 
   const handleOneDriveExport = async () => {
-    if (!window.confirm('確定要匯出到 OneDrive？')) return;
+    if (!window.confirm(msg.exportOneDriveConfirm)) return;
     try {
       await exportTransactionsToOneDrive(transactionHistory);
       Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
-      alert('已匯出到 OneDrive');
+      alert(msg.exportOneDriveSuccess);
     } catch (err) {
       console.error('OneDrive manual export failed', err);
-      alert('匯出到 OneDrive 失敗');
+      alert(msg.exportOneDriveFail);
     }
   };
 
@@ -188,11 +287,11 @@ export default function InventoryTab() {
     try {
       const list = await importTransactionsFromOneDrive();
       if (!list || list.length === 0) {
-        alert('未找到備份檔案');
+        alert(msg.noBackupFound);
         return;
       }
       if (transactionHistory.length > 0) {
-        if (!window.confirm('匯入後將覆蓋現有紀錄，是否繼續？')) {
+        if (!window.confirm(msg.importOverwrite)) {
           return;
         }
       }
@@ -205,23 +304,23 @@ export default function InventoryTab() {
       });
       setTransactionHistory(enriched);
       saveTransactionHistory(enriched);
-      alert('已從 OneDrive 匯入資料');
+      alert(msg.importOneDriveSuccess);
       if (typeof window !== 'undefined') window.location.reload();
     } catch (err) {
       console.error('OneDrive manual import failed', err);
-      alert('匯入 OneDrive 失敗');
+      alert(msg.importOneDriveFail);
     }
   };
 
   const handleICloudExport = async () => {
-    if (!window.confirm('確定要匯出到 iCloud Drive？')) return;
+    if (!window.confirm(msg.exportICloudConfirm)) return;
     try {
       await exportTransactionsToICloud(transactionHistory);
       Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
-      alert('已匯出到 iCloud Drive');
+      alert(msg.exportICloudSuccess);
     } catch (err) {
       console.error('iCloud manual export failed', err);
-      alert('匯出到 iCloud Drive 失敗');
+      alert(msg.exportICloudFail);
     }
   };
 
@@ -229,11 +328,11 @@ export default function InventoryTab() {
     try {
       const list = await importTransactionsFromICloud();
       if (!list || list.length === 0) {
-        alert('未找到備份檔案');
+        alert(msg.noBackupFound);
         return;
       }
       if (transactionHistory.length > 0) {
-        if (!window.confirm('匯入後將覆蓋現有紀錄，是否繼續？')) {
+        if (!window.confirm(msg.importOverwrite)) {
           return;
         }
       }
@@ -246,11 +345,11 @@ export default function InventoryTab() {
       });
       setTransactionHistory(enriched);
       saveTransactionHistory(enriched);
-      alert('已從 iCloud Drive 匯入資料');
+      alert(msg.importICloudSuccess);
       if (typeof window !== 'undefined') window.location.reload();
     } catch (err) {
       console.error('iCloud manual import failed', err);
-      alert('匯入 iCloud Drive 失敗');
+      alert(msg.importICloudFail);
     }
   };
 
@@ -261,7 +360,7 @@ export default function InventoryTab() {
     if (!last) {
       Cookies.set(BACKUP_COOKIE_KEY, now.toISOString(), { expires: 365 });
     } else if (now - new Date(last) >= 30 * 24 * 60 * 60 * 1000) {
-      if (window.confirm('距離上次備份已超過30天，是否匯出 CSV 備份？')) {
+      if (window.confirm(msg.backupPrompt)) {
         handleExport();
       }
       Cookies.set(BACKUP_COOKIE_KEY, now.toISOString(), { expires: 365 });
@@ -401,7 +500,7 @@ export default function InventoryTab() {
 
   const handleAdd = () => {
     if (!form.stock_id || !form.date || !form.quantity || !form.price) {
-      alert('請輸入完整資料');
+      alert(msg.inputRequired);
       return;
     }
     setTransactionHistory([
@@ -422,7 +521,7 @@ export default function InventoryTab() {
   const handleEditSave = idx => {
     const original = transactionHistory[idx];
     if (!editForm.quantity || !editForm.date || (original.type === 'buy' && !editForm.price)) {
-      alert('請輸入有效數字、價格和日期');
+      alert(msg.invalidNumbers);
       return;
     }
     const updated = [...transactionHistory];
@@ -439,7 +538,7 @@ export default function InventoryTab() {
   };
 
   const handleDelete = idx => {
-    if (window.confirm('確定要刪除此筆紀錄？')) {
+    if (window.confirm(msg.confirmDeleteRecord)) {
       setTransactionHistory(transactionHistory.filter((_, i) => i !== idx));
     }
   };
@@ -447,7 +546,7 @@ export default function InventoryTab() {
   const handleSell = (stock_id, qty) => {
     const stock = inventoryList.find(s => s.stock_id === stock_id);
     if (!stock || qty > stock.total_quantity) {
-      alert('賣出數量不得超過庫存');
+      alert(msg.sellExceeds);
       return;
     }
     setTransactionHistory([
@@ -460,7 +559,7 @@ export default function InventoryTab() {
   return (
     <div className="App">
       <p className={styles.notice}>
-        這是一個免費網站，我們不會把你的資料存到後台或伺服器，所有的紀錄（像是你的設定或操作紀錄）都只會保存在你的瀏覽器裡。簡單說：你的資料只在你這台電腦，不會上傳，也不會被我們看到，請安心使用！
+        {msg.notice}
       </p>
 
       <div className={styles.topControls}>
@@ -471,14 +570,14 @@ export default function InventoryTab() {
             setShowModal(true);
           }}
         >
-          新增購買紀錄
+          {msg.addRecord}
         </button>
         <div className="more-item">
           <button
             className={styles.button}
             onClick={() => setShowDataMenu(v => !v)}
           >
-            存取資料
+            {msg.dataAccess}
           </button>
           {showDataMenu && (
             <DataDropdown
@@ -524,33 +623,33 @@ export default function InventoryTab() {
         {showInventory ? (
           <>
             <div className={styles.tableHeader}>
-              <h3 className={styles.titleMargin}>目前庫存</h3>
+              <h3 className={styles.titleMargin}>{msg.currentInventory}</h3>
               <button
                 className={styles.button}
                 onClick={() => setShowInventory(false)}
-                title="切換列表顯示"
+                title={lang === 'en' ? 'Toggle list display' : '切換列表顯示'}
               >
-                顯示：交易歷史
+                {msg.showHistory}
               </button>
             </div>
             
             {cacheInfo && (
               <div className={styles.cacheInfo}>
-                快取: {cacheInfo.cacheStatus}
+                {msg.cache}: {cacheInfo.cacheStatus}
                 {cacheInfo.timestamp ? ` (${new Date(cacheInfo.timestamp).toLocaleString()})` : ''}
               </div>
             )}
 
             <div className={styles.totalInvestment}>
               <div>
-                總投資金額：
+                {msg.totalInvestment}
                 {totalInvestment.toLocaleString('en-US', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
                 })}
               </div>
               <span>
-                目前總價值：
+                {msg.totalValue}
                 {totalValue.toLocaleString('en-US', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
@@ -562,15 +661,15 @@ export default function InventoryTab() {
               <table className={`table table-bordered table-striped ${styles.fullWidth}`}>
                 <thead>
                   <tr>
-                    <th className="stock-col">股票代碼/名稱</th>
-                    <th>平均股價</th>
-                    <th>總數量</th>
-                    <th>操作</th>
+                    <th className="stock-col">{msg.stockCodeName}</th>
+                    <th>{msg.avgPrice}</th>
+                    <th>{msg.totalQuantity}</th>
+                    <th>{msg.actions}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {inventoryList.length === 0
-                    ? <tr><td colSpan={4}>尚無庫存</td></tr>
+                    ? <tr><td colSpan={4}>{msg.noInventory}</td></tr>
                     : inventoryList.map((item, idx) => (
                         <tr key={idx}>
                           <td className="stock-col">
@@ -579,9 +678,9 @@ export default function InventoryTab() {
                             </a>
                           </td>
                           <td>{item.avg_price.toFixed(2)}</td>
-                          <td>{item.total_quantity} ({(item.total_quantity / 1000).toFixed(3).replace(/\.0+$/, '')} 張)</td>
+                          <td>{item.total_quantity} ({(item.total_quantity / 1000).toFixed(3).replace(/\.0+$/, '')} {lang === 'en' ? 'lots' : '張'})</td>
                           <td>
-                            <button className={styles.sellButton} onClick={() => setSellModal({ show: true, stock: item })}>賣出</button>
+                            <button className={styles.sellButton} onClick={() => setSellModal({ show: true, stock: item })}>{msg.sell}</button>
                           </td>
                         </tr>
                       ))}
@@ -592,13 +691,13 @@ export default function InventoryTab() {
         ) : (
           <>
             <div className={styles.tableHeader}>
-              <h3 className={styles.titleMargin}>交易歷史 </h3>
+              <h3 className={styles.titleMargin}>{msg.transactionHistory}</h3>
               <button
                 className={styles.button}
                 onClick={() => setShowInventory(true)}
-                title="切換列表顯示"
+                title={lang === 'en' ? 'Toggle list display' : '切換列表顯示'}
               >
-                顯示：目前庫存
+                {msg.showInventory}
               </button>
             </div>
             <TransactionHistoryTable
