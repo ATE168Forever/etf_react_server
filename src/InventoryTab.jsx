@@ -370,35 +370,16 @@ export default function InventoryTab() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const list = [];
-        let page = 1;
-        let cacheStatus = null;
-        let timestamp = null;
-
-        // fetch pages until no items are returned or we hit a safe upper bound
-        while (page <= 10) {
-          const { data, cacheStatus: cs, timestamp: ts } = await fetchWithCache(
-            `${API_HOST}/get_stock_list?page=${page}`
-          );
-
-          if (page === 1) {
-            cacheStatus = cs;
-            timestamp = ts;
-          }
-
-          const arr = Array.isArray(data)
-            ? data
-            : Array.isArray(data?.data)
-              ? data.data
-              : Array.isArray(data?.items)
-                ? data.items
-                : [];
-
-          if (arr.length === 0) break;
-          list.push(...arr);
-          page++;
-        }
-
+        const { data, cacheStatus, timestamp } = await fetchWithCache(
+          `${API_HOST}/get_stock_list`
+        );
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data?.items)
+              ? data.items
+              : [];
         setStockList(list);
         setCacheInfo({ cacheStatus, timestamp });
       } catch {
