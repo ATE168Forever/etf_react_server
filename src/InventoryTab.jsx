@@ -17,6 +17,10 @@ import { useLanguage } from './i18n';
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
 
+const CURRENT_YEAR = new Date().getFullYear();
+const PREVIOUS_YEAR = CURRENT_YEAR - 1;
+const DIVIDEND_YEAR_QUERY = `year=${CURRENT_YEAR}&year=${PREVIOUS_YEAR}`;
+
 function getToday() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -412,7 +416,7 @@ export default function InventoryTab() {
   }, [stockList]);
 
   useEffect(() => {
-    fetchWithCache(`${API_HOST}/get_dividend`)
+    fetchWithCache(`${API_HOST}/get_dividend?${DIVIDEND_YEAR_QUERY}`)
       .then(({ data }) => {
         const list = Array.isArray(data)
           ? data

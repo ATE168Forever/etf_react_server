@@ -20,6 +20,11 @@ import { getTomorrowDividendAlerts } from './dividendUtils';
 
 const DEFAULT_MONTHLY_GOAL = 10000;
 
+const CURRENT_YEAR = new Date().getFullYear();
+const PREVIOUS_YEAR = CURRENT_YEAR - 1;
+const DIVIDEND_YEAR_QUERY = `year=${CURRENT_YEAR}&year=${PREVIOUS_YEAR}`;
+const ALLOWED_YEARS = [CURRENT_YEAR, PREVIOUS_YEAR];
+
 const DEFAULT_WATCH_GROUPS = [
   {
     name: '現金流導向（月月配息）',
@@ -127,7 +132,7 @@ function App() {
   useEffect(() => {
     const callUpdate = () => {
       fetch(`${API_HOST}/update_dividend`).finally(() => {
-        clearCache(`${API_HOST}/get_dividend`);
+        clearCache(`${API_HOST}/get_dividend?${DIVIDEND_YEAR_QUERY}`);
         window.location.reload();
       });
     };
@@ -153,15 +158,16 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: jsonData, cacheStatus, timestamp } = await fetchWithCache(`${API_HOST}/get_dividend`);
+        const { data: jsonData, cacheStatus, timestamp } = await fetchWithCache(`${API_HOST}/get_dividend?${DIVIDEND_YEAR_QUERY}`);
         const arr = Array.isArray(jsonData) ? jsonData : jsonData?.items;
         if (!Array.isArray(arr)) {
           throw new Error('Invalid data format');
         }
-        setData(arr);
+        const filteredArr = arr.filter(item => ALLOWED_YEARS.includes(new Date(item.dividend_date).getFullYear()));
+        setData(filteredArr);
         setDividendCacheInfo({ cacheStatus, timestamp });
 
-        const yearSet = new Set(arr.map(item => new Date(item.dividend_date).getFullYear()));
+        const yearSet = new Set(filteredArr.map(item => new Date(item.dividend_date).getFullYear()));
         const yearList = Array.from(yearSet).sort((a, b) => b - a);
         setYears(yearList);
         if (!yearSet.has(selectedYear)) setSelectedYear(yearList[0]);
