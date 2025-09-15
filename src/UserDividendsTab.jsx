@@ -20,7 +20,10 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         : ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
     const [history, setHistory] = useState([]);
-    const [showCalendar, setShowCalendar] = useState(true);
+    const [showCalendar, setShowCalendar] = useState(() => {
+        const stored = localStorage.getItem('userDividendsShowCalendar');
+        return stored === null ? true : stored === 'true';
+    });
     // Default to showing both ex-dividend and payment events
     const [calendarFilter, setCalendarFilter] = useState('both');
     const timeZone = 'Asia/Taipei';
@@ -29,6 +32,10 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     useEffect(() => {
         setHistory(getTransactionHistory());
     }, []);
+
+    useEffect(() => {
+        localStorage.setItem('userDividendsShowCalendar', showCalendar);
+    }, [showCalendar]);
 
     function getHolding(stock_id, date) {
         return history.reduce((sum, item) => {

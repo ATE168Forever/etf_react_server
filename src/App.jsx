@@ -63,7 +63,13 @@ function App() {
   const [upcomingAlerts, setUpcomingAlerts] = useState([]);
 
   // Toggle calendar visibility
-  const [showCalendar, setShowCalendar] = useState(true);
+  const [showCalendar, setShowCalendar] = useState(() => {
+    const stored = localStorage.getItem('appShowCalendar');
+    return stored === null ? true : stored === 'true';
+  });
+  useEffect(() => {
+    localStorage.setItem('appShowCalendar', showCalendar);
+  }, [showCalendar]);
 
   // Filter which event types to show on calendar
   // Default to displaying both ex-dividend and payment dates
