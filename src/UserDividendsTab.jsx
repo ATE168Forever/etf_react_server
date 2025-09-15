@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DividendCalendar from './components/DividendCalendar';
 import { readTransactionHistory } from './transactionStorage';
-import { API_HOST } from './config';
+import { HOST_URL } from './config';
 import { useLanguage } from './i18n';
 
 const MONTH_COL_WIDTH = 80;
@@ -283,7 +283,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                         sortedStocks.map(stock => (
                             <tr key={stock.stock_id + stock.stock_name}>
                                 <td className="stock-col">
-                                    <a href={`${API_HOST}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
+                                    <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
                                         {stock.stock_id} {stock.stock_name}
                                     </a>
                                 </td>

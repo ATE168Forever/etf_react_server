@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Cookies from 'js-cookie';
-import { API_HOST } from './config';
+import { API_HOST, HOST_URL } from './config';
 import { fetchWithCache } from './api';
 import { migrateTransactionHistory, saveTransactionHistory } from './transactionStorage';
 import { exportTransactionsToDrive, importTransactionsFromDrive } from './googleDrive';
@@ -658,7 +658,7 @@ export default function InventoryTab() {
                     : inventoryList.map((item, idx) => (
                         <tr key={idx}>
                           <td className="stock-col">
-                            <a href={`${API_HOST}/stock/${item.stock_id}`} target="_blank" rel="noreferrer">
+                            <a href={`${HOST_URL}/stock/${item.stock_id}`} target="_blank" rel="noreferrer">
                               {item.stock_id} {item.stock_name}
                             </a>
                           </td>
