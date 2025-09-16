@@ -52,7 +52,7 @@ function calcIncomeGoalInfo(dividend, price, goal, freq = 12, lang = 'zh') {
 
 function App() {
   // Tab state
-  const [tab, setTab] = useState('mydividend');
+  const [tab, setTab] = useState('home');
 
   // All your existing states for dividend page...
   const [data, setData] = useState([]);
