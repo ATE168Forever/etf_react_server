@@ -7,7 +7,7 @@ import { useLanguage } from './i18n';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const PREVIOUS_YEAR = CURRENT_YEAR - 1;
-const DIVIDEND_YEAR_QUERY = `year=${CURRENT_YEAR}&year=${PREVIOUS_YEAR}`;
+// const DIVIDEND_YEAR_QUERY = `year=${CURRENT_YEAR}&year=${PREVIOUS_YEAR}`;
 const ALLOWED_YEARS = [CURRENT_YEAR, PREVIOUS_YEAR];
 
 export default function StockDetail({ stockId }) {
@@ -36,7 +36,7 @@ export default function StockDetail({ stockId }) {
   const { data: dividendList = [], isLoading: dividendLoading } = useQuery({
     queryKey: ['dividend'],
     queryFn: async () => {
-      const res = await fetch(`${API_HOST}/get_dividend?${DIVIDEND_YEAR_QUERY}`);
+      const res = await fetch(`${API_HOST}/get_dividend`);
       const data = await res.json();
       const arr = Array.isArray(data)
         ? data
