@@ -9,8 +9,6 @@ export default function DataDropdown({
   handleExportClick,
   handleDriveImport,
   handleDriveExport,
-  handleDropboxImport,
-  handleDropboxExport,
   handleOneDriveImport,
   handleOneDriveExport,
   handleICloudImport,
@@ -52,13 +50,6 @@ export default function DataDropdown({
         <div className={styles.buttonGroup}>
           <button onClick={() => handleAction(handleDriveImport)}>{importText}</button>
           <button onClick={() => handleAction(handleDriveExport)}>{exportText}</button>
-        </div>
-      </div>
-      <div className={styles.dataRow}>
-        <span className={styles.dataLabel}>Dropbox</span>
-        <div className={styles.buttonGroup}>
-          <button onClick={() => handleAction(handleDropboxImport)}>{importText}</button>
-          <button onClick={() => handleAction(handleDropboxExport)}>{exportText}</button>
         </div>
       </div>
       <div className={styles.dataRow}>

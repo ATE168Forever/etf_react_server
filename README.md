@@ -30,16 +30,6 @@ Currently, two official plugins are available:
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
 
-## Dropbox Backup
-
-To enable Dropbox import and export, add your app key to a `.env` file in the project root:
-
-```
-VITE_DROPBOX_APP_KEY=your_app_key
-```
-
-Restart the development server after updating the file. The application will prompt for Dropbox authorization when using the data menu to import or export.
-
 ## OneDrive Backup
 
 To enable OneDrive import and export, create an Azure application with Microsoft Graph permissions (e.g. `Files.ReadWrite`).

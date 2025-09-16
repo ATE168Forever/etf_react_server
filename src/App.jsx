@@ -165,7 +165,6 @@ function App() {
     const fetchData = async () => {
       try {
         const { data: jsonData, cacheStatus, timestamp } = await fetchWithCache(`${API_HOST}/get_dividend?${DIVIDEND_YEAR_QUERY}`);
-        console.log(DIVIDEND_YEAR_QUERY)
         const arr = Array.isArray(jsonData) ? jsonData : jsonData?.items;
         if (!Array.isArray(arr)) {
           throw new Error('Invalid data format');

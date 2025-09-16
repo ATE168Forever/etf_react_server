@@ -4,7 +4,6 @@ import { API_HOST, HOST_URL } from './config';
 import { fetchWithCache } from './api';
 import { migrateTransactionHistory, saveTransactionHistory } from './transactionStorage';
 import { exportTransactionsToDrive, importTransactionsFromDrive } from './googleDrive';
-import { exportTransactionsToDropbox, importTransactionsFromDropbox } from './dropbox';
 import { exportTransactionsToOneDrive, importTransactionsFromOneDrive } from './oneDrive';
 import { exportTransactionsToICloud, importTransactionsFromICloud } from './icloud';
 import { transactionsToCsv, transactionsFromCsv } from './csvUtils';
@@ -50,11 +49,6 @@ export default function InventoryTab() {
       noBackupFound: '未找到備份檔案',
       importDriveSuccess: '已從 Google Drive 匯入資料',
       importDriveFail: '匯入 Google Drive 失敗',
-      exportDropboxConfirm: '確定要匯出到 Dropbox？',
-      exportDropboxSuccess: '已匯出到 Dropbox',
-      exportDropboxFail: '匯出到 Dropbox 失敗',
-      importDropboxSuccess: '已從 Dropbox 匯入資料',
-      importDropboxFail: '匯入 Dropbox 失敗',
       exportOneDriveConfirm: '確定要匯出到 OneDrive？',
       exportOneDriveSuccess: '已匯出到 OneDrive',
       exportOneDriveFail: '匯出到 OneDrive 失敗',
@@ -97,11 +91,6 @@ export default function InventoryTab() {
       noBackupFound: 'Backup file not found',
       importDriveSuccess: 'Imported data from Google Drive',
       importDriveFail: 'Import from Google Drive failed',
-      exportDropboxConfirm: 'Export to Dropbox?',
-      exportDropboxSuccess: 'Exported to Dropbox',
-      exportDropboxFail: 'Export to Dropbox failed',
-      importDropboxSuccess: 'Imported data from Dropbox',
-      importDropboxFail: 'Import from Dropbox failed',
       exportOneDriveConfirm: 'Export to OneDrive?',
       exportOneDriveSuccess: 'Exported to OneDrive',
       exportOneDriveFail: 'Export to OneDrive failed',
@@ -231,47 +220,6 @@ export default function InventoryTab() {
     } catch (err) {
       console.error('Drive manual import failed', err);
       alert(msg.importDriveFail);
-    }
-  };
-
-  const handleDropboxExport = async () => {
-    if (!window.confirm(msg.exportDropboxConfirm)) return;
-    try {
-      await exportTransactionsToDropbox(transactionHistory);
-      Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
-      alert(msg.exportDropboxSuccess);
-    } catch (err) {
-      console.error('Dropbox manual export failed', err);
-      alert(msg.exportDropboxFail);
-    }
-  };
-
-  const handleDropboxImport = async () => {
-    try {
-      const list = await importTransactionsFromDropbox();
-      if (!list || list.length === 0) {
-        alert(msg.noBackupFound);
-        return;
-      }
-      if (transactionHistory.length > 0) {
-        if (!window.confirm(msg.importOverwrite)) {
-          return;
-        }
-      }
-      const enriched = list.map(item => {
-        const stock = stockList.find(s => s.stock_id === item.stock_id);
-        return {
-          ...item,
-          stock_name: item.stock_name || (stock ? stock.stock_name : '')
-        };
-      });
-      setTransactionHistory(enriched);
-      saveTransactionHistory(enriched);
-      alert(msg.importDropboxSuccess);
-      if (typeof window !== 'undefined') window.location.reload();
-    } catch (err) {
-      console.error('Dropbox manual import failed', err);
-      alert(msg.importDropboxFail);
     }
   };
 
@@ -571,8 +519,6 @@ export default function InventoryTab() {
               handleExportClick={handleExportClick}
               handleDriveImport={handleDriveImport}
               handleDriveExport={handleDriveExport}
-              handleDropboxImport={handleDropboxImport}
-              handleDropboxExport={handleDropboxExport}
               handleOneDriveImport={handleOneDriveImport}
               handleOneDriveExport={handleOneDriveExport}
               handleICloudImport={handleICloudImport}
