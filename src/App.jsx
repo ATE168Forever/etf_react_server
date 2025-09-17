@@ -128,6 +128,13 @@ function App() {
     };
     return map[name] || name;
   };
+  const renderGroupOptionLabel = (group) => {
+    if (!group) return '';
+    const name = renderGroupName(group.name);
+    if (!group.ids || group.ids.length === 0) return name;
+    const ids = group.ids.join(', ');
+    return lang === 'en' ? `${name} (${ids})` : `${name}（${ids}）`;
+  };
   const handleResetFilters = (keepIds = false) => {
       if (!keepIds) setSelectedStockIds([]);
       setMonthHasValue(Array(12).fill(false));
@@ -608,7 +615,7 @@ function App() {
               <select value={selectedGroup} onChange={handleGroupChange}>
                 <option value="">{lang === 'en' ? 'Custom' : '自選'}</option>
                 {watchGroups.map(g => (
-                  <option key={g.name} value={g.name}>{renderGroupName(g.name)}</option>
+                  <option key={g.name} value={g.name}>{renderGroupOptionLabel(g)}</option>
                 ))}
               </select>
             </div>
