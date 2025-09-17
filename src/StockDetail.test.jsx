@@ -26,10 +26,19 @@ beforeEach(() => {
           market: 'TW',
           price_return_1m: 0.51,
           total_return_1m: 0.51,
+          highest_1m: 100,
+          lowest_1m: 10,
+          mean_1m: 50,
           price_return_3m: 2.55,
           total_return_3m: 5.06,
+          highest_3m: 100,
+          lowest_3m: 10,
+          mean_3m: 50,
           price_return_1y: -5.97,
-          total_return_1y: 4.85
+          total_return_1y: 4.85,
+          highest_1y: 100,
+          lowest_1y: 10,
+          mean_1y: 50
         })
       });
     }

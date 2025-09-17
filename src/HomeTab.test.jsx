@@ -12,6 +12,7 @@ jest.mock('./config', () => ({
 const mockData = {
   milestones: [
     { label: '已收錄台灣 ETF', value: 301 },
+    { label: '已收錄美股 ETF', value: 0 },
     { label: '累積配息紀錄', value: 1432 },
     { label: '歷史資料涵蓋', value: 21 }
   ],

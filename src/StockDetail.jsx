@@ -100,6 +100,7 @@ export default function StockDetail({ stockId }) {
         )}
       </p>
       <p>{lang === 'en' ? 'Listing date:' : '上市日期:'} {stock.listing_date || '-'}</p>
+
       {returns.stock_id && (
         <div className="table-responsive">
           <table className="dividend-record">
@@ -108,6 +109,9 @@ export default function StockDetail({ stockId }) {
                   <th></th>
                   <th>{lang === 'en' ? 'Price Return (ex-div)' : '價差(不含息)'}</th>
                   <th>{lang === 'en' ? 'Total Return (incl. div)' : '績效(含息)'}</th>
+                  <th>{lang === 'en' ? 'Highest' : '最高'}</th>
+                  <th>{lang === 'en' ? 'Lowest' : '最低'}</th>
+                  <th>{lang === 'en' ? 'Mean' : '平均'}</th>
                 </tr>
             </thead>
             <tbody>
@@ -115,21 +119,32 @@ export default function StockDetail({ stockId }) {
                 <td>{lang === 'en' ? '1M' : '近1月'}</td>
                 <td>{returns.price_return_1m}%</td>
                 <td>{returns.total_return_1m}%</td>
+                <td>{returns.highest_1m}</td>
+                <td>{returns.lowest_1m}</td>
+                <td>{returns.mean_1m}</td>
               </tr>
               <tr>
                 <td>{lang === 'en' ? '3M' : '近3月'}</td>
                 <td>{returns.price_return_3m}%</td>
                 <td>{returns.total_return_3m}%</td>
+                <td>{returns.highest_3m}</td>
+                <td>{returns.lowest_3m}</td>
+                <td>{returns.mean_3m}</td>
               </tr>
               <tr>
                 <td>{lang === 'en' ? '1Y' : '近1年'}</td>
                 <td>{returns.price_return_1y}%</td>
                 <td>{returns.total_return_1y}%</td>
+                <td>{returns.highest_1y}</td>
+                <td>{returns.lowest_1y}</td>
+                <td>{returns.mean_1y}</td>
               </tr>
             </tbody>
           </table>
         </div>
       )}
+
+      <p style={{marginTop: 6}}>{lang === 'en' ? 'External Date:' : '外部資料'}</p>
       <ul className="link-list">
         <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.cmoney.tw/etf/tw/${stockId}/intro`} target="_blank" rel="noreferrer">{lang === 'en' ? 'CMoney ETF Intro' : 'CMoney ETF介紹'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
         <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.moneydj.com/etf/x/basic/basic0003.xdjhtm?etfid=${stockId}.tw`} target="_blank" rel="noreferrer">{lang === 'en' ? 'MoneyDJ Basic Info' : 'MoneyDJ 基本資料'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
@@ -139,11 +154,13 @@ export default function StockDetail({ stockId }) {
         <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.cnyes.com/twstock/${stockId}`} target="_blank" rel="noreferrer">{lang === 'en' ? 'Cnyes Stock Info' : '鉅亨網 個股資訊'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
         <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.stockq.org/etf/${stockId}.php`} target="_blank" rel="noreferrer">{lang === 'en' ? 'StockQ ETF Data' : 'StockQ ETF資料'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
       </ul>
-      <p className="disclaimer">
+
+      <div className="disclaimer">
         {lang === 'en'
           ? 'The above links are third-party sites. Data is provided by those sites and we are not responsible for its accuracy.'
           : '以上連結皆為第三方外部網站，資料內容由各網站提供，本網站不對其正確性負責。'}
-      </p>
+      </div>
+
       {dividends.length > 0 && (
         <div className="table-responsive">
           <table className="dividend-record">
