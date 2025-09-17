@@ -123,15 +123,24 @@ export default function StockTable({
           if (!cell) return <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: NUM_COL_WIDTH }}></td>;
           const freq = freqMap[stock.stock_id];
           const perYield = cell.perYield || 0;
-          const displayVal = showDividendYield
-            ? `${parseFloat(cell.dividend_yield).toFixed(1)}%`
-            : cell.dividend.toFixed(3);
+          const rawDividend = Number(cell.dividend);
+          const rawYield = Number(cell.dividend_yield);
+          const isDividendValid = Number.isFinite(rawDividend);
+          const isYieldValid = Number.isFinite(rawYield);
+          const pendingText = lang === 'zh' ? '待確認' : 'Pending';
+          const displayDividend = isDividendValid ? rawDividend.toFixed(3) : pendingText;
+          const displayYield = isYieldValid ? `${rawYield.toFixed(1)}%` : pendingText;
+          const displayVal = showDividendYield ? displayYield : displayDividend;
           const price = latestPrice[stock.stock_id]?.price;
-          const extraInfo = getIncomeGoalInfo(cell.dividend, price, monthlyIncomeGoal, freq || 12);
+          const extraInfo = getIncomeGoalInfo(isDividendValid ? rawDividend : 0, price, monthlyIncomeGoal, freq || 12);
+          const tooltipYield = isYieldValid ? `${rawYield.toFixed(1)}%` : pendingText;
+          const lastClose = cell.last_close_price ?? '-';
+          const dividendDate = cell.dividend_date || '-';
+          const paymentDate = cell.payment_date || '-';
           return (
             <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: NUM_COL_WIDTH }}>
               <span
-                title={`${t('prev_close')}: ${cell.last_close_price}\n${t('current_yield')}: ${cell.dividend_yield}%\n${t('avg_month_yield')}: ${perYield.toFixed(2)}%\n${t('payout_frequency')}: ${freqNameMap[freq] || t('irregular')}\n${t('dividend_date')}: ${cell.dividend_date}\n${t('payment_date')}: ${cell.payment_date}${extraInfo}`}
+                title={`${t('prev_close')}: ${lastClose}\n${t('current_yield')}: ${tooltipYield}\n${t('avg_month_yield')}: ${perYield.toFixed(2)}%\n${t('payout_frequency')}: ${freqNameMap[freq] || t('irregular')}\n${t('dividend_date')}: ${dividendDate}\n${t('payment_date')}: ${paymentDate}${extraInfo}`}
               >
                 {displayVal}
                 {perYield === maxYieldPerMonth[idx] && maxYieldPerMonth[idx] > 0 && (
