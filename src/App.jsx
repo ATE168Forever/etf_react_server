@@ -611,13 +611,13 @@ function App() {
             </div>
             <div className="control-pair">
               <label>{lang === 'en' ? 'Watch Group:' : '觀察組合：'}</label>
-              <button onClick={() => setShowGroupModal(true)} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Create' : '建立'}</button>
               <select value={selectedGroup} onChange={handleGroupChange}>
                 <option value="">{lang === 'en' ? 'Custom' : '自選'}</option>
                 {watchGroups.map(g => (
                   <option key={g.name} value={g.name}>{renderGroupOptionLabel(g)}</option>
                 ))}
               </select>
+              <button onClick={() => setShowGroupModal(true)} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Create' : '建立'}</button>
             </div>
           </div>
           <button
