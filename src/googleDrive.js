@@ -34,10 +34,25 @@ export async function initDrive() {
 }
 
 async function ensureSignedIn() {
-  const auth = window.gapi.auth2.getAuthInstance();
+  const auth = window.gapi?.auth2?.getAuthInstance();
+  if (!auth) {
+    throw new Error('Google Auth has not been initialised');
+  }
   if (!auth.isSignedIn.get()) {
     await auth.signIn();
   }
+}
+
+function getAccessToken() {
+  const token = window.gapi?.client?.getToken?.();
+  if (token?.access_token) {
+    return token.access_token;
+  }
+  const legacyToken = window.gapi?.auth?.getToken?.();
+  if (legacyToken?.access_token) {
+    return legacyToken.access_token;
+  }
+  throw new Error('Unable to retrieve Google access token');
 }
 
 export async function exportTransactionsToDrive(list) {
@@ -46,7 +61,7 @@ export async function exportTransactionsToDrive(list) {
   const csv = transactionsToCsv(list);
   const file = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const metadata = { name: 'inventory_backup.csv', mimeType: 'text/csv' };
-  const accessToken = window.gapi.auth.getToken().access_token;
+  const accessToken = getAccessToken();
   const form = new FormData();
   form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
   form.append('file', file);
