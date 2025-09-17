@@ -42,6 +42,32 @@ VITE_ONEDRIVE_SCOPES=Files.ReadWrite
 
 Restart the development server after updating the file. Use the data menu to authorize and transfer backups with OneDrive.
 
+## Google Drive Backup
+
+The Google Drive integration relies on Google Identity Services (GIS). Create a Web
+application credential in the Google Cloud console and enable the Drive API for the
+project. Add your OAuth client ID and API key to a `.env` file so Vite exposes them to
+the app at build time:
+
+```
+VITE_GOOGLE_CLIENT_ID=your_client_id
+VITE_GOOGLE_API_KEY=your_api_key
+```
+
+Restart the dev server after updating environment variables. When testing locally, use
+the **匯出 Google Drive** option in the data menu, sign in with a Google account, and
+confirm that `inventory_backup.csv` appears in Google Drive. Use **匯入 Google Drive**
+to download the stored CSV and restore transactions.
+
+Automated coverage for the GIS token flow lives in
+`src/__tests__/googleDrive.test.js`. Run the targeted Drive test suite or the full Jest
+suite to validate the integration before shipping changes:
+
+```bash
+pnpm test -- --runTestsByPath src/__tests__/googleDrive.test.js
+pnpm test
+```
+
 ## iCloud Drive Backup
 
 The application can also import and export inventory records through the browser's file

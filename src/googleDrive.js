@@ -4,77 +4,120 @@ const CLIENT_ID = typeof window !== 'undefined' && window.GOOGLE_CLIENT_ID ? win
 const API_KEY = typeof window !== 'undefined' && window.GOOGLE_API_KEY ? window.GOOGLE_API_KEY : '';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
-let initialized = false;
+const GAPI_SCRIPT_ID = 'gapi';
+const GAPI_SCRIPT_SRC = 'https://apis.google.com/js/api.js';
+const GIS_SCRIPT_ID = 'gis';
+const GIS_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 
-async function loadScript() {
-  if (document.getElementById('gapi')) return;
+let initialized = false;
+let tokenClient;
+let accessToken;
+
+async function loadScript(id, src) {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById(id)) return;
   await new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.id = 'gapi';
-    script.src = 'https://apis.google.com/js/api.js';
+    script.id = id;
+    script.src = src;
     script.onload = resolve;
     script.onerror = reject;
     document.body.appendChild(script);
   });
 }
 
-export async function initDrive() {
-  if (initialized) return;
-  await loadScript();
-  await new Promise((resolve) => {
-    window.gapi.load('client:auth2', resolve);
+async function requestGapiClient() {
+  await new Promise((resolve, reject) => {
+    window.gapi.load('client', {
+      callback: resolve,
+      onerror: reject
+    });
   });
   await window.gapi.client.init({
     apiKey: API_KEY,
-    clientId: CLIENT_ID,
-    discoveryDocs: DISCOVERY_DOCS,
-    scope: SCOPES
+    discoveryDocs: DISCOVERY_DOCS
   });
+}
+
+function storeTokenResponse(response) {
+  if (response?.error) {
+    return { error: new Error(response.error) };
+  }
+  accessToken = response.access_token;
+  window.gapi.client.setToken({ access_token: accessToken });
+  return { token: accessToken };
+}
+
+function initialiseTokenClient() {
+  const gis = window.google?.accounts?.oauth2?.initTokenClient;
+  if (!gis) {
+    throw new Error('Google Identity Services client could not be initialised');
+  }
+  tokenClient = gis({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (response) => {
+      const result = storeTokenResponse(response);
+      if (result.error) {
+        // eslint-disable-next-line no-console
+        console.error(result.error);
+      }
+    }
+  });
+}
+
+export async function initDrive() {
+  if (initialized) return;
+  await loadScript(GAPI_SCRIPT_ID, GAPI_SCRIPT_SRC);
+  await loadScript(GIS_SCRIPT_ID, GIS_SCRIPT_SRC);
+  await requestGapiClient();
+  initialiseTokenClient();
   initialized = true;
 }
 
-async function ensureSignedIn() {
-  const auth = window.gapi?.auth2?.getAuthInstance();
-  if (!auth) {
-    throw new Error('Google Auth has not been initialised');
+async function ensureAccessToken() {
+  if (!tokenClient) {
+    throw new Error('Google Identity Services client has not been initialised');
   }
-  if (!auth.isSignedIn.get()) {
-    await auth.signIn();
+  if (accessToken) {
+    return accessToken;
   }
-}
-
-function getAccessToken() {
-  const token = window.gapi?.client?.getToken?.();
-  if (token?.access_token) {
-    return token.access_token;
-  }
-  const legacyToken = window.gapi?.auth?.getToken?.();
-  if (legacyToken?.access_token) {
-    return legacyToken.access_token;
-  }
-  throw new Error('Unable to retrieve Google access token');
+  return new Promise((resolve, reject) => {
+    tokenClient.callback = (response) => {
+      const result = storeTokenResponse(response);
+      if (result.error) {
+        reject(result.error);
+        return;
+      }
+      resolve(result.token);
+    };
+    try {
+      tokenClient.requestAccessToken({ prompt: accessToken ? '' : 'consent' });
+    } catch (error) {
+      reject(error);
+    }
+  });
 }
 
 export async function exportTransactionsToDrive(list) {
   await initDrive();
-  await ensureSignedIn();
+  const token = await ensureAccessToken();
   const csv = transactionsToCsv(list);
   const file = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const metadata = { name: 'inventory_backup.csv', mimeType: 'text/csv' };
-  const accessToken = getAccessToken();
   const form = new FormData();
   form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
   form.append('file', file);
   await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
     method: 'POST',
-    headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
+    headers: new Headers({ 'Authorization': 'Bearer ' + token }),
     body: form
   });
 }
 
 export async function importTransactionsFromDrive() {
   await initDrive();
-  await ensureSignedIn();
+  await ensureAccessToken();
   const list = await window.gapi.client.drive.files.list({
     q: "name='inventory_backup.csv' and trashed=false",
     fields: 'files(id)'
