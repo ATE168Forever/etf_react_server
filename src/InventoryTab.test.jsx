@@ -35,6 +35,9 @@ describe('InventoryTab interactions', () => {
     render(<InventoryTab />);
     expect(await screen.findByText('預期的股息目標')).toBeInTheDocument();
     expect(screen.getByText('累積股息')).toBeInTheDocument();
+    expect(screen.queryByLabelText('幫目標取個名字')).not.toBeInTheDocument();
+    const toggle = screen.getByRole('button', { name: '設定或更新目標' });
+    fireEvent.click(toggle);
     expect(screen.getByLabelText('幫目標取個名字')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('例：50000')).toBeInTheDocument();
   });

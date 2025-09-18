@@ -1,6 +1,9 @@
 import styles from './InvestmentGoalCard.module.css';
 
 export default function InvestmentGoalCard({ title, metrics = [], rows, savedMessage, form, emptyState }) {
+  const { isVisible: formIsVisible = true, toggle: formToggle, id: formId, ...formProps } = form || {};
+  const shouldRenderForm = Boolean(form) && formIsVisible !== false;
+
   return (
     <section className={styles.card}>
       <div className={styles.header}>
@@ -46,50 +49,61 @@ export default function InvestmentGoalCard({ title, metrics = [], rows, savedMes
           </div>
         ))}
         {emptyState ? <div className={styles.emptyState}>{emptyState}</div> : null}
-        {form ? (
-          <form className={styles.form} onSubmit={form.onSubmit}>
-            {form.intro ? <p className={styles.formIntro}>{form.intro}</p> : null}
-            {form.nameLabel ? (
+        {formToggle ? (
+          <button
+            type="button"
+            className={styles.formToggleButton}
+            onClick={formToggle.onClick}
+            aria-expanded={shouldRenderForm}
+            aria-controls={formToggle.ariaControls || formId || undefined}
+          >
+            {formToggle.label}
+          </button>
+        ) : null}
+        {shouldRenderForm ? (
+          <form id={formId} className={styles.form} onSubmit={formProps.onSubmit}>
+            {formProps.intro ? <p className={styles.formIntro}>{formProps.intro}</p> : null}
+            {formProps.nameLabel ? (
               <div className={styles.inputGroup}>
-                <label htmlFor={form.nameId}>{form.nameLabel}</label>
+                <label htmlFor={formProps.nameId}>{formProps.nameLabel}</label>
                 <input
-                  id={form.nameId}
+                  id={formProps.nameId}
                   type="text"
-                  value={form.nameValue}
-                  onChange={form.onNameChange}
-                  placeholder={form.namePlaceholder}
-                  maxLength={form.nameMaxLength || 60}
+                  value={formProps.nameValue}
+                  onChange={formProps.onNameChange}
+                  placeholder={formProps.namePlaceholder}
+                  maxLength={formProps.nameMaxLength || 60}
                 />
-                {form.nameHelper ? <span className={styles.inputHelper}>{form.nameHelper}</span> : null}
+                {formProps.nameHelper ? <span className={styles.inputHelper}>{formProps.nameHelper}</span> : null}
               </div>
             ) : null}
             <div className={styles.inputGroup}>
-              <label htmlFor={form.totalId}>{form.totalLabel}</label>
+              <label htmlFor={formProps.totalId}>{formProps.totalLabel}</label>
               <input
-                id={form.totalId}
+                id={formProps.totalId}
                 type="number"
                 inputMode="decimal"
-                value={form.totalValue}
-                onChange={form.onTotalChange}
-                placeholder={form.totalPlaceholder}
+                value={formProps.totalValue}
+                onChange={formProps.onTotalChange}
+                placeholder={formProps.totalPlaceholder}
                 min="0"
                 step="1000"
               />
             </div>
             <div className={styles.inputGroup}>
-              <label htmlFor={form.monthlyId}>{form.monthlyLabel}</label>
+              <label htmlFor={formProps.monthlyId}>{formProps.monthlyLabel}</label>
               <input
-                id={form.monthlyId}
+                id={formProps.monthlyId}
                 type="number"
                 inputMode="decimal"
-                value={form.monthlyValue}
-                onChange={form.onMonthlyChange}
-                placeholder={form.monthlyPlaceholder}
+                value={formProps.monthlyValue}
+                onChange={formProps.onMonthlyChange}
+                placeholder={formProps.monthlyPlaceholder}
                 min="0"
                 step="100"
               />
             </div>
-            <button type="submit">{form.saveLabel}</button>
+            <button type="submit">{formProps.saveLabel}</button>
           </form>
         ) : null}
       </div>

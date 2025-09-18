@@ -131,44 +131,41 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
     }
   ].filter(metric => Boolean(metric.label));
 
-  const rows = [
-    {
+  const rows = [];
+
+  if (annualGoalSet) {
+    rows.push({
       id: 'annual',
       label: messages.annualGoal,
       current: `${messages.goalDividendAccumulated}${formatCurrency(yearToDateTotal)}`,
-      target: `${messages.goalTargetAnnual}${annualGoalSet ? formatCurrency(annualGoal) : placeholder}`,
+      target: `${messages.goalTargetAnnual}${formatCurrency(annualGoal)}`,
       percent: annualPercentValue,
-      percentLabel: annualGoalSet
-        ? `${Math.min(100, Math.round(annualPercentValue * 100))}%`
-        : placeholder,
-      encouragement: annualGoalSet
-        ? annualPercentValue >= 1
-          ? messages.goalAnnualDone
-          : annualPercentValue >= 0.5
-            ? messages.goalAnnualHalf
-            : ''
-        : ''
-    },
-    {
+      percentLabel: `${Math.min(100, Math.round(annualPercentValue * 100))}%`,
+      encouragement: annualPercentValue >= 1
+        ? messages.goalAnnualDone
+        : annualPercentValue >= 0.5
+          ? messages.goalAnnualHalf
+          : ''
+    });
+  }
+
+  if (monthlyGoalSet) {
+    rows.push({
       id: 'monthly',
       label: messages.monthlyGoal,
       current: `${messages.goalDividendMonthly}${formatCurrency(monthlyAverage)}`,
-      target: `${messages.goalTargetMonthly}${monthlyGoalSet ? formatCurrency(monthlyGoal) : placeholder}`,
+      target: `${messages.goalTargetMonthly}${formatCurrency(monthlyGoal)}`,
       percent: monthlyPercentValue,
-      percentLabel: monthlyGoalSet
-        ? `${Math.min(100, Math.round(monthlyPercentValue * 100))}%`
-        : placeholder,
-      encouragement: monthlyGoalSet
-        ? monthlyPercentValue >= 1
-          ? messages.goalMonthlyDone
-          : monthlyPercentValue >= 0.5
-            ? messages.goalMonthlyHalf
-            : ''
-        : ''
-    }
-  ];
+      percentLabel: `${Math.min(100, Math.round(monthlyPercentValue * 100))}%`,
+      encouragement: monthlyPercentValue >= 1
+        ? messages.goalMonthlyDone
+        : monthlyPercentValue >= 0.5
+          ? messages.goalMonthlyHalf
+          : ''
+    });
+  }
 
-  const emptyState = !annualGoalSet && !monthlyGoalSet ? messages.goalEmpty || '' : '';
+  const emptyState = rows.length === 0 ? messages.goalEmpty || '' : '';
 
   return {
     metrics,

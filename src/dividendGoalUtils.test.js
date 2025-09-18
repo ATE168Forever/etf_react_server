@@ -83,4 +83,89 @@ describe('dividend goal helpers', () => {
       encouragement: '月過半'
     });
   });
+
+  test('omits goal rows when targets are not provided', () => {
+    const summary = {
+      yearToDateTotal: 900,
+      annualTotal: 1500,
+      annualYear: 2023,
+      monthlyAverage: 120
+    };
+    const messages = {
+      annualGoal: '年度目標',
+      monthlyGoal: '每月目標',
+      goalDividendAccumulated: '累積股息：',
+      goalDividendMonthly: '每月股息：',
+      goalDividendYtdLabel: '累積股息',
+      goalDividendAnnualLabel: '年度股息',
+      goalDividendMonthlyLabel: '每月股息',
+      goalAchievementLabel: '達成率',
+      goalTargetAnnual: '年度目標：',
+      goalTargetMonthly: '每月目標：',
+      goalPercentPlaceholder: '--',
+      goalAnnualHalf: '年度過半',
+      goalAnnualDone: '年度完成',
+      goalMonthlyHalf: '月過半',
+      goalMonthlyDone: '月完成',
+      goalEmpty: '請新增目標'
+    };
+
+    const { rows, emptyState } = buildDividendGoalViewModel({
+      summary,
+      goals: { totalTarget: 0, monthlyTarget: 300 },
+      messages,
+      formatCurrency: value => Number(value).toFixed(0)
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ id: 'monthly' });
+    expect(emptyState).toBe('');
+
+    const noGoals = buildDividendGoalViewModel({
+      summary,
+      goals: { totalTarget: 0, monthlyTarget: 0 },
+      messages,
+      formatCurrency: value => Number(value).toFixed(0)
+    });
+
+    expect(noGoals.rows).toHaveLength(0);
+    expect(noGoals.emptyState).toBe('請新增目標');
+  });
+
+  test('uses current year dividends when calculating achievement', () => {
+    const summary = {
+      yearToDateTotal: 900,
+      annualTotal: 1800,
+      annualYear: 2023,
+      monthlyAverage: 150
+    };
+    const messages = {
+      annualGoal: '年度目標',
+      monthlyGoal: '每月目標',
+      goalDividendAccumulated: '累積股息：',
+      goalDividendMonthly: '每月股息：',
+      goalDividendYtdLabel: '累積股息',
+      goalDividendAnnualLabel: '年度股息',
+      goalDividendMonthlyLabel: '每月股息',
+      goalAchievementLabel: '達成率',
+      goalTargetAnnual: '年度目標：',
+      goalTargetMonthly: '每月目標：',
+      goalPercentPlaceholder: '--',
+      goalAnnualHalf: '年度過半',
+      goalAnnualDone: '年度完成',
+      goalMonthlyHalf: '月過半',
+      goalMonthlyDone: '月完成',
+      goalEmpty: ''
+    };
+
+    const { metrics } = buildDividendGoalViewModel({
+      summary,
+      goals: { totalTarget: 1800, monthlyTarget: 0 },
+      messages,
+      formatCurrency: value => Number(value).toFixed(0)
+    });
+
+    const achievementMetric = metrics.find(metric => metric.id === 'achievement');
+    expect(achievementMetric.value).toBe('50%');
+  });
 });
