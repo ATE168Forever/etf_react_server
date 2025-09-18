@@ -53,20 +53,8 @@ export function calculateDividendSummary({ inventoryList = [], dividendEvents = 
     }
   });
 
-  const sortedYears = [...totalsByYear.keys()].sort((a, b) => b - a);
-  let annualYear = currentYear;
-  let annualTotal = totalsByYear.get(currentYear) || 0;
-
-  if (annualTotal === 0) {
-    for (const year of sortedYears) {
-      const total = totalsByYear.get(year);
-      if (total > 0) {
-        annualYear = year;
-        annualTotal = total;
-        break;
-      }
-    }
-  }
+  const annualYear = currentYear;
+  const annualTotal = totalsByYear.get(currentYear) || 0;
 
   const monthlyAverage = annualTotal > 0 ? annualTotal / 12 : 0;
 

@@ -17,12 +17,12 @@ import NLHelper from './NLHelper';
 import { API_HOST } from './config';
 import { fetchWithCache, clearCache } from './api';
 import { getTomorrowDividendAlerts } from './dividendUtils';
+import { DIVIDEND_YEAR_QUERY } from './dividendGoalUtils';
 
 const DEFAULT_MONTHLY_GOAL = 10000;
 
 const CURRENT_YEAR = new Date().getFullYear();
 const PREVIOUS_YEAR = CURRENT_YEAR - 1;
-const DIVIDEND_YEAR_QUERY = `year=${CURRENT_YEAR}`;
 const ALLOWED_YEARS = [CURRENT_YEAR, PREVIOUS_YEAR];
 
 const DEFAULT_WATCH_GROUPS = [
@@ -180,10 +180,10 @@ function App() {
         setData(filteredArr);
         setDividendCacheInfo({ cacheStatus, timestamp });
 
-        const yearSet = new Set(filteredArr.map(item => new Date(item.dividend_date).getFullYear()));
-        const yearList = Array.from(yearSet).sort((a, b) => b - a);
+        const availableYearSet = new Set(filteredArr.map(item => new Date(item.dividend_date).getFullYear()));
+        const yearList = Array.from(new Set([...ALLOWED_YEARS, ...availableYearSet])).sort((a, b) => b - a);
         setYears(yearList);
-        if (!yearSet.has(selectedYear)) setSelectedYear(yearList[0]);
+        if (!yearList.includes(selectedYear)) setSelectedYear(yearList[0]);
       } catch (error) {
         setError(error);
       } finally {
