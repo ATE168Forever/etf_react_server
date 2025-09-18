@@ -617,7 +617,12 @@ function App() {
                   <option key={g.name} value={g.name}>{renderGroupOptionLabel(g)}</option>
                 ))}
               </select>
-              <button onClick={() => setShowGroupModal(true)} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Create' : '建立'}</button>
+              <button
+                onClick={() => setShowGroupModal(true)}
+                className="group-create-button"
+              >
+                {lang === 'en' ? 'Create' : '建立'}
+              </button>
             </div>
           </div>
           <button
