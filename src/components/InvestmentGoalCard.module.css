@@ -29,6 +29,31 @@
   gap: 16px;
 }
 
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.metricLabel {
+  font-size: 0.75rem;
+  color: var(--muted-foreground, #6b7280);
+}
+
+.metricValue {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
 .goalRow {
   display: flex;
   flex-direction: column;
@@ -92,6 +117,13 @@
   align-items: flex-end;
 }
 
+.formIntro {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted-foreground, #6b7280);
+}
+
 .inputGroup {
   display: flex;
   flex-direction: column;
@@ -110,6 +142,11 @@
   border: 1px solid var(--color-border, rgba(148, 163, 184, 0.3));
   background: var(--color-background, #111827);
   color: inherit;
+}
+
+.inputHelper {
+  font-size: 0.75rem;
+  color: var(--muted-foreground, #6b7280);
 }
 
 .form button {

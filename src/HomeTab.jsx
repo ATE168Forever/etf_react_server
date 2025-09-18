@@ -1,11 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { API_HOST } from './config';
 import { fetchWithCache } from './api';
 import { useLanguage } from './i18n';
 import { readTransactionHistory } from './transactionStorage';
-import { summarizeInventory, calculateMonthlyContribution } from './inventoryUtils';
+import { summarizeInventory } from './inventoryUtils';
 import { loadInvestmentGoals } from './investmentGoalsStorage';
 import InvestmentGoalCard from './components/InvestmentGoalCard';
+import {
+  DIVIDEND_YEAR_QUERY,
+  normalizeDividendResponse,
+  calculateDividendSummary,
+  buildDividendGoalViewModel
+} from './dividendGoalUtils';
 
 export default function HomeTab() {
   const [stats, setStats] = useState({ milestones: [], latest: [], tip: '' });
@@ -13,10 +19,10 @@ export default function HomeTab() {
     const goals = loadInvestmentGoals();
     return {
       goals,
-      totalInvestment: 0,
-      monthlyContribution: 0
+      inventoryList: []
     };
   });
+  const [dividendData, setDividendData] = useState([]);
   const { t, lang } = useLanguage();
 
   useEffect(() => {
@@ -39,71 +45,79 @@ export default function HomeTab() {
 
   useEffect(() => {
     const history = readTransactionHistory();
-    const { totalInvestment } = summarizeInventory(history);
-    const monthlyContribution = calculateMonthlyContribution(history);
+    const { inventoryList } = summarizeInventory(history);
     const goals = loadInvestmentGoals();
-    setGoalSummary({ goals, totalInvestment, monthlyContribution });
+    setGoalSummary({ goals, inventoryList });
   }, []);
 
-  const formatCurrency = value => {
+  useEffect(() => {
+    let cancelled = false;
+    fetchWithCache(`${API_HOST}/get_dividend?${DIVIDEND_YEAR_QUERY}`)
+      .then(({ data }) => {
+        if (!cancelled) {
+          setDividendData(normalizeDividendResponse(data));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDividendData([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const formatCurrency = useCallback(value => {
     if (!Number.isFinite(value)) return '0.00';
-    return value.toLocaleString('en-US', {
+    return Number(value).toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
-  };
+  }, []);
 
-  const totalGoalSet = goalSummary.goals.totalTarget > 0;
-  const monthlyGoalSet = goalSummary.goals.monthlyTarget > 0;
-  const totalPercentValue = totalGoalSet
-    ? Math.min(1, goalSummary.totalInvestment / goalSummary.goals.totalTarget)
-    : 0;
-  const monthlyPercentValue = monthlyGoalSet
-    ? Math.min(1, goalSummary.monthlyContribution / goalSummary.goals.monthlyTarget)
-    : 0;
+  const dividendSummary = useMemo(
+    () => calculateDividendSummary({
+      inventoryList: goalSummary.inventoryList,
+      dividendEvents: dividendData
+    }),
+    [goalSummary.inventoryList, dividendData]
+  );
 
-  const goalRows = [
-    {
-      id: 'total',
-      label: t('total_goal'),
-      current: `${t('goal_current_total')}${formatCurrency(goalSummary.totalInvestment)}`,
-      target: `${t('goal_target')}${totalGoalSet
-        ? formatCurrency(goalSummary.goals.totalTarget)
-        : t('goal_not_set')}`,
-      percent: totalPercentValue,
-      percentLabel: totalGoalSet
-        ? `${Math.min(100, Math.round(totalPercentValue * 100))}%`
-        : t('goal_percent_placeholder'),
-      encouragement: totalGoalSet
-        ? totalPercentValue >= 1
-          ? t('goal_encourage_total_full')
-          : totalPercentValue >= 0.5
-            ? t('goal_encourage_total_half')
-            : ''
-        : ''
-    },
-    {
-      id: 'monthly',
-      label: t('monthly_goal'),
-      current: `${t('goal_current_month')}${formatCurrency(goalSummary.monthlyContribution)}`,
-      target: `${t('goal_target')}${monthlyGoalSet
-        ? formatCurrency(goalSummary.goals.monthlyTarget)
-        : t('goal_not_set')}`,
-      percent: monthlyPercentValue,
-      percentLabel: monthlyGoalSet
-        ? `${Math.min(100, Math.round(monthlyPercentValue * 100))}%`
-        : t('goal_percent_placeholder'),
-      encouragement: monthlyGoalSet
-        ? monthlyPercentValue >= 1
-          ? t('goal_encourage_month_full')
-          : monthlyPercentValue >= 0.5
-            ? t('goal_encourage_month_half')
-            : ''
-        : ''
-    }
-  ];
+  const goalMessages = useMemo(() => ({
+    annualGoal: t('annual_goal'),
+    monthlyGoal: t('monthly_goal'),
+    goalDividendAccumulated: t('goal_dividend_accumulated'),
+    goalDividendMonthly: t('goal_dividend_monthly'),
+    goalDividendYtdLabel: t('goal_dividend_ytd_label'),
+    goalDividendAnnualLabel: t('goal_dividend_annual_label'),
+    goalDividendMonthlyLabel: t('goal_dividend_monthly_label'),
+    goalAchievementLabel: t('goal_achievement_label'),
+    goalTargetAnnual: t('goal_target_annual'),
+    goalTargetMonthly: t('goal_target_monthly'),
+    goalPercentPlaceholder: t('goal_percent_placeholder'),
+    goalAnnualHalf: t('goal_annual_half'),
+    goalAnnualDone: t('goal_annual_full'),
+    goalMonthlyHalf: t('goal_monthly_half'),
+    goalMonthlyDone: t('goal_monthly_full'),
+    goalEmpty: t('goal_empty_state')
+  }), [t]);
 
-  const goalEmptyState = !totalGoalSet && !monthlyGoalSet ? t('goal_empty_state') : '';
+  const {
+    metrics: goalMetrics,
+    rows: goalRows,
+    emptyState: goalEmptyState
+  } = useMemo(
+    () => buildDividendGoalViewModel({
+      summary: dividendSummary,
+      goals: goalSummary.goals,
+      messages: goalMessages,
+      formatCurrency
+    }),
+    [dividendSummary, goalSummary.goals, goalMessages, formatCurrency]
+  );
+
+  const goalTitle = goalSummary.goals.goalName?.trim() || t('investment_goals');
 
   return (
     <div className="container" style={{ maxWidth: 800 }}>
@@ -134,7 +148,8 @@ export default function HomeTab() {
         <p style={{ margin: 0 }}>{stats.tip}</p>
       </section>
       <InvestmentGoalCard
-        title={t('investment_goals')}
+        title={goalTitle}
+        metrics={goalMetrics}
         rows={goalRows}
         emptyState={goalEmptyState}
       />

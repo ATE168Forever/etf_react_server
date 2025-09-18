@@ -1,6 +1,6 @@
 import styles from './InvestmentGoalCard.module.css';
 
-export default function InvestmentGoalCard({ title, rows, savedMessage, form, emptyState }) {
+export default function InvestmentGoalCard({ title, metrics = [], rows, savedMessage, form, emptyState }) {
   return (
     <section className={styles.card}>
       <div className={styles.header}>
@@ -8,6 +8,16 @@ export default function InvestmentGoalCard({ title, rows, savedMessage, form, em
         {savedMessage ? <span className={styles.savedMessage}>{savedMessage}</span> : null}
       </div>
       <div className={styles.body}>
+        {metrics.length > 0 ? (
+          <div className={styles.metrics}>
+            {metrics.map(metric => (
+              <div key={metric.id} className={styles.metric}>
+                <div className={styles.metricLabel}>{metric.label}</div>
+                <div className={styles.metricValue}>{metric.value}</div>
+              </div>
+            ))}
+          </div>
+        ) : null}
         {rows.map(row => (
           <div key={row.id} className={styles.goalRow}>
             <div className={styles.goalRowHeader}>
@@ -38,6 +48,21 @@ export default function InvestmentGoalCard({ title, rows, savedMessage, form, em
         {emptyState ? <div className={styles.emptyState}>{emptyState}</div> : null}
         {form ? (
           <form className={styles.form} onSubmit={form.onSubmit}>
+            {form.intro ? <p className={styles.formIntro}>{form.intro}</p> : null}
+            {form.nameLabel ? (
+              <div className={styles.inputGroup}>
+                <label htmlFor={form.nameId}>{form.nameLabel}</label>
+                <input
+                  id={form.nameId}
+                  type="text"
+                  value={form.nameValue}
+                  onChange={form.onNameChange}
+                  placeholder={form.namePlaceholder}
+                  maxLength={form.nameMaxLength || 60}
+                />
+                {form.nameHelper ? <span className={styles.inputHelper}>{form.nameHelper}</span> : null}
+              </div>
+            ) : null}
             <div className={styles.inputGroup}>
               <label htmlFor={form.totalId}>{form.totalLabel}</label>
               <input
