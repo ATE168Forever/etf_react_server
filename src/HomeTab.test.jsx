@@ -63,6 +63,14 @@ test('renders knowledge section', async () => {
   ).toBeInTheDocument();
 });
 
+test('renders investment goals card', async () => {
+  renderWithLang();
+  await screen.findByText(translations.zh.investment_goals);
+  expect(
+    screen.getByText(translations.zh.goal_empty_state)
+  ).toBeInTheDocument();
+});
+
 test('fetches stats with en flag false for zh', async () => {
   renderWithLang('zh');
   await screen.findByText(translations.zh.site_stats);
