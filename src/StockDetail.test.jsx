@@ -8,13 +8,15 @@ jest.mock('./config', () => ({
 }));
 
 beforeEach(() => {
+  const currentYear = new Date().getFullYear();
+  const previousYear = currentYear - 1;
   globalThis.fetch = jest.fn((url) => {
     if (url.includes('/get_stock_list')) {
       return Promise.resolve({
         json: () => Promise.resolve([{ stock_id: '0056', stock_name: 'Test ETF' }])
       });
     }
-    if (url.includes('/get_dividend')) {
+    if (url.includes(`/get_dividend?year=${currentYear}`) || url.includes(`/get_dividend?year=${previousYear}`)) {
       return Promise.resolve({
         json: () => Promise.resolve([])
       });

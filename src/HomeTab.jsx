@@ -1,14 +1,13 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { API_HOST } from './config';
 import { fetchWithCache } from './api';
+import { fetchDividendsByYears } from './dividendApi';
 import { useLanguage } from './i18n';
 import { readTransactionHistory } from './transactionStorage';
 import { summarizeInventory } from './inventoryUtils';
 import { loadInvestmentGoals } from './investmentGoalsStorage';
 import InvestmentGoalCard from './components/InvestmentGoalCard';
 import {
-  DIVIDEND_YEAR_QUERY,
-  normalizeDividendResponse,
   calculateDividendSummary,
   buildDividendGoalViewModel
 } from './dividendGoalUtils';
@@ -52,10 +51,10 @@ export default function HomeTab() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchWithCache(`${API_HOST}/get_dividend?${DIVIDEND_YEAR_QUERY}`)
+    fetchDividendsByYears()
       .then(({ data }) => {
         if (!cancelled) {
-          setDividendData(normalizeDividendResponse(data));
+          setDividendData(data);
         }
       })
       .catch(() => {

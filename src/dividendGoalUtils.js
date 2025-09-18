@@ -1,7 +1,7 @@
-const CURRENT_YEAR = new Date().getFullYear();
-const PREVIOUS_YEAR = CURRENT_YEAR - 1;
+export const CURRENT_YEAR = new Date().getFullYear();
+export const PREVIOUS_YEAR = CURRENT_YEAR - 1;
 
-export const DIVIDEND_YEAR_QUERY = `year=${CURRENT_YEAR}&year=${PREVIOUS_YEAR}`;
+export const DIVIDEND_YEARS = [CURRENT_YEAR, PREVIOUS_YEAR];
 
 export function normalizeDividendResponse(payload) {
   if (Array.isArray(payload)) return payload;
