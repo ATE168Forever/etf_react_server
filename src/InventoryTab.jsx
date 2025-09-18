@@ -52,6 +52,7 @@ export default function InventoryTab() {
     monthlyTarget: initialGoals.monthlyTarget ? String(initialGoals.monthlyTarget) : ''
   }));
   const [goalSaved, setGoalSaved] = useState(false);
+  const [isGoalFormVisible, setIsGoalFormVisible] = useState(false);
   const text = {
     zh: {
       importOverwrite: '匯入後將覆蓋現有紀錄，是否繼續？',
@@ -103,6 +104,8 @@ export default function InventoryTab() {
       goalEmpty: '還沒設定股息計畫？給目標取個響亮的名字，再填上年度與每月數字吧！',
       goalInputPlaceholderTotal: '例：50000',
       goalInputPlaceholderMonthly: '例：5000',
+      goalFormShow: '設定或更新目標',
+      goalFormHide: '收起設定',
       goalAnnualHalf: '年度進度過半，離夢想更近一步！',
       goalAnnualDone: '恭喜完成年度目標，繼續打造現金流！',
       goalMonthlyHalf: '這個月過半囉，再衝一把！',
@@ -170,6 +173,8 @@ export default function InventoryTab() {
       goalEmpty: 'No plan yet—give your dividend goal a name and add annual and monthly targets below to stay focused.',
       goalInputPlaceholderTotal: 'e.g. 5000',
       goalInputPlaceholderMonthly: 'e.g. 500',
+      goalFormShow: 'Add or edit goal',
+      goalFormHide: 'Hide goal form',
       goalAnnualHalf: 'Halfway through the year—your dream cashflow is getting closer!',
       goalAnnualDone: 'Annual goal achieved! Keep that momentum building income!',
       goalMonthlyHalf: 'Over halfway this month—one more push!',
@@ -517,6 +522,10 @@ export default function InventoryTab() {
   const goalSavedMessage = goalSaved ? msg.goalSaved : '';
   const goalTitle = goals.goalName?.trim() ? goals.goalName.trim() : msg.investmentGoals;
 
+  const handleGoalFormToggle = () => {
+    setIsGoalFormVisible(prev => !prev);
+  };
+
   const handleGoalNameChange = event => {
     const value = event.target.value;
     setGoalForm(prev => ({ ...prev, name: value }));
@@ -723,6 +732,13 @@ export default function InventoryTab() {
               savedMessage={goalSavedMessage}
               emptyState={goalEmptyState}
               form={{
+                id: 'inventory-goal-form',
+                isVisible: isGoalFormVisible,
+                toggle: {
+                  label: isGoalFormVisible ? msg.goalFormHide : msg.goalFormShow,
+                  onClick: handleGoalFormToggle,
+                  ariaControls: 'inventory-goal-form'
+                },
                 onSubmit: handleGoalSubmit,
                 intro: msg.goalFormIntro,
                 nameId: 'inventory-goal-name',
