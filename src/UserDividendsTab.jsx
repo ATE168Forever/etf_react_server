@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import DividendCalendar from './components/DividendCalendar';
 import { readTransactionHistory } from './transactionStorage';
 import { HOST_URL } from './config';
 import { useLanguage } from './i18n';
+import usePreserveScroll from './hooks/usePreserveScroll';
 
 const MONTH_COL_WIDTH = 80;
 function getTransactionHistory() {
@@ -30,6 +31,8 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
     const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
     const [monthFilters, setMonthFilters] = useState(() => Array(12).fill(false));
+    const tableContainerRef = useRef(null);
+    usePreserveScroll(tableContainerRef, 'userDividendsTableScroll');
     useEffect(() => {
         setHistory(getTransactionHistory());
     }, []);
@@ -317,7 +320,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 </button>
             </div>
 
-            <div className="table-responsive">
+            <div className="table-responsive" ref={tableContainerRef}>
             <table className="table table-bordered table-striped">
                 <thead>
                     <tr>

@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 // Removed react-window virtualization to avoid invalid table markup
 import FilterDropdown from './FilterDropdown';
 import AdvancedFilterDropdown from './AdvancedFilterDropdown';
 import { HOST_URL } from '../config';
 import { useLanguage } from '../i18n';
+import usePreserveScroll from '../hooks/usePreserveScroll';
 
 const NUM_COL_WIDTH = 80;
 
@@ -37,6 +38,7 @@ export default function StockTable({
   const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
   const [showIdDropdown, setShowIdDropdown] = useState(false);
   const [showExtraDropdown, setShowExtraDropdown] = useState(false);
+  const tableContainerRef = useRef(null);
   const { lang, t } = useLanguage();
   const MONTHS = lang === 'zh'
     ? ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
@@ -44,6 +46,8 @@ export default function StockTable({
   const freqNameMap = lang === 'zh'
     ? { 1: '年配', 2: '半年配', 4: '季配', 6: '雙月配', 12: '月配' }
     : { 1: 'Annual', 2: 'Semi-annual', 4: 'Quarterly', 6: 'Bimonthly', 12: 'Monthly' };
+
+  usePreserveScroll(tableContainerRef, 'stockTableScrollLeft', [showInfoAxis]);
 
   const handleSort = (column) => {
     setSortConfig(prev => {
@@ -161,7 +165,7 @@ export default function StockTable({
 
   if (showInfoAxis) {
     return (
-      <div className="table-responsive">
+      <div className="table-responsive" ref={tableContainerRef}>
         <table className="table table-bordered table-striped">
           <thead>
             <tr>
@@ -221,7 +225,7 @@ export default function StockTable({
   }
 
   return (
-    <div className="table-responsive">
+    <div className="table-responsive" ref={tableContainerRef}>
       <table className="table table-bordered table-striped" style={{ minWidth: 1380 }}>
         <thead>
           <tr>
