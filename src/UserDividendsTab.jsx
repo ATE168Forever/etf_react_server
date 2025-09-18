@@ -50,25 +50,30 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         }, 0);
     }
 
-    // 1. 取得持有股票清單（以年末持股為準）
+    // 1. 取得持有股票清單（包含年末持股與當年度已領息後賣出的持股）
     const stockIdSet = new Set(history.map(h => h.stock_id));
     const holdingIds = Array.from(stockIdSet).filter(id => getHolding(id, `${selectedYear}-12-31`) > 0);
-    const holdingIdSet = new Set(holdingIds);
 
-    // 建立股票代號到名稱的對應（名稱由 tw_stock_id 提供）
+    // 2. 只取有配息紀錄的資料（若有除息日則以除息日為主，否則使用發放日）
+    const dividendData = (allDividendData || []).filter(item => {
+        const refDate = item.dividend_date || item.payment_date;
+        if (!refDate) return false;
+        const yearMatches = new Date(refDate).getFullYear() === Number(selectedYear);
+        if (!yearMatches) return false;
+        const checkDate = item.dividend_date || refDate;
+        return getHolding(item.stock_id, checkDate) > 0;
+    });
+
+    const dividendStockIds = Array.from(new Set(dividendData.map(item => item.stock_id)));
+    const allRelevantStockIds = Array.from(new Set([...holdingIds, ...dividendStockIds]));
+
+    // 建立股票代號到名稱的對應（名稱由股息資料提供）
     const stockMap = {};
-    holdingIds.forEach(id => {
+    allRelevantStockIds.forEach(id => {
         const info = (allDividendData || []).find(d => d.stock_id === id);
         stockMap[id] = info?.stock_name || '';
     });
-    const myStocks = holdingIds.map(id => ({ stock_id: id, stock_name: stockMap[id] }));
-
-    // 2. 只取有配息紀錄的資料
-    const dividendData = (allDividendData || []).filter(item => {
-        const d = item.dividend_date;
-        return d && new Date(d).getFullYear() === Number(selectedYear) &&
-            holdingIdSet.has(item.stock_id) && getHolding(item.stock_id, d) > 0;
-    });
+    const myStocks = allRelevantStockIds.map(id => ({ stock_id: id, stock_name: stockMap[id] }));
 
     // Events for calendar view
     const calendarEvents = dividendData.flatMap(item => {
