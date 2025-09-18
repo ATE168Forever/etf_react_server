@@ -44,3 +44,27 @@ test('calendar defaults to showing both ex and payment events', async () => {
   const bothBtn = screen.getByRole('button', { name: '除息/發放日' });
   expect(bothBtn).toHaveClass('btn-selected');
 });
+
+test('shows dividends for stocks sold before year end', async () => {
+  readTransactionHistory.mockReturnValue([
+    { stock_id: '0056', date: '2024-01-01', quantity: 1000, type: 'buy' },
+    { stock_id: '0056', date: '2024-08-01', quantity: 1000, type: 'sell' }
+  ]);
+
+  const data = [
+    {
+      stock_id: '0056',
+      stock_name: '高股息ETF',
+      dividend: '1.5',
+      dividend_date: '2024-03-15',
+      payment_date: '2024-04-15',
+      dividend_yield: '5',
+      last_close_price: '30'
+    }
+  ];
+
+  render(<UserDividendsTab allDividendData={data} selectedYear={2024} />);
+
+  expect(await screen.findByText('0056 高股息ETF')).toBeInTheDocument();
+  expect(screen.queryByText('尚無庫存，請先新增交易紀錄')).not.toBeInTheDocument();
+});
