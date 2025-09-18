@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Cookies from 'js-cookie';
 import { API_HOST, HOST_URL } from './config';
 import { fetchWithCache } from './api';
+import { fetchDividendsByYears } from './dividendApi';
 import { migrateTransactionHistory, saveTransactionHistory } from './transactionStorage';
 import { exportTransactionsToDrive, importTransactionsFromDrive } from './googleDrive';
 import { exportTransactionsToOneDrive, importTransactionsFromOneDrive } from './oneDrive';
@@ -17,8 +18,6 @@ import InvestmentGoalCard from './components/InvestmentGoalCard';
 import { summarizeInventory } from './inventoryUtils';
 import { loadInvestmentGoals, saveInvestmentGoals } from './investmentGoalsStorage';
 import {
-  DIVIDEND_YEAR_QUERY,
-  normalizeDividendResponse,
   calculateDividendSummary,
   buildDividendGoalViewModel
 } from './dividendGoalUtils';
@@ -433,9 +432,9 @@ export default function InventoryTab() {
   }, [stockList]);
 
   useEffect(() => {
-    fetchWithCache(`${API_HOST}/get_dividend?${DIVIDEND_YEAR_QUERY}`)
+    fetchDividendsByYears()
       .then(({ data }) => {
-        const list = normalizeDividendResponse(data);
+        const list = data;
         setDividendData(list);
         const priceMap = {};
         list.forEach(item => {

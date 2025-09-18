@@ -36,16 +36,27 @@ export default function StockDetail({ stockId }) {
   const { data: dividendList = [], isLoading: dividendLoading } = useQuery({
     queryKey: ['dividend'],
     queryFn: async () => {
-      const res = await fetch(`${API_HOST}/get_dividend`);
-      const data = await res.json();
-      const arr = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data?.items)
-            ? data.items
-            : [];
-      return arr.filter(item => ALLOWED_YEARS.includes(new Date(item.dividend_date).getFullYear()));
+      const results = await Promise.allSettled(
+        ALLOWED_YEARS.map(async year => {
+          const res = await fetch(`${API_HOST}/get_dividend?year=${year}`);
+          const data = await res.json();
+          return Array.isArray(data)
+            ? data
+            : Array.isArray(data?.data)
+              ? data.data
+              : Array.isArray(data?.items)
+                ? data.items
+                : [];
+        })
+      );
+      const fulfilledResults = results.filter(result => result.status === 'fulfilled');
+      if (!fulfilledResults.length) {
+        const firstRejection = results.find(result => result.status === 'rejected');
+        if (firstRejection?.reason) throw firstRejection.reason;
+        throw new Error('Failed to fetch dividend data');
+      }
+      const data = fulfilledResults.flatMap(result => result.value);
+      return data.filter(item => ALLOWED_YEARS.includes(new Date(item.dividend_date).getFullYear()));
     },
     staleTime: 2 * 60 * 60 * 1000,
   });

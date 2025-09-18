@@ -26,13 +26,19 @@ const mockDividendData = [
   { stock_id: '0050', dividend_date: '2024-01-10', dividend: 1, last_close_price: 20 }
 ];
 
+const currentYear = new Date().getFullYear();
+const previousYear = currentYear - 1;
+
 beforeEach(() => {
   localStorage.clear();
   fetchWithCache.mockImplementation((url) => {
     if (url.includes('/site_stats')) {
       return Promise.resolve({ data: mockData });
     }
-    if (url.includes('/get_dividend')) {
+    if (url.includes(`/get_dividend?year=${currentYear}`)) {
+      return Promise.resolve({ data: mockDividendData });
+    }
+    if (url.includes(`/get_dividend?year=${previousYear}`)) {
       return Promise.resolve({ data: mockDividendData });
     }
     return Promise.resolve({ data: [] });

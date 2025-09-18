@@ -15,9 +15,9 @@ import dividendLogoDark from './assets/conceptB-ETF-Life-dark.svg';
 import dividendLogoLight from './assets/conceptB-ETF-Life-light.svg';
 import NLHelper from './NLHelper';
 import { API_HOST } from './config';
-import { fetchWithCache, clearCache } from './api';
+import { fetchWithCache } from './api';
 import { getTomorrowDividendAlerts } from './dividendUtils';
-import { DIVIDEND_YEAR_QUERY } from './dividendGoalUtils';
+import { fetchDividendsByYears, clearDividendsCache } from './dividendApi';
 
 const DEFAULT_MONTHLY_GOAL = 10000;
 
@@ -145,7 +145,7 @@ function App() {
   useEffect(() => {
     const callUpdate = () => {
       fetch(`${API_HOST}/update_dividend`).finally(() => {
-        clearCache(`${API_HOST}/get_dividend?${DIVIDEND_YEAR_QUERY}`);
+        clearDividendsCache();
         window.location.reload();
       });
     };
@@ -171,14 +171,20 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: jsonData, cacheStatus, timestamp } = await fetchWithCache(`${API_HOST}/get_dividend?${DIVIDEND_YEAR_QUERY}`);
-        const arr = Array.isArray(jsonData) ? jsonData : jsonData?.items;
-        if (!Array.isArray(arr)) {
-          throw new Error('Invalid data format');
-        }
-        const filteredArr = arr.filter(item => ALLOWED_YEARS.includes(new Date(item.dividend_date).getFullYear()));
+        const { data: dividendData, meta } = await fetchDividendsByYears(ALLOWED_YEARS);
+        const filteredArr = dividendData.filter(item => ALLOWED_YEARS.includes(new Date(item.dividend_date).getFullYear()));
         setData(filteredArr);
-        setDividendCacheInfo({ cacheStatus, timestamp });
+        if (meta.length) {
+          const primaryMeta = meta.find(entry => entry.year === CURRENT_YEAR) || meta[0];
+          setDividendCacheInfo(primaryMeta
+            ? {
+                cacheStatus: primaryMeta.cacheStatus || 'unknown',
+                timestamp: primaryMeta.timestamp
+              }
+            : null);
+        } else {
+          setDividendCacheInfo(null);
+        }
 
         const availableYearSet = new Set(filteredArr.map(item => new Date(item.dividend_date).getFullYear()));
         const yearList = Array.from(new Set([...ALLOWED_YEARS, ...availableYearSet])).sort((a, b) => b - a);
