@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Cookies from 'js-cookie';
 import { API_HOST, HOST_URL } from './config';
 import { fetchWithCache } from './api';
@@ -13,6 +13,9 @@ import TransactionHistoryTable from './components/TransactionHistoryTable';
 import DataDropdown from './components/DataDropdown';
 import styles from './InventoryTab.module.css';
 import { useLanguage } from './i18n';
+import InvestmentGoalCard from './components/InvestmentGoalCard';
+import { summarizeInventory, calculateMonthlyContribution } from './inventoryUtils';
+import { loadInvestmentGoals, saveInvestmentGoals } from './investmentGoalsStorage';
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
 
@@ -38,6 +41,13 @@ export default function InventoryTab() {
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [latestPrices, setLatestPrices] = useState({});
   const { lang } = useLanguage();
+  const initialGoals = useMemo(() => loadInvestmentGoals(), []);
+  const [goals, setGoals] = useState(initialGoals);
+  const [goalForm, setGoalForm] = useState(() => ({
+    totalTarget: initialGoals.totalTarget ? String(initialGoals.totalTarget) : '',
+    monthlyTarget: initialGoals.monthlyTarget ? String(initialGoals.monthlyTarget) : ''
+  }));
+  const [goalSaved, setGoalSaved] = useState(false);
   const text = {
     zh: {
       importOverwrite: '匯入後將覆蓋現有紀錄，是否繼續？',
@@ -72,6 +82,22 @@ export default function InventoryTab() {
       cache: '快取',
       totalInvestment: '總投資金額：',
       totalValue: '目前總價值：',
+      investmentGoals: '存股目標',
+      totalGoal: '累積目標',
+      monthlyGoal: '每月目標',
+      goalTotalInvestment: '累積投入：',
+      goalMonthlyContribution: '本月投入：',
+      goalTarget: '目標：',
+      goalPercentPlaceholder: '--',
+      goalSave: '儲存目標',
+      goalSaved: '目標已儲存',
+      goalEmpty: '尚未設定目標，請在下方輸入金額',
+      goalInputPlaceholderTotal: '例：500000',
+      goalInputPlaceholderMonthly: '例：10000',
+      goalTotalHalf: '累積目標過半！繼續保持～',
+      goalTotalDone: '恭喜達成累積目標！',
+      goalMonthlyHalf: '本月進度過半，再接再厲！',
+      goalMonthlyDone: '本月目標達成，太棒了！',
       stockCodeName: '股票代碼/名稱',
       avgPrice: '平均股價',
       totalQuantity: '總數量',
@@ -114,6 +140,22 @@ export default function InventoryTab() {
       cache: 'Cache',
       totalInvestment: 'Total Investment:',
       totalValue: 'Total Value:',
+      investmentGoals: 'Investment Goals',
+      totalGoal: 'Total Goal',
+      monthlyGoal: 'Monthly Goal',
+      goalTotalInvestment: 'Invested so far:',
+      goalMonthlyContribution: 'This month:',
+      goalTarget: 'Target:',
+      goalPercentPlaceholder: '--',
+      goalSave: 'Save goals',
+      goalSaved: 'Goals saved',
+      goalEmpty: 'No goals yet. Add your targets below to track progress.',
+      goalInputPlaceholderTotal: 'e.g. 500000',
+      goalInputPlaceholderMonthly: 'e.g. 10000',
+      goalTotalHalf: 'Halfway to your total goal—keep going!',
+      goalTotalDone: 'Total goal achieved! Fantastic!',
+      goalMonthlyHalf: 'Monthly progress is past halfway—almost there!',
+      goalMonthlyDone: 'Monthly goal achieved! Great job!',
       stockCodeName: 'Stock Code/Name',
       avgPrice: 'Average Price',
       totalQuantity: 'Total Quantity',
@@ -394,42 +436,112 @@ export default function InventoryTab() {
     saveTransactionHistory(transactionHistory);
   }, [transactionHistory]);
 
-  const inventoryMap = {};
-  transactionHistory.forEach(item => {
-    if (!inventoryMap[item.stock_id]) {
-      const s = stockList.find(x => x.stock_id === item.stock_id) || {};
-      inventoryMap[item.stock_id] = {
-        stock_id: item.stock_id,
-        stock_name: s.stock_name || item.stock_name || '',
-        total_quantity: 0,
-        total_cost: 0
-      };
-    }
-    const info = inventoryMap[item.stock_id];
-    const qty = Number(item.quantity);
-    if (item.type === 'sell') {
-      const sellQty = Math.min(qty, info.total_quantity);
-      if (info.total_quantity > 0) {
-        const avg = info.total_cost / info.total_quantity;
-        info.total_quantity -= sellQty;
-        info.total_cost -= avg * sellQty;
-      }
-    } else {
-      const price = Number(item.price) || 0;
-      info.total_quantity += qty;
-      info.total_cost += qty * price;
-    }
-  });
+  useEffect(() => {
+    if (!goalSaved) return undefined;
+    const timer = setTimeout(() => setGoalSaved(false), 2500);
+    return () => clearTimeout(timer);
+  }, [goalSaved]);
 
-  const inventoryList = Object.values(inventoryMap)
-    .filter(i => i.total_quantity > 0)
-    .map(i => ({ ...i, avg_price: i.total_cost / i.total_quantity }));
-
-  const totalInvestment = inventoryList.reduce((sum, item) => sum + item.total_cost, 0);
-  const totalValue = inventoryList.reduce(
-    (sum, item) => sum + item.total_quantity * (latestPrices[item.stock_id] || 0),
-    0
+  const { inventoryList, totalInvestment, totalValue } = summarizeInventory(
+    transactionHistory,
+    stockList,
+    latestPrices
   );
+  const monthlyContribution = calculateMonthlyContribution(transactionHistory);
+
+  const formatCurrency = value => {
+    if (!Number.isFinite(value)) return '0.00';
+    return value.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
+  const totalGoalSet = goals.totalTarget > 0;
+  const monthlyGoalSet = goals.monthlyTarget > 0;
+  const totalPercentValue = totalGoalSet ? Math.min(1, totalInvestment / goals.totalTarget) : 0;
+  const monthlyPercentValue = monthlyGoalSet
+    ? Math.min(1, monthlyContribution / goals.monthlyTarget)
+    : 0;
+
+  const goalRows = [
+    {
+      id: 'total',
+      label: msg.totalGoal,
+      current: `${msg.goalTotalInvestment}${formatCurrency(totalInvestment)}`,
+      target: `${msg.goalTarget}${totalGoalSet
+        ? formatCurrency(goals.totalTarget)
+        : msg.goalPercentPlaceholder}`,
+      percent: totalPercentValue,
+      percentLabel: totalGoalSet
+        ? `${Math.min(100, Math.round(totalPercentValue * 100))}%`
+        : msg.goalPercentPlaceholder,
+      encouragement: totalGoalSet
+        ? totalPercentValue >= 1
+          ? msg.goalTotalDone
+          : totalPercentValue >= 0.5
+            ? msg.goalTotalHalf
+            : ''
+        : ''
+    },
+    {
+      id: 'monthly',
+      label: msg.monthlyGoal,
+      current: `${msg.goalMonthlyContribution}${formatCurrency(monthlyContribution)}`,
+      target: `${msg.goalTarget}${monthlyGoalSet
+        ? formatCurrency(goals.monthlyTarget)
+        : msg.goalPercentPlaceholder}`,
+      percent: monthlyPercentValue,
+      percentLabel: monthlyGoalSet
+        ? `${Math.min(100, Math.round(monthlyPercentValue * 100))}%`
+        : msg.goalPercentPlaceholder,
+      encouragement: monthlyGoalSet
+        ? monthlyPercentValue >= 1
+          ? msg.goalMonthlyDone
+          : monthlyPercentValue >= 0.5
+            ? msg.goalMonthlyHalf
+            : ''
+        : ''
+    }
+  ];
+
+  const goalEmptyState = !totalGoalSet && !monthlyGoalSet ? msg.goalEmpty : '';
+  const goalSavedMessage = goalSaved ? msg.goalSaved : '';
+
+  const handleGoalTotalChange = event => {
+    const value = event.target.value;
+    setGoalForm(prev => ({ ...prev, totalTarget: value }));
+  };
+
+  const handleGoalMonthlyChange = event => {
+    const value = event.target.value;
+    setGoalForm(prev => ({ ...prev, monthlyTarget: value }));
+  };
+
+  const handleGoalSubmit = event => {
+    event.preventDefault();
+    const parseGoal = value => {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed === '') return 0;
+        const num = Number(trimmed);
+        return Number.isFinite(num) && num >= 0 ? num : 0;
+      }
+      const num = Number(value);
+      return Number.isFinite(num) && num >= 0 ? num : 0;
+    };
+    const updated = {
+      totalTarget: parseGoal(goalForm.totalTarget),
+      monthlyTarget: parseGoal(goalForm.monthlyTarget)
+    };
+    setGoals(updated);
+    saveInvestmentGoals(updated);
+    setGoalForm({
+      totalTarget: updated.totalTarget ? String(updated.totalTarget) : '',
+      monthlyTarget: updated.monthlyTarget ? String(updated.monthlyTarget) : ''
+    });
+    setGoalSaved(true);
+  };
 
   const handleAdd = () => {
     if (!form.stock_id || !form.date || !form.quantity || !form.price) {
@@ -587,6 +699,27 @@ export default function InventoryTab() {
                 })}
               </span>
             </div>
+
+            <InvestmentGoalCard
+              title={msg.investmentGoals}
+              rows={goalRows}
+              savedMessage={goalSavedMessage}
+              emptyState={goalEmptyState}
+              form={{
+                onSubmit: handleGoalSubmit,
+                totalId: 'inventory-goal-total',
+                monthlyId: 'inventory-goal-monthly',
+                totalLabel: msg.totalGoal,
+                monthlyLabel: msg.monthlyGoal,
+                totalValue: goalForm.totalTarget,
+                monthlyValue: goalForm.monthlyTarget,
+                onTotalChange: handleGoalTotalChange,
+                onMonthlyChange: handleGoalMonthlyChange,
+                totalPlaceholder: msg.goalInputPlaceholderTotal,
+                monthlyPlaceholder: msg.goalInputPlaceholderMonthly,
+                saveLabel: msg.goalSave
+              }}
+            />
 
             <div className="table-responsive">
               <table className={`table table-bordered table-striped ${styles.fullWidth}`}>
