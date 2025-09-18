@@ -55,13 +55,13 @@ function mockGoogleApis({
 beforeEach(() => {
   jest.resetModules();
   document.body.innerHTML = '<script id="gapi"></script><script id="gis"></script>';
-  global.fetch = jest.fn(() => Promise.resolve({ ok: true }));
+  globalThis.fetch = jest.fn(() => Promise.resolve({ ok: true }));
 });
 
 afterEach(() => {
   delete window.gapi;
   delete window.google;
-  delete global.fetch;
+  delete globalThis.fetch;
 });
 
 async function loadModule() {
@@ -79,8 +79,8 @@ test('exportTransactionsToDrive uploads CSV using client token', async () => {
   expect(window.gapi.client.init).toHaveBeenCalled();
   expect(tokenClient.requestAccessToken).toHaveBeenCalled();
   expect(setToken).toHaveBeenCalledWith({ access_token: 'client-token' });
-  expect(global.fetch).toHaveBeenCalledTimes(1);
-  const [, options] = global.fetch.mock.calls[0];
+  expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+  const [, options] = globalThis.fetch.mock.calls[0];
   expect(options.method).toBe('POST');
   expect(options.headers.get('Authorization')).toBe('Bearer client-token');
   expect(options.body).toBeInstanceOf(FormData);
