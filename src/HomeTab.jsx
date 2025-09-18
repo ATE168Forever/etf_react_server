@@ -21,6 +21,7 @@ export default function HomeTab() {
       inventoryList: []
     };
   });
+  const [transactionHistory, setTransactionHistory] = useState([]);
   const [dividendData, setDividendData] = useState([]);
   const { t, lang } = useLanguage();
 
@@ -44,6 +45,7 @@ export default function HomeTab() {
 
   useEffect(() => {
     const history = readTransactionHistory();
+    setTransactionHistory(history);
     const { inventoryList } = summarizeInventory(history);
     const goals = loadInvestmentGoals();
     setGoalSummary({ goals, inventoryList });
@@ -78,9 +80,10 @@ export default function HomeTab() {
   const dividendSummary = useMemo(
     () => calculateDividendSummary({
       inventoryList: goalSummary.inventoryList,
-      dividendEvents: dividendData
+      dividendEvents: dividendData,
+      transactionHistory
     }),
-    [goalSummary.inventoryList, dividendData]
+    [goalSummary.inventoryList, dividendData, transactionHistory]
   );
 
   const goalMessages = useMemo(() => ({

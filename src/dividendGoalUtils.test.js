@@ -10,6 +10,10 @@ describe('dividend goal helpers', () => {
       { stock_id: '0050', total_quantity: 1000 },
       { stock_id: '00878', total_quantity: 500 }
     ];
+    const transactionHistory = [
+      { stock_id: '0050', date: '2023-12-15', quantity: 1000, type: 'buy' },
+      { stock_id: '00878', date: '2024-01-10', quantity: 500, type: 'buy' }
+    ];
     const dividendEvents = [
       { stock_id: '0050', dividend_date: '2024-01-10', dividend: '1' },
       { stock_id: '0050', dividend_date: '2024-06-10', dividend: '0.8' },
@@ -20,6 +24,7 @@ describe('dividend goal helpers', () => {
     const summary = calculateDividendSummary({
       inventoryList,
       dividendEvents,
+      transactionHistory,
       asOfDate: new Date('2024-07-01')
     });
 
@@ -28,6 +33,54 @@ describe('dividend goal helpers', () => {
       annualTotal: 1000 * 1 + 1000 * 0.8 + 500 * 0.5,
       annualYear: 2024,
       monthlyAverage: (1000 * 1 + 1000 * 0.8 + 500 * 0.5) / 12
+    });
+  });
+
+  test('uses transaction history quantity at dividend date', () => {
+    const transactionHistory = [
+      { stock_id: '0050', date: '2023-12-01', quantity: 1000, type: 'buy' },
+      { stock_id: '0050', date: '2024-02-01', quantity: 1000, type: 'sell' }
+    ];
+    const dividendEvents = [
+      { stock_id: '0050', dividend_date: '2024-01-10', dividend: '1' },
+      { stock_id: '0050', dividend_date: '2024-03-10', dividend: '1' }
+    ];
+
+    const summary = calculateDividendSummary({
+      inventoryList: [],
+      dividendEvents,
+      transactionHistory,
+      asOfDate: new Date('2024-04-01')
+    });
+
+    expect(summary).toEqual({
+      yearToDateTotal: 1000,
+      annualTotal: 1000,
+      annualYear: 2024,
+      monthlyAverage: 1000 / 12
+    });
+  });
+
+  test('falls back to inventory totals when history is unavailable', () => {
+    const inventoryList = [
+      { stock_id: '0050', total_quantity: 100 }
+    ];
+    const dividendEvents = [
+      { stock_id: '0050', dividend_date: '2024-01-10', dividend: '2' }
+    ];
+
+    const summary = calculateDividendSummary({
+      inventoryList,
+      dividendEvents,
+      transactionHistory: null,
+      asOfDate: new Date('2024-02-01')
+    });
+
+    expect(summary).toEqual({
+      yearToDateTotal: 200,
+      annualTotal: 200,
+      annualYear: 2024,
+      monthlyAverage: 200 / 12
     });
   });
 
