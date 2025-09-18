@@ -25,58 +25,72 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose })
     onClose();
   };
 
+  const freqOptions = [
+    { v: 12, zh: '月配', en: 'Monthly' },
+    { v: 6, zh: '雙月配', en: 'Bimonthly' },
+    { v: 4, zh: '季配', en: 'Quarterly' },
+    { v: 2, zh: '半年配', en: 'Semi-annual' },
+    { v: 1, zh: '年配', en: 'Annual' }
+  ];
+
   return (
-    <div className="dropdown" ref={ref} style={{ padding: 8, zIndex: 9999 }}>
-      <div className="dropdown-section">
-        <label>
-          {lang === 'en' ? 'Estimated yield ≥' : '預估殖利率 ≥'}
+    <div className="dropdown advanced-dropdown" ref={ref}>
+      <div className="dropdown-section advanced-dropdown__section">
+        <span className="advanced-dropdown__label">{lang === 'en' ? 'Estimated yield ≥' : '預估殖利率 ≥'}</span>
+        <div className="advanced-dropdown__input-row">
           <input
             type="number"
             value={temp.minYield}
             onChange={e => setTemp({ ...temp, minYield: e.target.value })}
-            style={{ width: 60, marginLeft: 4 }}
-          />%
-        </label>
+            className="advanced-dropdown__input"
+          />
+          <span className="advanced-dropdown__suffix">%</span>
+        </div>
       </div>
       <hr />
-      <div className="dropdown-section" style={{ maxHeight: 100, overflowY: 'auto' }}>
-        {[{ v: 12, zh: '月配', en: 'Monthly' }, { v: 6, zh: '雙月配', en: 'Bimonthly' }, { v: 4, zh: '季配', en: 'Quarterly' }, { v: 2, zh: '半年配', en: 'Semi-annual' }, { v: 1, zh: '年配', en: 'Annual' }].map(opt => (
-          <label key={opt.v} className="dropdown-item">
-            <input
-              type="checkbox"
-              checked={temp.freq.includes(opt.v)}
-              onChange={() => toggleFreq(opt.v)}
-            /> {lang === 'en' ? opt.en : opt.zh}
-          </label>
-        ))}
+      <div className="dropdown-section advanced-dropdown__section">
+        <span className="advanced-dropdown__label">{lang === 'en' ? 'Payout frequency' : '配息頻率'}</span>
+        <div className="advanced-dropdown__freq-grid">
+          {freqOptions.map(opt => (
+            <label key={opt.v} className="dropdown-item advanced-dropdown__checkbox">
+              <input
+                type="checkbox"
+                checked={temp.freq.includes(opt.v)}
+                onChange={() => toggleFreq(opt.v)}
+              />
+              <span>{lang === 'en' ? opt.en : opt.zh}</span>
+            </label>
+          ))}
+        </div>
       </div>
       <hr />
-      <div className="dropdown-section">
-        <label className="dropdown-item">
+      <div className="dropdown-section advanced-dropdown__section">
+        <label className="dropdown-item advanced-dropdown__checkbox">
           <input
             type="checkbox"
             checked={temp.diamond}
             onChange={e => setTemp({ ...temp, diamond: e.target.checked })}
-          /> {lang === 'en' ? 'Show only diamonds' : '只顯示鑽石'}
+          />
+          <span>{lang === 'en' ? 'Show only diamonds' : '只顯示鑽石'}</span>
         </label>
       </div>
       <hr />
-      <div className="dropdown-section">
-        <label>
-          {lang === 'en' ? 'Upcoming ex/payout within' : '即將除息/發息：未來'}
+      <div className="dropdown-section advanced-dropdown__section">
+        <span className="advanced-dropdown__label">{lang === 'en' ? 'Upcoming ex/payout within' : '即將除息/發息：未來'}</span>
+        <div className="advanced-dropdown__input-row">
           <input
             type="number"
             value={temp.upcomingWithin}
             onChange={e => setTemp({ ...temp, upcomingWithin: e.target.value })}
-            style={{ width: 60, margin: '0 4px' }}
-          />{lang === 'en' ? 'days' : '天內'}
-        </label>
+            className="advanced-dropdown__input"
+          />
+          <span className="advanced-dropdown__suffix">{lang === 'en' ? 'days' : '天內'}</span>
+        </div>
       </div>
-      <div style={{ marginTop: 8, textAlign: 'right' }}>
+      <div className="advanced-dropdown__actions">
         <button className="dropdown-btn" onClick={handleClear}>{lang === 'en' ? 'Clear' : '清除'}</button>
-        <button className="dropdown-btn" style={{ marginLeft: 8 }} onClick={handleApply}>{lang === 'en' ? 'Apply' : '確定'}</button>
+        <button className="dropdown-btn" onClick={handleApply}>{lang === 'en' ? 'Apply' : '確定'}</button>
       </div>
     </div>
   );
 }
-
