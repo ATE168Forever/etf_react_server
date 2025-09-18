@@ -481,8 +481,12 @@ export default function InventoryTab() {
   }, []);
 
   const dividendSummary = useMemo(
-    () => calculateDividendSummary({ inventoryList, dividendEvents: dividendData }),
-    [inventoryList, dividendData]
+    () => calculateDividendSummary({
+      inventoryList,
+      dividendEvents: dividendData,
+      transactionHistory
+    }),
+    [inventoryList, dividendData, transactionHistory]
   );
 
   const goalMessages = useMemo(() => ({

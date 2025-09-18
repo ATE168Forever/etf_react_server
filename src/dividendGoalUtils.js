@@ -15,35 +15,148 @@ function toValidDate(value) {
   return date && !Number.isNaN(date.getTime()) ? date : null;
 }
 
-export function calculateDividendSummary({ inventoryList = [], dividendEvents = [], asOfDate = new Date() } = {}) {
-  const holdings = new Map();
-  inventoryList.forEach(item => {
-    if (item?.stock_id && Number.isFinite(Number(item.total_quantity))) {
-      holdings.set(item.stock_id, Number(item.total_quantity));
-    }
-  });
-  if (!holdings.size) {
-    return {
-      yearToDateTotal: 0,
-      annualTotal: 0,
-      annualYear: new Date(asOfDate).getFullYear(),
-      monthlyAverage: 0
-    };
+const holdingsTimelineCache = new WeakMap();
+const objectCacheKeyRegistry = new WeakMap();
+const summaryCache = new Map();
+let objectCacheKeySeed = 0;
+
+function getObjectCacheKey(obj, fallback) {
+  if (!obj || (typeof obj !== 'object' && typeof obj !== 'function')) {
+    return fallback;
+  }
+  if (!objectCacheKeyRegistry.has(obj)) {
+    objectCacheKeySeed += 1;
+    objectCacheKeyRegistry.set(obj, `obj-${objectCacheKeySeed}`);
+  }
+  return objectCacheKeyRegistry.get(obj);
+}
+
+function normalizeTransactionHistory(transactionHistory = []) {
+  const perStockTimeline = new Map();
+  if (!Array.isArray(transactionHistory) || !transactionHistory.length) {
+    return perStockTimeline;
   }
 
-  const now = new Date(asOfDate);
+  transactionHistory.forEach((item, index) => {
+    const stockId = item?.stock_id;
+    if (!stockId) return;
+    const rawQuantity = Number(item?.quantity);
+    if (!Number.isFinite(rawQuantity) || rawQuantity === 0) return;
+    const eventDate = toValidDate(item?.date || item?.purchased_date);
+    if (!eventDate) return;
+    const direction = item?.type === 'sell' ? -1 : 1;
+    const delta = direction * rawQuantity;
+    if (!perStockTimeline.has(stockId)) {
+      perStockTimeline.set(stockId, []);
+    }
+    perStockTimeline.get(stockId).push({ date: eventDate, delta, index });
+  });
+
+  perStockTimeline.forEach((events, stockId) => {
+    events.sort((a, b) => {
+      const diff = a.date - b.date;
+      return diff !== 0 ? diff : a.index - b.index;
+    });
+    let running = 0;
+    const timeline = events.map(({ date, delta }) => {
+      running += delta;
+      if (running < 0) running = 0;
+      return { date, quantity: running };
+    });
+    perStockTimeline.set(stockId, timeline);
+  });
+
+  return perStockTimeline;
+}
+
+function getHoldingsTimeline(transactionHistory) {
+  if (!Array.isArray(transactionHistory) || !transactionHistory.length) {
+    return null;
+  }
+  if (holdingsTimelineCache.has(transactionHistory)) {
+    return holdingsTimelineCache.get(transactionHistory);
+  }
+  const timeline = normalizeTransactionHistory(transactionHistory);
+  const result = timeline.size ? timeline : null;
+  holdingsTimelineCache.set(transactionHistory, result);
+  return result;
+}
+
+function getQuantityOnDate(timeline = [], targetDate) {
+  if (!Array.isArray(timeline) || !timeline.length || !targetDate) {
+    return 0;
+  }
+  const targetTime = targetDate.getTime();
+  let left = 0;
+  let right = timeline.length - 1;
+  let quantity = 0;
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    const midTime = timeline[mid].date.getTime();
+    if (midTime <= targetTime) {
+      quantity = timeline[mid].quantity;
+      left = mid + 1;
+    } else {
+      right = mid - 1;
+    }
+  }
+  return quantity > 0 ? quantity : 0;
+}
+
+function buildInventoryHoldings(inventoryList = []) {
+  const holdings = new Map();
+  if (!Array.isArray(inventoryList)) {
+    return holdings;
+  }
+  inventoryList.forEach(item => {
+    const stockId = item?.stock_id;
+    const quantity = Number(item?.total_quantity);
+    if (!stockId || !Number.isFinite(quantity) || quantity <= 0) return;
+    holdings.set(stockId, quantity);
+  });
+  return holdings;
+}
+
+export function calculateDividendSummary({
+  inventoryList = [],
+  dividendEvents = [],
+  transactionHistory = [],
+  asOfDate = new Date()
+} = {}) {
+  const now = toValidDate(asOfDate) || new Date();
+  const asOfKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+  const historyKey = getObjectCacheKey(Array.isArray(transactionHistory) ? transactionHistory : null, 'no-history');
+  const dividendKey = getObjectCacheKey(Array.isArray(dividendEvents) ? dividendEvents : null, 'no-dividends');
+  const inventoryKey = getObjectCacheKey(Array.isArray(inventoryList) ? inventoryList : null, 'no-inventory');
+  const cacheKey = `${historyKey}|${dividendKey}|${inventoryKey}|${asOfKey}`;
+
+  if (summaryCache.has(cacheKey)) {
+    return summaryCache.get(cacheKey);
+  }
+
   const currentYear = now.getFullYear();
   const totalsByYear = new Map();
   let yearToDateTotal = 0;
 
-  dividendEvents.forEach(event => {
+  const holdingsTimeline = getHoldingsTimeline(transactionHistory);
+  const fallbackHoldings = holdingsTimeline ? null : buildInventoryHoldings(inventoryList);
+
+  (Array.isArray(dividendEvents) ? dividendEvents : []).forEach(event => {
     const stockId = event?.stock_id;
-    const quantity = holdings.get(stockId);
-    if (!quantity) return;
+    if (!stockId) return;
     const perShareDividend = Number(event?.dividend);
     if (!Number.isFinite(perShareDividend) || perShareDividend <= 0) return;
-    const eventDate = toValidDate(event?.dividend_date);
+    const eventDate = toValidDate(event?.dividend_date) || toValidDate(event?.payment_date);
     if (!eventDate) return;
+
+    let quantity = 0;
+    if (holdingsTimeline) {
+      const stockTimeline = holdingsTimeline.get(stockId);
+      quantity = getQuantityOnDate(stockTimeline, eventDate);
+    } else if (fallbackHoldings) {
+      quantity = fallbackHoldings.get(stockId) || 0;
+    }
+    if (!quantity) return;
 
     const amount = perShareDividend * quantity;
     const eventYear = eventDate.getFullYear();
@@ -53,17 +166,18 @@ export function calculateDividendSummary({ inventoryList = [], dividendEvents = 
     }
   });
 
-  const annualYear = currentYear;
   const annualTotal = totalsByYear.get(currentYear) || 0;
-
   const monthlyAverage = annualTotal > 0 ? annualTotal / 12 : 0;
 
-  return {
+  const result = {
     yearToDateTotal,
     annualTotal,
-    annualYear,
+    annualYear: currentYear,
     monthlyAverage
   };
+
+  summaryCache.set(cacheKey, result);
+  return result;
 }
 
 export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages = {}, formatCurrency = (value) => {
