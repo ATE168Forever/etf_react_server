@@ -14,14 +14,16 @@ import DataDropdown from './components/DataDropdown';
 import styles from './InventoryTab.module.css';
 import { useLanguage } from './i18n';
 import InvestmentGoalCard from './components/InvestmentGoalCard';
-import { summarizeInventory, calculateMonthlyContribution } from './inventoryUtils';
+import { summarizeInventory } from './inventoryUtils';
 import { loadInvestmentGoals, saveInvestmentGoals } from './investmentGoalsStorage';
+import {
+  DIVIDEND_YEAR_QUERY,
+  normalizeDividendResponse,
+  calculateDividendSummary,
+  buildDividendGoalViewModel
+} from './dividendGoalUtils';
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
-
-const CURRENT_YEAR = new Date().getFullYear();
-const PREVIOUS_YEAR = CURRENT_YEAR - 1;
-const DIVIDEND_YEAR_QUERY = `year=${CURRENT_YEAR}&year=${PREVIOUS_YEAR}`;
 
 function getToday() {
   return new Date().toISOString().slice(0, 10);
@@ -40,10 +42,12 @@ export default function InventoryTab() {
   const [cacheInfo, setCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [latestPrices, setLatestPrices] = useState({});
+  const [dividendData, setDividendData] = useState([]);
   const { lang } = useLanguage();
   const initialGoals = useMemo(() => loadInvestmentGoals(), []);
   const [goals, setGoals] = useState(initialGoals);
   const [goalForm, setGoalForm] = useState(() => ({
+    name: initialGoals.goalName ? String(initialGoals.goalName) : '',
     totalTarget: initialGoals.totalTarget ? String(initialGoals.totalTarget) : '',
     monthlyTarget: initialGoals.monthlyTarget ? String(initialGoals.monthlyTarget) : ''
   }));
@@ -82,22 +86,31 @@ export default function InventoryTab() {
       cache: '快取',
       totalInvestment: '總投資金額：',
       totalValue: '目前總價值：',
-      investmentGoals: '存股目標',
-      totalGoal: '累積目標',
+      investmentGoals: '預期的股息目標',
+      goalNameLabel: '幫目標取個名字',
+      goalNamePlaceholder: '例：一年滾出 10 萬股息',
+      goalNameHelper: '清楚的名稱能提醒自己為什麼開始。',
+      goalFormIntro: '替你的股息計畫取個名字，設定年度與每月目標，讓努力更有方向！',
+      totalGoal: '年度目標',
       monthlyGoal: '每月目標',
-      goalTotalInvestment: '累積投入：',
-      goalMonthlyContribution: '本月投入：',
-      goalTarget: '目標：',
+      goalDividendAccumulated: '累積股息：',
+      goalDividendMonthly: '每月股息：',
+      goalTargetAnnual: '年度目標：',
+      goalTargetMonthly: '每月目標：',
       goalPercentPlaceholder: '--',
-      goalSave: '儲存目標',
-      goalSaved: '目標已儲存',
-      goalEmpty: '尚未設定目標，請在下方輸入金額',
-      goalInputPlaceholderTotal: '例：500000',
-      goalInputPlaceholderMonthly: '例：10000',
-      goalTotalHalf: '累積目標過半！繼續保持～',
-      goalTotalDone: '恭喜達成累積目標！',
-      goalMonthlyHalf: '本月進度過半，再接再厲！',
-      goalMonthlyDone: '本月目標達成，太棒了！',
+      goalSave: '儲存我的股息計畫',
+      goalSaved: '已儲存，加油！',
+      goalEmpty: '還沒設定股息計畫？給目標取個響亮的名字，再填上年度與每月數字吧！',
+      goalInputPlaceholderTotal: '例：50000',
+      goalInputPlaceholderMonthly: '例：5000',
+      goalAnnualHalf: '年度進度過半，離夢想更近一步！',
+      goalAnnualDone: '恭喜完成年度目標，繼續打造現金流！',
+      goalMonthlyHalf: '這個月過半囉，再衝一把！',
+      goalMonthlyDone: '月目標達成，保持這個節奏！',
+      goalDividendYtdLabel: '累積股息',
+      goalDividendAnnualLabel: '年度股息',
+      goalDividendMonthlyLabel: '每月股息',
+      goalAchievementLabel: '達成率',
       stockCodeName: '股票代碼/名稱',
       avgPrice: '平均股價',
       totalQuantity: '總數量',
@@ -140,22 +153,31 @@ export default function InventoryTab() {
       cache: 'Cache',
       totalInvestment: 'Total Investment:',
       totalValue: 'Total Value:',
-      investmentGoals: 'Investment Goals',
-      totalGoal: 'Total Goal',
+      investmentGoals: 'Expected Dividend Targets',
+      goalNameLabel: 'Name your goal',
+      goalNamePlaceholder: 'e.g. Build a $5K dividend stream',
+      goalNameHelper: 'A memorable name keeps your motivation high.',
+      goalFormIntro: 'Give your dividend plan a motivating title, then set the annual and monthly targets.',
+      totalGoal: 'Annual Goal',
       monthlyGoal: 'Monthly Goal',
-      goalTotalInvestment: 'Invested so far:',
-      goalMonthlyContribution: 'This month:',
-      goalTarget: 'Target:',
+      goalDividendAccumulated: 'Accumulated dividends:',
+      goalDividendMonthly: 'Monthly dividends:',
+      goalTargetAnnual: 'Annual target:',
+      goalTargetMonthly: 'Monthly target:',
       goalPercentPlaceholder: '--',
-      goalSave: 'Save goals',
-      goalSaved: 'Goals saved',
-      goalEmpty: 'No goals yet. Add your targets below to track progress.',
-      goalInputPlaceholderTotal: 'e.g. 500000',
-      goalInputPlaceholderMonthly: 'e.g. 10000',
-      goalTotalHalf: 'Halfway to your total goal—keep going!',
-      goalTotalDone: 'Total goal achieved! Fantastic!',
-      goalMonthlyHalf: 'Monthly progress is past halfway—almost there!',
-      goalMonthlyDone: 'Monthly goal achieved! Great job!',
+      goalSave: 'Save my dividend plan',
+      goalSaved: 'Plan updated—keep going!',
+      goalEmpty: 'No plan yet—give your dividend goal a name and add annual and monthly targets below to stay focused.',
+      goalInputPlaceholderTotal: 'e.g. 5000',
+      goalInputPlaceholderMonthly: 'e.g. 500',
+      goalAnnualHalf: 'Halfway through the year—your dream cashflow is getting closer!',
+      goalAnnualDone: 'Annual goal achieved! Keep that momentum building income!',
+      goalMonthlyHalf: 'Over halfway this month—one more push!',
+      goalMonthlyDone: 'Monthly goal achieved—stay in this winning rhythm!',
+      goalDividendYtdLabel: 'Accumulated dividends',
+      goalDividendAnnualLabel: 'Annual dividends',
+      goalDividendMonthlyLabel: 'Monthly dividends',
+      goalAchievementLabel: 'Achievement',
       stockCodeName: 'Stock Code/Name',
       avgPrice: 'Average Price',
       totalQuantity: 'Total Quantity',
@@ -408,13 +430,8 @@ export default function InventoryTab() {
   useEffect(() => {
     fetchWithCache(`${API_HOST}/get_dividend?${DIVIDEND_YEAR_QUERY}`)
       .then(({ data }) => {
-        const list = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.data)
-            ? data.data
-            : Array.isArray(data?.items)
-              ? data.items
-              : [];
+        const list = normalizeDividendResponse(data);
+        setDividendData(list);
         const priceMap = {};
         list.forEach(item => {
           const price = parseFloat(item.last_close_price);
@@ -429,7 +446,10 @@ export default function InventoryTab() {
         });
         setLatestPrices(prices);
       })
-      .catch(() => setLatestPrices({}));
+      .catch(() => {
+        setDividendData([]);
+        setLatestPrices({});
+      });
   }, []);
 
   useEffect(() => {
@@ -447,66 +467,60 @@ export default function InventoryTab() {
     stockList,
     latestPrices
   );
-  const monthlyContribution = calculateMonthlyContribution(transactionHistory);
 
-  const formatCurrency = value => {
+  const formatCurrency = useCallback(value => {
     if (!Number.isFinite(value)) return '0.00';
-    return value.toLocaleString('en-US', {
+    return Number(value).toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
-  };
+  }, []);
 
-  const totalGoalSet = goals.totalTarget > 0;
-  const monthlyGoalSet = goals.monthlyTarget > 0;
-  const totalPercentValue = totalGoalSet ? Math.min(1, totalInvestment / goals.totalTarget) : 0;
-  const monthlyPercentValue = monthlyGoalSet
-    ? Math.min(1, monthlyContribution / goals.monthlyTarget)
-    : 0;
+  const dividendSummary = useMemo(
+    () => calculateDividendSummary({ inventoryList, dividendEvents: dividendData }),
+    [inventoryList, dividendData]
+  );
 
-  const goalRows = [
-    {
-      id: 'total',
-      label: msg.totalGoal,
-      current: `${msg.goalTotalInvestment}${formatCurrency(totalInvestment)}`,
-      target: `${msg.goalTarget}${totalGoalSet
-        ? formatCurrency(goals.totalTarget)
-        : msg.goalPercentPlaceholder}`,
-      percent: totalPercentValue,
-      percentLabel: totalGoalSet
-        ? `${Math.min(100, Math.round(totalPercentValue * 100))}%`
-        : msg.goalPercentPlaceholder,
-      encouragement: totalGoalSet
-        ? totalPercentValue >= 1
-          ? msg.goalTotalDone
-          : totalPercentValue >= 0.5
-            ? msg.goalTotalHalf
-            : ''
-        : ''
-    },
-    {
-      id: 'monthly',
-      label: msg.monthlyGoal,
-      current: `${msg.goalMonthlyContribution}${formatCurrency(monthlyContribution)}`,
-      target: `${msg.goalTarget}${monthlyGoalSet
-        ? formatCurrency(goals.monthlyTarget)
-        : msg.goalPercentPlaceholder}`,
-      percent: monthlyPercentValue,
-      percentLabel: monthlyGoalSet
-        ? `${Math.min(100, Math.round(monthlyPercentValue * 100))}%`
-        : msg.goalPercentPlaceholder,
-      encouragement: monthlyGoalSet
-        ? monthlyPercentValue >= 1
-          ? msg.goalMonthlyDone
-          : monthlyPercentValue >= 0.5
-            ? msg.goalMonthlyHalf
-            : ''
-        : ''
-    }
-  ];
+  const goalMessages = useMemo(() => ({
+    annualGoal: msg.totalGoal,
+    monthlyGoal: msg.monthlyGoal,
+    goalDividendAccumulated: msg.goalDividendAccumulated,
+    goalDividendMonthly: msg.goalDividendMonthly,
+    goalDividendYtdLabel: msg.goalDividendYtdLabel,
+    goalDividendAnnualLabel: msg.goalDividendAnnualLabel,
+    goalDividendMonthlyLabel: msg.goalDividendMonthlyLabel,
+    goalAchievementLabel: msg.goalAchievementLabel,
+    goalTargetAnnual: msg.goalTargetAnnual,
+    goalTargetMonthly: msg.goalTargetMonthly,
+    goalPercentPlaceholder: msg.goalPercentPlaceholder,
+    goalAnnualHalf: msg.goalAnnualHalf,
+    goalAnnualDone: msg.goalAnnualDone,
+    goalMonthlyHalf: msg.goalMonthlyHalf,
+    goalMonthlyDone: msg.goalMonthlyDone,
+    goalEmpty: msg.goalEmpty
+  }), [msg]);
 
-  const goalEmptyState = !totalGoalSet && !monthlyGoalSet ? msg.goalEmpty : '';
+  const {
+    metrics: goalMetrics,
+    rows: goalRows,
+    emptyState: goalEmptyState
+  } = useMemo(
+    () => buildDividendGoalViewModel({
+      summary: dividendSummary,
+      goals,
+      messages: goalMessages,
+      formatCurrency
+    }),
+    [dividendSummary, goals, goalMessages, formatCurrency]
+  );
+
   const goalSavedMessage = goalSaved ? msg.goalSaved : '';
+  const goalTitle = goals.goalName?.trim() ? goals.goalName.trim() : msg.investmentGoals;
+
+  const handleGoalNameChange = event => {
+    const value = event.target.value;
+    setGoalForm(prev => ({ ...prev, name: value }));
+  };
 
   const handleGoalTotalChange = event => {
     const value = event.target.value;
@@ -531,12 +545,14 @@ export default function InventoryTab() {
       return Number.isFinite(num) && num >= 0 ? num : 0;
     };
     const updated = {
+      goalName: typeof goalForm.name === 'string' ? goalForm.name.trim().slice(0, 60) : '',
       totalTarget: parseGoal(goalForm.totalTarget),
       monthlyTarget: parseGoal(goalForm.monthlyTarget)
     };
     setGoals(updated);
     saveInvestmentGoals(updated);
     setGoalForm({
+      name: updated.goalName,
       totalTarget: updated.totalTarget ? String(updated.totalTarget) : '',
       monthlyTarget: updated.monthlyTarget ? String(updated.monthlyTarget) : ''
     });
@@ -701,12 +717,21 @@ export default function InventoryTab() {
             </div>
 
             <InvestmentGoalCard
-              title={msg.investmentGoals}
+              title={goalTitle}
+              metrics={goalMetrics}
               rows={goalRows}
               savedMessage={goalSavedMessage}
               emptyState={goalEmptyState}
               form={{
                 onSubmit: handleGoalSubmit,
+                intro: msg.goalFormIntro,
+                nameId: 'inventory-goal-name',
+                nameLabel: msg.goalNameLabel,
+                nameValue: goalForm.name,
+                namePlaceholder: msg.goalNamePlaceholder,
+                nameHelper: msg.goalNameHelper,
+                onNameChange: handleGoalNameChange,
+                nameMaxLength: 60,
                 totalId: 'inventory-goal-total',
                 monthlyId: 'inventory-goal-monthly',
                 totalLabel: msg.totalGoal,

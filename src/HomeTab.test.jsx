@@ -22,8 +22,21 @@ const mockData = {
   tip: '高股息 ETF 不代表報酬率高，還需要考慮殖利率與價格變化。'
 };
 
+const mockDividendData = [
+  { stock_id: '0050', dividend_date: '2024-01-10', dividend: 1, last_close_price: 20 }
+];
+
 beforeEach(() => {
-  fetchWithCache.mockResolvedValue({ data: mockData });
+  localStorage.clear();
+  fetchWithCache.mockImplementation((url) => {
+    if (url.includes('/site_stats')) {
+      return Promise.resolve({ data: mockData });
+    }
+    if (url.includes('/get_dividend')) {
+      return Promise.resolve({ data: mockDividendData });
+    }
+    return Promise.resolve({ data: [] });
+  });
 });
 
 afterEach(() => {
@@ -69,6 +82,12 @@ test('renders investment goals card', async () => {
   expect(
     screen.getByText(translations.zh.goal_empty_state)
   ).toBeInTheDocument();
+});
+
+test('shows custom goal title when saved', async () => {
+  localStorage.setItem('investment_goals', JSON.stringify({ goalName: '現金流自由計畫' }));
+  renderWithLang();
+  expect(await screen.findByText('現金流自由計畫')).toBeInTheDocument();
 });
 
 test('fetches stats with en flag false for zh', async () => {

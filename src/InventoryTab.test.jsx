@@ -33,8 +33,10 @@ describe('InventoryTab interactions', () => {
 
   test('renders investment goal section with inputs', async () => {
     render(<InventoryTab />);
-    expect(await screen.findByText('存股目標')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('例：500000')).toBeInTheDocument();
+    expect(await screen.findByText('預期的股息目標')).toBeInTheDocument();
+    expect(screen.getByText('累積股息')).toBeInTheDocument();
+    expect(screen.getByLabelText('幫目標取個名字')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('例：50000')).toBeInTheDocument();
   });
 
   test('displays total investment amount and value', async () => {
@@ -43,7 +45,7 @@ describe('InventoryTab interactions', () => {
     ]));
     render(<InventoryTab />);
     await screen.findByText('顯示：交易歷史');
-    await screen.findByText('存股目標');
+    await screen.findByText('預期的股息目標');
     expect(await screen.findByText('總投資金額：10,000.00')).toBeInTheDocument();
     expect(await screen.findByText('目前總價值：20,000.00')).toBeInTheDocument();
   });
@@ -63,6 +65,16 @@ describe('InventoryTab interactions', () => {
     await screen.findByText(/2000/);
     const saved = JSON.parse(localStorage.getItem('my_transaction_history'));
     expect(saved[0].quantity).toBe(2000);
+  });
+
+  test('renders saved custom goal name', async () => {
+    localStorage.setItem('investment_goals', JSON.stringify({
+      goalName: '退休旅遊基金',
+      totalTarget: 360000,
+      monthlyTarget: 30000
+    }));
+    render(<InventoryTab />);
+    expect(await screen.findByText('退休旅遊基金')).toBeInTheDocument();
   });
 
 });
