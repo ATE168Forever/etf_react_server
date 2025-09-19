@@ -187,7 +187,8 @@
 
 .inputGroup label {
   font-size: 0.75rem;
-  color: var(--muted-foreground, #6b7280);
+  color: var(--color-text, #1f2937);
+  font-weight: 600;
 }
 
 .inputGroup input,
