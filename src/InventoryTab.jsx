@@ -113,7 +113,8 @@ export default function InventoryTab() {
       goalTargetAnnual: '年度目標：',
       goalTargetMonthly: '每月目標：',
       goalTargetMinimum: '每月最低目標：',
-      goalSave: '儲存我的股息計畫',
+      goalText: '我的股息計畫',
+      goalSave: '儲存',
       goalSaved: '已儲存，加油！',
       goalEmpty: '還沒設定股息計畫？給目標取個響亮的名字，再填上年度與每月數字吧！',
       goalInputPlaceholderTotal: '例：50000',
@@ -188,7 +189,8 @@ export default function InventoryTab() {
       goalTargetAnnual: 'Annual target:',
       goalTargetMonthly: 'Monthly target:',
       goalTargetMinimum: 'Monthly minimum target:',
-      goalSave: 'Save my dividend plan',
+      goalText: 'My plan',
+      goalSave: 'Save',
       goalSaved: 'Plan updated—keep going!',
       goalEmpty: 'No plan yet—give your dividend goal a name and add annual and monthly targets below to stay focused.',
       goalInputPlaceholderTotal: 'e.g. 5000',
@@ -840,7 +842,8 @@ export default function InventoryTab() {
                 targetPlaceholder: goalTargetConfig.placeholder,
                 targetStep: goalTargetConfig.step,
                 targetMin: '0',
-                saveLabel: msg.goalSave
+                saveLabel: msg.goalText,
+                saveButton: msg.goalSave
               }}
             />
 

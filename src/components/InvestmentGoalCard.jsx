@@ -126,7 +126,10 @@ export default function InvestmentGoalCard({ title, metrics = [], rows, savedMes
                 step={formProps.targetStep || '100'}
               />
             </div>
-            <button type="submit">{formProps.saveLabel}</button>
+            <div className={styles.inputGroup}>
+              <label>{formProps.saveLabel}</label>
+              <button type="submit" style={{ width: "fit-content" }}>{formProps.saveButton}</button>
+            </div>
           </form>
         ) : null}
       </div>
