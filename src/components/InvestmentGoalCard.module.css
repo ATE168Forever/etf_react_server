@@ -168,7 +168,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  align-items: flex-end;
+  align-items: flex-start;
 }
 
 .formIntro {
@@ -187,8 +187,7 @@
 
 .inputGroup label {
   font-size: 0.75rem;
-  color: var(--color-text, #1f2937);
-  font-weight: 600;
+  color: var(--muted-foreground, #6b7280);
 }
 
 .inputGroup input,
@@ -206,7 +205,6 @@
 }
 
 .form button {
-  align-self: flex-end;
   padding: 6px 18px;
   border-radius: 6px;
   background: var(--accent-gold);
