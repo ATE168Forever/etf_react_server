@@ -187,8 +187,7 @@
 
 .inputGroup label {
   font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text, #1f2937);
+  color: var(--muted-foreground, #6b7280);
 }
 
 .inputGroup input,
@@ -212,17 +211,6 @@
   border: none;
   color: var(--color-text);
   cursor: pointer;
-}
-
-.submitSection {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 160px;
-}
-
-.submitSection button {
-  align-self: flex-start;
 }
 
 @media (max-width: 480px) {

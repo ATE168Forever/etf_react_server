@@ -113,22 +113,20 @@ export default function InvestmentGoalCard({ title, metrics = [], rows, savedMes
                 </select>
               </div>
             ) : null}
-            <div className={styles.submitSection}>
-              <div className={styles.inputGroup}>
-                <label htmlFor={formProps.targetId}>{formProps.targetLabel}</label>
-                <input
-                  id={formProps.targetId}
-                  type="number"
-                  inputMode="decimal"
-                  value={formProps.targetValue}
-                  onChange={formProps.onTargetChange}
-                  placeholder={formProps.targetPlaceholder}
-                  min={formProps.targetMin || '0'}
-                  step={formProps.targetStep || '100'}
-                />
-              </div>
-              <button type="submit">{formProps.saveLabel}</button>
+            <div className={styles.inputGroup}>
+              <label htmlFor={formProps.targetId}>{formProps.targetLabel}</label>
+              <input
+                id={formProps.targetId}
+                type="number"
+                inputMode="decimal"
+                value={formProps.targetValue}
+                onChange={formProps.onTargetChange}
+                placeholder={formProps.targetPlaceholder}
+                min={formProps.targetMin || '0'}
+                step={formProps.targetStep || '100'}
+              />
             </div>
+            <button type="submit">{formProps.saveLabel}</button>
           </form>
         ) : null}
       </div>
