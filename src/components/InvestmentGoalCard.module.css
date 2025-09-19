@@ -59,6 +59,8 @@
   padding: 8px 12px;
   border-radius: 8px;
   background: rgba(148, 163, 184, 0.12);
+  border: 1px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .metricLabel {
@@ -69,6 +71,41 @@
 .metricValue {
   font-size: 1.1rem;
   font-weight: 600;
+}
+
+.metricActive {
+  background: rgba(250, 204, 21, 0.18);
+  border-color: rgba(250, 204, 21, 0.45);
+}
+
+.metricActive .metricLabel,
+.metricActive .metricValue {
+  color: var(--accent-gold);
+}
+
+.metricHighlight {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+.metricHighlight .metricLabel,
+.metricHighlight .metricValue {
+  color: #22c55e;
+}
+
+.metricCelebrate {
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.25);
+}
+
+.metricValueCelebrate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.metricCelebrateIcon {
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 .goalRow {
