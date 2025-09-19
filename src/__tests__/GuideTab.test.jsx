@@ -1,6 +1,6 @@
 /* eslint-env jest */
 import { render, screen } from '@testing-library/react';
-import GuideTab from './GuideTab';
+import GuideTab from '../GuideTab';
 
 test('renders guide heading', () => {
   render(<GuideTab />);

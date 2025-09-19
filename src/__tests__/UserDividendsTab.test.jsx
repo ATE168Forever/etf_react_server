@@ -1,10 +1,10 @@
 /* eslint-env jest */
 import { render, screen } from '@testing-library/react';
-import UserDividendsTab from './UserDividendsTab';
-import { readTransactionHistory } from './transactionStorage';
+import UserDividendsTab from '../UserDividendsTab';
+import { readTransactionHistory } from '../transactionStorage';
 
-jest.mock('./transactionStorage');
-jest.mock('./config', () => ({ API_HOST: '' }));
+jest.mock('../transactionStorage');
+jest.mock('../config', () => ({ API_HOST: '' }));
 
 test('displays stock id and dynamic name from dividend data', async () => {
   readTransactionHistory.mockReturnValue([
