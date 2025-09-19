@@ -136,11 +136,11 @@ export function calculateDividendSummary({
 
   const currentYear = now.getFullYear();
   const totalsByYear = new Map();
-  let yearToDateTotal = 0;
+  let accumulatedTotal = 0;
 
   const holdingsTimeline = getHoldingsTimeline(transactionHistory);
   const fallbackHoldings = holdingsTimeline ? null : buildInventoryHoldings(inventoryList);
-
+  let lastMonth = null;
   (Array.isArray(dividendEvents) ? dividendEvents : []).forEach(event => {
     const stockId = event?.stock_id;
     if (!stockId) return;
@@ -157,20 +157,18 @@ export function calculateDividendSummary({
       quantity = fallbackHoldings.get(stockId) || 0;
     }
     if (!quantity) return;
+    lastMonth = eventDate.getMonth();
 
     const amount = perShareDividend * quantity;
     const eventYear = eventDate.getFullYear();
     totalsByYear.set(eventYear, (totalsByYear.get(eventYear) || 0) + amount);
-    if (eventYear === currentYear && eventDate <= now) {
-      yearToDateTotal += amount;
-    }
+    accumulatedTotal += amount;
   });
 
   const annualTotal = totalsByYear.get(currentYear) || 0;
-  const monthlyAverage = annualTotal > 0 ? annualTotal / 12 : 0;
-
+  const monthlyAverage = annualTotal > 0 ? annualTotal / (lastMonth + 1) : 0;
   const result = {
-    yearToDateTotal,
+    accumulatedTotal,
     annualTotal,
     annualYear: currentYear,
     monthlyAverage
@@ -188,29 +186,33 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
   });
 } }) {
   const {
-    yearToDateTotal = 0,
+    accumulatedTotal = 0,
     annualTotal = 0,
     annualYear,
-    monthlyAverage = 0
+    monthlyAverage = 0,
+    monthlyMinimum = 0
   } = summary;
   const annualGoal = Number(goals.totalTarget) || 0;
   const monthlyGoal = Number(goals.monthlyTarget) || 0;
-  const placeholder = messages.goalPercentPlaceholder || '--';
+  const minimumGoal = Number(goals.minimumTarget) || 0;
 
   const annualGoalSet = annualGoal > 0;
   const monthlyGoalSet = monthlyGoal > 0;
+  const minimumGoalSet = minimumGoal > 0;
   const annualPercentValue = annualGoalSet && annualGoal > 0
-    ? Math.min(1, yearToDateTotal / annualGoal)
+    ? Math.min(1, accumulatedTotal / annualGoal)
     : 0;
   const monthlyPercentValue = monthlyGoalSet && monthlyGoal > 0
     ? Math.min(1, monthlyAverage / monthlyGoal)
     : 0;
-
+  const minimumPercentValue = minimumGoalSet && minimumGoal > 0
+    ? Math.min(1, monthlyMin / minimumGoal)
+    : 0;
   const metrics = [
     {
       id: 'ytd',
       label: messages.goalDividendYtdLabel,
-      value: formatCurrency(yearToDateTotal)
+      value: formatCurrency(accumulatedTotal)
     },
     {
       id: 'annual',
@@ -225,11 +227,16 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
       value: formatCurrency(monthlyAverage)
     },
     {
+      id: 'min',
+      label: messages.goalDividendMinimumLabel,
+      value: formatCurrency(monthlyMin)
+    },
+    {
       id: 'achievement',
       label: messages.goalAchievementLabel,
       value: annualGoalSet
         ? `${Math.min(100, Math.round(annualPercentValue * 100))}%`
-        : placeholder
+        : `${Math.min(100, Math.round(monthlyPercentValue * 100))}%`
     }
   ].filter(metric => Boolean(metric.label));
 
@@ -239,7 +246,7 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
     rows.push({
       id: 'annual',
       label: messages.annualGoal,
-      current: `${messages.goalDividendAccumulated}${formatCurrency(yearToDateTotal)}`,
+      current: `${messages.goalDividendAccumulated}${formatCurrency(accumulatedTotal)}`,
       target: `${messages.goalTargetAnnual}${formatCurrency(annualGoal)}`,
       percent: annualPercentValue,
       percentLabel: `${Math.min(100, Math.round(annualPercentValue * 100))}%`,
@@ -263,6 +270,22 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
         ? messages.goalMonthlyDone
         : monthlyPercentValue >= 0.5
           ? messages.goalMonthlyHalf
+          : ''
+    });
+  }
+
+  if (minimumGoalSet) {
+    rows.push({
+      id: 'minimum',
+      label: messages.minimumGoal,
+      current: `${messages.goalDividendMinimum}${formatCurrency(monthlyMinimum)}`,
+      target: `${messages.goalTargetMinimum}${formatCurrency(minimumGoal)}`,
+      percent: minimumPercentValue,
+      percentLabel: `${Math.min(100, Math.round(minimumPercentValue * 100))}%`,
+      encouragement: minimumPercentValue >= 1
+        ? messages.goalMinimumDone
+        : minimumPercentValue >= 0.5
+          ? messages.goalMinimumHalf
           : ''
     });
   }

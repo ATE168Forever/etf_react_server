@@ -29,7 +29,7 @@ describe('dividend goal helpers', () => {
     });
 
     expect(summary).toEqual({
-      yearToDateTotal: 1000 * 1 + 1000 * 0.8 + 500 * 0.5,
+      accumulatedTotal: 1000 * 1 + 1000 * 0.8 + 500 * 0.5,
       annualTotal: 1000 * 1 + 1000 * 0.8 + 500 * 0.5,
       annualYear: 2024,
       monthlyAverage: (1000 * 1 + 1000 * 0.8 + 500 * 0.5) / 12
@@ -54,7 +54,7 @@ describe('dividend goal helpers', () => {
     });
 
     expect(summary).toEqual({
-      yearToDateTotal: 1000,
+      accumulatedTotal: 1000,
       annualTotal: 1000,
       annualYear: 2024,
       monthlyAverage: 1000 / 12
@@ -77,7 +77,7 @@ describe('dividend goal helpers', () => {
     });
 
     expect(summary).toEqual({
-      yearToDateTotal: 200,
+      accumulatedTotal: 200,
       annualTotal: 200,
       annualYear: 2024,
       monthlyAverage: 200 / 12
@@ -86,7 +86,7 @@ describe('dividend goal helpers', () => {
 
   test('builds goal view model with metrics and rows', () => {
     const summary = {
-      yearToDateTotal: 1800,
+      accumulatedTotal: 1800,
       annualTotal: 2400,
       annualYear: 2024,
       monthlyAverage: 200
@@ -108,6 +108,8 @@ describe('dividend goal helpers', () => {
       goalAnnualDone: '年度完成',
       goalMonthlyHalf: '月過半',
       goalMonthlyDone: '月完成',
+      goalMinimumHalf: '月最低過半',
+      goalMinimumDone: '月最低完成',
       goalEmpty: ''
     };
 
@@ -139,7 +141,7 @@ describe('dividend goal helpers', () => {
 
   test('omits goal rows when targets are not provided', () => {
     const summary = {
-      yearToDateTotal: 900,
+      accumulatedTotal: 900,
       annualTotal: 1500,
       annualYear: 2023,
       monthlyAverage: 120
@@ -160,6 +162,8 @@ describe('dividend goal helpers', () => {
       goalAnnualDone: '年度完成',
       goalMonthlyHalf: '月過半',
       goalMonthlyDone: '月完成',
+      goalMinimumHalf: '月最低過半',
+      goalMinimumDone: '月最低完成',
       goalEmpty: '請新增目標'
     };
 
@@ -187,7 +191,7 @@ describe('dividend goal helpers', () => {
 
   test('uses current year dividends when calculating achievement', () => {
     const summary = {
-      yearToDateTotal: 900,
+      accumulatedTotal: 900,
       annualTotal: 1800,
       annualYear: 2023,
       monthlyAverage: 150
@@ -208,6 +212,8 @@ describe('dividend goal helpers', () => {
       goalAnnualDone: '年度完成',
       goalMonthlyHalf: '月過半',
       goalMonthlyDone: '月完成',
+      goalMinimumHalf: '月最低過半',
+      goalMinimumDone: '月最低完成',
       goalEmpty: ''
     };
 

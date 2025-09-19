@@ -102,6 +102,8 @@ export default function HomeTab() {
     goalAnnualDone: t('goal_annual_full'),
     goalMonthlyHalf: t('goal_monthly_half'),
     goalMonthlyDone: t('goal_monthly_full'),
+    goalMinimumHalf: t('goal_minimum_half'),
+    goalMinimumDone: t('goal_minimum_full'),
     goalEmpty: t('goal_empty_state')
   }), [t]);
 
