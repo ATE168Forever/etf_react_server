@@ -1,6 +1,6 @@
 /* eslint-env jest */
 import Cookies from 'js-cookie';
-import { migrateTransactionHistory } from './transactionStorage';
+import { migrateTransactionHistory } from '../transactionStorage';
 
 describe('transaction storage migration', () => {
   beforeEach(() => {

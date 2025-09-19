@@ -46,6 +46,10 @@ describe('InventoryTab interactions', () => {
     fireEvent.click(toggle);
     expect(screen.getByLabelText('幫目標取個名字')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('例：50000')).toBeInTheDocument();
+    const goalTypeSelect = screen.getByLabelText('選擇目標類型');
+    expect(goalTypeSelect).toHaveValue('annual');
+    fireEvent.change(goalTypeSelect, { target: { value: 'minimum' } });
+    expect(screen.getByPlaceholderText('例：5000')).toBeInTheDocument();
   });
 
   test('displays total investment amount and value', async () => {
