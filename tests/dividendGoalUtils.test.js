@@ -98,8 +98,8 @@ describe('dividend goal helpers', () => {
     const goals = { totalTarget: 3600, monthlyTarget: 250, minimumTarget: 100, goalType: 'annual' };
     const messages = {
       annualGoal: '年度目標',
-      monthlyGoal: '每月目標',
-      minimumGoal: '最低目標',
+      monthlyGoal: '月平均目標',
+      minimumGoal: '每月最低目標',
       goalDividendAccumulated: '累積股息：',
       goalDividendMonthly: '每月平均股息：',
       goalDividendMinimum: '每月最低股息：',
@@ -109,7 +109,7 @@ describe('dividend goal helpers', () => {
       goalDividendMinimumLabel: '每月最低股息',
       goalAchievementLabel: '達成率',
       goalTargetAnnual: '年度目標：',
-      goalTargetMonthly: '每月目標：',
+      goalTargetMonthly: '月平均目標：',
       goalTargetMinimum: '每月最低目標：',
       goalPercentPlaceholder: '--',
       goalAnnualHalf: '年度過半',
@@ -156,8 +156,8 @@ describe('dividend goal helpers', () => {
     };
     const messages = {
       annualGoal: '年度目標',
-      monthlyGoal: '每月目標',
-      minimumGoal: '最低目標',
+      monthlyGoal: '月平均目標',
+      minimumGoal: '每月最低目標',
       goalDividendAccumulated: '累積股息：',
       goalDividendMonthly: '每月平均股息：',
       goalDividendMinimum: '每月最低股息：',
@@ -167,7 +167,7 @@ describe('dividend goal helpers', () => {
       goalDividendMinimumLabel: '每月最低股息',
       goalAchievementLabel: '達成率',
       goalTargetAnnual: '年度目標：',
-      goalTargetMonthly: '每月目標：',
+      goalTargetMonthly: '月平均目標：',
       goalTargetMinimum: '每月最低目標：',
       goalPercentPlaceholder: '--',
       goalAnnualHalf: '年度過半',
@@ -212,8 +212,8 @@ describe('dividend goal helpers', () => {
     };
     const messages = {
       annualGoal: '年度目標',
-      monthlyGoal: '每月目標',
-      minimumGoal: '最低目標',
+      monthlyGoal: '月平均目標',
+      minimumGoal: '每月最低目標',
       goalDividendAccumulated: '累積股息：',
       goalDividendMonthly: '每月平均股息：',
       goalDividendMinimum: '每月最低股息：',
@@ -223,7 +223,7 @@ describe('dividend goal helpers', () => {
       goalDividendMinimumLabel: '每月最低股息',
       goalAchievementLabel: '達成率',
       goalTargetAnnual: '年度目標：',
-      goalTargetMonthly: '每月目標：',
+      goalTargetMonthly: '月平均目標：',
       goalTargetMinimum: '每月最低目標：',
       goalPercentPlaceholder: '--',
       goalAnnualHalf: '年度過半',
@@ -258,8 +258,8 @@ describe('dividend goal helpers', () => {
     };
     const messages = {
       annualGoal: '年度目標',
-      monthlyGoal: '每月目標',
-      minimumGoal: '最低目標',
+      monthlyGoal: '月平均目標',
+      minimumGoal: '每月最低目標',
       goalDividendAccumulated: '累積股息：',
       goalDividendMonthly: '每月平均股息：',
       goalDividendMinimum: '每月最低股息：',
@@ -269,7 +269,7 @@ describe('dividend goal helpers', () => {
       goalDividendMinimumLabel: '每月最低股息',
       goalAchievementLabel: '達成率',
       goalTargetAnnual: '年度目標：',
-      goalTargetMonthly: '每月目標：',
+      goalTargetMonthly: '月平均目標：',
       goalTargetMinimum: '每月最低目標：',
       goalPercentPlaceholder: '--',
       goalAnnualHalf: '年度過半',
