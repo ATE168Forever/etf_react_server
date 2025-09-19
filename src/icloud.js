@@ -1,4 +1,4 @@
-import { transactionsToCsv, transactionsFromCsv } from './csvUtils';
+import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 
 export async function exportTransactionsToICloud(list) {
   if (typeof window === 'undefined' || !window.showSaveFilePicker) {

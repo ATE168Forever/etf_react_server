@@ -1,10 +1,10 @@
 /* eslint-env jest */
 import { render, screen, fireEvent } from '@testing-library/react';
-import UserDividendsTab from '../UserDividendsTab';
-import { readTransactionHistory } from '../transactionStorage';
+import UserDividendsTab from '../src/UserDividendsTab';
+import { readTransactionHistory } from '../src/utils/transactionStorage';
 
-jest.mock('../transactionStorage');
-jest.mock('../config', () => ({ API_HOST: '' }));
+jest.mock('../src/utils/transactionStorage');
+jest.mock('../src/config', () => ({ API_HOST: '' }));
 
 test('UserDividendsTab remembers calendar visibility', async () => {
   localStorage.clear();

@@ -1,4 +1,4 @@
-import { transactionsToCsv, transactionsFromCsv } from './csvUtils';
+import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 
 const CLIENT_ID = typeof window !== 'undefined' && window.ONEDRIVE_CLIENT_ID ? window.ONEDRIVE_CLIENT_ID : '';
 const SCOPES = typeof window !== 'undefined' && window.ONEDRIVE_SCOPES ? window.ONEDRIVE_SCOPES.split(' ') : ['Files.ReadWrite'];

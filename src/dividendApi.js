@@ -1,6 +1,6 @@
 import { API_HOST } from './config';
 import { fetchWithCache, clearCache } from './api';
-import { normalizeDividendResponse, DIVIDEND_YEARS } from './dividendGoalUtils';
+import { normalizeDividendResponse, DIVIDEND_YEARS } from './utils/dividendGoalUtils';
 
 function buildDividendUrl(year) {
   return `${API_HOST}/get_dividend?year=${year}`;

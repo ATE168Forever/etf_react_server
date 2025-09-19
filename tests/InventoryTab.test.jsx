@@ -1,11 +1,11 @@
 /* eslint-env jest */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Cookies from 'js-cookie';
-import InventoryTab from '../InventoryTab';
-import { fetchWithCache } from '../api';
+import InventoryTab from '../src/InventoryTab';
+import { fetchWithCache } from '../src/api';
 
-jest.mock('../api');
-jest.mock('../config', () => ({
+jest.mock('../src/api');
+jest.mock('../src/config', () => ({
   API_HOST: 'http://localhost'
 }));
 
