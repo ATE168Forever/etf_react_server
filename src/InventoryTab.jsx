@@ -62,7 +62,7 @@ export default function InventoryTab() {
     monthlyTarget: initialGoals.monthlyTarget ? String(initialGoals.monthlyTarget) : '',
     minimumTarget: initialGoals.minimumTarget ? String(initialGoals.minimumTarget) : ''
   }));
-  const [goalSaved, setGoalSaved] = useState(false);
+  const [goalSaved, setGoalSaved] = useState('');
   const [isGoalFormVisible, setIsGoalFormVisible] = useState(false);
   const text = {
     zh: {
@@ -116,6 +116,7 @@ export default function InventoryTab() {
       goalText: '我的計畫',
       goalSave: '儲存',
       goalSaved: '已儲存，加油！',
+      goalSavedEmpty: '趕快設下你的目標吧！',
       goalEmpty: '還沒設定股息計畫？給目標取個響亮的名字，再填上年度與每月數字吧！',
       goalInputPlaceholderTotal: '例：50000',
       goalInputPlaceholderMonthly: '例：5000',
@@ -192,6 +193,7 @@ export default function InventoryTab() {
       goalText: 'My plan',
       goalSave: 'Save',
       goalSaved: 'Plan updated—keep going!',
+      goalSavedEmpty: 'Set your goal to get started!',
       goalEmpty: 'No plan yet—give your dividend goal a name and add annual and monthly targets below to stay focused.',
       goalInputPlaceholderTotal: 'e.g. 5000',
       goalInputPlaceholderMonthly: 'e.g. 500',
@@ -488,7 +490,7 @@ export default function InventoryTab() {
 
   useEffect(() => {
     if (!goalSaved) return undefined;
-    const timer = setTimeout(() => setGoalSaved(false), 2500);
+    const timer = setTimeout(() => setGoalSaved(''), 2500);
     return () => clearTimeout(timer);
   }, [goalSaved]);
 
@@ -553,7 +555,11 @@ export default function InventoryTab() {
     [dividendSummary, goals, goalMessages, formatCurrency]
   );
 
-  const goalSavedMessage = goalSaved ? msg.goalSaved : '';
+  const goalSavedMessage = goalSaved === 'empty'
+    ? msg.goalSavedEmpty
+    : goalSaved === 'saved'
+      ? msg.goalSaved
+      : '';
   const goalTitle = goals.goalName?.trim() ? goals.goalName.trim() : msg.investmentGoals;
   const normalizedGoalType = ['annual', 'monthly', 'minimum'].includes(goalForm.goalType)
     ? goalForm.goalType
@@ -638,16 +644,44 @@ export default function InventoryTab() {
       monthlyTarget: parseGoal(goalForm.monthlyTarget),
       minimumTarget: parseGoal(goalForm.minimumTarget)
     };
-    setGoals(updated);
-    saveInvestmentGoals(updated);
-    setGoalForm({
+    const nextFormState = {
       name: updated.goalName,
       goalType: updated.goalType,
       annualTarget: updated.totalTarget ? String(updated.totalTarget) : '',
       monthlyTarget: updated.monthlyTarget ? String(updated.monthlyTarget) : '',
       minimumTarget: updated.minimumTarget ? String(updated.minimumTarget) : ''
-    });
-    setGoalSaved(true);
+    };
+    setGoalForm(nextFormState);
+
+    const isEmptyGoal = !updated.goalName && !updated.totalTarget && !updated.monthlyTarget && !updated.minimumTarget;
+    if (isEmptyGoal) {
+      setGoals(updated);
+      saveInvestmentGoals(updated);
+      setGoalSaved('empty');
+      return;
+    }
+
+    const prevGoalName = typeof goals.goalName === 'string' ? goals.goalName : '';
+    const prevGoalType = ['annual', 'monthly', 'minimum'].includes(goals.goalType) ? goals.goalType : 'annual';
+    const prevTotalTarget = Number.isFinite(Number(goals.totalTarget)) ? Number(goals.totalTarget) : 0;
+    const prevMonthlyTarget = Number.isFinite(Number(goals.monthlyTarget)) ? Number(goals.monthlyTarget) : 0;
+    const prevMinimumTarget = Number.isFinite(Number(goals.minimumTarget)) ? Number(goals.minimumTarget) : 0;
+
+    const hasChanged =
+      updated.goalName !== prevGoalName ||
+      updated.goalType !== prevGoalType ||
+      updated.totalTarget !== prevTotalTarget ||
+      updated.monthlyTarget !== prevMonthlyTarget ||
+      updated.minimumTarget !== prevMinimumTarget;
+
+    if (!hasChanged) {
+      setGoalSaved('');
+      return;
+    }
+
+    setGoals(updated);
+    saveInvestmentGoals(updated);
+    setGoalSaved('saved');
   };
 
   const handleAdd = () => {
