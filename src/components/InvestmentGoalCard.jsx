@@ -14,12 +14,31 @@ export default function InvestmentGoalCard({ title, metrics = [], rows, savedMes
       <div className={styles.body}>
         {metrics.length > 0 ? (
           <div className={styles.metrics}>
-            {metrics.map(metric => (
-              <div key={metric.id} className={styles.metric}>
-                <div className={styles.metricLabel}>{metric.label}</div>
-                <div className={styles.metricValue}>{metric.value}</div>
-              </div>
-            ))}
+            {metrics.map(metric => {
+              const metricClassName = [
+                styles.metric,
+                metric.isActive ? styles.metricActive : '',
+                metric.highlight ? styles.metricHighlight : '',
+                metric.showCelebration ? styles.metricCelebrate : ''
+              ].filter(Boolean).join(' ');
+              const metricValueClassName = [
+                styles.metricValue,
+                metric.showCelebration ? styles.metricValueCelebrate : ''
+              ].filter(Boolean).join(' ');
+              return (
+                <div key={metric.id} className={metricClassName}>
+                  <div className={styles.metricLabel}>{metric.label}</div>
+                  <div className={metricValueClassName}>
+                    {metric.value}
+                    {metric.showCelebration ? (
+                      <span className={styles.metricCelebrateIcon} aria-hidden="true">
+                        🎆
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : null}
         {rows.map(row => (

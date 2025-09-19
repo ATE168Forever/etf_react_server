@@ -130,11 +130,11 @@ describe('dividend goal helpers', () => {
     });
 
     expect(metrics).toEqual([
-      { id: 'ytd', label: '累積股息', value: '1800' },
-      { id: 'annual', label: '年度股息 (2024)', value: '2400' },
-      { id: 'monthly', label: '每月平均股息', value: '200' },
-      { id: 'minimum', label: '每月最低股息', value: '120' },
-      { id: 'achievement', label: '達成率', value: '50%' }
+      expect.objectContaining({ id: 'ytd', label: '累積股息', value: '1800' }),
+      expect.objectContaining({ id: 'annual', label: '年度股息 (2024)', value: '2400', isActive: true }),
+      expect.objectContaining({ id: 'monthly', label: '每月平均股息', value: '200' }),
+      expect.objectContaining({ id: 'minimum', label: '每月最低股息', value: '120' }),
+      expect.objectContaining({ id: 'achievement', label: '達成率', value: '50%', highlight: true, showCelebration: false })
     ]);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
@@ -244,5 +244,53 @@ describe('dividend goal helpers', () => {
 
     const achievementMetric = metrics.find(metric => metric.id === 'achievement');
     expect(achievementMetric.value).toBe('50%');
+    expect(achievementMetric.highlight).toBe(true);
+    expect(achievementMetric.showCelebration).toBe(false);
+  });
+
+  test('celebrates achievement when reaching 100 percent', () => {
+    const summary = {
+      accumulatedTotal: 3600,
+      annualTotal: 3600,
+      annualYear: 2024,
+      monthlyAverage: 300,
+      monthlyMinimum: 200
+    };
+    const messages = {
+      annualGoal: '年度目標',
+      monthlyGoal: '每月目標',
+      minimumGoal: '最低目標',
+      goalDividendAccumulated: '累積股息：',
+      goalDividendMonthly: '每月平均股息：',
+      goalDividendMinimum: '每月最低股息：',
+      goalDividendYtdLabel: '累積股息',
+      goalDividendAnnualLabel: '年度股息',
+      goalDividendMonthlyLabel: '每月平均股息',
+      goalDividendMinimumLabel: '每月最低股息',
+      goalAchievementLabel: '達成率',
+      goalTargetAnnual: '年度目標：',
+      goalTargetMonthly: '每月目標：',
+      goalTargetMinimum: '每月最低目標：',
+      goalPercentPlaceholder: '--',
+      goalAnnualHalf: '年度過半',
+      goalAnnualDone: '年度完成',
+      goalMonthlyHalf: '月過半',
+      goalMonthlyDone: '月完成',
+      goalMinimumHalf: '月最低過半',
+      goalMinimumDone: '月最低完成',
+      goalEmpty: ''
+    };
+
+    const { metrics } = buildDividendGoalViewModel({
+      summary,
+      goals: { totalTarget: 3600, monthlyTarget: 0, minimumTarget: 0, goalType: 'annual' },
+      messages,
+      formatCurrency: value => Number(value).toFixed(0)
+    });
+
+    const achievementMetric = metrics.find(metric => metric.id === 'achievement');
+    expect(achievementMetric.value).toBe('100%');
+    expect(achievementMetric.highlight).toBe(true);
+    expect(achievementMetric.showCelebration).toBe(true);
   });
 });

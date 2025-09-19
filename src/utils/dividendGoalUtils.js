@@ -273,22 +273,27 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
       label: annualTotal > 0 && annualYear
         ? `${messages.goalDividendAnnualLabel} (${annualYear})`
         : messages.goalDividendAnnualLabel,
-      value: formatCurrency(annualTotal)
+      value: formatCurrency(annualTotal),
+      isActive: activeGoalType === 'annual'
     },
     {
       id: 'monthly',
       label: messages.goalDividendMonthlyLabel,
-      value: formatCurrency(monthlyAverage)
+      value: formatCurrency(monthlyAverage),
+      isActive: activeGoalType === 'monthly'
     },
     {
       id: 'minimum',
       label: messages.goalDividendMinimumLabel,
-      value: formatCurrency(monthlyMinimum)
+      value: formatCurrency(monthlyMinimum),
+      isActive: activeGoalType === 'minimum'
     },
     {
       id: 'achievement',
       label: messages.goalAchievementLabel,
-      value: achievementLabel
+      value: achievementLabel,
+      highlight: achievementPercentValue >= 0.5,
+      showCelebration: achievementPercentValue >= 1
     }
   ].filter(metric => Boolean(metric.label));
 
