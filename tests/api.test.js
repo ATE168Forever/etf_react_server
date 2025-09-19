@@ -1,5 +1,5 @@
 /* eslint-env jest */
-import { fetchWithCache } from '../api';
+import { fetchWithCache } from '../src/api';
 
 describe('fetchWithCache', () => {
   const URL = 'https://example.com/data';

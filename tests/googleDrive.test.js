@@ -65,7 +65,7 @@ afterEach(() => {
 });
 
 async function loadModule() {
-  return import('../googleDrive.js');
+  return import('../src/googleDrive.js');
 }
 
 test('exportTransactionsToDrive uploads CSV using client token', async () => {

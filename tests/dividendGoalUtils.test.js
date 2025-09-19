@@ -2,7 +2,7 @@
 import {
   calculateDividendSummary,
   buildDividendGoalViewModel
-} from '../dividendGoalUtils';
+} from '../src/utils/dividendGoalUtils';
 
 describe('dividend goal helpers', () => {
   test('calculates dividend summary for current year', () => {

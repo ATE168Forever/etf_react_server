@@ -3,11 +3,11 @@ import Cookies from 'js-cookie';
 import { API_HOST, HOST_URL } from './config';
 import { fetchWithCache } from './api';
 import { fetchDividendsByYears } from './dividendApi';
-import { migrateTransactionHistory, saveTransactionHistory } from './transactionStorage';
+import { migrateTransactionHistory, saveTransactionHistory } from './utils/transactionStorage';
 import { exportTransactionsToDrive, importTransactionsFromDrive } from './googleDrive';
 import { exportTransactionsToOneDrive, importTransactionsFromOneDrive } from './oneDrive';
 import { exportTransactionsToICloud, importTransactionsFromICloud } from './icloud';
-import { transactionsToCsv, transactionsFromCsv } from './csvUtils';
+import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 import AddTransactionModal from './components/AddTransactionModal';
 import SellModal from './components/SellModal';
 import TransactionHistoryTable from './components/TransactionHistoryTable';
@@ -15,12 +15,12 @@ import DataDropdown from './components/DataDropdown';
 import styles from './InventoryTab.module.css';
 import { useLanguage } from './i18n';
 import InvestmentGoalCard from './components/InvestmentGoalCard';
-import { summarizeInventory } from './inventoryUtils';
-import { loadInvestmentGoals, saveInvestmentGoals } from './investmentGoalsStorage';
+import { summarizeInventory } from './utils/inventoryUtils';
+import { loadInvestmentGoals, saveInvestmentGoals } from './utils/investmentGoalsStorage';
 import {
   calculateDividendSummary,
   buildDividendGoalViewModel
-} from './dividendGoalUtils';
+} from './utils/dividendGoalUtils';
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
 

@@ -2,6 +2,7 @@ export default {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleFileExtensions: ['js', 'jsx'],
+  roots: ['<rootDir>/src', '<rootDir>/tests'],
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest'
   },

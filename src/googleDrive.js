@@ -1,4 +1,4 @@
-import { transactionsToCsv, transactionsFromCsv } from './csvUtils';
+import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 
 const CLIENT_ID = typeof window !== 'undefined' && window.GOOGLE_CLIENT_ID ? window.GOOGLE_CLIENT_ID : '';
 const API_KEY = typeof window !== 'undefined' && window.GOOGLE_API_KEY ? window.GOOGLE_API_KEY : '';

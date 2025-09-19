@@ -1,9 +1,9 @@
 /* eslint-env jest */
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import StockDetail from '../StockDetail';
+import StockDetail from '../src/StockDetail';
 
-jest.mock('../config', () => ({
+jest.mock('../src/config', () => ({
   API_HOST: 'http://localhost'
 }));
 

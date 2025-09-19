@@ -16,7 +16,7 @@ import dividendLogoLight from './assets/conceptB-ETF-Life-light.svg';
 import NLHelper from './NLHelper';
 import { API_HOST } from './config';
 import { fetchWithCache } from './api';
-import { getTomorrowDividendAlerts } from './dividendUtils';
+import { getTomorrowDividendAlerts } from './utils/dividendUtils';
 import { fetchDividendsByYears, clearDividendsCache } from './dividendApi';
 
 const DEFAULT_MONTHLY_GOAL = 10000;

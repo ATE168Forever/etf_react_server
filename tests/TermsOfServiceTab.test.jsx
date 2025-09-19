@@ -1,6 +1,6 @@
 /* eslint-env jest */
 import { render, screen } from '@testing-library/react';
-import TermsOfServiceTab from '../TermsOfServiceTab';
+import TermsOfServiceTab from '../src/TermsOfServiceTab';
 
 test('renders terms heading', () => {
   render(<TermsOfServiceTab />);

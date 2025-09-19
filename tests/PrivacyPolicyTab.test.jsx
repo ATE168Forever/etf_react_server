@@ -1,6 +1,6 @@
 /* eslint-env jest */
 import { render, screen } from '@testing-library/react';
-import PrivacyPolicyTab from '../PrivacyPolicyTab';
+import PrivacyPolicyTab from '../src/PrivacyPolicyTab';
 
 test('renders privacy policy heading', () => {
   render(<PrivacyPolicyTab />);

@@ -3,14 +3,14 @@ import { API_HOST } from './config';
 import { fetchWithCache } from './api';
 import { fetchDividendsByYears } from './dividendApi';
 import { useLanguage } from './i18n';
-import { readTransactionHistory } from './transactionStorage';
-import { summarizeInventory } from './inventoryUtils';
-import { loadInvestmentGoals } from './investmentGoalsStorage';
+import { readTransactionHistory } from './utils/transactionStorage';
+import { summarizeInventory } from './utils/inventoryUtils';
+import { loadInvestmentGoals } from './utils/investmentGoalsStorage';
 import InvestmentGoalCard from './components/InvestmentGoalCard';
 import {
   calculateDividendSummary,
   buildDividendGoalViewModel
-} from './dividendGoalUtils';
+} from './utils/dividendGoalUtils';
 
 export default function HomeTab() {
   const [stats, setStats] = useState({ milestones: [], latest: [], tip: '' });
