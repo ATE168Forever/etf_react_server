@@ -1,6 +1,6 @@
 /* eslint-env jest */
-import { encodeCsvCode, decodeCsvCode } from './csvUtils';
-import { transactionsToCsv, transactionsFromCsv } from './csvUtils';
+import { encodeCsvCode, decodeCsvCode } from '../csvUtils';
+import { transactionsToCsv, transactionsFromCsv } from '../csvUtils';
 
 test('encodeCsvCode wraps code with formula to preserve leading zeros', () => {
   expect(encodeCsvCode('00878')).toBe('="00878"');

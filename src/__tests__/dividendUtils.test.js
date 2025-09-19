@@ -1,4 +1,4 @@
-import { getTomorrowDividendAlerts } from './dividendUtils';
+import { getTomorrowDividendAlerts } from '../dividendUtils';
 
 describe('getTomorrowDividendAlerts', () => {
   test('detects ex-dividend and payment events for tomorrow', () => {

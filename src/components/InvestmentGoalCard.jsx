@@ -2,6 +2,7 @@ import styles from './InvestmentGoalCard.module.css';
 
 export default function InvestmentGoalCard({ title, metrics = [], rows, savedMessage, form, emptyState }) {
   const { isVisible: formIsVisible = true, toggle: formToggle, id: formId, ...formProps } = form || {};
+  const typeOptions = Array.isArray(formProps.typeOptions) ? formProps.typeOptions : [];
   const shouldRenderForm = Boolean(form) && formIsVisible !== false;
 
   return (
@@ -77,30 +78,33 @@ export default function InvestmentGoalCard({ title, metrics = [], rows, savedMes
                 {formProps.nameHelper ? <span className={styles.inputHelper}>{formProps.nameHelper}</span> : null}
               </div>
             ) : null}
+            {formProps.typeLabel ? (
+              <div className={styles.inputGroup}>
+                <label htmlFor={formProps.typeId}>{formProps.typeLabel}</label>
+                <select
+                  id={formProps.typeId}
+                  value={formProps.typeValue}
+                  onChange={formProps.onTypeChange}
+                >
+                  {typeOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             <div className={styles.inputGroup}>
-              <label htmlFor={formProps.totalId}>{formProps.totalLabel}</label>
+              <label htmlFor={formProps.targetId}>{formProps.targetLabel}</label>
               <input
-                id={formProps.totalId}
+                id={formProps.targetId}
                 type="number"
                 inputMode="decimal"
-                value={formProps.totalValue}
-                onChange={formProps.onTotalChange}
-                placeholder={formProps.totalPlaceholder}
-                min="0"
-                step="1000"
-              />
-            </div>
-            <div className={styles.inputGroup}>
-              <label htmlFor={formProps.monthlyId}>{formProps.monthlyLabel}</label>
-              <input
-                id={formProps.monthlyId}
-                type="number"
-                inputMode="decimal"
-                value={formProps.monthlyValue}
-                onChange={formProps.onMonthlyChange}
-                placeholder={formProps.monthlyPlaceholder}
-                min="0"
-                step="100"
+                value={formProps.targetValue}
+                onChange={formProps.onTargetChange}
+                placeholder={formProps.targetPlaceholder}
+                min={formProps.targetMin || '0'}
+                step={formProps.targetStep || '100'}
               />
             </div>
             <button type="submit">{formProps.saveLabel}</button>

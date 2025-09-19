@@ -2,7 +2,7 @@
 import {
   calculateDividendSummary,
   buildDividendGoalViewModel
-} from './dividendGoalUtils';
+} from '../dividendGoalUtils';
 
 describe('dividend goal helpers', () => {
   test('calculates dividend summary for current year', () => {
@@ -32,7 +32,8 @@ describe('dividend goal helpers', () => {
       accumulatedTotal: 1000 * 1 + 1000 * 0.8 + 500 * 0.5,
       annualTotal: 1000 * 1 + 1000 * 0.8 + 500 * 0.5,
       annualYear: 2024,
-      monthlyAverage: (1000 * 1 + 1000 * 0.8 + 500 * 0.5) / 12
+      monthlyAverage: (1000 * 1 + 1000 * 0.8 + 500 * 0.5) / 6,
+      monthlyMinimum: 0
     });
   });
 
@@ -57,7 +58,8 @@ describe('dividend goal helpers', () => {
       accumulatedTotal: 1000,
       annualTotal: 1000,
       annualYear: 2024,
-      monthlyAverage: 1000 / 12
+      monthlyAverage: 1000,
+      monthlyMinimum: 0
     });
   });
 
@@ -80,7 +82,8 @@ describe('dividend goal helpers', () => {
       accumulatedTotal: 200,
       annualTotal: 200,
       annualYear: 2024,
-      monthlyAverage: 200 / 12
+      monthlyAverage: 200,
+      monthlyMinimum: 0
     });
   });
 
@@ -89,20 +92,25 @@ describe('dividend goal helpers', () => {
       accumulatedTotal: 1800,
       annualTotal: 2400,
       annualYear: 2024,
-      monthlyAverage: 200
+      monthlyAverage: 200,
+      monthlyMinimum: 120
     };
-    const goals = { totalTarget: 3600, monthlyTarget: 250 };
+    const goals = { totalTarget: 3600, monthlyTarget: 250, minimumTarget: 100, goalType: 'annual' };
     const messages = {
       annualGoal: '年度目標',
       monthlyGoal: '每月目標',
+      minimumGoal: '最低目標',
       goalDividendAccumulated: '累積股息：',
       goalDividendMonthly: '每月平均股息：',
+      goalDividendMinimum: '每月最低股息：',
       goalDividendYtdLabel: '累積股息',
       goalDividendAnnualLabel: '年度股息',
       goalDividendMonthlyLabel: '每月平均股息',
+      goalDividendMinimumLabel: '每月最低股息',
       goalAchievementLabel: '達成率',
       goalTargetAnnual: '年度目標：',
       goalTargetMonthly: '每月目標：',
+      goalTargetMinimum: '每月最低目標：',
       goalPercentPlaceholder: '--',
       goalAnnualHalf: '年度過半',
       goalAnnualDone: '年度完成',
@@ -114,7 +122,7 @@ describe('dividend goal helpers', () => {
     };
 
     const formatCurrency = value => Number(value).toFixed(0);
-    const { metrics, rows } = buildDividendGoalViewModel({
+    const { metrics, rows, goalType, achievementPercent } = buildDividendGoalViewModel({
       summary,
       goals,
       messages,
@@ -125,38 +133,42 @@ describe('dividend goal helpers', () => {
       { id: 'ytd', label: '累積股息', value: '1800' },
       { id: 'annual', label: '年度股息 (2024)', value: '2400' },
       { id: 'monthly', label: '每月平均股息', value: '200' },
+      { id: 'minimum', label: '每月最低股息', value: '120' },
       { id: 'achievement', label: '達成率', value: '50%' }
     ]);
+    expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       id: 'annual',
       percentLabel: '50%',
       encouragement: '年度過半'
     });
-    expect(rows[1]).toMatchObject({
-      id: 'monthly',
-      percentLabel: '80%',
-      encouragement: '月過半'
-    });
+    expect(goalType).toBe('annual');
+    expect(achievementPercent).toBeCloseTo(0.5);
   });
 
-  test('omits goal rows when targets are not provided', () => {
+  test('builds monthly minimum goal when selected', () => {
     const summary = {
       accumulatedTotal: 900,
       annualTotal: 1500,
       annualYear: 2023,
-      monthlyAverage: 120
+      monthlyAverage: 120,
+      monthlyMinimum: 80
     };
     const messages = {
       annualGoal: '年度目標',
       monthlyGoal: '每月目標',
+      minimumGoal: '最低目標',
       goalDividendAccumulated: '累積股息：',
       goalDividendMonthly: '每月平均股息：',
+      goalDividendMinimum: '每月最低股息：',
       goalDividendYtdLabel: '累積股息',
       goalDividendAnnualLabel: '年度股息',
       goalDividendMonthlyLabel: '每月平均股息',
+      goalDividendMinimumLabel: '每月最低股息',
       goalAchievementLabel: '達成率',
       goalTargetAnnual: '年度目標：',
       goalTargetMonthly: '每月目標：',
+      goalTargetMinimum: '每月最低目標：',
       goalPercentPlaceholder: '--',
       goalAnnualHalf: '年度過半',
       goalAnnualDone: '年度完成',
@@ -167,20 +179,21 @@ describe('dividend goal helpers', () => {
       goalEmpty: '請新增目標'
     };
 
-    const { rows, emptyState } = buildDividendGoalViewModel({
+    const { rows, emptyState, goalType } = buildDividendGoalViewModel({
       summary,
-      goals: { totalTarget: 0, monthlyTarget: 300 },
+      goals: { totalTarget: 0, monthlyTarget: 0, minimumTarget: 120, goalType: 'minimum' },
       messages,
       formatCurrency: value => Number(value).toFixed(0)
     });
 
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ id: 'monthly' });
+    expect(rows[0]).toMatchObject({ id: 'minimum', percentLabel: '67%' });
+    expect(goalType).toBe('minimum');
     expect(emptyState).toBe('');
 
     const noGoals = buildDividendGoalViewModel({
       summary,
-      goals: { totalTarget: 0, monthlyTarget: 0 },
+      goals: { totalTarget: 0, monthlyTarget: 0, minimumTarget: 0 },
       messages,
       formatCurrency: value => Number(value).toFixed(0)
     });
@@ -194,19 +207,24 @@ describe('dividend goal helpers', () => {
       accumulatedTotal: 900,
       annualTotal: 1800,
       annualYear: 2023,
-      monthlyAverage: 150
+      monthlyAverage: 150,
+      monthlyMinimum: 90
     };
     const messages = {
       annualGoal: '年度目標',
       monthlyGoal: '每月目標',
+      minimumGoal: '最低目標',
       goalDividendAccumulated: '累積股息：',
       goalDividendMonthly: '每月平均股息：',
+      goalDividendMinimum: '每月最低股息：',
       goalDividendYtdLabel: '累積股息',
       goalDividendAnnualLabel: '年度股息',
       goalDividendMonthlyLabel: '每月平均股息',
+      goalDividendMinimumLabel: '每月最低股息',
       goalAchievementLabel: '達成率',
       goalTargetAnnual: '年度目標：',
       goalTargetMonthly: '每月目標：',
+      goalTargetMinimum: '每月最低目標：',
       goalPercentPlaceholder: '--',
       goalAnnualHalf: '年度過半',
       goalAnnualDone: '年度完成',
@@ -219,7 +237,7 @@ describe('dividend goal helpers', () => {
 
     const { metrics } = buildDividendGoalViewModel({
       summary,
-      goals: { totalTarget: 1800, monthlyTarget: 0 },
+      goals: { totalTarget: 1800, monthlyTarget: 0, minimumTarget: 0, goalType: 'annual' },
       messages,
       formatCurrency: value => Number(value).toFixed(0)
     });
