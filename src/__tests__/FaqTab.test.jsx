@@ -1,6 +1,6 @@
 /* eslint-env jest */
 import { render, screen } from '@testing-library/react';
-import FaqTab from './FaqTab';
+import FaqTab from '../FaqTab';
 
 test('renders faq heading', () => {
   render(<FaqTab />);

@@ -1,6 +1,6 @@
 /* eslint-env jest */
 import { render, screen } from '@testing-library/react';
-import AboutTab from './AboutTab';
+import AboutTab from '../AboutTab';
 
 test('renders about heading and all sections', () => {
   render(<AboutTab />);

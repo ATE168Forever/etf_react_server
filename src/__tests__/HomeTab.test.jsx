@@ -1,11 +1,11 @@
 /* eslint-env jest */
 import { render, screen } from '@testing-library/react';
-import HomeTab from './HomeTab';
-import { fetchWithCache } from './api';
-import { LanguageContext, translations } from './i18n';
+import HomeTab from '../HomeTab';
+import { fetchWithCache } from '../api';
+import { LanguageContext, translations } from '../i18n';
 
-jest.mock('./api');
-jest.mock('./config', () => ({
+jest.mock('../api');
+jest.mock('../config', () => ({
   API_HOST: 'http://localhost'
 }));
 

@@ -1,6 +1,6 @@
 /* eslint-env jest */
 import { render, screen } from '@testing-library/react';
-import DividendCalendar from './DividendCalendar';
+import DividendCalendar from '../components/DividendCalendar';
 
 test('displays monthly ex and pay totals', () => {
   const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });

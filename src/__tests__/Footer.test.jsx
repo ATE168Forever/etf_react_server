@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import Footer from './components/Footer.jsx';
-import { LanguageContext, translations } from './i18n';
+import Footer from '../components/Footer.jsx';
+import { LanguageContext, translations } from '../i18n';
 
 test('renders contact info and dynamic copyright', () => {
   const year = new Date().getFullYear();
