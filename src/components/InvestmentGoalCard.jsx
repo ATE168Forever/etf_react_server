@@ -13,6 +13,7 @@ export default function InvestmentGoalCard({ title, metrics = [], rows, savedMes
         };
       }).filter(Boolean)
     : [];
+  const shouldShowTargetInput = !formProps.targetHidden && Boolean(formProps.targetLabel);
   const shouldRenderForm = Boolean(form) && formIsVisible !== false;
 
   return (
@@ -123,19 +124,21 @@ export default function InvestmentGoalCard({ title, metrics = [], rows, savedMes
                 </select>
               </div>
             ) : null}
-            <div className={styles.inputGroup}>
-              <label htmlFor={formProps.targetId}>{formProps.targetLabel}</label>
-              <input
-                id={formProps.targetId}
-                type="number"
-                inputMode="decimal"
-                value={formProps.targetValue}
-                onChange={formProps.onTargetChange}
-                placeholder={formProps.targetPlaceholder}
-                min={formProps.targetMin || '0'}
-                step={formProps.targetStep || '100'}
-              />
-            </div>
+            {shouldShowTargetInput ? (
+              <div className={styles.inputGroup}>
+                <label htmlFor={formProps.targetId}>{formProps.targetLabel}</label>
+                <input
+                  id={formProps.targetId}
+                  type="number"
+                  inputMode="decimal"
+                  value={formProps.targetValue}
+                  onChange={formProps.onTargetChange}
+                  placeholder={formProps.targetPlaceholder}
+                  min={formProps.targetMin || '0'}
+                  step={formProps.targetStep || '100'}
+                />
+              </div>
+            ) : null}
             {formSections.map(section => (
               <div key={section.key} className={styles.formSection}>
                 {section.content}

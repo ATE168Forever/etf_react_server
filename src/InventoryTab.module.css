@@ -112,6 +112,22 @@
   min-width: 140px;
 }
 
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inputGroup label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text, #1f2937);
+}
+
+.shareGoalSelect {
+  width: 100%;
+}
+
 .shareGoalActions {
   display: flex;
   align-items: flex-end;
