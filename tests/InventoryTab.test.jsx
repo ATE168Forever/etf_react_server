@@ -57,8 +57,15 @@ describe('InventoryTab interactions', () => {
     const toggle = await screen.findByRole('button', { name: '設定或更新目標' });
     fireEvent.click(toggle);
 
-    const codeInput = screen.getByLabelText('股票代碼');
+    expect(screen.queryByRole('button', { name: '新增存股目標' })).not.toBeInTheDocument();
+
+    const goalTypeSelect = screen.getByLabelText('選擇目標類型');
+    fireEvent.change(goalTypeSelect, { target: { value: 'shares' } });
+    expect(screen.queryByPlaceholderText('例：50000')).not.toBeInTheDocument();
+
+    const codeInput = screen.getByLabelText('股票代碼 / 名稱');
     fireEvent.change(codeInput, { target: { value: '0056' } });
+    fireEvent.keyDown(codeInput, { key: 'Enter', code: 'Enter', charCode: 13 });
     const lotsInput = screen.getByPlaceholderText('例：100');
     fireEvent.change(lotsInput, { target: { value: '100' } });
     fireEvent.click(screen.getByRole('button', { name: '新增存股目標' }));
@@ -67,6 +74,7 @@ describe('InventoryTab interactions', () => {
 
     await screen.findByText('目標張數：100 張');
     const saved = JSON.parse(localStorage.getItem('investment_goals'));
+    expect(saved.goalType).toBe('shares');
     expect(saved.shareTargets).toEqual([
       { stockId: '0056', stockName: '', targetQuantity: 100 }
     ]);

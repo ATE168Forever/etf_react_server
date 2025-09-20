@@ -1,11 +1,13 @@
 const STORAGE_KEY = 'investment_goals';
+const GOAL_TYPES = ['annual', 'monthly', 'minimum', 'shares'];
+const DEFAULT_GOAL_TYPE = 'annual';
 
 const defaultGoals = {
   totalTarget: 0,
   monthlyTarget: 0,
   minimumTarget: 0,
   goalName: '',
-  goalType: 'annual',
+  goalType: DEFAULT_GOAL_TYPE,
   shareTargets: []
 };
 
@@ -55,24 +57,25 @@ export function loadInvestmentGoals() {
     const monthlyTarget = Number(parsed.monthlyTarget);
     const minimumTarget = Number(parsed.minimumTarget);
     const goalTypeRaw = typeof parsed.goalType === 'string' ? parsed.goalType.toLowerCase() : '';
-    const normalizedGoalType = ['annual', 'monthly', 'minimum'].includes(goalTypeRaw)
+    const normalizedGoalType = GOAL_TYPES.includes(goalTypeRaw)
       ? goalTypeRaw
       : '';
     const goalName = typeof parsed.goalName === 'string' ? parsed.goalName : '';
+    const shareTargets = normalizeShareTargets(parsed.shareTargets);
+    const fallbackGoalType = () => {
+      if (Number.isFinite(totalTarget) && totalTarget > 0) return 'annual';
+      if (Number.isFinite(monthlyTarget) && monthlyTarget > 0) return 'monthly';
+      if (Number.isFinite(minimumTarget) && minimumTarget > 0) return 'minimum';
+      if (shareTargets.length > 0) return 'shares';
+      return DEFAULT_GOAL_TYPE;
+    };
     return {
       totalTarget: Number.isFinite(totalTarget) ? totalTarget : 0,
       monthlyTarget: Number.isFinite(monthlyTarget) ? monthlyTarget : 0,
       minimumTarget: Number.isFinite(minimumTarget) ? minimumTarget : 0,
       goalName: goalName.trim().slice(0, 60),
-      goalType: normalizedGoalType
-        || (Number.isFinite(totalTarget) && totalTarget > 0
-          ? 'annual'
-          : Number.isFinite(monthlyTarget) && monthlyTarget > 0
-            ? 'monthly'
-            : Number.isFinite(minimumTarget) && minimumTarget > 0
-              ? 'minimum'
-              : 'annual'),
-      shareTargets: normalizeShareTargets(parsed.shareTargets)
+      goalType: normalizedGoalType || fallbackGoalType(),
+      shareTargets
     };
   } catch {
     return { ...defaultGoals };
@@ -82,7 +85,7 @@ export function loadInvestmentGoals() {
 export function saveInvestmentGoals(goals) {
   if (typeof localStorage === 'undefined') return;
   const rawType = typeof goals.goalType === 'string' ? goals.goalType.toLowerCase() : '';
-  const goalType = ['annual', 'monthly', 'minimum'].includes(rawType) ? rawType : 'annual';
+  const goalType = GOAL_TYPES.includes(rawType) ? rawType : DEFAULT_GOAL_TYPE;
   const payload = {
     totalTarget: Number.isFinite(Number(goals.totalTarget)) ? Number(goals.totalTarget) : 0,
     monthlyTarget: Number.isFinite(Number(goals.monthlyTarget)) ? Number(goals.monthlyTarget) : 0,
