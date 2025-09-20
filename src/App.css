@@ -146,7 +146,7 @@ td {
 
 .dropdown {
   position: absolute;
-  z-index: 99;
+  z-index: 1200;
   top: 30px;
   left: 0;
   background: var(--color-card-bg);
@@ -292,7 +292,7 @@ td {
 /* Action dropdown for top controls */
 .action-dropdown {
   position: absolute;
-  z-index: 99;
+  z-index: 1200;
   top: 36px;
   left: 0;
   background: var(--color-card-bg);
