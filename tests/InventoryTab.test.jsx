@@ -52,6 +52,26 @@ describe('InventoryTab interactions', () => {
     expect(screen.getByPlaceholderText('例：5000')).toBeInTheDocument();
   });
 
+  test('allows adding share accumulation goals', async () => {
+    render(<InventoryTab />);
+    const toggle = await screen.findByRole('button', { name: '設定或更新目標' });
+    fireEvent.click(toggle);
+
+    const codeInput = screen.getByLabelText('股票代碼');
+    fireEvent.change(codeInput, { target: { value: '0056' } });
+    const lotsInput = screen.getByPlaceholderText('例：100');
+    fireEvent.change(lotsInput, { target: { value: '100' } });
+    fireEvent.click(screen.getByRole('button', { name: '新增存股目標' }));
+
+    fireEvent.click(screen.getByRole('button', { name: '儲存' }));
+
+    await screen.findByText('目標張數：100 張');
+    const saved = JSON.parse(localStorage.getItem('investment_goals'));
+    expect(saved.shareTargets).toEqual([
+      { stockId: '0056', stockName: '', targetQuantity: 100 }
+    ]);
+  });
+
   test('displays total investment amount and value', async () => {
     localStorage.setItem('my_transaction_history', JSON.stringify([
       { stock_id: '0050', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 }

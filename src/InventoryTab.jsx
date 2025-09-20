@@ -55,15 +55,24 @@ export default function InventoryTab() {
     return 'annual';
   })();
   const [goals, setGoals] = useState({ ...initialGoals, goalType: initialGoalType });
+  const initialShareTargets = Array.isArray(initialGoals.shareTargets)
+    ? initialGoals.shareTargets.map(item => ({
+        stockId: item?.stockId || '',
+        stockName: item?.stockName || '',
+        targetQuantity: item?.targetQuantity ? String(item.targetQuantity) : ''
+      }))
+    : [];
   const [goalForm, setGoalForm] = useState(() => ({
     name: initialGoals.goalName ? String(initialGoals.goalName) : '',
     goalType: initialGoalType,
     annualTarget: initialGoals.totalTarget ? String(initialGoals.totalTarget) : '',
     monthlyTarget: initialGoals.monthlyTarget ? String(initialGoals.monthlyTarget) : '',
-    minimumTarget: initialGoals.minimumTarget ? String(initialGoals.minimumTarget) : ''
+    minimumTarget: initialGoals.minimumTarget ? String(initialGoals.minimumTarget) : '',
+    shareTargets: initialShareTargets
   }));
   const [goalSaved, setGoalSaved] = useState('');
   const [isGoalFormVisible, setIsGoalFormVisible] = useState(false);
+  const [shareTargetDraft, setShareTargetDraft] = useState({ stockId: '', stockName: '', quantity: '' });
   const text = {
     zh: {
       importOverwrite: '匯入後將覆蓋現有紀錄，是否繼續？',
@@ -133,6 +142,22 @@ export default function InventoryTab() {
       goalDividendMonthlyLabel: '每月平均股息',
       goalDividendMinimumLabel: '每月最低股息',
       goalAchievementLabel: '達成率',
+      shareGoalSectionTitle: '存股張數目標',
+      shareGoalEmptyList: '還沒有設定存股目標，輸入代碼與目標張數後按下「新增存股目標」。',
+      shareGoalStockIdLabel: '股票代碼',
+      shareGoalStockIdPlaceholder: '例：0056',
+      shareGoalStockNameLabel: '顯示名稱（選填）',
+      shareGoalStockNamePlaceholder: '例：高股息ETF',
+      shareGoalTargetLabelForm: '目標張數',
+      shareGoalTargetPlaceholder: '例：100',
+      shareGoalAddButton: '新增存股目標',
+      shareGoalRemove: '移除',
+      shareGoalUnit: '張',
+      shareGoalCurrent: '目前張數：',
+      shareGoalTargetDisplay: '目標張數：',
+      shareGoalHalf: '進度過半，再加把勁！',
+      shareGoalDone: '恭喜達成存股目標！',
+      shareGoalInputRequired: '請先輸入股票代碼與目標張數',
       stockCodeName: '股票代碼/名稱',
       avgPrice: '平均股價',
       totalQuantity: '總數量',
@@ -210,6 +235,22 @@ export default function InventoryTab() {
       goalDividendMonthlyLabel: 'Average monthly dividends',
       goalDividendMinimumLabel: 'Monthly minimum dividends',
       goalAchievementLabel: 'Achievement',
+      shareGoalSectionTitle: 'Share accumulation targets',
+      shareGoalEmptyList: 'No share targets yet—enter a ticker and target lots, then click “Add share target.”',
+      shareGoalStockIdLabel: 'Ticker',
+      shareGoalStockIdPlaceholder: 'e.g. 0056',
+      shareGoalStockNameLabel: 'Display name (optional)',
+      shareGoalStockNamePlaceholder: 'e.g. High Dividend ETF',
+      shareGoalTargetLabelForm: 'Target lots',
+      shareGoalTargetPlaceholder: 'e.g. 100',
+      shareGoalAddButton: 'Add share target',
+      shareGoalRemove: 'Remove',
+      shareGoalUnit: 'lots',
+      shareGoalCurrent: 'Current lots:',
+      shareGoalTargetDisplay: 'Target lots:',
+      shareGoalHalf: 'Over halfway there—keep it up!',
+      shareGoalDone: 'Share target reached—great job!',
+      shareGoalInputRequired: 'Enter a ticker and target lots first.',
       stockCodeName: 'Stock Code/Name',
       avgPrice: 'Average Price',
       totalQuantity: 'Total Quantity',
@@ -500,6 +541,232 @@ export default function InventoryTab() {
     latestPrices
   );
 
+  const shareTargetNameLookup = useMemo(() => {
+    const map = new Map();
+    (Array.isArray(stockList) ? stockList : []).forEach(item => {
+      const stockId = typeof item?.stock_id === 'string' ? item.stock_id.trim().toUpperCase() : '';
+      if (!stockId || map.has(stockId)) return;
+      map.set(stockId, typeof item?.stock_name === 'string' ? item.stock_name : '');
+    });
+    (Array.isArray(inventoryList) ? inventoryList : []).forEach(item => {
+      const stockId = typeof item?.stock_id === 'string' ? item.stock_id.trim().toUpperCase() : '';
+      if (!stockId) return;
+      const stockName = typeof item?.stock_name === 'string' ? item.stock_name : '';
+      if (stockName) {
+        map.set(stockId, stockName);
+      }
+    });
+    return map;
+  }, [stockList, inventoryList]);
+
+  const handleShareTargetChange = (index, field) => event => {
+    const value = event.target.value;
+    setGoalForm(prev => {
+      const targets = Array.isArray(prev.shareTargets) ? [...prev.shareTargets] : [];
+      const current = { ...(targets[index] || { stockId: '', stockName: '', targetQuantity: '' }) };
+      if (field === 'stockId') {
+        const upper = String(value || '').trim().toUpperCase();
+        current.stockId = upper;
+        if (!current.stockName) {
+          const autoName = shareTargetNameLookup.get(upper);
+          if (autoName) {
+            current.stockName = autoName;
+          }
+        }
+      } else if (field === 'stockName') {
+        current.stockName = value;
+      } else if (field === 'targetQuantity') {
+        current.targetQuantity = value;
+      }
+      targets[index] = current;
+      return {
+        ...prev,
+        shareTargets: targets
+      };
+    });
+  };
+
+  const handleShareTargetRemove = index => {
+    setGoalForm(prev => ({
+      ...prev,
+      shareTargets: (Array.isArray(prev.shareTargets) ? prev.shareTargets : []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleShareTargetDraftChange = (field) => event => {
+    const value = event.target.value;
+    setShareTargetDraft(prev => {
+      if (field === 'stockId') {
+        const upper = String(value || '').trim().toUpperCase();
+        const autoName = (!prev.stockName || !prev.stockName.trim())
+          ? (shareTargetNameLookup.get(upper) || '')
+          : prev.stockName;
+        return {
+          ...prev,
+          stockId: upper,
+          stockName: autoName
+        };
+      }
+      if (field === 'stockName') {
+        return { ...prev, stockName: value };
+      }
+      if (field === 'quantity') {
+        return { ...prev, quantity: value };
+      }
+      return prev;
+    });
+  };
+
+  const handleShareTargetAdd = () => {
+    const stockId = String(shareTargetDraft.stockId || '').trim().toUpperCase();
+    const quantity = Number(shareTargetDraft.quantity);
+    if (!stockId || !Number.isFinite(quantity) || quantity <= 0) {
+      alert(msg.shareGoalInputRequired);
+      return;
+    }
+    let stockName = typeof shareTargetDraft.stockName === 'string'
+      ? shareTargetDraft.stockName.trim().slice(0, 60)
+      : '';
+    if (!stockName) {
+      stockName = shareTargetNameLookup.get(stockId) || '';
+    }
+    setGoalForm(prev => {
+      const targets = Array.isArray(prev.shareTargets) ? [...prev.shareTargets] : [];
+      const existingIndex = targets.findIndex(item => String(item?.stockId || '').trim().toUpperCase() === stockId);
+      const entry = {
+        stockId,
+        stockName,
+        targetQuantity: String(quantity)
+      };
+      if (existingIndex >= 0) {
+        targets[existingIndex] = entry;
+      } else {
+        targets.push(entry);
+      }
+      return {
+        ...prev,
+        shareTargets: targets
+      };
+    });
+    setShareTargetDraft({ stockId: '', stockName: '', quantity: '' });
+  };
+
+  const handleGoalSubmit = event => {
+    event.preventDefault();
+    const parseGoal = value => {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed === '') return 0;
+        const num = Number(trimmed);
+        return Number.isFinite(num) && num >= 0 ? num : 0;
+      }
+      const num = Number(value);
+      return Number.isFinite(num) && num >= 0 ? num : 0;
+    };
+    const normalizedGoalType = ['annual', 'monthly', 'minimum'].includes(goalForm.goalType)
+      ? goalForm.goalType
+      : 'annual';
+
+    const shareTargetsRaw = Array.isArray(goalForm.shareTargets) ? goalForm.shareTargets : [];
+    const seen = new Set();
+    const sanitizedShareTargets = [];
+    shareTargetsRaw.forEach(item => {
+      const stockId = typeof item?.stockId === 'string' ? item.stockId.trim().toUpperCase() : '';
+      if (!stockId || seen.has(stockId)) return;
+      const quantity = Number(item?.targetQuantity);
+      if (!Number.isFinite(quantity) || quantity <= 0) return;
+      let stockName = typeof item?.stockName === 'string'
+        ? item.stockName.trim().slice(0, 60)
+        : '';
+      if (!stockName) {
+        stockName = shareTargetNameLookup.get(stockId) || '';
+      }
+      sanitizedShareTargets.push({
+        stockId,
+        stockName,
+        targetQuantity: quantity
+      });
+      seen.add(stockId);
+    });
+
+    const updated = {
+      goalName: typeof goalForm.name === 'string' ? goalForm.name.trim().slice(0, 60) : '',
+      goalType: normalizedGoalType,
+      totalTarget: parseGoal(goalForm.annualTarget),
+      monthlyTarget: parseGoal(goalForm.monthlyTarget),
+      minimumTarget: parseGoal(goalForm.minimumTarget),
+      shareTargets: sanitizedShareTargets
+    };
+
+    const nextFormState = {
+      name: updated.goalName,
+      goalType: updated.goalType,
+      annualTarget: updated.totalTarget ? String(updated.totalTarget) : '',
+      monthlyTarget: updated.monthlyTarget ? String(updated.monthlyTarget) : '',
+      minimumTarget: updated.minimumTarget ? String(updated.minimumTarget) : '',
+      shareTargets: sanitizedShareTargets.map(target => ({
+        stockId: target.stockId,
+        stockName: target.stockName,
+        targetQuantity: String(target.targetQuantity)
+      }))
+    };
+
+    setGoalForm(nextFormState);
+
+    const isEmptyGoal = !updated.goalName
+      && !updated.totalTarget
+      && !updated.monthlyTarget
+      && !updated.minimumTarget
+      && sanitizedShareTargets.length === 0;
+    if (isEmptyGoal) {
+      setGoals(updated);
+      saveInvestmentGoals(updated);
+      setGoalSaved('empty');
+      return;
+    }
+
+    const prevGoalName = typeof goals.goalName === 'string' ? goals.goalName : '';
+    const prevGoalType = ['annual', 'monthly', 'minimum'].includes(goals.goalType) ? goals.goalType : 'annual';
+    const prevTotalTarget = Number.isFinite(Number(goals.totalTarget)) ? Number(goals.totalTarget) : 0;
+    const prevMonthlyTarget = Number.isFinite(Number(goals.monthlyTarget)) ? Number(goals.monthlyTarget) : 0;
+    const prevMinimumTarget = Number.isFinite(Number(goals.minimumTarget)) ? Number(goals.minimumTarget) : 0;
+    const prevShareTargets = Array.isArray(goals.shareTargets) ? goals.shareTargets : [];
+    const prevShareTargetMap = new Map();
+    prevShareTargets.forEach(item => {
+      const stockId = typeof item?.stockId === 'string' ? item.stockId.trim().toUpperCase() : '';
+      if (!stockId || prevShareTargetMap.has(stockId)) return;
+      const quantity = Number(item?.targetQuantity);
+      prevShareTargetMap.set(stockId, {
+        stockName: typeof item?.stockName === 'string' ? item.stockName.trim().slice(0, 60) : '',
+        targetQuantity: Number.isFinite(quantity) ? quantity : 0
+      });
+    });
+    const shareTargetsChanged = sanitizedShareTargets.length !== prevShareTargetMap.size
+      || sanitizedShareTargets.some(target => {
+        const prevTarget = prevShareTargetMap.get(target.stockId);
+        if (!prevTarget) return true;
+        return prevTarget.stockName !== (target.stockName || '')
+          || prevTarget.targetQuantity !== target.targetQuantity;
+      });
+
+    const hasChanged =
+      updated.goalName !== prevGoalName
+      || updated.goalType !== prevGoalType
+      || updated.totalTarget !== prevTotalTarget
+      || updated.monthlyTarget !== prevMonthlyTarget
+      || updated.minimumTarget !== prevMinimumTarget
+      || shareTargetsChanged;
+
+    if (!hasChanged) {
+      setGoalSaved('');
+      return;
+    }
+
+    setGoals(updated);
+    saveInvestmentGoals(updated);
+    setGoalSaved('saved');
+  };
+
   const formatCurrency = useCallback(value => {
     if (!Number.isFinite(value)) return '0.00';
     return Number(value).toLocaleString('en-US', {
@@ -555,6 +822,61 @@ export default function InventoryTab() {
     [dividendSummary, goals, goalMessages, formatCurrency]
   );
 
+  const shareGoalRows = useMemo(() => {
+    const shareTargets = Array.isArray(goals.shareTargets) ? goals.shareTargets : [];
+    if (!shareTargets.length) {
+      return [];
+    }
+    const inventoryMap = new Map();
+    (Array.isArray(inventoryList) ? inventoryList : []).forEach(item => {
+      const stockId = typeof item?.stock_id === 'string' ? item.stock_id.trim().toUpperCase() : '';
+      if (!stockId || inventoryMap.has(stockId)) return;
+      inventoryMap.set(stockId, item);
+    });
+    const formatLots = value => {
+      if (!Number.isFinite(value)) return '0';
+      return Number(value).toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: Math.abs(value % 1) > 0 ? 2 : 0
+      });
+    };
+    return shareTargets.map(target => {
+      const stockId = typeof target?.stockId === 'string' ? target.stockId.trim().toUpperCase() : '';
+      const targetQuantity = Number(target?.targetQuantity);
+      if (!stockId || !Number.isFinite(targetQuantity) || targetQuantity <= 0) {
+        return null;
+      }
+      const inventoryItem = inventoryMap.get(stockId);
+      const currentQuantity = Number(inventoryItem?.total_quantity) || 0;
+      const percent = targetQuantity > 0 ? Math.min(1, currentQuantity / targetQuantity) : 0;
+      const inventoryName = typeof inventoryItem?.stock_name === 'string' ? inventoryItem.stock_name.trim() : '';
+      const storedName = typeof target?.stockName === 'string' ? target.stockName.trim() : '';
+      const labelName = storedName || inventoryName;
+      const label = labelName ? `${stockId} (${labelName})` : stockId;
+      const encouragement = percent >= 1
+        ? msg.shareGoalDone
+        : percent >= 0.5
+          ? msg.shareGoalHalf
+          : '';
+      return {
+        id: `share-${stockId}`,
+        label,
+        current: `${msg.shareGoalCurrent}${formatLots(currentQuantity)} ${msg.shareGoalUnit}`,
+        target: `${msg.shareGoalTargetDisplay}${formatLots(targetQuantity)} ${msg.shareGoalUnit}`,
+        percent,
+        percentLabel: `${Math.min(100, Math.round(percent * 100))}%`,
+        encouragement
+      };
+    }).filter(Boolean);
+  }, [goals.shareTargets, inventoryList, msg.shareGoalCurrent, msg.shareGoalTargetDisplay, msg.shareGoalUnit, msg.shareGoalHalf, msg.shareGoalDone]);
+
+  const combinedGoalRows = useMemo(
+    () => [...goalRows, ...shareGoalRows],
+    [goalRows, shareGoalRows]
+  );
+
+  const combinedGoalEmptyState = shareGoalRows.length > 0 ? '' : goalEmptyState;
+
   const goalSavedMessage = goalSaved === 'empty'
     ? msg.goalSavedEmpty
     : goalSaved === 'saved'
@@ -589,6 +911,118 @@ export default function InventoryTab() {
           step: '1000',
           value: goalForm.annualTarget
         };
+  const goalShareTargets = Array.isArray(goalForm.shareTargets) ? goalForm.shareTargets : [];
+
+  const shareGoalFormSection = {
+    id: 'share-targets',
+    render: () => (
+      <div className={styles.shareGoalSection}>
+        <div className={styles.shareGoalHeader}>{msg.shareGoalSectionTitle}</div>
+        {goalShareTargets.length ? (
+          <div className={styles.shareGoalList}>
+            {goalShareTargets.map((target, index) => {
+              const baseId = `share-target-${index}`;
+              const stockIdValue = typeof target?.stockId === 'string' ? target.stockId : '';
+              const stockNameValue = typeof target?.stockName === 'string' ? target.stockName : '';
+              const quantityValue = typeof target?.targetQuantity === 'string'
+                ? target.targetQuantity
+                : target?.targetQuantity
+                  ? String(target.targetQuantity)
+                  : '';
+              return (
+                <div key={`${stockIdValue || 'target'}-${index}`} className={styles.shareGoalRow}>
+                  <div className={`${styles.inputGroup} ${styles.shareGoalInput}`}>
+                    <label htmlFor={`${baseId}-code`}>{msg.shareGoalStockIdLabel}</label>
+                    <input
+                      id={`${baseId}-code`}
+                      type="text"
+                      value={stockIdValue}
+                      onChange={handleShareTargetChange(index, 'stockId')}
+                      placeholder={msg.shareGoalStockIdPlaceholder}
+                      maxLength={16}
+                    />
+                  </div>
+                  <div className={`${styles.inputGroup} ${styles.shareGoalInput}`}>
+                    <label htmlFor={`${baseId}-name`}>{msg.shareGoalStockNameLabel}</label>
+                    <input
+                      id={`${baseId}-name`}
+                      type="text"
+                      value={stockNameValue}
+                      onChange={handleShareTargetChange(index, 'stockName')}
+                      placeholder={msg.shareGoalStockNamePlaceholder}
+                      maxLength={60}
+                    />
+                  </div>
+                  <div className={`${styles.inputGroup} ${styles.shareGoalInput}`}>
+                    <label htmlFor={`${baseId}-quantity`}>{msg.shareGoalTargetLabelForm}</label>
+                    <input
+                      id={`${baseId}-quantity`}
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      step="1"
+                      value={quantityValue}
+                      onChange={handleShareTargetChange(index, 'targetQuantity')}
+                      placeholder={msg.shareGoalTargetPlaceholder}
+                    />
+                  </div>
+                  <div className={styles.shareGoalActions}>
+                    <button type="button" onClick={() => handleShareTargetRemove(index)}>
+                      {msg.shareGoalRemove}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className={styles.shareGoalEmpty}>{msg.shareGoalEmptyList}</p>
+        )}
+        <div className={styles.shareGoalRow}>
+          <div className={`${styles.inputGroup} ${styles.shareGoalInput}`}>
+            <label htmlFor="share-target-new-code">{msg.shareGoalStockIdLabel}</label>
+            <input
+              id="share-target-new-code"
+              type="text"
+              value={shareTargetDraft.stockId}
+              onChange={handleShareTargetDraftChange('stockId')}
+              placeholder={msg.shareGoalStockIdPlaceholder}
+              maxLength={16}
+            />
+          </div>
+          <div className={`${styles.inputGroup} ${styles.shareGoalInput}`}>
+            <label htmlFor="share-target-new-name">{msg.shareGoalStockNameLabel}</label>
+            <input
+              id="share-target-new-name"
+              type="text"
+              value={shareTargetDraft.stockName}
+              onChange={handleShareTargetDraftChange('stockName')}
+              placeholder={msg.shareGoalStockNamePlaceholder}
+              maxLength={60}
+            />
+          </div>
+          <div className={`${styles.inputGroup} ${styles.shareGoalInput}`}>
+            <label htmlFor="share-target-new-quantity">{msg.shareGoalTargetLabelForm}</label>
+            <input
+              id="share-target-new-quantity"
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="1"
+              value={shareTargetDraft.quantity}
+              onChange={handleShareTargetDraftChange('quantity')}
+              placeholder={msg.shareGoalTargetPlaceholder}
+            />
+          </div>
+          <div className={styles.shareGoalActions}>
+            <button type="button" className={styles.shareGoalAddButton} onClick={handleShareTargetAdd}>
+              {msg.shareGoalAddButton}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  };
 
   const handleGoalFormToggle = () => {
     setIsGoalFormVisible(prev => !prev);
@@ -620,68 +1054,6 @@ export default function InventoryTab() {
         [key]: value
       };
     });
-  };
-
-  const handleGoalSubmit = event => {
-    event.preventDefault();
-    const parseGoal = value => {
-      if (typeof value === 'string') {
-        const trimmed = value.trim();
-        if (trimmed === '') return 0;
-        const num = Number(trimmed);
-        return Number.isFinite(num) && num >= 0 ? num : 0;
-      }
-      const num = Number(value);
-      return Number.isFinite(num) && num >= 0 ? num : 0;
-    };
-    const normalizedGoalType = ['annual', 'monthly', 'minimum'].includes(goalForm.goalType)
-      ? goalForm.goalType
-      : 'annual';
-    const updated = {
-      goalName: typeof goalForm.name === 'string' ? goalForm.name.trim().slice(0, 60) : '',
-      goalType: normalizedGoalType,
-      totalTarget: parseGoal(goalForm.annualTarget),
-      monthlyTarget: parseGoal(goalForm.monthlyTarget),
-      minimumTarget: parseGoal(goalForm.minimumTarget)
-    };
-    const nextFormState = {
-      name: updated.goalName,
-      goalType: updated.goalType,
-      annualTarget: updated.totalTarget ? String(updated.totalTarget) : '',
-      monthlyTarget: updated.monthlyTarget ? String(updated.monthlyTarget) : '',
-      minimumTarget: updated.minimumTarget ? String(updated.minimumTarget) : ''
-    };
-    setGoalForm(nextFormState);
-
-    const isEmptyGoal = !updated.goalName && !updated.totalTarget && !updated.monthlyTarget && !updated.minimumTarget;
-    if (isEmptyGoal) {
-      setGoals(updated);
-      saveInvestmentGoals(updated);
-      setGoalSaved('empty');
-      return;
-    }
-
-    const prevGoalName = typeof goals.goalName === 'string' ? goals.goalName : '';
-    const prevGoalType = ['annual', 'monthly', 'minimum'].includes(goals.goalType) ? goals.goalType : 'annual';
-    const prevTotalTarget = Number.isFinite(Number(goals.totalTarget)) ? Number(goals.totalTarget) : 0;
-    const prevMonthlyTarget = Number.isFinite(Number(goals.monthlyTarget)) ? Number(goals.monthlyTarget) : 0;
-    const prevMinimumTarget = Number.isFinite(Number(goals.minimumTarget)) ? Number(goals.minimumTarget) : 0;
-
-    const hasChanged =
-      updated.goalName !== prevGoalName ||
-      updated.goalType !== prevGoalType ||
-      updated.totalTarget !== prevTotalTarget ||
-      updated.monthlyTarget !== prevMonthlyTarget ||
-      updated.minimumTarget !== prevMinimumTarget;
-
-    if (!hasChanged) {
-      setGoalSaved('');
-      return;
-    }
-
-    setGoals(updated);
-    saveInvestmentGoals(updated);
-    setGoalSaved('saved');
   };
 
   const handleAdd = () => {
@@ -844,9 +1216,9 @@ export default function InventoryTab() {
             <InvestmentGoalCard
               title={goalTitle}
               metrics={goalMetrics}
-              rows={goalRows}
+              rows={combinedGoalRows}
               savedMessage={goalSavedMessage}
-              emptyState={goalEmptyState}
+              emptyState={combinedGoalEmptyState}
               form={{
                 id: 'inventory-goal-form',
                 isVisible: isGoalFormVisible,
@@ -877,7 +1249,8 @@ export default function InventoryTab() {
                 targetStep: goalTargetConfig.step,
                 targetMin: '0',
                 saveLabel: msg.goalText,
-                saveButton: msg.goalSave
+                saveButton: msg.goalSave,
+                sections: [shareGoalFormSection]
               }}
             />
 
