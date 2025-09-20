@@ -1022,12 +1022,20 @@ export default function InventoryTab() {
     }).filter(Boolean);
   }, [goals.shareTargets, inventoryList, msg.shareGoalCurrent, msg.shareGoalTargetDisplay, msg.shareGoalUnit, msg.shareGoalHalf, msg.shareGoalDone]);
 
+  const normalizedSavedGoalType = GOAL_TYPES.includes(goals.goalType)
+    ? goals.goalType
+    : DEFAULT_GOAL_TYPE;
+
   const combinedGoalRows = useMemo(
-    () => [...goalRows, ...shareGoalRows],
-    [goalRows, shareGoalRows]
+    () => (normalizedSavedGoalType === 'shares'
+      ? [...goalRows, ...shareGoalRows]
+      : goalRows),
+    [goalRows, shareGoalRows, normalizedSavedGoalType]
   );
 
-  const combinedGoalEmptyState = shareGoalRows.length > 0 ? '' : goalEmptyState;
+  const combinedGoalEmptyState = normalizedSavedGoalType === 'shares' && shareGoalRows.length > 0
+    ? ''
+    : goalEmptyState;
 
   const goalSavedMessage = goalSaved === 'empty'
     ? msg.goalSavedEmpty
