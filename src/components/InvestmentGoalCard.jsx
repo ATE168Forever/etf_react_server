@@ -3,6 +3,16 @@ import styles from './InvestmentGoalCard.module.css';
 export default function InvestmentGoalCard({ title, metrics = [], rows, savedMessage, form, emptyState }) {
   const { isVisible: formIsVisible = true, toggle: formToggle, id: formId, ...formProps } = form || {};
   const typeOptions = Array.isArray(formProps.typeOptions) ? formProps.typeOptions : [];
+  const formSections = Array.isArray(formProps.sections)
+    ? formProps.sections.map((section, index) => {
+        const content = typeof section?.render === 'function' ? section.render() : section?.content;
+        if (!content) return null;
+        return {
+          key: section.id || section.key || `section-${index}`,
+          content
+        };
+      }).filter(Boolean)
+    : [];
   const shouldRenderForm = Boolean(form) && formIsVisible !== false;
 
   return (
@@ -126,6 +136,11 @@ export default function InvestmentGoalCard({ title, metrics = [], rows, savedMes
                 step={formProps.targetStep || '100'}
               />
             </div>
+            {formSections.map(section => (
+              <div key={section.key} className={styles.formSection}>
+                {section.content}
+              </div>
+            ))}
             <div className={styles.inputGroup}>
               <label>{formProps.saveLabel}</label>
               <button type="submit" style={{ width: "fit-content" }}>{formProps.saveButton}</button>

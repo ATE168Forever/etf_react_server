@@ -5,8 +5,41 @@ const defaultGoals = {
   monthlyTarget: 0,
   minimumTarget: 0,
   goalName: '',
-  goalType: 'annual'
+  goalType: 'annual',
+  shareTargets: []
 };
+
+function normalizeShareTargets(rawTargets) {
+  if (!Array.isArray(rawTargets) || !rawTargets.length) {
+    return [];
+  }
+
+  const seen = new Set();
+  const normalized = [];
+
+  rawTargets.forEach(item => {
+    const stockId = typeof item?.stockId === 'string'
+      ? item.stockId.trim().toUpperCase()
+      : '';
+    if (!stockId || seen.has(stockId)) return;
+
+    const quantity = Number(item?.targetQuantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) return;
+
+    const stockName = typeof item?.stockName === 'string'
+      ? item.stockName.trim().slice(0, 60)
+      : '';
+
+    normalized.push({
+      stockId,
+      stockName,
+      targetQuantity: quantity
+    });
+    seen.add(stockId);
+  });
+
+  return normalized;
+}
 
 export function loadInvestmentGoals() {
   if (typeof localStorage === 'undefined') {
@@ -38,7 +71,8 @@ export function loadInvestmentGoals() {
             ? 'monthly'
             : Number.isFinite(minimumTarget) && minimumTarget > 0
               ? 'minimum'
-              : 'annual')
+              : 'annual'),
+      shareTargets: normalizeShareTargets(parsed.shareTargets)
     };
   } catch {
     return { ...defaultGoals };
@@ -54,7 +88,8 @@ export function saveInvestmentGoals(goals) {
     monthlyTarget: Number.isFinite(Number(goals.monthlyTarget)) ? Number(goals.monthlyTarget) : 0,
     minimumTarget: Number.isFinite(Number(goals.minimumTarget)) ? Number(goals.minimumTarget) : 0,
     goalName: typeof goals.goalName === 'string' ? goals.goalName.trim().slice(0, 60) : '',
-    goalType
+    goalType,
+    shareTargets: normalizeShareTargets(goals.shareTargets)
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
