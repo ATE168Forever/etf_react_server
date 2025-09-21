@@ -25,28 +25,97 @@
 
 
 .dataDropdown button {
-  width: 60px;
+  min-width: 72px;
   margin: 0;
   text-align: center;
 }
 
-.dataRow {
+.buttonGroup {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.dataSelectRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.dataSelectLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text, #1f2937);
+}
+
+.dataSelect {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border, rgba(148, 163, 184, 0.3));
+  background: var(--color-card-bg, #ffffff);
+  color: inherit;
+}
+
+.autoSaveRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin: 4px 0;
+  margin-bottom: 8px;
 }
 
-.dataLabel {
-  flex: 1;
-  white-space: nowrap;
-  width: 150px;
+.autoSaveLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text, #1f2937);
 }
 
-.buttonGroup {
-  display: flex;
-  gap: 4px;
+.autoSaveButton {
+  padding: 6px 16px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border, rgba(148, 163, 184, 0.4));
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.autoSaveButton:hover,
+.autoSaveButton:focus-visible {
+  border-color: var(--accent-gold, #fbbf24);
+  outline: none;
+}
+
+.autoSaveButtonActive {
+  background: var(--accent-gold, #fbbf24);
+  border-color: transparent;
+  color: var(--color-text, #1f2937);
+}
+
+.autoSaveStatus {
+  min-height: 20px;
+  font-size: 0.75rem;
+  color: var(--muted-foreground, #6b7280);
+  margin-bottom: 12px;
+}
+
+.autoSaveStatusSaving {
+  color: var(--muted-foreground, #6b7280);
+}
+
+.autoSaveStatusSuccess {
+  color: #047857;
+}
+
+.autoSaveStatusError {
+  color: #b91c1c;
+}
+
+.dataSelect:focus-visible {
+  outline: 2px solid var(--accent-gold, #fbbf24);
+  outline-offset: 2px;
 }
 
 .button {

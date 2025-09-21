@@ -43,8 +43,12 @@ export default function InventoryTab() {
   const [editForm, setEditForm] = useState({ date: '', quantity: '', price: '' });
   const [sellModal, setSellModal] = useState({ show: false, stock: null });
   const fileInputRef = useRef(null);
+  const autoSaveRequestRef = useRef(0);
   const [cacheInfo, setCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
+  const [selectedDataSource, setSelectedDataSource] = useState('csv');
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [autoSaveState, setAutoSaveState] = useState({ status: 'idle', provider: 'csv' });
   const [latestPrices, setLatestPrices] = useState({});
   const [dividendData, setDividendData] = useState([]);
   const { lang } = useLanguage();
@@ -271,6 +275,68 @@ export default function InventoryTab() {
     }
   };
   const msg = text[lang];
+
+  const runAutoSave = useCallback(
+    async (list, options = {}) => {
+      const { provider: providerOverride, force = false } = options;
+      const provider = providerOverride || selectedDataSource;
+      if (!provider) return;
+      if (!autoSaveEnabled && !force) return;
+
+      const data = Array.isArray(list) ? list : transactionHistory;
+      const requestId = Date.now();
+      autoSaveRequestRef.current = requestId;
+      setAutoSaveState({ status: 'saving', provider });
+
+      try {
+        if (provider === 'csv') {
+          const csvContent = transactionsToCsv(data);
+          if (typeof window !== 'undefined' && window?.localStorage) {
+            window.localStorage.setItem('inventory_auto_backup_csv', csvContent);
+          }
+        } else if (provider === 'googleDrive') {
+          await exportTransactionsToDrive(data);
+        } else if (provider === 'oneDrive') {
+          await exportTransactionsToOneDrive(data);
+        } else if (provider === 'icloudDrive') {
+          await exportTransactionsToICloud(data);
+        } else {
+          throw new Error(`Unsupported auto-save provider: ${provider}`);
+        }
+
+        if (autoSaveRequestRef.current === requestId) {
+          setAutoSaveState({ status: 'success', timestamp: Date.now(), provider });
+        }
+      } catch (error) {
+        console.error('Auto save failed', error);
+        if (autoSaveRequestRef.current === requestId) {
+          setAutoSaveState({ status: 'error', timestamp: Date.now(), provider });
+        }
+      }
+    },
+    [autoSaveEnabled, selectedDataSource, transactionHistory]
+  );
+
+  const handleDataSourceChange = useCallback(
+    value => {
+      setSelectedDataSource(value);
+      if (!autoSaveEnabled) {
+        setAutoSaveEnabled(true);
+      }
+      runAutoSave(transactionHistory, { provider: value, force: true });
+    },
+    [autoSaveEnabled, runAutoSave, transactionHistory]
+  );
+
+  const handleAutoSaveToggle = useCallback(() => {
+    setAutoSaveEnabled(prev => {
+      const next = !prev;
+      if (!prev) {
+        runAutoSave(transactionHistory, { force: true });
+      }
+      return next;
+    });
+  }, [runAutoSave, transactionHistory]);
 
   const handleExport = useCallback(() => {
     const csv = transactionsToCsv(transactionHistory);
@@ -1219,7 +1285,7 @@ export default function InventoryTab() {
       alert(msg.inputRequired);
       return;
     }
-    setTransactionHistory([
+    const updatedHistory = [
       ...transactionHistory,
       {
         stock_id: form.stock_id,
@@ -1229,9 +1295,11 @@ export default function InventoryTab() {
         price: Number(form.price),
         type: 'buy'
       }
-    ]);
+    ];
+    setTransactionHistory(updatedHistory);
     setForm({ stock_id: '', stock_name: '', date: getToday(), quantity: '', price: '' });
     setShowModal(false);
+    runAutoSave(updatedHistory);
   };
 
   const handleEditSave = idx => {
@@ -1251,11 +1319,14 @@ export default function InventoryTab() {
     }
     setTransactionHistory(updated);
     setEditingIdx(null);
+    runAutoSave(updated);
   };
 
   const handleDelete = idx => {
     if (window.confirm(msg.confirmDeleteRecord)) {
-      setTransactionHistory(transactionHistory.filter((_, i) => i !== idx));
+      const updated = transactionHistory.filter((_, i) => i !== idx);
+      setTransactionHistory(updated);
+      runAutoSave(updated);
     }
   };
 
@@ -1265,11 +1336,13 @@ export default function InventoryTab() {
       alert(msg.sellExceeds);
       return;
     }
-    setTransactionHistory([
+    const updatedHistory = [
       ...transactionHistory,
       { stock_id, stock_name: stock.stock_name, date: getToday(), quantity: Number(qty), type: 'sell' }
-    ]);
+    ];
+    setTransactionHistory(updatedHistory);
     setSellModal({ show: false, stock: null });
+    runAutoSave(updatedHistory);
   };
 
   return (
@@ -1306,6 +1379,11 @@ export default function InventoryTab() {
               handleOneDriveExport={handleOneDriveExport}
               handleICloudImport={handleICloudImport}
               handleICloudExport={handleICloudExport}
+              selectedSource={selectedDataSource}
+              onSelectChange={handleDataSourceChange}
+              autoSaveEnabled={autoSaveEnabled}
+              onToggleAutoSave={handleAutoSaveToggle}
+              autoSaveState={autoSaveState}
             />
           )}
         </div>
