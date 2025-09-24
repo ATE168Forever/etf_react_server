@@ -41,7 +41,8 @@ export default function DataDropdown({
       autoSaveSaving: '自動儲存中…',
       autoSaveSuccess: '自動儲存完成',
       autoSaveError: '自動儲存失敗',
-      autoSaveDisabled: '自動儲存已關閉'
+      autoSaveDisabled: '自動儲存已關閉',
+      autoSaveLocationLabel: '存入位置'
     },
     en: {
       importText: 'Import',
@@ -53,11 +54,12 @@ export default function DataDropdown({
       autoSaveSaving: 'Auto-saving…',
       autoSaveSuccess: 'Auto-save completed',
       autoSaveError: 'Auto-save failed',
-      autoSaveDisabled: 'Auto-save is off'
+      autoSaveDisabled: 'Auto-save is off',
+      autoSaveLocationLabel: 'Saved to'
     }
   };
 
-  const { importText, exportText, selectLabel, autoSaveLabel, autoSaveOn, autoSaveOff, autoSaveSaving, autoSaveSuccess, autoSaveError, autoSaveDisabled } = text[lang];
+  const { importText, exportText, selectLabel, autoSaveLabel, autoSaveOn, autoSaveOff, autoSaveSaving, autoSaveSuccess, autoSaveError, autoSaveDisabled, autoSaveLocationLabel } = text[lang];
 
   const providerActions = {
     csv: {
@@ -92,6 +94,7 @@ export default function DataDropdown({
   const locale = lang === 'zh' ? 'zh-TW' : 'en-US';
   const status = autoSaveState?.status;
   const timestamp = autoSaveState?.timestamp;
+  const location = autoSaveState?.location;
   const providerLabels = {
     csv: 'CSV',
     googleDrive: 'Google Drive',
@@ -99,6 +102,16 @@ export default function DataDropdown({
     icloudDrive: 'iCloudDrive'
   };
   const providerLabel = providerLabels?.[autoSaveState?.provider] || '';
+  const locationTypeLabels = {
+    localStorage: {
+      zh: '瀏覽器儲存空間',
+      en: 'Browser storage'
+    },
+    fileSystem: {
+      zh: '本機資料夾',
+      en: 'Local folder'
+    }
+  };
   let statusMessage = '';
   if (status === 'saving') {
     statusMessage = autoSaveSaving;
@@ -110,14 +123,33 @@ export default function DataDropdown({
     statusMessage = autoSaveDisabled;
   }
 
+  const messageParts = [];
+
   if (statusMessage && providerLabel && status !== 'idle') {
     statusMessage = `${statusMessage} (${providerLabel})`;
   }
 
-  if (statusMessage && timestamp) {
-    const formatted = new Date(timestamp).toLocaleString(locale);
-    statusMessage = `${statusMessage} · ${formatted}`;
+  if (statusMessage) {
+    messageParts.push(statusMessage);
   }
+
+  if (timestamp) {
+    const formatted = new Date(timestamp).toLocaleString(locale);
+    messageParts.push(formatted);
+  }
+
+  if (location) {
+    const typeLabel = locationTypeLabels?.[location.type]?.[lang] || location.type;
+    const detailParts = [];
+    if (location.path) detailParts.push(location.path);
+    if (location.filename) detailParts.push(location.filename);
+    if (detailParts.length === 0 && location.key) detailParts.push(location.key);
+    const detail = detailParts.join(' · ');
+    const locationMessage = `${autoSaveLocationLabel}: ${typeLabel}${detail ? ` (${detail})` : ''}`;
+    messageParts.push(locationMessage);
+  }
+
+  const finalStatusMessage = messageParts.join(' · ');
 
   return (
     <div className={`action-dropdown silver-button-container ${styles.dataDropdown}`} ref={ref}>
@@ -163,7 +195,7 @@ export default function DataDropdown({
                 : ''
         }`}
       >
-        {statusMessage}
+        {finalStatusMessage}
       </div>
       <div className={styles.buttonGroup}>
         <button onClick={() => handleSelectAction('import')}>{importText}</button>
