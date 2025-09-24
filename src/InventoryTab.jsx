@@ -295,7 +295,14 @@ export default function InventoryTab() {
           if (typeof window !== 'undefined' && window?.localStorage) {
             const storageKey = 'inventory_auto_backup_csv';
             window.localStorage.setItem(storageKey, csvContent);
-            locationInfo = { type: 'localStorage', key: storageKey };
+            const host = window.location?.host || window.location?.hostname || '';
+            const path = host ? `localStorage://${host}/${storageKey}` : `localStorage://${storageKey}`;
+            locationInfo = {
+              type: 'localStorage',
+              key: storageKey,
+              path,
+              filename: 'inventory_backup.csv'
+            };
           }
         } else if (provider === 'googleDrive') {
           await exportTransactionsToDrive(data);

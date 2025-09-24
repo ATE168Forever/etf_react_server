@@ -136,7 +136,11 @@ export default function DataDropdown({
 
   if (location) {
     const typeLabel = locationTypeLabels?.[location.type]?.[lang] || location.type;
-    const detail = location.path || location.key;
+    const detailParts = [];
+    if (location.path) detailParts.push(location.path);
+    if (location.filename) detailParts.push(location.filename);
+    if (detailParts.length === 0 && location.key) detailParts.push(location.key);
+    const detail = detailParts.join(' · ');
     const locationMessage = `${autoSaveLocationLabel}: ${typeLabel}${detail ? ` (${detail})` : ''}`;
     messageParts.push(locationMessage);
   }
