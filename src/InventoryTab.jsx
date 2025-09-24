@@ -289,10 +289,13 @@ export default function InventoryTab() {
       setAutoSaveState({ status: 'saving', provider });
 
       try {
+        let locationInfo;
         if (provider === 'csv') {
           const csvContent = transactionsToCsv(data);
           if (typeof window !== 'undefined' && window?.localStorage) {
-            window.localStorage.setItem('inventory_auto_backup_csv', csvContent);
+            const storageKey = 'inventory_auto_backup_csv';
+            window.localStorage.setItem(storageKey, csvContent);
+            locationInfo = { type: 'localStorage', key: storageKey };
           }
         } else if (provider === 'googleDrive') {
           await exportTransactionsToDrive(data);
@@ -305,7 +308,12 @@ export default function InventoryTab() {
         }
 
         if (autoSaveRequestRef.current === requestId) {
-          setAutoSaveState({ status: 'success', timestamp: Date.now(), provider });
+          setAutoSaveState({
+            status: 'success',
+            timestamp: Date.now(),
+            provider,
+            ...(locationInfo ? { location: locationInfo } : {})
+          });
         }
       } catch (error) {
         console.error('Auto save failed', error);
