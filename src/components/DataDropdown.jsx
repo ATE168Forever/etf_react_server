@@ -106,6 +106,10 @@ export default function DataDropdown({
     localStorage: {
       zh: '瀏覽器儲存空間',
       en: 'Browser storage'
+    },
+    fileSystem: {
+      zh: '本機資料夾',
+      en: 'Local folder'
     }
   };
   let statusMessage = '';

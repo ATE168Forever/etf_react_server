@@ -44,6 +44,8 @@ export default function InventoryTab() {
   const [sellModal, setSellModal] = useState({ show: false, stock: null });
   const fileInputRef = useRef(null);
   const autoSaveRequestRef = useRef(0);
+  const autoSaveDirectoryHandleRef = useRef(null);
+  const autoSaveFileHandleRef = useRef(null);
   const [cacheInfo, setCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [selectedDataSource, setSelectedDataSource] = useState('csv');
@@ -276,6 +278,27 @@ export default function InventoryTab() {
   };
   const msg = text[lang];
 
+  const ensurePermission = useCallback(async (handle, mode = 'readwrite') => {
+    if (!handle) return false;
+    if (!handle.queryPermission || !handle.requestPermission) {
+      return true;
+    }
+    const current = await handle.queryPermission({ mode });
+    if (current === 'granted') {
+      return true;
+    }
+    if (current === 'denied') {
+      return false;
+    }
+    const requested = await handle.requestPermission({ mode });
+    return requested === 'granted';
+  }, []);
+
+  const resetCsvAutoSaveHandles = useCallback(() => {
+    autoSaveDirectoryHandleRef.current = null;
+    autoSaveFileHandleRef.current = null;
+  }, []);
+
   const runAutoSave = useCallback(
     async (list, options = {}) => {
       const { provider: providerOverride, force = false } = options;
@@ -292,17 +315,88 @@ export default function InventoryTab() {
         let locationInfo;
         if (provider === 'csv') {
           const csvContent = transactionsToCsv(data);
-          if (typeof window !== 'undefined' && window?.localStorage) {
-            const storageKey = 'inventory_auto_backup_csv';
-            window.localStorage.setItem(storageKey, csvContent);
-            const host = window.location?.host || window.location?.hostname || '';
-            const path = host ? `localStorage://${host}/${storageKey}` : `localStorage://${storageKey}`;
+          if (typeof window === 'undefined') {
+            throw new Error('CSV auto-save requires a browser environment');
+          }
+
+          if (typeof window.showDirectoryPicker === 'function') {
+            let directoryHandle = autoSaveDirectoryHandleRef.current;
+            if (directoryHandle) {
+              const directoryPermission = await ensurePermission(directoryHandle, 'readwrite');
+              if (!directoryPermission) {
+                resetCsvAutoSaveHandles();
+                directoryHandle = null;
+              }
+            }
+
+            if (!directoryHandle) {
+              directoryHandle = await window.showDirectoryPicker({ id: 'inventory-auto-save' });
+              autoSaveDirectoryHandleRef.current = directoryHandle;
+              autoSaveFileHandleRef.current = null;
+            }
+
+            if (!(await ensurePermission(directoryHandle, 'readwrite'))) {
+              throw new Error('Permission denied for the selected directory');
+            }
+
+            let fileHandle = autoSaveFileHandleRef.current;
+            if (!fileHandle) {
+              fileHandle = await directoryHandle.getFileHandle('inventory_backup.csv', { create: true });
+              autoSaveFileHandleRef.current = fileHandle;
+            }
+
+            if (!(await ensurePermission(fileHandle, 'readwrite'))) {
+              throw new Error('Permission denied for the backup file');
+            }
+
+            const writable = await fileHandle.createWritable();
+            await writable.write(csvContent);
+            await writable.close();
+
+            let relativePath = '';
+            if (typeof directoryHandle.resolve === 'function') {
+              try {
+                const segments = await directoryHandle.resolve(fileHandle);
+                if (Array.isArray(segments) && segments.length > 1) {
+                  relativePath = segments.slice(0, -1).join('/');
+                }
+              } catch (resolveError) {
+                console.warn('Failed to resolve file path', resolveError);
+              }
+            }
+
+            const basePath = directoryHandle?.name ? String(directoryHandle.name) : '';
+            const combinedPath = relativePath ? `${basePath}/${relativePath}` : basePath;
+
             locationInfo = {
-              type: 'localStorage',
-              key: storageKey,
-              path,
-              filename: 'inventory_backup.csv'
+              type: 'fileSystem',
+              path: combinedPath,
+              filename: fileHandle?.name || 'inventory_backup.csv'
             };
+          } else if (typeof window.showSaveFilePicker === 'function') {
+            let fileHandle = autoSaveFileHandleRef.current;
+            if (!fileHandle) {
+              fileHandle = await window.showSaveFilePicker({
+                suggestedName: 'inventory_backup.csv',
+                types: [{ description: 'CSV Files', accept: { 'text/csv': ['.csv'] } }]
+              });
+              autoSaveFileHandleRef.current = fileHandle;
+            }
+
+            if (!(await ensurePermission(fileHandle, 'readwrite'))) {
+              throw new Error('Permission denied for the selected file');
+            }
+
+            const writable = await fileHandle.createWritable();
+            await writable.write(csvContent);
+            await writable.close();
+
+            locationInfo = {
+              type: 'fileSystem',
+              filename: fileHandle?.name || 'inventory_backup.csv'
+            };
+          } else {
+            throw new Error('This browser does not support saving files to the local filesystem');
           }
         } else if (provider === 'googleDrive') {
           await exportTransactionsToDrive(data);
@@ -324,12 +418,21 @@ export default function InventoryTab() {
         }
       } catch (error) {
         console.error('Auto save failed', error);
+        if (provider === 'csv') {
+          resetCsvAutoSaveHandles();
+        }
         if (autoSaveRequestRef.current === requestId) {
           setAutoSaveState({ status: 'error', timestamp: Date.now(), provider });
         }
       }
     },
-    [autoSaveEnabled, selectedDataSource, transactionHistory]
+    [
+      autoSaveEnabled,
+      ensurePermission,
+      resetCsvAutoSaveHandles,
+      selectedDataSource,
+      transactionHistory
+    ]
   );
 
   const handleDataSourceChange = useCallback(
