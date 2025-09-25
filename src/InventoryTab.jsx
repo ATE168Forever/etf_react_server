@@ -49,7 +49,7 @@ export default function InventoryTab() {
   const [cacheInfo, setCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [selectedDataSource, setSelectedDataSource] = useState('csv');
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
   const [autoSaveState, setAutoSaveState] = useState({ status: 'idle', provider: 'csv' });
   const [latestPrices, setLatestPrices] = useState({});
   const [dividendData, setDividendData] = useState([]);
@@ -438,10 +438,7 @@ export default function InventoryTab() {
   const handleDataSourceChange = useCallback(
     value => {
       setSelectedDataSource(value);
-      if (!autoSaveEnabled) {
-        setAutoSaveEnabled(true);
-      }
-      runAutoSave(transactionHistory, { provider: value, force: true });
+      runAutoSave(transactionHistory, { provider: value, force: autoSaveEnabled });
     },
     [autoSaveEnabled, runAutoSave, transactionHistory]
   );
