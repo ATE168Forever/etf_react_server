@@ -45,6 +45,30 @@ test('calendar defaults to showing both ex and payment events', async () => {
   expect(bothBtn).toHaveClass('btn-selected');
 });
 
+test('payment totals fall back to payment date holdings when ex-date missing', async () => {
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const [year, month] = nowStr.split('-');
+  readTransactionHistory.mockReturnValue([
+    { stock_id: 'BBB', date: `${year}-01-10`, quantity: 1000, type: 'buy' }
+  ]);
+
+  const data = [
+    {
+      stock_id: 'BBB',
+      stock_name: 'BBB ETF',
+      dividend: '2.5',
+      dividend_date: null,
+      payment_date: `${year}-${month}-18`,
+      dividend_yield: '3',
+      last_close_price: '40'
+    }
+  ];
+
+  render(<UserDividendsTab allDividendData={data} selectedYear={Number(year)} />);
+
+  expect(await screen.findByText('發放金額: 2,500')).toBeInTheDocument();
+});
+
 test('shows dividends for stocks sold before year end', async () => {
   readTransactionHistory.mockReturnValue([
     { stock_id: '0056', date: '2024-01-01', quantity: 1000, type: 'buy' },
