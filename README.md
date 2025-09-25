@@ -41,6 +41,11 @@ sovereign deployment. The Azure portal labels map directly to the variables belo
 - **Directory (tenant) ID** → use it in the authority URL, e.g. `https://login.microsoftonline.com/<tenant-id>`
 - **Object ID** → not required for the integration
 
+> ℹ️ There is no separate "OneDrive ID" to configure. Supplying your Azure app's
+> client ID (and optional authority or Graph base overrides) is sufficient for
+> the OneDrive backup feature to authenticate and store files in the signed-in
+> user's account.
+
 ```
 VITE_ONEDRIVE_CLIENT_ID=your_client_id
 VITE_ONEDRIVE_SCOPES=Files.ReadWrite
