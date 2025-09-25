@@ -77,7 +77,8 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
 
     // Events for calendar view
     const calendarEvents = dividendData.flatMap(item => {
-        const qty = getHolding(item.stock_id, item.dividend_date);
+        const holdingDate = item.dividend_date || item.payment_date;
+        const qty = getHolding(item.stock_id, holdingDate);
         const dividend = parseFloat(item.dividend);
         const amount = dividend * qty;
         const dividend_yield = parseFloat(item.dividend_yield) || 0;
