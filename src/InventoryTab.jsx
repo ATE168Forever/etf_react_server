@@ -558,7 +558,8 @@ export default function InventoryTab() {
       alert(msg.exportOneDriveSuccess);
     } catch (err) {
       console.error('OneDrive manual export failed', err);
-      alert(msg.exportOneDriveFail);
+      const errorMessage = err?.message ? `${msg.exportOneDriveFail}\n${err.message}` : msg.exportOneDriveFail;
+      alert(errorMessage);
     }
   };
 
@@ -587,7 +588,8 @@ export default function InventoryTab() {
       if (typeof window !== 'undefined') window.location.reload();
     } catch (err) {
       console.error('OneDrive manual import failed', err);
-      alert(msg.importOneDriveFail);
+      const errorMessage = err?.message ? `${msg.importOneDriveFail}\n${err.message}` : msg.importOneDriveFail;
+      alert(errorMessage);
     }
   };
 
