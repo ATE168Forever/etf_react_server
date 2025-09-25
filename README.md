@@ -33,14 +33,23 @@ If you are developing a production application, we recommend using TypeScript wi
 ## OneDrive Backup
 
 To enable OneDrive import and export, create an Azure application with Microsoft Graph permissions (e.g. `Files.ReadWrite`).
-Set your app's redirect URI to your site's origin. Then add the client ID and desired scopes to a `.env` file:
+Set your app's redirect URI to your site's origin. Then add the client ID, desired scopes, and optional authority to a `.env`
+file. You can also override the Microsoft Graph base URL when using a national Azure cloud (e.g. China or US Gov) or a
+sovereign deployment:
 
 ```
 VITE_ONEDRIVE_CLIENT_ID=your_client_id
 VITE_ONEDRIVE_SCOPES=Files.ReadWrite
+VITE_ONEDRIVE_AUTHORITY=https://login.microsoftonline.com/common
+VITE_ONEDRIVE_GRAPH_BASE=https://graph.microsoft.com
 ```
 
-Restart the development server after updating the file. Use the data menu to authorize and transfer backups with OneDrive.
+Restart the development server after updating the file. Use the data menu to authorize and transfer backups with OneDrive. Each
+person signs in with their own Microsoft account, and the app will prompt them to choose the desired profile if multiple
+accounts are available in the browser session. Set `VITE_ONEDRIVE_AUTHORITY` to `https://login.microsoftonline.com/consumers`
+when the app registration only allows personal Microsoft accounts, or to a tenant-specific authority when the registration is
+single tenant. Use the appropriate `VITE_ONEDRIVE_GRAPH_BASE` for Azure China (`https://microsoftgraph.chinacloudapi.cn`), US
+Government (`https://graph.microsoft.us`), or other clouds so API calls reach the correct Microsoft Graph endpoint.
 
 ## Google Drive Backup
 
