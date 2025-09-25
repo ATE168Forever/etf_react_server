@@ -1,23 +1,25 @@
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 
-const CLIENT_ID =
-  typeof window !== 'undefined' && window.ONEDRIVE_CLIENT_ID && window.ONEDRIVE_CLIENT_ID !== 'undefined'
-    ? window.ONEDRIVE_CLIENT_ID
-    : '';
-const RAW_SCOPES =
-  typeof window !== 'undefined' && window.ONEDRIVE_SCOPES && window.ONEDRIVE_SCOPES !== 'undefined'
-    ? window.ONEDRIVE_SCOPES
-    : '';
+function resolveWindowString(key, { fallback = '', allowPercentPlaceholders = false } = {}) {
+  if (typeof window === 'undefined') return fallback;
+  const value = window[key];
+  if (typeof value !== 'string') return fallback;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === 'undefined') return fallback;
+  if (!allowPercentPlaceholders && /^%[A-Z0-9_]+%$/i.test(trimmed)) {
+    return fallback;
+  }
+  return trimmed;
+}
+
+const CLIENT_ID = resolveWindowString('ONEDRIVE_CLIENT_ID');
+const RAW_SCOPES = resolveWindowString('ONEDRIVE_SCOPES', { allowPercentPlaceholders: true });
 const DEFAULT_SCOPES = ['Files.ReadWrite'];
 const BASE_OPENID_SCOPES = ['openid', 'profile'];
 const AUTHORITY =
-  typeof window !== 'undefined' && window.ONEDRIVE_AUTHORITY && window.ONEDRIVE_AUTHORITY !== 'undefined'
-    ? window.ONEDRIVE_AUTHORITY
-    : 'https://login.microsoftonline.com/common';
+  resolveWindowString('ONEDRIVE_AUTHORITY') || 'https://login.microsoftonline.com/common';
 const GRAPH_BASE =
-  typeof window !== 'undefined' && window.ONEDRIVE_GRAPH_BASE && window.ONEDRIVE_GRAPH_BASE !== 'undefined'
-    ? window.ONEDRIVE_GRAPH_BASE.replace(/\/$/, '')
-    : 'https://graph.microsoft.com';
+  (resolveWindowString('ONEDRIVE_GRAPH_BASE') || 'https://graph.microsoft.com').replace(/\/$/, '');
 let msalInstance = null;
 let accessToken = null;
 let msalLoaded = false;
