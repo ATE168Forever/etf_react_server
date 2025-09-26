@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import DividendCalendar from './components/DividendCalendar';
 import { readTransactionHistory } from './utils/transactionStorage';
-import { HOST_URL } from './config';
+import { HOST_URL, API_HOST } from './config';
 import { useLanguage } from './i18n';
 import usePreserveScroll from './hooks/usePreserveScroll';
+import { fetchWithCache } from './api';
 
 const MONTH_COL_WIDTH = 80;
 function getTransactionHistory() {
@@ -27,6 +28,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     });
     // Default to showing both ex-dividend and payment events
     const [calendarFilter, setCalendarFilter] = useState('both');
+    const [stockNameMap, setStockNameMap] = useState({});
     const timeZone = 'Asia/Taipei';
     const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
     const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
@@ -40,6 +42,20 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     useEffect(() => {
         localStorage.setItem('userDividendsShowCalendar', showCalendar);
     }, [showCalendar]);
+
+    useEffect(() => {
+        fetchWithCache(`${API_HOST}/get_stock_list`)
+            .then(({ data }) => {
+                const list = Array.isArray(data) ? data : data?.items || [];
+                const map = {};
+                list.forEach(item => {
+                    if (!item?.stock_id) return;
+                    map[item.stock_id] = item.stock_name || '';
+                });
+                setStockNameMap(map);
+            })
+            .catch(() => setStockNameMap({}));
+    }, []);
 
     function getHolding(stock_id, date) {
         return history.reduce((sum, item) => {
@@ -71,7 +87,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const stockMap = {};
     allRelevantStockIds.forEach(id => {
         const info = (allDividendData || []).find(d => d.stock_id === id);
-        stockMap[id] = info?.stock_name || '';
+        stockMap[id] = stockNameMap[id] || info?.stock_name || '';
     });
     const myStocks = allRelevantStockIds.map(id => ({ stock_id: id, stock_name: stockMap[id] }));
 
