@@ -492,7 +492,6 @@ export default function InventoryTab() {
       saveTransactionHistory(imported);
       e.target.value = '';
       alert(msg.importDone);
-      if (typeof window !== 'undefined') window.location.reload();
     };
     reader.readAsText(file, 'utf-8');
   };
@@ -543,7 +542,6 @@ export default function InventoryTab() {
       setTransactionHistory(enriched);
       saveTransactionHistory(enriched);
       alert(msg.importDriveSuccess);
-      if (typeof window !== 'undefined') window.location.reload();
     } catch (err) {
       console.error('Drive manual import failed', err);
       alert(msg.importDriveFail);
@@ -584,7 +582,6 @@ export default function InventoryTab() {
       setTransactionHistory(enriched);
       saveTransactionHistory(enriched);
       alert(msg.importOneDriveSuccess);
-      if (typeof window !== 'undefined') window.location.reload();
     } catch (err) {
       console.error('OneDrive manual import failed', err);
       alert(msg.importOneDriveFail);
@@ -625,7 +622,6 @@ export default function InventoryTab() {
       setTransactionHistory(enriched);
       saveTransactionHistory(enriched);
       alert(msg.importICloudSuccess);
-      if (typeof window !== 'undefined') window.location.reload();
     } catch (err) {
       console.error('iCloud manual import failed', err);
       alert(msg.importICloudFail);
