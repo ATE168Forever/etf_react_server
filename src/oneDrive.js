@@ -25,6 +25,10 @@ let accessToken = null;
 let msalLoaded = false;
 let activeAccount = null;
 
+export function isOneDriveConfigured() {
+  return Boolean(CLIENT_ID);
+}
+
 const SCOPES = (() => {
   const input = typeof RAW_SCOPES === 'string' ? RAW_SCOPES : '';
   const requested = input
