@@ -17,7 +17,8 @@ export default function DataDropdown({
   onSelectChange,
   autoSaveEnabled,
   onToggleAutoSave,
-  autoSaveState
+  autoSaveState,
+  oneDriveAvailable = false
 }) {
   const ref = useRef();
   useClickOutside(ref, onClose);
@@ -70,10 +71,14 @@ export default function DataDropdown({
       import: handleDriveImport,
       export: handleDriveExport
     },
-    oneDrive: {
-      import: handleOneDriveImport,
-      export: handleOneDriveExport
-    },
+    ...(oneDriveAvailable
+      ? {
+          oneDrive: {
+            import: handleOneDriveImport,
+            export: handleOneDriveExport
+          }
+        }
+      : {}),
     icloudDrive: {
       import: handleICloudImport,
       export: handleICloudExport
@@ -81,8 +86,12 @@ export default function DataDropdown({
   };
 
   const handleSelectChange = event => {
+    const value = event.target.value;
+    if (value === 'oneDrive' && !oneDriveAvailable) {
+      return;
+    }
     if (typeof onSelectChange === 'function') {
-      onSelectChange(event.target.value);
+      onSelectChange(value);
     }
   };
 
@@ -98,7 +107,7 @@ export default function DataDropdown({
   const providerLabels = {
     csv: 'CSV',
     googleDrive: 'Google Drive',
-    oneDrive: 'OneDrive',
+    ...(oneDriveAvailable ? { oneDrive: 'OneDrive' } : {}),
     icloudDrive: 'iCloudDrive'
   };
   const providerLabel = providerLabels?.[autoSaveState?.provider] || '';
@@ -165,7 +174,7 @@ export default function DataDropdown({
         >
           <option value="csv">CSV</option>
           <option value="googleDrive">Google Drive</option>
-          <option value="oneDrive">OneDrive</option>
+          {oneDriveAvailable && <option value="oneDrive">OneDrive</option>}
           <option value="icloudDrive">iCloudDrive</option>
         </select>
       </div>

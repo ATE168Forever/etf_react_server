@@ -6,7 +6,11 @@ import { fetchWithCache } from './api';
 import { fetchDividendsByYears } from './dividendApi';
 import { migrateTransactionHistory, saveTransactionHistory } from './utils/transactionStorage';
 import { exportTransactionsToDrive, importTransactionsFromDrive } from './googleDrive';
-import { exportTransactionsToOneDrive, importTransactionsFromOneDrive } from './oneDrive';
+import {
+  exportTransactionsToOneDrive,
+  importTransactionsFromOneDrive,
+  isOneDriveConfigured
+} from './oneDrive';
 import { exportTransactionsToICloud, importTransactionsFromICloud } from './icloud';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 import AddTransactionModal from './components/AddTransactionModal';
@@ -106,6 +110,7 @@ export default function InventoryTab() {
       exportOneDriveFail: '匯出到 OneDrive 失敗',
       importOneDriveSuccess: '已從 OneDrive 匯入資料',
       importOneDriveFail: '匯入 OneDrive 失敗',
+      oneDriveUnavailable: 'OneDrive 尚未設定。請在 .env 中設定 VITE_ONEDRIVE_CLIENT_ID 以啟用備份。',
       exportICloudConfirm: '確定要匯出到 iCloud Drive？',
       exportICloudSuccess: '已匯出到 iCloud Drive',
       exportICloudFail: '匯出到 iCloud Drive 失敗',
@@ -198,6 +203,7 @@ export default function InventoryTab() {
       exportOneDriveFail: 'Export to OneDrive failed',
       importOneDriveSuccess: 'Imported data from OneDrive',
       importOneDriveFail: 'Import from OneDrive failed',
+      oneDriveUnavailable: 'OneDrive is not configured. Set VITE_ONEDRIVE_CLIENT_ID in the .env file to enable OneDrive backups.',
       exportICloudConfirm: 'Export to iCloud Drive?',
       exportICloudSuccess: 'Exported to iCloud Drive',
       exportICloudFail: 'Export to iCloud Drive failed',
@@ -277,6 +283,13 @@ export default function InventoryTab() {
     }
   };
   const msg = text[lang];
+  const oneDriveAvailable = isOneDriveConfigured();
+
+  useEffect(() => {
+    if (!oneDriveAvailable && selectedDataSource === 'oneDrive') {
+      setSelectedDataSource('csv');
+    }
+  }, [oneDriveAvailable, selectedDataSource]);
 
   const ensurePermission = useCallback(async (handle, mode = 'readwrite') => {
     if (!handle) return false;
@@ -401,6 +414,11 @@ export default function InventoryTab() {
         } else if (provider === 'googleDrive') {
           await exportTransactionsToDrive(data);
         } else if (provider === 'oneDrive') {
+          if (!oneDriveAvailable) {
+            throw new Error(
+              'OneDrive integration is not configured. Set VITE_ONEDRIVE_CLIENT_ID to enable OneDrive backups.'
+            );
+          }
           await exportTransactionsToOneDrive(data);
         } else if (provider === 'icloudDrive') {
           await exportTransactionsToICloud(data);
@@ -431,7 +449,8 @@ export default function InventoryTab() {
       ensurePermission,
       resetCsvAutoSaveHandles,
       selectedDataSource,
-      transactionHistory
+      transactionHistory,
+      oneDriveAvailable
     ]
   );
 
@@ -551,6 +570,10 @@ export default function InventoryTab() {
   };
 
   const handleOneDriveExport = async () => {
+    if (!oneDriveAvailable) {
+      alert(msg.oneDriveUnavailable);
+      return;
+    }
     if (!window.confirm(msg.exportOneDriveConfirm)) return;
     try {
       await exportTransactionsToOneDrive(transactionHistory);
@@ -564,6 +587,10 @@ export default function InventoryTab() {
   };
 
   const handleOneDriveImport = async () => {
+    if (!oneDriveAvailable) {
+      alert(msg.oneDriveUnavailable);
+      return;
+    }
     try {
       const list = await importTransactionsFromOneDrive();
       if (!list || list.length === 0) {
@@ -1501,6 +1528,7 @@ export default function InventoryTab() {
               autoSaveEnabled={autoSaveEnabled}
               onToggleAutoSave={handleAutoSaveToggle}
               autoSaveState={autoSaveState}
+              oneDriveAvailable={oneDriveAvailable}
             />
           )}
         </div>
