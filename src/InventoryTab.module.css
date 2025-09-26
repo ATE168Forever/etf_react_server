@@ -58,6 +58,13 @@
   color: inherit;
 }
 
+.oneDriveHint {
+  margin-top: -4px;
+  margin-bottom: 12px;
+  font-size: 0.75rem;
+  color: #b91c1c;
+}
+
 .autoSaveRow {
   display: flex;
   align-items: center;

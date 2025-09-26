@@ -1,10 +1,46 @@
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 
+const importMetaEnv = (() => {
+  try {
+    return Function('return typeof import.meta !== "undefined" ? import.meta.env : undefined;')();
+  } catch {
+    return undefined;
+  }
+})();
+
 function resolveWindowString(key, { fallback = '', allowPercentPlaceholders = false } = {}) {
-  if (typeof window === 'undefined') return fallback;
-  const value = window[key];
-  if (typeof value !== 'string') return fallback;
-  const trimmed = value.trim();
+  let rawValue = null;
+
+  if (typeof window !== 'undefined') {
+    rawValue = window[key];
+  }
+
+  const maybeUseImportMetaEnv = value => {
+    const shouldFallback =
+      typeof value !== 'string' ||
+      !value.trim() ||
+      value.trim() === 'undefined' ||
+      (!allowPercentPlaceholders && /^%[A-Z0-9_]+%$/i.test(value.trim()));
+    if (!shouldFallback) {
+      return value;
+    }
+    if (importMetaEnv) {
+      const envKey = `VITE_${key}`;
+      const envValue = importMetaEnv[envKey];
+      if (typeof envValue === 'string') {
+        return envValue;
+      }
+    }
+    return null;
+  };
+
+  rawValue = maybeUseImportMetaEnv(rawValue);
+
+  if (typeof rawValue !== 'string') {
+    return fallback;
+  }
+
+  const trimmed = rawValue.trim();
   if (!trimmed || trimmed === 'undefined') return fallback;
   if (!allowPercentPlaceholders && /^%[A-Z0-9_]+%$/i.test(trimmed)) {
     return fallback;
