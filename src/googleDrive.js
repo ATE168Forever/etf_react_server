@@ -115,15 +115,31 @@ export async function exportTransactionsToDrive(list) {
   });
 }
 
-export async function importTransactionsFromDrive() {
+export async function importTransactionsFromDrive(options = {}) {
+  const { includeMetadata = false, metadataOnly = false } = options;
   await initDrive();
   await ensureAccessToken();
+  const fields = metadataOnly || includeMetadata ? 'files(id, modifiedTime)' : 'files(id)';
   const list = await window.gapi.client.drive.files.list({
     q: "name='inventory_backup.csv' and trashed=false",
-    fields: 'files(id)'
+    fields,
+    orderBy: 'modifiedTime desc',
+    pageSize: 1
   });
   if (!list.result.files || list.result.files.length === 0) return null;
-  const fileId = list.result.files[0].id;
+  const fileEntry = list.result.files[0];
+  const fileId = fileEntry.id;
+  const modifiedTime = fileEntry?.modifiedTime ? Date.parse(fileEntry.modifiedTime) : null;
+  if (metadataOnly) {
+    return { modifiedTime: Number.isFinite(modifiedTime) ? modifiedTime : null };
+  }
   const file = await window.gapi.client.drive.files.get({ fileId, alt: 'media' });
-  return transactionsFromCsv(file.body);
+  const transactions = transactionsFromCsv(file.body);
+  if (includeMetadata) {
+    return {
+      list: transactions,
+      modifiedTime: Number.isFinite(modifiedTime) ? modifiedTime : null
+    };
+  }
+  return transactions;
 }
