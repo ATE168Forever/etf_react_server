@@ -4,7 +4,11 @@ import CreatableSelect from 'react-select/creatable';
 import { API_HOST, HOST_URL } from './config';
 import { fetchWithCache } from './api';
 import { fetchDividendsByYears } from './dividendApi';
-import { migrateTransactionHistory, saveTransactionHistory } from './utils/transactionStorage';
+import {
+  migrateTransactionHistory,
+  saveTransactionHistory,
+  getTransactionHistoryUpdatedAt
+} from './utils/transactionStorage';
 import { exportTransactionsToDrive, importTransactionsFromDrive } from './googleDrive';
 import { exportTransactionsToOneDrive, importTransactionsFromOneDrive } from './oneDrive';
 import { exportTransactionsToICloud, importTransactionsFromICloud } from './icloud';
@@ -51,6 +55,9 @@ export default function InventoryTab() {
   const [selectedDataSource, setSelectedDataSource] = useState('csv');
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
   const [autoSaveState, setAutoSaveState] = useState({ status: 'idle', provider: 'csv' });
+  const [transactionHistoryUpdatedAt, setTransactionHistoryUpdatedAt] = useState(
+    () => getTransactionHistoryUpdatedAt() ?? 0
+  );
   const [latestPrices, setLatestPrices] = useState({});
   const [dividendData, setDividendData] = useState([]);
   const { lang } = useLanguage();
@@ -278,6 +285,18 @@ export default function InventoryTab() {
   };
   const msg = text[lang];
 
+  const mapTransactionsWithStockNames = useCallback(
+    list =>
+      (Array.isArray(list) ? list : []).map(item => {
+        const stock = stockList.find(s => s.stock_id === item.stock_id);
+        return {
+          ...item,
+          stock_name: item.stock_name || (stock ? stock.stock_name : '')
+        };
+      }),
+    [stockList]
+  );
+
   const ensurePermission = useCallback(async (handle, mode = 'readwrite') => {
     if (!handle) return false;
     if (!handle.queryPermission || !handle.requestPermission) {
@@ -298,6 +317,148 @@ export default function InventoryTab() {
     autoSaveDirectoryHandleRef.current = null;
     autoSaveFileHandleRef.current = null;
   }, []);
+
+  const maybeRestoreFromBackup = useCallback(
+    async provider => {
+      const localUpdatedAt = transactionHistoryUpdatedAt ?? getTransactionHistoryUpdatedAt() ?? 0;
+      try {
+        if (provider === 'csv') {
+          if (typeof window === 'undefined' || typeof window.showDirectoryPicker !== 'function') {
+            return null;
+          }
+
+          let directoryHandle = autoSaveDirectoryHandleRef.current;
+          if (!directoryHandle) {
+            directoryHandle = await window.showDirectoryPicker({ id: 'inventory-auto-save' });
+            autoSaveDirectoryHandleRef.current = directoryHandle;
+            autoSaveFileHandleRef.current = null;
+          }
+
+          if (!(await ensurePermission(directoryHandle, 'readwrite'))) {
+            resetCsvAutoSaveHandles();
+            return null;
+          }
+
+          let fileHandle = autoSaveFileHandleRef.current;
+          if (!fileHandle) {
+            try {
+              fileHandle = await directoryHandle.getFileHandle('inventory_backup.csv');
+            } catch (error) {
+              if (error?.name === 'NotFoundError' || error?.code === 'NotFoundError') {
+                return null;
+              }
+              throw error;
+            }
+            autoSaveFileHandleRef.current = fileHandle;
+          }
+
+          if (!(await ensurePermission(fileHandle, 'read'))) {
+            return null;
+          }
+
+          const file = await fileHandle.getFile();
+          const modifiedTime = Number.isFinite(file?.lastModified) ? file.lastModified : null;
+          if (modifiedTime && modifiedTime <= localUpdatedAt) {
+            return null;
+          }
+
+          const text = await file.text();
+          const imported = mapTransactionsWithStockNames(transactionsFromCsv(text));
+          if (!Array.isArray(imported) || imported.length === 0) {
+            return null;
+          }
+
+          setTransactionHistory(imported);
+          saveTransactionHistory(imported);
+          const timestamp = modifiedTime || Date.now();
+          setTransactionHistoryUpdatedAt(timestamp);
+
+          let relativePath = '';
+          if (typeof directoryHandle.resolve === 'function') {
+            try {
+              const segments = await directoryHandle.resolve(fileHandle);
+              if (Array.isArray(segments) && segments.length > 1) {
+                relativePath = segments.slice(0, -1).join('/');
+              }
+            } catch (resolveError) {
+              console.warn('Failed to resolve file path', resolveError);
+            }
+          }
+
+          const basePath = directoryHandle?.name ? String(directoryHandle.name) : '';
+          const combinedPath = relativePath ? `${basePath}/${relativePath}` : basePath;
+
+          setAutoSaveState({
+            status: 'success',
+            timestamp,
+            provider: 'csv',
+            location: {
+              type: 'fileSystem',
+              path: combinedPath,
+              filename: file?.name || 'inventory_backup.csv'
+            }
+          });
+
+          return imported;
+        }
+
+        if (provider === 'googleDrive') {
+          const result = await importTransactionsFromDrive({ includeMetadata: true });
+          const list = Array.isArray(result) ? result : result?.list;
+          if (!Array.isArray(list) || list.length === 0) {
+            return null;
+          }
+          const remoteModified =
+            !Array.isArray(result) && Number.isFinite(result?.modifiedTime) ? result.modifiedTime : null;
+          if (remoteModified && remoteModified <= localUpdatedAt) {
+            return null;
+          }
+          const imported = mapTransactionsWithStockNames(list);
+          if (imported.length === 0) {
+            return null;
+          }
+          setTransactionHistory(imported);
+          saveTransactionHistory(imported);
+          const timestamp = remoteModified || Date.now();
+          setTransactionHistoryUpdatedAt(timestamp);
+          setAutoSaveState({ status: 'success', timestamp, provider: 'googleDrive' });
+          return imported;
+        }
+
+        if (provider === 'oneDrive') {
+          const result = await importTransactionsFromOneDrive({ includeMetadata: true });
+          const list = Array.isArray(result) ? result : result?.list;
+          if (!Array.isArray(list) || list.length === 0) {
+            return null;
+          }
+          const remoteModified =
+            !Array.isArray(result) && Number.isFinite(result?.modifiedTime) ? result.modifiedTime : null;
+          if (remoteModified && remoteModified <= localUpdatedAt) {
+            return null;
+          }
+          const imported = mapTransactionsWithStockNames(list);
+          if (imported.length === 0) {
+            return null;
+          }
+          setTransactionHistory(imported);
+          saveTransactionHistory(imported);
+          const timestamp = remoteModified || Date.now();
+          setTransactionHistoryUpdatedAt(timestamp);
+          setAutoSaveState({ status: 'success', timestamp, provider: 'oneDrive' });
+          return imported;
+        }
+      } catch (error) {
+        console.error('Auto-save backup sync failed', error);
+      }
+      return null;
+    },
+    [
+      ensurePermission,
+      mapTransactionsWithStockNames,
+      transactionHistoryUpdatedAt,
+      resetCsvAutoSaveHandles
+    ]
+  );
 
   const runAutoSave = useCallback(
     async (list, options = {}) => {
@@ -444,14 +605,29 @@ export default function InventoryTab() {
   );
 
   const handleAutoSaveToggle = useCallback(() => {
-    setAutoSaveEnabled(prev => {
-      const next = !prev;
-      if (!prev) {
-        runAutoSave(transactionHistory, { force: true });
+    if (autoSaveEnabled) {
+      setAutoSaveEnabled(false);
+      return;
+    }
+
+    (async () => {
+      let syncedList = null;
+      try {
+        syncedList = await maybeRestoreFromBackup(selectedDataSource);
+      } catch (error) {
+        console.error('Auto-save sync before enabling failed', error);
       }
-      return next;
-    });
-  }, [runAutoSave, transactionHistory]);
+      setAutoSaveEnabled(true);
+      const dataToPersist = Array.isArray(syncedList) ? syncedList : transactionHistory;
+      runAutoSave(dataToPersist, { force: true, provider: selectedDataSource });
+    })();
+  }, [
+    autoSaveEnabled,
+    maybeRestoreFromBackup,
+    runAutoSave,
+    selectedDataSource,
+    transactionHistory
+  ]);
 
   const handleExport = useCallback(() => {
     const csv = transactionsToCsv(transactionHistory);
@@ -471,13 +647,7 @@ export default function InventoryTab() {
     const reader = new FileReader();
     reader.onload = event => {
       const text = event.target.result;
-      const imported = transactionsFromCsv(text).map(item => {
-        const stock = stockList.find(s => s.stock_id === item.stock_id);
-        return {
-          ...item,
-          stock_name: stock ? stock.stock_name : item.stock_name || ''
-        };
-      });
+      const imported = mapTransactionsWithStockNames(transactionsFromCsv(text));
       if (imported.length === 0) {
         e.target.value = '';
         return;
@@ -532,13 +702,7 @@ export default function InventoryTab() {
           return;
         }
       }
-      const enriched = list.map(item => {
-        const stock = stockList.find(s => s.stock_id === item.stock_id);
-        return {
-          ...item,
-          stock_name: item.stock_name || (stock ? stock.stock_name : '')
-        };
-      });
+      const enriched = mapTransactionsWithStockNames(list);
       setTransactionHistory(enriched);
       saveTransactionHistory(enriched);
       alert(msg.importDriveSuccess);
@@ -572,13 +736,7 @@ export default function InventoryTab() {
           return;
         }
       }
-      const enriched = list.map(item => {
-        const stock = stockList.find(s => s.stock_id === item.stock_id);
-        return {
-          ...item,
-          stock_name: item.stock_name || (stock ? stock.stock_name : '')
-        };
-      });
+      const enriched = mapTransactionsWithStockNames(list);
       setTransactionHistory(enriched);
       saveTransactionHistory(enriched);
       alert(msg.importOneDriveSuccess);
@@ -612,13 +770,7 @@ export default function InventoryTab() {
           return;
         }
       }
-      const enriched = list.map(item => {
-        const stock = stockList.find(s => s.stock_id === item.stock_id);
-        return {
-          ...item,
-          stock_name: item.stock_name || (stock ? stock.stock_name : '')
-        };
-      });
+      const enriched = mapTransactionsWithStockNames(list);
       setTransactionHistory(enriched);
       saveTransactionHistory(enriched);
       alert(msg.importICloudSuccess);
@@ -713,6 +865,7 @@ export default function InventoryTab() {
 
   useEffect(() => {
     saveTransactionHistory(transactionHistory);
+    setTransactionHistoryUpdatedAt(Date.now());
   }, [transactionHistory]);
 
   useEffect(() => {

@@ -12,6 +12,24 @@ Running `pnpm install --frozen-lockfile` populates the `node_modules` folder bas
 
 The `pnpm-lock.yaml` file should be kept under version control to guarantee identical installs in CI/CD and local environments.
 
+## Running unit tests
+
+Jest powers the project's unit tests. Run the entire suite locally with:
+
+```bash
+pnpm test
+```
+
+To focus on the auto-save coverage that verifies CSV, Google Drive, OneDrive, and iCloud Drive behaviour, target the specific suite:
+
+```bash
+pnpm test -- InventoryAutoSave.test.jsx
+```
+
+Codex does not run Jest automatically—you should execute the tests yourself before sending changes for review so that regressions are caught early.
+
+If you prefer to rely on automation, the repository ships with a GitHub Actions workflow at `.github/workflows/ci.yml`. It installs dependencies with pnpm and runs `pnpm test` on every pull request targeting `main`, so opening a PR will trigger the unit test suite in GitHub's infrastructure even when Codex cannot execute the command locally.
+
 To build and run the production image the Dockerfile also installs dependencies from the lockfile:
 
 ```bash
