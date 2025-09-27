@@ -1,5 +1,5 @@
 /* eslint-env jest */
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 // Mock asset imports used by App
 jest.mock('../src/assets/conceptB-ETF-Life-dark.svg', () => 'data:image/svg+xml;base64,PHN2Zy8+');
 jest.mock('../src/assets/conceptB-ETF-Life-light.svg', () => 'data:image/svg+xml;base64,PHN2Zy8+');
@@ -19,15 +19,35 @@ beforeAll(() => {
 
 test('App remembers calendar visibility', async () => {
   localStorage.clear();
-  const { unmount } = render(<App />);
-  const dividendTab = screen.getByRole('button', { name: 'ETF 配息查詢' });
-  fireEvent.click(dividendTab);
+  localStorage.setItem('lang', 'zh');
+  let unmount;
+  await act(async () => {
+    ({ unmount } = render(<App />));
+  });
+
+  const dividendTab = await screen.findByRole('button', { name: 'ETF 配息查詢' });
+  await act(async () => {
+    fireEvent.click(dividendTab);
+  });
+
   const hideBtn = await screen.findByRole('button', { name: '隱藏月曆' });
-  fireEvent.click(hideBtn);
-  unmount();
-  render(<App />);
-  const dividendTab2 = screen.getByRole('button', { name: 'ETF 配息查詢' });
-  fireEvent.click(dividendTab2);
+  await act(async () => {
+    fireEvent.click(hideBtn);
+  });
+
+  await act(async () => {
+    unmount();
+  });
+
+  await act(async () => {
+    render(<App />);
+  });
+
+  const dividendTab2 = await screen.findByRole('button', { name: 'ETF 配息查詢' });
+  await act(async () => {
+    fireEvent.click(dividendTab2);
+  });
+
   const showBtn = await screen.findByRole('button', { name: '顯示月曆' });
   expect(showBtn).toBeInTheDocument();
 });

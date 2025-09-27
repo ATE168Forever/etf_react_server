@@ -50,6 +50,21 @@ function calcIncomeGoalInfo(dividend, price, goal, freq = 12, lang = 'zh') {
     : `\n月報酬${goal.toLocaleString()}需: ${lotsNeeded}張\n成本: ${cost}元`;
 }
 
+const isChineseLanguage = (lang) => lang && lang.toLowerCase().startsWith('zh');
+
+const getInitialLanguage = () => {
+  if (typeof window === 'undefined') return 'zh';
+
+  const stored = window.localStorage?.getItem('lang');
+  if (stored) return stored;
+
+  const browserLanguages = window.navigator?.languages?.length
+    ? window.navigator.languages
+    : [window.navigator?.language];
+
+  return browserLanguages?.some(isChineseLanguage) ? 'zh' : 'en';
+};
+
 function App() {
   // Tab state
   const [tab, setTab] = useState('home');
@@ -103,7 +118,7 @@ function App() {
 
 
   // Language
-  const [lang, setLang] = useState(() => localStorage.getItem('lang') || 'zh');
+  const [lang, setLang] = useState(getInitialLanguage);
   useEffect(() => {
     localStorage.setItem('lang', lang);
   }, [lang]);
