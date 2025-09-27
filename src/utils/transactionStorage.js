@@ -1,13 +1,41 @@
 import Cookies from 'js-cookie';
 
 const STORAGE_KEY = 'my_transaction_history';
+const STORAGE_UPDATED_AT_KEY = 'my_transaction_history_updated_at';
+
+function readUpdatedAt() {
+  try {
+    const value = localStorage.getItem(STORAGE_UPDATED_AT_KEY);
+    if (!value) return null;
+    const timestamp = Number(value);
+    return Number.isFinite(timestamp) ? timestamp : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeUpdatedAt(timestamp) {
+  try {
+    const value = Number.isFinite(timestamp) ? String(timestamp) : String(Date.now());
+    localStorage.setItem(STORAGE_UPDATED_AT_KEY, value);
+  } catch {
+    // ignore storage write errors
+  }
+}
 
 export function migrateTransactionHistory() {
   // first check localStorage
   try {
     const localVal = localStorage.getItem(STORAGE_KEY);
     if (localVal) {
-      return JSON.parse(localVal);
+      const list = JSON.parse(localVal);
+      if (list) {
+        const current = readUpdatedAt();
+        if (current == null) {
+          writeUpdatedAt(Date.now());
+        }
+      }
+      return list;
     }
     } catch {
       // ignore localStorage errors
@@ -19,6 +47,7 @@ export function migrateTransactionHistory() {
     if (cookieVal) {
       const list = JSON.parse(cookieVal);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      writeUpdatedAt(Date.now());
       Cookies.remove(STORAGE_KEY);
       return list;
     }
@@ -39,4 +68,9 @@ export function readTransactionHistory() {
 
 export function saveTransactionHistory(list) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  writeUpdatedAt(Date.now());
+}
+
+export function getTransactionHistoryUpdatedAt() {
+  return readUpdatedAt();
 }
