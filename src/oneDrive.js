@@ -78,16 +78,37 @@ export async function exportTransactionsToOneDrive(list) {
   });
 }
 
-export async function importTransactionsFromOneDrive() {
+export async function importTransactionsFromOneDrive(options = {}) {
+  const { includeMetadata = false, metadataOnly = false } = options;
   const token = await initOneDrive();
   if (!token) return null;
   try {
+    const shouldSelect = includeMetadata || metadataOnly;
+    const metadataRes = await fetch(
+      `${GRAPH_BASE}/v1.0/me/drive/root:/inventory_backup.csv${shouldSelect ? '?$select=lastModifiedDateTime' : ''}`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    if (!metadataRes.ok) return null;
+    const metadata = await metadataRes.json();
+    const modifiedTime = metadata?.lastModifiedDateTime ? Date.parse(metadata.lastModifiedDateTime) : null;
+    if (metadataOnly) {
+      return { modifiedTime: Number.isFinite(modifiedTime) ? modifiedTime : null };
+    }
     const res = await fetch(`${GRAPH_BASE}/v1.0/me/drive/root:/inventory_backup.csv:/content`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) return null;
     const text = await res.text();
-    return transactionsFromCsv(text);
+    const transactions = transactionsFromCsv(text);
+    if (includeMetadata) {
+      return {
+        list: transactions,
+        modifiedTime: Number.isFinite(modifiedTime) ? modifiedTime : null
+      };
+    }
+    return transactions;
   } catch (err) {
     console.error('OneDrive download failed', err);
     return null;
