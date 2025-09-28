@@ -1,5 +1,5 @@
 /* eslint-env jest */
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 // Mock asset imports used by App
 jest.mock('../src/assets/conceptB-ETF-Life-dark.svg', () => 'data:image/svg+xml;base64,PHN2Zy8+');
 jest.mock('../src/assets/conceptB-ETF-Life-light.svg', () => 'data:image/svg+xml;base64,PHN2Zy8+');
@@ -18,9 +18,15 @@ beforeAll(() => {
 });
 
 test('calendar defaults to showing both ex and payment events', async () => {
-  render(<App />);
+  localStorage.clear();
+  localStorage.setItem('lang', 'zh');
+  await act(async () => {
+    render(<App />);
+  });
   const dividendTab = screen.getByRole('button', { name: 'ETF 配息查詢' });
-  fireEvent.click(dividendTab);
+  await act(async () => {
+    fireEvent.click(dividendTab);
+  });
   const bothBtn = await screen.findByRole('button', { name: '除息/發放日' });
   expect(bothBtn).toHaveClass('btn-selected');
 });
