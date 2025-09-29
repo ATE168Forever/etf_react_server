@@ -472,8 +472,8 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                     ) : (
                         <>
                             <tr style={{ background: '#d0ebff', fontWeight: 'bold' }}>
-                                <td>{lang === 'en' ? 'Monthly Dividend Cost' : '月配息成本'}</td>
-                                <td>{displayCostGrandTotal > 0 ? Math.round(displayCostGrandTotal).toLocaleString() : ''}</td>
+                                <td>{lang === 'en' ? 'Dividend Cost' : '配息成本'}</td>
+                                <td></td>
                                 {displayCostPerMonth.map((total, idx) => (
                                     <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
                                         {total > 0 ? Math.round(total).toLocaleString() : ''}
