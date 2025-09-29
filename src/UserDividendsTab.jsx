@@ -92,6 +92,15 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         }, 0);
     }
 
+    const formatLots = (quantity) => {
+        if (!quantity) return '0';
+        const lots = Number(quantity) / 1000;
+        if (!Number.isFinite(lots) || lots <= 0) {
+            return '0';
+        }
+        return lots.toFixed(3).replace(/\.?0+$/, '');
+    };
+
     // 1. 取得持有股票清單（包含年末持股與當年度已領息後賣出的持股）
     const stockIdSet = new Set(history.map(h => h.stock_id));
     const holdingIds = Array.from(stockIdSet).filter(id => getHolding(id, `${selectedYear}-12-31`) > 0);
@@ -333,6 +342,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     });
 
     const displayCostPerMonth = Array(12).fill(0);
+    const costDetailsPerMonth = Array.from({ length: 12 }, () => []);
     const displayTotalsPerMonth = Array(12).fill(0);
     filteredStocks.forEach(stock => {
         for (let idx = 0; idx < 12; idx++) {
@@ -341,6 +351,11 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 const cost = Number(cell.cost_basis) || 0;
                 if (cost > 0) {
                     displayCostPerMonth[idx] += cost;
+                    costDetailsPerMonth[idx].push({
+                        stockId: stock.stock_id,
+                        stockName: stock.stock_name,
+                        quantity: cell.quantity
+                    });
                 }
                 displayTotalsPerMonth[idx] += cell.dividend * cell.quantity;
             }
@@ -474,11 +489,38 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                             <tr style={{ background: '#d0ebff', fontWeight: 'bold' }}>
                                 <td>{lang === 'en' ? 'Dividend Cost' : '配息成本'}</td>
                                 <td></td>
-                                {displayCostPerMonth.map((total, idx) => (
-                                    <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
-                                        {total > 0 ? Math.round(total).toLocaleString() : ''}
-                                    </td>
-                                ))}
+                                {displayCostPerMonth.map((total, idx) => {
+                                    const details = costDetailsPerMonth[idx];
+                                    const hasTooltip = details.length > 0;
+                                    const tooltip = hasTooltip
+                                        ? [
+                                            lang === 'en' ? 'Holdings before ex-dividend:' : '除息前持有：',
+                                            ...details.map(detail => {
+                                                const label = detail.stockName
+                                                    ? `${detail.stockId} ${detail.stockName}`.trim()
+                                                    : detail.stockId;
+                                                const lots = formatLots(detail.quantity);
+                                                return lang === 'en'
+                                                    ? `${label} - ${lots} lots`
+                                                    : `${label} - ${lots} 張`;
+                                            })
+                                        ].join('\n')
+                                        : '';
+                                    return (
+                                        <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
+                                            {total > 0 ? (
+                                                hasTooltip ? (
+                                                    <span
+                                                        title={tooltip}
+                                                        style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
+                                                    >
+                                                        {Math.round(total).toLocaleString()}
+                                                    </span>
+                                                ) : Math.round(total).toLocaleString()
+                                            ) : ''}
+                                        </td>
+                                    );
+                                })}
                             </tr>
                             <tr style={{ background: '#ffe066', fontWeight: 'bold' }}>
                                 <td>{lang === 'en' ? 'Monthly Total' : '月合計'}</td>
