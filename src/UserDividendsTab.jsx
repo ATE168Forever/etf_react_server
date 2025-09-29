@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import DividendCalendar from './components/DividendCalendar';
 import { readTransactionHistory } from './utils/transactionStorage';
 import { HOST_URL, API_HOST } from './config';
@@ -12,6 +12,8 @@ function getTransactionHistory() {
         stock_id: item.stock_id,
         date: item.date || item.purchased_date,
         quantity: item.quantity,
+        price: item.price,
+        stock_name: item.stock_name,
         type: item.type || 'buy'
     }));
 }
@@ -35,6 +37,30 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const [monthFilters, setMonthFilters] = useState(() => Array(12).fill(false));
     const tableContainerRef = useRef(null);
     usePreserveScroll(tableContainerRef, 'userDividendsTableScroll');
+
+    const historyByStock = useMemo(() => {
+        const map = {};
+        history.forEach(item => {
+            if (!item?.stock_id) return;
+            const date = item.date || item.purchased_date;
+            if (!date) return;
+            if (!map[item.stock_id]) {
+                map[item.stock_id] = [];
+            }
+            map[item.stock_id].push({ ...item, date });
+        });
+        Object.keys(map).forEach(stockId => {
+            map[stockId].sort((a, b) => {
+                const timeA = new Date(a.date).getTime();
+                const timeB = new Date(b.date).getTime();
+                if (Number.isNaN(timeA) && Number.isNaN(timeB)) return 0;
+                if (Number.isNaN(timeA)) return 1;
+                if (Number.isNaN(timeB)) return -1;
+                return timeA - timeB;
+            });
+        });
+        return map;
+    }, [history]);
     useEffect(() => {
         setHistory(getTransactionHistory());
     }, []);
@@ -141,6 +167,46 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     myStocks.forEach(stock => {
         dividendTable[stock.stock_id] = {};
     });
+
+    const getAverageCostBeforeDate = (stockId, dateStr) => {
+        if (!dateStr) return 0;
+        const entries = historyByStock[stockId];
+        if (!entries || entries.length === 0) return 0;
+        const targetTime = new Date(dateStr).getTime();
+        if (Number.isNaN(targetTime)) return 0;
+        let totalQty = 0;
+        let totalCost = 0;
+        for (const entry of entries) {
+            const entryTime = new Date(entry.date).getTime();
+            if (Number.isNaN(entryTime)) {
+                continue;
+            }
+            if (entryTime > targetTime) {
+                break;
+            }
+            const qty = Number(entry.quantity);
+            if (!Number.isFinite(qty) || qty <= 0) {
+                continue;
+            }
+            if (entry.type === 'sell') {
+                if (totalQty <= 0) continue;
+                const sellQty = Math.min(qty, totalQty);
+                if (sellQty > 0) {
+                    const avgCost = totalCost / totalQty;
+                    totalQty -= sellQty;
+                    totalCost -= avgCost * sellQty;
+                }
+            } else {
+                const price = Number(entry.price);
+                if (!Number.isFinite(price)) continue;
+                totalQty += qty;
+                totalCost += qty * price;
+            }
+        }
+        if (totalQty <= 0) return 0;
+        return totalCost / totalQty;
+    };
+
     dividendData.forEach(item => {
         const thisDate = item.dividend_date;
         if (!thisDate) return;
@@ -148,13 +214,17 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         const stock_id = item.stock_id;
         const dividend = parseFloat(item.dividend);
         const quantity = getHolding(stock_id, thisDate);
+        const avgCost = getAverageCostBeforeDate(stock_id, thisDate);
+        const costBasis = avgCost > 0 && quantity > 0 ? avgCost * quantity : 0;
         dividendTable[stock_id][month] = {
             dividend,
             quantity,
             dividend_date: item.dividend_date,
             payment_date: item.payment_date,
             last_close_price: item.last_close_price,
-            dividend_yield: item.dividend_yield
+            dividend_yield: item.dividend_yield,
+            avg_cost: avgCost,
+            cost_basis: costBasis
         };
     });
 
@@ -262,16 +332,22 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         });
     });
 
+    const displayCostPerMonth = Array(12).fill(0);
     const displayTotalsPerMonth = Array(12).fill(0);
     filteredStocks.forEach(stock => {
         for (let idx = 0; idx < 12; idx++) {
             const cell = dividendTable[stock.stock_id][idx];
             if (cell && cell.dividend && cell.quantity) {
+                const cost = Number(cell.cost_basis) || 0;
+                if (cost > 0) {
+                    displayCostPerMonth[idx] += cost;
+                }
                 displayTotalsPerMonth[idx] += cell.dividend * cell.quantity;
             }
         }
     });
 
+    const displayCostGrandTotal = displayCostPerMonth.reduce((sum, val) => sum + val, 0);
     const displayGrandTotal = displayTotalsPerMonth.reduce((sum, val) => sum + val, 0);
 
     let displayMonthsForAverage = 0;
@@ -394,69 +470,80 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                             </td>
                         </tr>
                     ) : (
-                        filteredStocks.map(stock => {
-                            const stockTotal = getTotalForStock(stock.stock_id);
-                            const { sumYield, monthsCount: yieldMonthsCount } = getYieldInfo(stock.stock_id);
-                            return (
-                                <tr key={stock.stock_id + stock.stock_name}>
-                                    <td className="stock-col">
-                                        <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
-                                            {stock.stock_id} {stock.stock_name}
-                                        </a>
+                        <>
+                            <tr style={{ background: '#d0ebff', fontWeight: 'bold' }}>
+                                <td>{lang === 'en' ? 'Monthly Dividend Cost' : '月配息成本'}</td>
+                                <td>{displayCostGrandTotal > 0 ? Math.round(displayCostGrandTotal).toLocaleString() : ''}</td>
+                                {displayCostPerMonth.map((total, idx) => (
+                                    <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
+                                        {total > 0 ? Math.round(total).toLocaleString() : ''}
                                     </td>
-                                    <td>{stockTotal > 0 ? (() => {
-                                        const avgYield = yieldMonthsCount > 0 ? sumYield / yieldMonthsCount : 0;
-                                        const estAnnual = avgYield * 12;
-                                        return (
-                                            <span
-                                                title={lang === 'en'
-                                                    ? `Latest close: ${latestClosePrice[stock.stock_id]?.price || '-'}\nSum yield: ${sumYield.toFixed(1)}%\nEst. annual yield: ${estAnnual.toFixed(1)}%`
-                                                    : `最新收盤價: ${latestClosePrice[stock.stock_id]?.price || '-'}\n加總殖利率: ${sumYield.toFixed(1)}%\n預估年化殖利率: ${estAnnual.toFixed(1)}%`}
-                                                style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
-                                            >
-                                                {Math.round(stockTotal).toLocaleString()}
-                                            </span>
-                                        );
-                                    })() : ''}</td>
-                                    {MONTHS.map((m, idx) => {
-                                        const cell = dividendTable[stock.stock_id][idx];
-                                        if (!cell || !cell.dividend || !cell.quantity) return <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}></td>;
-                                        const total = cell.dividend * cell.quantity;
-                                        return (
-                                            <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
+                                ))}
+                            </tr>
+                            <tr style={{ background: '#ffe066', fontWeight: 'bold' }}>
+                                <td>{lang === 'en' ? 'Monthly Total' : '月合計'}</td>
+                                <td>
+                                    {displayGrandTotal > 0 ? (
+                                        <span
+                                            title={lang === 'en'
+                                                ? `Average per month: ${Math.round(displayAvgPerMonth).toLocaleString()}`
+                                                : `每月平均領取: ${Math.round(displayAvgPerMonth).toLocaleString()}`}
+                                            style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
+                                        >
+                                            {Math.round(displayGrandTotal).toLocaleString()}
+                                        </span>
+                                    ) : ''}
+                                </td>
+                                {displayTotalsPerMonth.map((total, idx) => (
+                                    <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>{total > 0 ? Math.round(total).toLocaleString() : ''}</td>
+                                ))}
+                            </tr>
+                            {filteredStocks.map(stock => {
+                                const stockTotal = getTotalForStock(stock.stock_id);
+                                const { sumYield, monthsCount: yieldMonthsCount } = getYieldInfo(stock.stock_id);
+                                return (
+                                    <tr key={stock.stock_id + stock.stock_name}>
+                                        <td className="stock-col">
+                                            <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
+                                                {stock.stock_id} {stock.stock_name}
+                                            </a>
+                                        </td>
+                                        <td>{stockTotal > 0 ? (() => {
+                                            const avgYield = yieldMonthsCount > 0 ? sumYield / yieldMonthsCount : 0;
+                                            const estAnnual = avgYield * 12;
+                                            return (
                                                 <span
                                                     title={lang === 'en'
-                                                        ? `Shares held: ${cell.quantity} (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} lots)\nDividend per share: ${cell.dividend} \nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
-                                                        : `持有數量: ${cell.quantity} 股 (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)\n每股配息: ${cell.dividend} 元\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`}
+                                                        ? `Latest close: ${latestClosePrice[stock.stock_id]?.price || '-'}\nSum yield: ${sumYield.toFixed(1)}%\nEst. annual yield: ${estAnnual.toFixed(1)}%`
+                                                        : `最新收盤價: ${latestClosePrice[stock.stock_id]?.price || '-'}\n加總殖利率: ${sumYield.toFixed(1)}%\n預估年化殖利率: ${estAnnual.toFixed(1)}%`}
                                                     style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
                                                 >
-                                                    {total > 0 ? Math.round(total).toLocaleString() : ''}
+                                                    {Math.round(stockTotal).toLocaleString()}
                                                 </span>
-                                            </td>
-                                        );
-                                    })}
-                                </tr>
-                            );
-                        })
+                                            );
+                                        })() : ''}</td>
+                                        {MONTHS.map((m, idx) => {
+                                            const cell = dividendTable[stock.stock_id][idx];
+                                            if (!cell || !cell.dividend || !cell.quantity) return <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}></td>;
+                                            const total = cell.dividend * cell.quantity;
+                                            return (
+                                                <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
+                                                    <span
+                                                        title={lang === 'en'
+                                                            ? `Shares held: ${cell.quantity} (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} lots)\nDividend per share: ${cell.dividend} \nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
+                                                            : `持有數量: ${cell.quantity} 股 (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)\n每股配息: ${cell.dividend} 元\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`}
+                                                        style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
+                                                    >
+                                                        {total > 0 ? Math.round(total).toLocaleString() : ''}
+                                                    </span>
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                );
+                            })}
+                        </>
                     )}
-                    <tr style={{ background: '#ffe066', fontWeight: 'bold' }}>
-                        <td>{lang === 'en' ? 'Monthly Total' : '月合計'}</td>
-                        <td>
-                            {displayGrandTotal > 0 ? (
-                                <span
-                                    title={lang === 'en'
-                                        ? `Average per month: ${Math.round(displayAvgPerMonth).toLocaleString()}`
-                                        : `每月平均領取: ${Math.round(displayAvgPerMonth).toLocaleString()}`}
-                                    style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
-                                >
-                                    {Math.round(displayGrandTotal).toLocaleString()}
-                                </span>
-                            ) : ''}
-                        </td>
-                        {displayTotalsPerMonth.map((total, idx) => (
-                            <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>{total > 0 ? Math.round(total).toLocaleString() : ''}</td>
-                        ))}
-                    </tr>
                 </tbody>
             </table>
             </div>
