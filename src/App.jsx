@@ -204,7 +204,13 @@ function App() {
         const availableYearSet = new Set(filteredArr.map(item => new Date(item.dividend_date).getFullYear()));
         const yearList = Array.from(new Set([...ALLOWED_YEARS, ...availableYearSet])).sort((a, b) => b - a);
         setYears(yearList);
-        if (!yearList.includes(selectedYear)) setSelectedYear(yearList[0]);
+
+        if (availableYearSet.size > 0 && !availableYearSet.has(selectedYear)) {
+          const sortedAvailableYears = Array.from(availableYearSet).sort((a, b) => b - a);
+          setSelectedYear(sortedAvailableYears[0]);
+        } else if (!yearList.includes(selectedYear)) {
+          setSelectedYear(yearList[0]);
+        }
       } catch (error) {
         setError(error);
       } finally {
