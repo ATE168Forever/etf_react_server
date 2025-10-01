@@ -11,6 +11,7 @@ import {
   calculateDividendSummary,
   buildDividendGoalViewModel
 } from './utils/dividendGoalUtils';
+import { featureUpdates } from './featureUpdates';
 
 export default function HomeTab() {
   const [stats, setStats] = useState({ milestones: [], latest: [], tip: '' });
@@ -23,6 +24,7 @@ export default function HomeTab() {
   });
   const [transactionHistory, setTransactionHistory] = useState([]);
   const [dividendData, setDividendData] = useState([]);
+  const [showFeatureUpdates, setShowFeatureUpdates] = useState(false);
   const { t, lang } = useLanguage();
 
   useEffect(() => {
@@ -129,6 +131,84 @@ export default function HomeTab() {
 
   return (
     <div className="container" style={{ maxWidth: 800 }}>
+      <section className="mt-4">
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12
+          }}
+        >
+          <h5 style={{ marginBottom: 0 }}>{t('feature_updates')}</h5>
+          <button
+            type="button"
+            onClick={() => setShowFeatureUpdates((prev) => !prev)}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--color-border)',
+              borderRadius: 4,
+              padding: '4px 12px',
+              cursor: 'pointer'
+            }}
+            aria-expanded={showFeatureUpdates}
+          >
+            {showFeatureUpdates
+              ? t('hide_feature_updates')
+              : t('show_feature_updates')}
+          </button>
+        </div>
+        {showFeatureUpdates && (
+          <div
+            style={{
+              marginTop: 12,
+              border: '1px solid var(--color-border)',
+              borderRadius: 4,
+              overflow: 'hidden'
+            }}
+          >
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+              <thead style={{ background: 'var(--color-row-even)' }}>
+                <tr>
+                  <th
+                    style={{ textAlign: 'left', padding: '8px 12px', width: '20%' }}
+                  >
+                    {t('feature_update_date')}
+                  </th>
+                  <th
+                    style={{ textAlign: 'left', padding: '8px 12px', width: '20%' }}
+                  >
+                    {t('feature_update_category')}
+                  </th>
+                  <th style={{ textAlign: 'left', padding: '8px 12px' }}>
+                    {t('feature_update_summary')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {featureUpdates.map((update, idx) => (
+                  <tr
+                    key={`${update.date}-${update.category}-${idx}`}
+                    style={{
+                      background: idx % 2 === 0 ? 'transparent' : 'var(--color-row-even)'
+                    }}
+                  >
+                    <td style={{ padding: '8px 12px', verticalAlign: 'top' }}>
+                      {update.date}
+                    </td>
+                    <td style={{ padding: '8px 12px', verticalAlign: 'top' }}>
+                      {update.category}
+                    </td>
+                    <td style={{ padding: '8px 12px', verticalAlign: 'top' }}>
+                      {update.description}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
       <section className="mt-4">
         <h5>{t('site_stats')}</h5>
         <div style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'center', marginTop: 16 }}>
