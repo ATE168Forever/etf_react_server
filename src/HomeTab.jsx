@@ -11,7 +11,7 @@ import {
   calculateDividendSummary,
   buildDividendGoalViewModel
 } from './utils/dividendGoalUtils';
-import { featureUpdates } from './featureUpdates';
+import { getFeatureUpdates } from './featureUpdates';
 
 export default function HomeTab() {
   const [stats, setStats] = useState({ milestones: [], latest: [], tip: '' });
@@ -26,6 +26,7 @@ export default function HomeTab() {
   const [dividendData, setDividendData] = useState([]);
   const [showFeatureUpdates, setShowFeatureUpdates] = useState(false);
   const { t, lang } = useLanguage();
+  const featureUpdates = useMemo(() => getFeatureUpdates(lang), [lang]);
 
   useEffect(() => {
     let cancelled = false;
