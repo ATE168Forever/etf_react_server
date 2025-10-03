@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const DEFAULT_BREAKPOINT = 768;
 
@@ -18,6 +18,9 @@ export default function TooltipText({
 }) {
   const [isMobile, setIsMobile] = useState(() => getMatches(`(max-width: ${breakpoint}px)`));
   const [open, setOpen] = useState(false);
+  const [floatingStyle, setFloatingStyle] = useState(null);
+  const triggerRef = useRef(null);
+  const tooltipRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -43,6 +46,86 @@ export default function TooltipText({
       setOpen(false);
     }
   }, [isMobile, open]);
+
+  useEffect(() => {
+    if (!isMobile || !open) {
+      setFloatingStyle(null);
+    }
+  }, [isMobile, open]);
+
+  const updateFloatingPosition = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const schedule = typeof window.requestAnimationFrame === 'function'
+      ? window.requestAnimationFrame.bind(window)
+      : (callback) => window.setTimeout(callback, 0);
+
+    schedule(() => {
+      if (!triggerRef.current || !tooltipRef.current) {
+        return;
+      }
+
+      const margin = 16;
+      const triggerRect = triggerRef.current.getBoundingClientRect();
+      const tooltipRect = tooltipRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const maxWidth = Math.min(280, viewportWidth - margin * 2);
+      const tooltipWidth = Math.min(tooltipRect.width, maxWidth);
+
+      let left = triggerRect.left + triggerRect.width / 2;
+      const halfWidth = tooltipWidth / 2;
+
+      if (left - halfWidth < margin) {
+        left = margin + halfWidth;
+      } else if (left + halfWidth > viewportWidth - margin) {
+        left = viewportWidth - margin - halfWidth;
+      }
+
+      let top = triggerRect.bottom + 12;
+      if (top + tooltipRect.height > viewportHeight - margin) {
+        top = Math.max(triggerRect.top - tooltipRect.height - 12, margin);
+      }
+
+      setFloatingStyle({
+        top,
+        left,
+        maxWidth,
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return () => {};
+    }
+
+    if (!isMobile || !open) {
+      return () => {};
+    }
+
+    updateFloatingPosition();
+
+    const handleReposition = () => {
+      updateFloatingPosition();
+    };
+
+    window.addEventListener('resize', handleReposition);
+    window.addEventListener('scroll', handleReposition, true);
+
+    return () => {
+      window.removeEventListener('resize', handleReposition);
+      window.removeEventListener('scroll', handleReposition, true);
+    };
+  }, [isMobile, open, updateFloatingPosition]);
+
+  useEffect(() => {
+    if (isMobile && open) {
+      updateFloatingPosition();
+    }
+  }, [isMobile, open, tooltip, updateFloatingPosition]);
 
   const hasTooltip = typeof tooltip === 'string' ? tooltip.trim().length > 0 : Boolean(tooltip);
 
@@ -81,6 +164,7 @@ export default function TooltipText({
 
   return (
     <span
+      ref={triggerRef}
       className={combinedClassName}
       style={combinedStyle}
       title={isMobile ? undefined : tooltip}
@@ -93,7 +177,18 @@ export default function TooltipText({
     >
       {children}
       {isMobile && open && (
-        <span className="tooltip-inline">
+        <span
+          ref={tooltipRef}
+          className="tooltip-inline tooltip-inline-floating"
+          style={floatingStyle
+            ? {
+                top: `${floatingStyle.top}px`,
+                left: `${floatingStyle.left}px`,
+                maxWidth: `${floatingStyle.maxWidth}px`,
+                bottom: 'auto',
+              }
+            : undefined}
+        >
           {tooltipLines.map((line, idx) => (
             <span key={`${line}-${idx}`}>
               {line}
