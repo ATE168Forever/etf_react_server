@@ -2,7 +2,6 @@ export async function fetchWithCache(url, maxAge = 10 * 60 * 60 * 1000) {
   // maxAge controls how long cached data is considered "fresh" before we label it stale.
   const cacheKey = `cache:data:${url}`;
   const metaKey = `cache:meta:${url}`;
-  const headers = {};
   const getHeader = (res, key) => {
     if (!res || !res.headers) return null;
     if (typeof res.headers.get === 'function') {
@@ -49,10 +48,14 @@ export async function fetchWithCache(url, maxAge = 10 * 60 * 60 * 1000) {
   }
 
   const hasFreshCache = hasCachedData && age < maxAge;
-  if (meta?.etag) {
-    headers['If-None-Match'] = meta.etag;
-  } else if (meta?.lastModified) {
-    headers['If-Modified-Since'] = meta.lastModified;
+  const shouldSendValidators = hasFreshCache || (hasCachedData && age < maxAge * 2);
+  const headers = {};
+  if (shouldSendValidators) {
+    if (meta?.etag) {
+      headers['If-None-Match'] = meta.etag;
+    } else if (meta?.lastModified) {
+      headers['If-Modified-Since'] = meta.lastModified;
+    }
   }
 
   let response;
@@ -84,9 +87,9 @@ export async function fetchWithCache(url, maxAge = 10 * 60 * 60 * 1000) {
   }
 
   if (response.status === 304) {
-    if (hasCachedData) {
-      const etag = response.headers.get('ETag') || meta?.etag || null;
-      const lastModified = response.headers.get('Last-Modified') || meta?.lastModified || null;
+    if (hasCachedData && hasFreshCache) {
+      const etag = getHeader(response, 'ETag') || meta?.etag || null;
+      const lastModified = getHeader(response, 'Last-Modified') || meta?.lastModified || null;
       const timestamp = new Date().toISOString();
       try {
         localStorage.setItem(metaKey, JSON.stringify({ etag, lastModified, timestamp }));
