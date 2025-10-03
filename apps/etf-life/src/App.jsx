@@ -18,7 +18,6 @@ import { API_HOST } from './config';
 import { fetchWithCache } from './api';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
 import { fetchDividendsByYears, clearDividendsCache } from './dividendApi';
-import { parseNumeric } from './utils/numberUtils';
 
 const DEFAULT_MONTHLY_GOAL = 10000;
 
@@ -30,6 +29,19 @@ const hasPayload = (value) =>
   value !== undefined &&
   value !== null &&
   (typeof value === 'number' || (typeof value === 'string' && value.trim() !== ''));
+
+const parseNumeric = (value) => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : NaN;
+  }
+  if (typeof value === 'string') {
+    const cleaned = value
+      .replace(/[\s,]+/g, '')
+      .match(/[+-]?(?:\d+(?:\.\d*)?|\.\d+)/);
+    return cleaned ? Number(cleaned[0]) : NaN;
+  }
+  return NaN;
+};
 
 const DEFAULT_WATCH_GROUPS = [
   {
@@ -384,8 +396,8 @@ function App() {
         cell.dividend_yield = 0;
       }
 
-      const dividendValue = parseNumeric(item.dividend);
-      const yieldValue = parseNumeric(item.dividend_yield);
+      const dividendValue = Number(item.dividend);
+      const yieldValue = Number(item.dividend_yield);
       const hasRawDividend = item.dividend !== undefined && item.dividend !== null && `${item.dividend}`.trim() !== '';
       const hasRawYield = item.dividend_yield !== undefined && item.dividend_yield !== null && `${item.dividend_yield}`.trim() !== '';
 
@@ -459,7 +471,7 @@ function App() {
         let count = 0;
         for (let i = 0; i < 12; i++) {
           const cell = dividendTable[stock.stock_id]?.[i];
-          const y = parseNumeric(cell?.dividend_yield) || 0;
+          const y = parseFloat(cell?.dividend_yield) || 0;
           if (y > 0) {
             total += y;
             count += 1;
@@ -570,8 +582,8 @@ function App() {
       selectedStockIds.length === 0 || selectedStockIds.includes(item.stock_id)
     )
     .flatMap(item => {
-      const amount = parseNumeric(item.dividend);
-      const dividend_yield = parseNumeric(item.dividend_yield) || 0;
+      const amount = parseFloat(item.dividend);
+      const dividend_yield = parseFloat(item.dividend_yield) || 0;
       const arr = [];
       if (item.dividend_date) {
         arr.push({

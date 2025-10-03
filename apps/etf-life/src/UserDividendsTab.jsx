@@ -6,7 +6,6 @@ import { useLanguage } from './i18n';
 import usePreserveScroll from './hooks/usePreserveScroll';
 import { fetchWithCache } from './api';
 import TooltipText from './components/TooltipText';
-import { parseNumeric } from './utils/numberUtils';
 
 const MONTH_COL_WIDTH = 80;
 function getTransactionHistory() {
@@ -132,9 +131,9 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const calendarEvents = dividendData.flatMap(item => {
         const holdingDate = item.dividend_date || item.payment_date;
         const qty = getHolding(item.stock_id, holdingDate);
-        const dividend = parseNumeric(item.dividend);
+        const dividend = parseFloat(item.dividend);
         const amount = dividend * qty;
-        const dividend_yield = parseNumeric(item.dividend_yield) || 0;
+        const dividend_yield = parseFloat(item.dividend_yield) || 0;
         const arr = [];
         if (item.dividend_date) {
             arr.push({
@@ -223,7 +222,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         if (!thisDate) return;
         const month = new Date(thisDate).getMonth();
         const stock_id = item.stock_id;
-        const dividend = parseNumeric(item.dividend);
+        const dividend = parseFloat(item.dividend);
         const quantity = getHolding(stock_id, thisDate);
         const avgCost = getAverageCostBeforeDate(stock_id, thisDate);
         const costBasis = avgCost > 0 && quantity > 0 ? avgCost * quantity : 0;
@@ -254,7 +253,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
             if (cell && cell.dividend && cell.quantity) {
                 const amt = cell.dividend * cell.quantity;
                 totalPerStock[stock.stock_id] += amt;
-                totalYield[stock.stock_id] += parseNumeric(cell.dividend_yield) || 0;
+                totalYield[stock.stock_id] += parseFloat(cell.dividend_yield) || 0;
                 // monthsCount should reflect the month of the payout
                 monthsCount[stock.stock_id] = m + 1;
 
@@ -304,7 +303,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
             if (!monthFilters[idx]) continue;
             const cell = dividendTable[stockId][idx];
             if (cell && cell.dividend && cell.quantity) {
-                sumYield += parseNumeric(cell.dividend_yield) || 0;
+                sumYield += parseFloat(cell.dividend_yield) || 0;
                 lastMonth = idx + 1;
             }
         }

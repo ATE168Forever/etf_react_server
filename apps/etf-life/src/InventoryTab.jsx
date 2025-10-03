@@ -13,7 +13,6 @@ import { exportTransactionsToDrive, importTransactionsFromDrive } from './google
 import { exportTransactionsToOneDrive, importTransactionsFromOneDrive } from './oneDrive';
 import { exportTransactionsToICloud, importTransactionsFromICloud } from './icloud';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
-import { parseNumeric } from './utils/numberUtils';
 import AddTransactionModal from './components/AddTransactionModal';
 import SellModal from './components/SellModal';
 import TransactionHistoryTable from './components/TransactionHistoryTable';
@@ -846,7 +845,7 @@ export default function InventoryTab() {
         setDividendData(list);
         const priceMap = {};
         list.forEach(item => {
-          const price = parseNumeric(item.last_close_price);
+          const price = parseFloat(item.last_close_price);
           if (!item.stock_id || Number.isNaN(price)) return;
           if (!priceMap[item.stock_id] || new Date(item.dividend_date) > new Date(priceMap[item.stock_id].date)) {
             priceMap[item.stock_id] = { price, date: item.dividend_date };
