@@ -536,6 +536,17 @@ button:active {
   -webkit-overflow-scrolling: touch;
 }
 
+.table-more-btn-wrapper {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.table-more-btn-wrapper .more-btn {
+  margin-left: auto;
+  margin-right: auto;
+  display: inline-block;
+}
+
 .table-responsive thead th {
   position: sticky;
   top: 0;
