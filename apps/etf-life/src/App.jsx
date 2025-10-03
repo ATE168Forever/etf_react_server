@@ -396,15 +396,12 @@ function App() {
         cell.dividend_yield = 0;
       }
 
-      const rawDividend = item.dividend;
-      const rawYield = item.dividend_yield;
-      const hasRawDividend = hasPayload(rawDividend);
-      const hasRawYield = hasPayload(rawYield);
+      const dividendValue = Number(item.dividend);
+      const yieldValue = Number(item.dividend_yield);
+      const hasRawDividend = item.dividend !== undefined && item.dividend !== null && `${item.dividend}`.trim() !== '';
+      const hasRawYield = item.dividend_yield !== undefined && item.dividend_yield !== null && `${item.dividend_yield}`.trim() !== '';
 
-      const dividendValue = hasRawDividend ? parseNumeric(rawDividend) : NaN;
-      const yieldValue = hasRawYield ? parseNumeric(rawYield) : NaN;
-
-      if (hasRawDividend && Number.isFinite(dividendValue)) {
+      if (Number.isFinite(dividendValue)) {
         cell.dividend += dividendValue;
         cell.hasValidDividend = true;
         cell.hasPendingDividend = false;
@@ -412,7 +409,7 @@ function App() {
         cell.hasPendingDividend = true;
       }
 
-      if (hasRawYield && Number.isFinite(yieldValue)) {
+      if (Number.isFinite(yieldValue)) {
         cell.dividend_yield += yieldValue;
         cell.hasValidYield = true;
         cell.hasPendingYield = false;
