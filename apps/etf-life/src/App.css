@@ -778,7 +778,6 @@ button:active {
 
 .tooltip-text .tooltip-inline {
   display: block;
-  position: relative;
   margin-top: 6px;
   padding: 8px;
   border-radius: 6px;
@@ -791,4 +790,14 @@ button:active {
   z-index: 1;
   max-width: min(280px, calc(100vw - 48px));
   word-break: break-word;
+}
+
+.tooltip-text .tooltip-inline-floating {
+  position: fixed;
+  margin-top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 16px;
+  z-index: 1000;
+  max-width: min(280px, calc(100vw - 32px));
 }
