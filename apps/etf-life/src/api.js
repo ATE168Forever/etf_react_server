@@ -49,9 +49,9 @@ export async function fetchWithCache(url, maxAge = 10 * 60 * 60 * 1000) {
   }
 
   const hasFreshCache = hasCachedData && age < maxAge;
-  if (hasFreshCache && meta?.etag) {
+  if (meta?.etag) {
     headers['If-None-Match'] = meta.etag;
-  } else if (hasFreshCache && meta?.lastModified) {
+  } else if (meta?.lastModified) {
     headers['If-Modified-Since'] = meta.lastModified;
   }
 
@@ -84,13 +84,9 @@ export async function fetchWithCache(url, maxAge = 10 * 60 * 60 * 1000) {
   }
 
   if (response.status === 304) {
-    if (!hasCachedData) {
-      throw new Error('No cached data available');
-    }
-
-    if (hasFreshCache) {
-      const etag = getHeader(response, 'ETag') || meta?.etag || null;
-      const lastModified = getHeader(response, 'Last-Modified') || meta?.lastModified || null;
+    if (hasCachedData) {
+      const etag = response.headers.get('ETag') || meta?.etag || null;
+      const lastModified = response.headers.get('Last-Modified') || meta?.lastModified || null;
       const timestamp = new Date().toISOString();
       try {
         localStorage.setItem(metaKey, JSON.stringify({ etag, lastModified, timestamp }));
