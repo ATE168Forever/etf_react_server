@@ -1,5 +1,4 @@
 import { readTransactionHistory } from './transactionStorage';
-import { parseNumeric } from './numberUtils';
 
 export function getTomorrowDividendAlerts(dividendData, history = readTransactionHistory()) {
   if (!Array.isArray(dividendData) || dividendData.length === 0) return [];
@@ -19,7 +18,7 @@ export function getTomorrowDividendAlerts(dividendData, history = readTransactio
   dividendData.forEach(item => {
     const qty = holdings[item.stock_id];
     if (!qty) return;
-    const dividend = parseNumeric(item.dividend) || 0;
+    const dividend = parseFloat(item.dividend) || 0;
     if (item.dividend_date === tomorrowStr) {
       alerts.push({ stock_id: item.stock_id, stock_name: item.stock_name, type: 'ex', dividend, quantity: qty, total: dividend * qty });
     }
