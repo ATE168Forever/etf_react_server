@@ -61,6 +61,45 @@ describe('fetchWithCache', () => {
     expect(result.timestamp).toBe(new Date('2024-01-01T10:01:00Z').toISOString());
   });
 
+  test('forces unconditional refetch when stale cache receives 304', async () => {
+    jest.useFakeTimers();
+    const oldTimestamp = new Date('2024-01-01T00:00:00Z').toISOString();
+    jest.setSystemTime(new Date('2024-01-02T00:00:00Z'));
+    const cachedValue = { value: 1 };
+    const newPayload = { value: 3 };
+
+    localStorage.setItem(cacheKey, JSON.stringify(cachedValue));
+    localStorage.setItem(metaKey, JSON.stringify({ timestamp: oldTimestamp, etag: 'stale-etag' }));
+
+    globalThis.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({
+        status: 304,
+        headers: { get: () => null }
+      })
+      .mockResolvedValueOnce({
+        status: 200,
+        json: async () => newPayload,
+        headers: { get: () => null }
+      });
+
+    const result = await fetchWithCache(URL);
+
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(1, URL, {
+      headers: {}
+    });
+
+    const cacheBust = new Date('2024-01-02T00:00:00Z').getTime().toString();
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(2, `${URL}?cacheBust=${cacheBust}`, {
+      cache: 'no-store'
+    });
+    expect(result.data).toEqual(newPayload);
+    expect(result.cacheStatus).toBe('fresh');
+    expect(result.timestamp).toBe(new Date('2024-01-02T00:00:00Z').toISOString());
+    expect(JSON.parse(localStorage.getItem(cacheKey))).toEqual(newPayload);
+  });
+
   test('falls back to stale cache on fetch error', async () => {
     jest.useFakeTimers();
     const timestamp = new Date('2024-01-01T00:00:00Z').toISOString();

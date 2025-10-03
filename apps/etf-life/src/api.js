@@ -3,6 +3,17 @@ export async function fetchWithCache(url, maxAge = 10 * 60 * 60 * 1000) {
   const cacheKey = `cache:data:${url}`;
   const metaKey = `cache:meta:${url}`;
   const headers = {};
+  const getHeader = (res, key) => {
+    if (!res || !res.headers) return null;
+    if (typeof res.headers.get === 'function') {
+      try {
+        return res.headers.get(key);
+      } catch {
+        return null;
+      }
+    }
+    return res.headers?.[key] ?? null;
+  };
   let meta;
   let age = Infinity;
   let cachedTimestamp = null;
@@ -60,8 +71,8 @@ export async function fetchWithCache(url, maxAge = 10 * 60 * 60 * 1000) {
 
   if (response.status === 200) {
     const data = await response.json();
-    const etag = response.headers.get('ETag');
-    const lastModified = response.headers.get('Last-Modified');
+    const etag = getHeader(response, 'ETag');
+    const lastModified = getHeader(response, 'Last-Modified');
     const timestamp = new Date().toISOString();
     try {
       localStorage.setItem(cacheKey, JSON.stringify(data));
@@ -84,7 +95,45 @@ export async function fetchWithCache(url, maxAge = 10 * 60 * 60 * 1000) {
       }
       return { data: cachedData, cacheStatus: 'cached', timestamp };
     }
-    throw new Error('No cached data available');
+
+    try {
+      const cacheBustValue = Date.now().toString();
+      const cacheBustUrl = url.includes('?')
+        ? `${url}&cacheBust=${cacheBustValue}`
+        : `${url}?cacheBust=${cacheBustValue}`;
+      const revalidatedResponse = await fetch(cacheBustUrl, { cache: 'no-store' });
+
+      if (revalidatedResponse.status === 200) {
+        const data = await revalidatedResponse.json();
+        const etag = getHeader(revalidatedResponse, 'ETag');
+        const lastModified = getHeader(revalidatedResponse, 'Last-Modified');
+        const timestamp = new Date().toISOString();
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(data));
+          localStorage.setItem(metaKey, JSON.stringify({ etag, lastModified, timestamp }));
+        } catch {
+          // ignore write errors
+        }
+        return { data, cacheStatus: 'fresh', timestamp };
+      }
+
+      if (revalidatedResponse.status === 304) {
+        const timestamp = cachedTimestamp;
+        return {
+          data: cachedData,
+          cacheStatus: 'stale',
+          timestamp
+        };
+      }
+    } catch {
+      // network errors fall through to stale cache below
+    }
+
+    return {
+      data: cachedData,
+      cacheStatus: 'stale',
+      timestamp: cachedTimestamp
+    };
   }
 
   if (hasCachedData) {
