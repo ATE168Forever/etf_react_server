@@ -129,15 +129,31 @@ export default function StockTable({
           const perYield = cell.perYield || 0;
           const rawDividend = Number(cell.dividend);
           const rawYield = Number(cell.dividend_yield);
-          const isDividendValid = Number.isFinite(rawDividend);
-          const isYieldValid = Number.isFinite(rawYield);
+          const hasValidDividend = Boolean(cell.hasValidDividend);
+          const hasValidYield = Boolean(cell.hasValidYield);
+          const isDividendValid = hasValidDividend && Number.isFinite(rawDividend);
+          const isYieldValid = hasValidYield && Number.isFinite(rawYield);
+          const hasPendingDividend = Boolean(cell.hasPendingDividend);
+          const hasPendingYield = Boolean(cell.hasPendingYield);
           const pendingText = lang === 'zh' ? '待確認' : 'Pending';
-          const displayDividend = isDividendValid ? rawDividend.toFixed(3) : pendingText;
-          const displayYield = isYieldValid ? `${rawYield.toFixed(1)}%` : pendingText;
+          const displayDividend = isDividendValid
+            ? rawDividend.toFixed(3)
+            : hasPendingDividend
+              ? pendingText
+              : '';
+          const displayYield = isYieldValid
+            ? `${rawYield.toFixed(1)}%`
+            : (hasPendingYield || hasPendingDividend)
+              ? pendingText
+              : '';
           const displayVal = showDividendYield ? displayYield : displayDividend;
           const price = latestPrice[stock.stock_id]?.price;
           const extraInfo = getIncomeGoalInfo(isDividendValid ? rawDividend : 0, price, monthlyIncomeGoal, freq || 12);
-          const tooltipYield = isYieldValid ? `${rawYield.toFixed(1)}%` : pendingText;
+          const tooltipYield = isYieldValid
+            ? `${rawYield.toFixed(1)}%`
+            : (hasPendingYield || hasPendingDividend)
+              ? pendingText
+              : '';
           const lastClose = cell.last_close_price ?? '-';
           const dividendDate = cell.dividend_date || '-';
           const paymentDate = cell.payment_date || '-';
