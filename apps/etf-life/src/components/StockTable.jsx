@@ -6,6 +6,7 @@ import TooltipText from './TooltipText';
 import { HOST_URL } from '../config';
 import { useLanguage } from '../i18n';
 import usePreserveScroll from '../hooks/usePreserveScroll';
+import { parseNumeric } from '../utils/numberUtils';
 
 const NUM_COL_WIDTH = 80;
 
@@ -68,8 +69,8 @@ export default function StockTable({
         case 'stock_name':
           return a.stock_name.localeCompare(b.stock_name) * dir;
         case 'latest_price': {
-          const aPrice = parseFloat(latestPrice[a.stock_id]?.price) || 0;
-          const bPrice = parseFloat(latestPrice[b.stock_id]?.price) || 0;
+          const aPrice = parseNumeric(latestPrice[a.stock_id]?.price) || 0;
+          const bPrice = parseNumeric(latestPrice[b.stock_id]?.price) || 0;
           return (aPrice - bPrice) * dir;
         }
         case 'total': {
@@ -86,10 +87,10 @@ export default function StockTable({
           if (sortConfig.column?.startsWith('month')) {
             const idx = Number(sortConfig.column.slice(5));
             const aVal = showDividendYield
-              ? parseFloat(dividendTable[a.stock_id]?.[idx]?.dividend_yield) || 0
+              ? parseNumeric(dividendTable[a.stock_id]?.[idx]?.dividend_yield) || 0
               : dividendTable[a.stock_id]?.[idx]?.dividend || 0;
             const bVal = showDividendYield
-              ? parseFloat(dividendTable[b.stock_id]?.[idx]?.dividend_yield) || 0
+              ? parseNumeric(dividendTable[b.stock_id]?.[idx]?.dividend_yield) || 0
               : dividendTable[b.stock_id]?.[idx]?.dividend || 0;
             return (aVal - bVal) * dir;
           }
