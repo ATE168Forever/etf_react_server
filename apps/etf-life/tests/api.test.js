@@ -54,7 +54,7 @@ describe('fetchWithCache', () => {
 
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     expect(globalThis.fetch.mock.calls[0][1]).toEqual({
-      headers: {}
+      headers: { 'If-None-Match': 'old' }
     });
     expect(result.data).toEqual(newData);
     expect(result.cacheStatus).toBe('fresh');
