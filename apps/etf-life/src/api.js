@@ -1,4 +1,4 @@
-export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
+export async function fetchWithCache(url, maxAge = 10 * 60 * 60 * 1000) {
   // maxAge controls how long to reuse cached data before revalidating
   const cacheKey = `cache:data:${url}`;
   const metaKey = `cache:meta:${url}`;
