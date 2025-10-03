@@ -5,6 +5,7 @@ import { HOST_URL, API_HOST } from './config';
 import { useLanguage } from './i18n';
 import usePreserveScroll from './hooks/usePreserveScroll';
 import { fetchWithCache } from './api';
+import TooltipText from './components/TooltipText';
 
 const MONTH_COL_WIDTH = 80;
 function getTransactionHistory() {
@@ -509,12 +510,12 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                         <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
                                             {total > 0 ? (
                                                 hasTooltip ? (
-                                                    <span
-                                                        title={tooltip}
-                                                        style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
+                                                    <TooltipText
+                                                        tooltip={tooltip}
+                                                        style={{ borderBottom: '1px dotted #777' }}
                                                     >
                                                         {Math.round(total).toLocaleString()}
-                                                    </span>
+                                                    </TooltipText>
                                                 ) : Math.round(total).toLocaleString()
                                             ) : ''}
                                         </td>
@@ -525,14 +526,14 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                 <td>{lang === 'en' ? 'Monthly Total' : '月合計'}</td>
                                 <td>
                                     {displayGrandTotal > 0 ? (
-                                        <span
-                                            title={lang === 'en'
+                                        <TooltipText
+                                            tooltip={lang === 'en'
                                                 ? `Average per month: ${Math.round(displayAvgPerMonth).toLocaleString()}`
                                                 : `每月平均領取: ${Math.round(displayAvgPerMonth).toLocaleString()}`}
-                                            style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
+                                            style={{ borderBottom: '1px dotted #777' }}
                                         >
                                             {Math.round(displayGrandTotal).toLocaleString()}
-                                        </span>
+                                        </TooltipText>
                                     ) : ''}
                                 </td>
                                 {displayTotalsPerMonth.map((total, idx) => (
@@ -553,14 +554,14 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                             const avgYield = yieldMonthsCount > 0 ? sumYield / yieldMonthsCount : 0;
                                             const estAnnual = avgYield * 12;
                                             return (
-                                                <span
-                                                    title={lang === 'en'
+                                                <TooltipText
+                                                    tooltip={lang === 'en'
                                                         ? `Latest close: ${latestClosePrice[stock.stock_id]?.price || '-'}\nSum yield: ${sumYield.toFixed(1)}%\nEst. annual yield: ${estAnnual.toFixed(1)}%`
                                                         : `最新收盤價: ${latestClosePrice[stock.stock_id]?.price || '-'}\n加總殖利率: ${sumYield.toFixed(1)}%\n預估年化殖利率: ${estAnnual.toFixed(1)}%`}
-                                                    style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
+                                                    style={{ borderBottom: '1px dotted #777' }}
                                                 >
                                                     {Math.round(stockTotal).toLocaleString()}
-                                                </span>
+                                                </TooltipText>
                                             );
                                         })() : ''}</td>
                                         {MONTHS.map((m, idx) => {
@@ -569,14 +570,14 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                             const total = cell.dividend * cell.quantity;
                                             return (
                                                 <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
-                                                    <span
-                                                        title={lang === 'en'
+                                                    <TooltipText
+                                                        tooltip={lang === 'en'
                                                             ? `Shares held: ${cell.quantity} (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} lots)\nDividend per share: ${cell.dividend} \nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
                                                             : `持有數量: ${cell.quantity} 股 (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)\n每股配息: ${cell.dividend} 元\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`}
-                                                        style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
+                                                        style={{ borderBottom: '1px dotted #777' }}
                                                     >
                                                         {total > 0 ? Math.round(total).toLocaleString() : ''}
-                                                    </span>
+                                                    </TooltipText>
                                                 </td>
                                             );
                                         })}
@@ -590,8 +591,8 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
             </div>
             <p style={{ fontSize: 12, marginTop: 8, color: '#666' }}>
                 {lang === 'en'
-                    ? 'Tip: hover numbers to see holdings, per-share dividends, dates, prices and yield details.'
-                    : '提示：滑鼠移到數字可看持股、每股配息及日期、價格與殖利率細節。'}
+                    ? 'Tip: tap or hover numbers to see holdings, per-share dividends, dates, prices and yield details.'
+                    : '提示：點擊或滑鼠移到數字可看持股、每股配息及日期、價格與殖利率細節。'}
             </p>
         </div>
     );
