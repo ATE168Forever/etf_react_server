@@ -362,7 +362,6 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         }
     });
 
-    const displayCostGrandTotal = displayCostPerMonth.reduce((sum, val) => sum + val, 0);
     const displayGrandTotal = displayTotalsPerMonth.reduce((sum, val) => sum + val, 0);
 
     let displayMonthsForAverage = 0;

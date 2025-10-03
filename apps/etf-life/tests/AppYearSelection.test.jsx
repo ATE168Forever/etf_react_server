@@ -29,7 +29,7 @@ beforeEach(() => {
   localStorage.setItem('lang', 'zh');
   mockFetchWithCache.mockReset();
   mockFetchDividendsByYears.mockReset();
-  global.fetch = jest.fn(() => Promise.resolve({}));
+  globalThis.fetch = jest.fn(() => Promise.resolve({}));
 });
 
 afterEach(() => {

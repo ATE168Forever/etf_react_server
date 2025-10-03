@@ -165,8 +165,9 @@ export default function StockTable({
 
   if (showInfoAxis) {
     return (
-      <div className="table-responsive" ref={tableContainerRef}>
-        <table className="table table-bordered table-striped">
+      <>
+        <div className="table-responsive" ref={tableContainerRef}>
+          <table className="table table-bordered table-striped">
           <thead>
             <tr>
               <th className="stock-col">{t('stock_code_name')}</th>
@@ -211,22 +212,25 @@ export default function StockTable({
             })}
           </tbody>
         </table>
+        </div>
         {sortedStocks.length > 20 && (
-          <button
-            className="more-btn"
-            onClick={() => setShowAllStocks(v => !v)}
-            style={{ marginTop: 8, display: 'block', marginLeft: 'auto', marginRight: 'auto' }}
-          >
-            {showAllStocks ? `${t('hide')}-` : `${t('more')}+`}
-          </button>
+          <div className="table-more-btn-wrapper">
+            <button
+              className="more-btn"
+              onClick={() => setShowAllStocks(v => !v)}
+            >
+              {showAllStocks ? `${t('hide')}-` : `${t('more')}+`}
+            </button>
+          </div>
         )}
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="table-responsive" ref={tableContainerRef}>
-      <table className="table table-bordered table-striped" style={{ minWidth: 1380 }}>
+    <>
+      <div className="table-responsive" ref={tableContainerRef}>
+        <table className="table table-bordered table-striped" style={{ minWidth: 1380 }}>
         <thead>
           <tr>
             <th className="stock-col">
@@ -334,16 +338,18 @@ export default function StockTable({
             <Row key={stock.stock_id + stock.stock_name} stock={stock} />
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
       {sortedStocks.length > 20 && (
-        <button
-          className="more-btn"
-          onClick={() => setShowAllStocks(v => !v)}
-          style={{ marginTop: 8, display: 'block', marginLeft: 'auto', marginRight: 'auto' }}
-        >
-          {showAllStocks ? `${t('hide')}-` : `${t('more')}+`}
-        </button>
+        <div className="table-more-btn-wrapper">
+          <button
+            className="more-btn"
+            onClick={() => setShowAllStocks(v => !v)}
+          >
+            {showAllStocks ? `${t('hide')}-` : `${t('more')}+`}
+          </button>
+        </div>
       )}
-    </div>
+    </>
   );
 }
