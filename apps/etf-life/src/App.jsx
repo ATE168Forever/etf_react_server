@@ -25,6 +25,24 @@ const CURRENT_YEAR = new Date().getFullYear();
 const PREVIOUS_YEAR = CURRENT_YEAR - 1;
 const ALLOWED_YEARS = [CURRENT_YEAR, PREVIOUS_YEAR];
 
+const hasPayload = (value) =>
+  value !== undefined &&
+  value !== null &&
+  (typeof value === 'number' || (typeof value === 'string' && value.trim() !== ''));
+
+const parseNumeric = (value) => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : NaN;
+  }
+  if (typeof value === 'string') {
+    const cleaned = value
+      .replace(/[\s,]+/g, '')
+      .match(/[+-]?(?:\d+(?:\.\d*)?|\.\d+)/);
+    return cleaned ? Number(cleaned[0]) : NaN;
+  }
+  return NaN;
+};
+
 const DEFAULT_WATCH_GROUPS = [
   {
     name: '現金流導向（月月配息）',
@@ -365,12 +383,53 @@ function App() {
       const cell = dividendTable[item.stock_id][month] || {
         dividend: 0,
         dividend_yield: 0,
+        hasPendingDividend: false,
+        hasPendingYield: false,
+        hasValidDividend: false,
+        hasValidYield: false,
       };
-      cell.dividend += parseFloat(item.dividend);
-      cell.dividend_yield += parseFloat(item.dividend_yield) || 0;
-      cell.last_close_price = item.last_close_price;
-      cell.dividend_date = item.dividend_date;
-      cell.payment_date = item.payment_date;
+
+      if (!Number.isFinite(cell.dividend)) {
+        cell.dividend = 0;
+      }
+      if (!Number.isFinite(cell.dividend_yield)) {
+        cell.dividend_yield = 0;
+      }
+
+      const rawDividend = item.dividend;
+      const rawYield = item.dividend_yield;
+      const hasRawDividend = hasPayload(rawDividend);
+      const hasRawYield = hasPayload(rawYield);
+
+      const dividendValue = hasRawDividend ? parseNumeric(rawDividend) : NaN;
+      const yieldValue = hasRawYield ? parseNumeric(rawYield) : NaN;
+
+      if (hasRawDividend && Number.isFinite(dividendValue)) {
+        cell.dividend += dividendValue;
+        cell.hasValidDividend = true;
+        cell.hasPendingDividend = false;
+      } else if (hasRawDividend && !cell.hasValidDividend) {
+        cell.hasPendingDividend = true;
+      }
+
+      if (hasRawYield && Number.isFinite(yieldValue)) {
+        cell.dividend_yield += yieldValue;
+        cell.hasValidYield = true;
+        cell.hasPendingYield = false;
+      } else if (hasRawYield && !cell.hasValidYield) {
+        cell.hasPendingYield = true;
+      }
+
+      if (item.last_close_price !== undefined) {
+        cell.last_close_price = item.last_close_price;
+      }
+      if (item.dividend_date) {
+        cell.dividend_date = item.dividend_date;
+      }
+      if (item.payment_date) {
+        cell.payment_date = item.payment_date;
+      }
+
       dividendTable[item.stock_id][month] = cell;
     });
 
@@ -389,8 +448,10 @@ function App() {
           span = m - prev;
           if (span <= 0) span += 12;
         }
+        const totalYield = Number(cell.dividend_yield);
+        const safeTotalYield = Number.isFinite(totalYield) ? totalYield : 0;
         cell.monthsSpan = span;
-        cell.perYield = (parseFloat(cell.dividend_yield) || 0) / span;
+        cell.perYield = safeTotalYield / span;
         prev = m;
       });
     });
@@ -486,8 +547,10 @@ function App() {
     latestYield[stock.stock_id] = { yield: null, date: null };
     for (let m = 0; m < 12; m++) {
       const cell = dividendTable[stock.stock_id]?.[m];
-      const val = cell?.dividend || 0;
-      const yVal = parseFloat(cell?.dividend_yield) || 0;
+      const dividendTotal = Number(cell?.dividend);
+      const val = Number.isFinite(dividendTotal) ? dividendTotal : 0;
+      const yValRaw = Number(cell?.dividend_yield);
+      const yVal = Number.isFinite(yValRaw) ? yValRaw : 0;
       // track per-stock totals and yield sums
       if (cell) {
         totalPerStock[stock.stock_id] += val;
@@ -495,8 +558,10 @@ function App() {
           yieldSum[stock.stock_id] += yVal;
           yieldCount[stock.stock_id] += 1;
         }
+        const lastClose = Number(cell.last_close_price);
+        const safeLastClose = Number.isFinite(lastClose) ? lastClose : cell.last_close_price ?? null;
         if (!latestPrice[stock.stock_id].date || new Date(cell.dividend_date) > new Date(latestPrice[stock.stock_id].date)) {
-          latestPrice[stock.stock_id] = { price: cell.last_close_price, date: cell.dividend_date };
+          latestPrice[stock.stock_id] = { price: safeLastClose, date: cell.dividend_date };
           latestYield[stock.stock_id] = { yield: yVal, date: cell.dividend_date };
         } else if (!latestYield[stock.stock_id].date || new Date(cell.dividend_date) > new Date(latestYield[stock.stock_id].date)) {
           latestYield[stock.stock_id] = { yield: yVal, date: cell.dividend_date };
