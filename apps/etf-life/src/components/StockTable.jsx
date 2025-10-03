@@ -2,6 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 // Removed react-window virtualization to avoid invalid table markup
 import FilterDropdown from './FilterDropdown';
 import AdvancedFilterDropdown from './AdvancedFilterDropdown';
+import TooltipText from './TooltipText';
 import { HOST_URL } from '../config';
 import { useLanguage } from '../i18n';
 import usePreserveScroll from '../hooks/usePreserveScroll';
@@ -105,12 +106,12 @@ export default function StockTable({
       ? (yieldSum[stock.stock_id] > 0 ? `${yieldSum[stock.stock_id].toFixed(1)}%` : '')
       : (totalPerStock[stock.stock_id] > 0 ? totalPerStock[stock.stock_id].toFixed(1) : '');
     const annualVal = estAnnualYield[stock.stock_id] > 0 ? (
-      <span title={`${lang === 'zh' ? '目前已累積殖利率' : 'Accumulated yield so far'}: ${(yieldSum[stock.stock_id] || 0).toFixed(1)}%`}>
+      <TooltipText tooltip={`${lang === 'zh' ? '目前已累積殖利率' : 'Accumulated yield so far'}: ${(yieldSum[stock.stock_id] || 0).toFixed(1)}%`}>
         {estAnnualYield[stock.stock_id].toFixed(1)}%
         {estAnnualYield[stock.stock_id] === maxAnnualYield && maxAnnualYield > 0 && (
           <span className="crown-icon" role="img" aria-label="crown">👑</span>
         )}
-      </span>
+      </TooltipText>
     ) : '';
 
     return (
@@ -159,14 +160,14 @@ export default function StockTable({
           const paymentDate = cell.payment_date || '-';
           return (
             <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: NUM_COL_WIDTH }}>
-              <span
-                title={`${t('prev_close')}: ${lastClose}\n${t('current_yield')}: ${tooltipYield}\n${t('avg_month_yield')}: ${perYield.toFixed(2)}%\n${t('payout_frequency')}: ${freqNameMap[freq] || t('irregular')}\n${t('dividend_date')}: ${dividendDate}\n${t('payment_date')}: ${paymentDate}${extraInfo}`}
+              <TooltipText
+                tooltip={`${t('prev_close')}: ${lastClose}\n${t('current_yield')}: ${tooltipYield}\n${t('avg_month_yield')}: ${perYield.toFixed(2)}%\n${t('payout_frequency')}: ${freqNameMap[freq] || t('irregular')}\n${t('dividend_date')}: ${dividendDate}\n${t('payment_date')}: ${paymentDate}${extraInfo}`}
               >
                 {displayVal}
                 {perYield === maxYieldPerMonth[idx] && maxYieldPerMonth[idx] > 0 && (
                   <span className="diamond-icon" role="img" aria-label="diamond">💎</span>
                 )}
-              </span>
+              </TooltipText>
             </td>
           );
         })}

@@ -771,3 +771,24 @@ button:active {
 .btn-unselected {
   opacity: 0.6;
 }
+
+.tooltip-text {
+  position: relative;
+}
+
+.tooltip-text .tooltip-inline {
+  display: block;
+  position: relative;
+  margin-top: 6px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre-line;
+  z-index: 1;
+  max-width: min(280px, calc(100vw - 48px));
+  word-break: break-word;
+}
