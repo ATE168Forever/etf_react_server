@@ -31,7 +31,7 @@ describe('fetchWithCache', () => {
   test('fetches new data when cache expired', async () => {
     jest.useFakeTimers();
     const oldTimestamp = new Date('2024-01-01T00:00:00Z').toISOString();
-    jest.setSystemTime(new Date('2024-01-01T02:01:00Z'));
+    jest.setSystemTime(new Date('2024-01-01T10:01:00Z'));
     localStorage.setItem(cacheKey, JSON.stringify({ value: 1 }));
     localStorage.setItem(metaKey, JSON.stringify({ timestamp: oldTimestamp, etag: 'old' }));
 
@@ -48,13 +48,13 @@ describe('fetchWithCache', () => {
     expect(globalThis.fetch.mock.calls[0][1]).toEqual({ headers: {} });
     expect(result.data).toEqual(newData);
     expect(result.cacheStatus).toBe('fresh');
-    expect(result.timestamp).toBe(new Date('2024-01-01T02:01:00Z').toISOString());
+    expect(result.timestamp).toBe(new Date('2024-01-01T10:01:00Z').toISOString());
   });
 
   test('falls back to stale cache on fetch error', async () => {
     jest.useFakeTimers();
     const timestamp = new Date('2024-01-01T00:00:00Z').toISOString();
-    jest.setSystemTime(new Date('2024-01-01T03:00:00Z'));
+    jest.setSystemTime(new Date('2024-01-01T10:01:00Z'));
     localStorage.setItem(cacheKey, JSON.stringify({ value: 1 }));
     localStorage.setItem(metaKey, JSON.stringify({ timestamp }));
 

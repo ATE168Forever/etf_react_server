@@ -30,7 +30,7 @@ export default function HomeTab() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchWithCache(`${API_HOST}/site_stats?en=${lang === 'en'}`, 4 * 60 * 60 * 1000)
+    fetchWithCache(`${API_HOST}/site_stats?en=${lang === 'en'}`, 10 * 60 * 60 * 1000)
       .then(({ data }) => {
         if (!cancelled) {
           setStats({
