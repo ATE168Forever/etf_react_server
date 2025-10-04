@@ -30,7 +30,7 @@ export default function StockDetail({ stockId }) {
             ? data.items
             : [];
     },
-    staleTime: 10 * 60 * 60 * 1000,
+    staleTime: 2 * 60 * 60 * 1000,
   });
 
   const { data: dividendList = [], isLoading: dividendLoading } = useQuery({
@@ -58,7 +58,7 @@ export default function StockDetail({ stockId }) {
       const data = fulfilledResults.flatMap(result => result.value);
       return data.filter(item => ALLOWED_YEARS.includes(new Date(item.dividend_date).getFullYear()));
     },
-    staleTime: 10 * 60 * 60 * 1000,
+    staleTime: 2 * 60 * 60 * 1000,
   });
 
   const { data: returns = {}, isLoading: returnsLoading } = useQuery({
@@ -67,7 +67,7 @@ export default function StockDetail({ stockId }) {
       const res = await fetch(`${API_HOST}/get_returns?stock_id=${stockId}`);
       return await res.json();
     },
-    staleTime: 10 * 60 * 60 * 1000,
+    staleTime: 2 * 60 * 60 * 1000,
   });
 
   const stock = useMemo(() => {

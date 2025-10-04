@@ -209,8 +209,9 @@ export function calculateDividendSummary({
 }
 
 export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages = {}, formatCurrency = (value) => {
-  if (!Number.isFinite(value)) return '0.00';
-  return Number(value).toLocaleString('en-US', {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return '0.00';
+  return numericValue.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });

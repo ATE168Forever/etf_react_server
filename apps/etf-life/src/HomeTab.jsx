@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { API_HOST } from './config';
 import { fetchWithCache } from './api';
 import { fetchDividendsByYears } from './dividendApi';
@@ -30,7 +30,7 @@ export default function HomeTab() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchWithCache(`${API_HOST}/site_stats?en=${lang === 'en'}`, 10 * 60 * 60 * 1000)
+    fetchWithCache(`${API_HOST}/site_stats?en=${lang === 'en'}`, 2 * 60 * 60 * 1000)
       .then(({ data }) => {
         if (!cancelled) {
           setStats({
@@ -70,14 +70,6 @@ export default function HomeTab() {
     return () => {
       cancelled = true;
     };
-  }, []);
-
-  const formatCurrency = useCallback(value => {
-    if (!Number.isFinite(value)) return '0.00';
-    return Number(value).toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
   }, []);
 
   const dividendSummary = useMemo(
@@ -122,10 +114,9 @@ export default function HomeTab() {
     () => buildDividendGoalViewModel({
       summary: dividendSummary,
       goals: goalSummary.goals,
-      messages: goalMessages,
-      formatCurrency
+      messages: goalMessages
     }),
-    [dividendSummary, goalSummary.goals, goalMessages, formatCurrency]
+    [dividendSummary, goalSummary.goals, goalMessages]
   );
 
   const goalTitle = goalSummary.goals.goalName?.trim() || t('investment_goals');
