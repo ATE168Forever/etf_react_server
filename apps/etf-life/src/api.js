@@ -72,8 +72,56 @@ export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
     throw err;
   }
 
+  const parseJsonBody = async (resp, requestUrl) => {
+    const source = typeof resp.clone === 'function' ? resp.clone() : resp;
+
+    if (typeof source.text === 'function') {
+      const bodyText = await source.text();
+
+      if (!bodyText) {
+        return null;
+      }
+
+      try {
+        return JSON.parse(bodyText);
+      } catch (err) {
+        const contentType = getHeader(resp, 'Content-Type') || 'unknown content type';
+        const snippet = bodyText.replace(/\s+/g, ' ').trim().slice(0, 200);
+        const errorLines = [
+          `Failed to parse JSON from ${requestUrl}.`,
+          `Received ${contentType}.`,
+          'This usually means the ETF Life API host is not configured correctly (check VITE_API_HOST).'
+        ];
+        if (snippet) {
+          errorLines.push(`Response preview: ${snippet}`);
+        }
+        const error = new Error(errorLines.join(' '));
+        error.cause = err;
+        throw error;
+      }
+    }
+
+    if (typeof source.json === 'function') {
+      try {
+        return await source.json();
+      } catch (err) {
+        const contentType = getHeader(resp, 'Content-Type') || 'unknown content type';
+        const errorLines = [
+          `Failed to parse JSON from ${requestUrl}.`,
+          `Received ${contentType}.`,
+          'This usually means the ETF Life API host is not configured correctly (check VITE_API_HOST).'
+        ];
+        const error = new Error(errorLines.join(' '));
+        error.cause = err;
+        throw error;
+      }
+    }
+
+    throw new Error(`Response from ${requestUrl} does not provide text() or json() methods.`);
+  };
+
   if (response.status === 200) {
-    const data = await response.json();
+    const data = await parseJsonBody(response, url);
     const etag = getHeader(response, 'ETag');
     const lastModified = getHeader(response, 'Last-Modified');
     const timestamp = new Date().toISOString();
@@ -107,7 +155,7 @@ export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
       const revalidatedResponse = await fetch(cacheBustUrl, { cache: 'no-store' });
 
       if (revalidatedResponse.status === 200) {
-        const data = await revalidatedResponse.json();
+        const data = await parseJsonBody(revalidatedResponse, cacheBustUrl);
         const etag = getHeader(revalidatedResponse, 'ETag');
         const lastModified = getHeader(revalidatedResponse, 'Last-Modified');
         const timestamp = new Date().toISOString();

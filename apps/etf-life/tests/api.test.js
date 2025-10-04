@@ -7,6 +7,16 @@ describe('fetchWithCache', () => {
   const metaKey = `cache:meta:${URL}`;
   const realFetch = globalThis.fetch;
 
+  const buildJsonResponse = (status, data, headers = { get: () => null }) => ({
+    status,
+    headers,
+    text: jest.fn().mockResolvedValue(JSON.stringify(data)),
+    json: jest.fn().mockResolvedValue(data),
+    clone() {
+      return buildJsonResponse(status, data, headers);
+    }
+  });
+
   afterEach(() => {
     localStorage.clear();
     globalThis.fetch = realFetch;
@@ -44,11 +54,7 @@ describe('fetchWithCache', () => {
     localStorage.setItem(metaKey, JSON.stringify({ timestamp: oldTimestamp, etag: 'old' }));
 
     const newData = { value: 2 };
-    globalThis.fetch = jest.fn().mockResolvedValue({
-      status: 200,
-      json: async () => newData,
-      headers: { get: () => null }
-    });
+    globalThis.fetch = jest.fn().mockResolvedValue(buildJsonResponse(200, newData));
 
     const result = await fetchWithCache(URL);
 
@@ -77,11 +83,7 @@ describe('fetchWithCache', () => {
         status: 304,
         headers: { get: () => null }
       })
-      .mockResolvedValueOnce({
-        status: 200,
-        json: async () => newPayload,
-        headers: { get: () => null }
-      });
+      .mockResolvedValueOnce(buildJsonResponse(200, newPayload));
 
     const result = await fetchWithCache(URL);
 
