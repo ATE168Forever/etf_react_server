@@ -73,7 +73,49 @@ export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
   }
 
   if (response.status === 200) {
-    const data = await response.json();
+    const contentType = (getHeader(response, 'Content-Type') || '').toLowerCase();
+    const canReadText = typeof response.text === 'function';
+    const canReadJson = typeof response.json === 'function';
+    let rawBody = '';
+    let data;
+
+    if (canReadText) {
+      rawBody = await response.text();
+    }
+
+    if (contentType && !contentType.includes('json')) {
+      const error = new Error(
+        `Expected JSON response from ${url} but received "${contentType || 'unknown'}". `
+        + 'This usually means the API host is misconfigured or the request was routed to the front-end dev server.'
+      );
+      error.details = rawBody.slice(0, 200);
+      throw error;
+    }
+
+    try {
+      if (canReadText) {
+        data = rawBody ? JSON.parse(rawBody) : null;
+      } else if (canReadJson) {
+        data = await response.json();
+        try {
+          rawBody = typeof data === 'string' ? data : JSON.stringify(data);
+        } catch {
+          rawBody = '[body-unavailable]';
+        }
+      } else {
+        data = null;
+        rawBody = '[body-unavailable]';
+      }
+    } catch (parseError) {
+      const error = new Error(
+        `Failed to parse JSON response from ${url}. `
+        + 'Ensure the ETF Life API is reachable and returning valid JSON.'
+      );
+      error.cause = parseError;
+      error.details = rawBody.slice(0, 200);
+      throw error;
+    }
+
     const etag = getHeader(response, 'ETag');
     const lastModified = getHeader(response, 'Last-Modified');
     const timestamp = new Date().toISOString();
