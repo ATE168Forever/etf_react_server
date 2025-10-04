@@ -30,19 +30,6 @@ const hasPayload = (value) =>
   value !== null &&
   (typeof value === 'number' || (typeof value === 'string' && value.trim() !== ''));
 
-const parseNumeric = (value) => {
-  if (typeof value === 'number') {
-    return Number.isFinite(value) ? value : NaN;
-  }
-  if (typeof value === 'string') {
-    const cleaned = value
-      .replace(/[\s,]+/g, '')
-      .match(/[+-]?(?:\d+(?:\.\d*)?|\.\d+)/);
-    return cleaned ? Number(cleaned[0]) : NaN;
-  }
-  return NaN;
-};
-
 const DEFAULT_WATCH_GROUPS = [
   {
     name: '現金流導向（月月配息）',

@@ -64,17 +64,20 @@ export default function InventoryTab() {
   const initialGoals = useMemo(() => loadInvestmentGoals(), []);
   const initialShareTargetList = Array.isArray(initialGoals.shareTargets) ? initialGoals.shareTargets : [];
   const hasInitialShareTargets = initialShareTargetList.some(item => {
-    const quantity = Number(item?.targetQuantity);
-    return Number.isFinite(quantity) && quantity > 0;
+    const quantityValue = +item?.targetQuantity;
+    return Number.isFinite(quantityValue) && quantityValue > 0;
   });
   const initialGoalType = (() => {
     const candidate = typeof initialGoals.goalType === 'string' ? initialGoals.goalType.toLowerCase() : '';
     if (GOAL_TYPES.includes(candidate)) {
       return candidate;
     }
-    if (Number(initialGoals.totalTarget) > 0) return 'annual';
-    if (Number(initialGoals.monthlyTarget) > 0) return 'monthly';
-    if (Number(initialGoals.minimumTarget) > 0) return 'minimum';
+    const totalTargetValue = +initialGoals.totalTarget;
+    if (Number.isFinite(totalTargetValue) && totalTargetValue > 0) return 'annual';
+    const monthlyTargetValue = +initialGoals.monthlyTarget;
+    if (Number.isFinite(monthlyTargetValue) && monthlyTargetValue > 0) return 'monthly';
+    const minimumTargetValue = +initialGoals.minimumTarget;
+    if (Number.isFinite(minimumTargetValue) && minimumTargetValue > 0) return 'minimum';
     if (hasInitialShareTargets) return 'shares';
     return DEFAULT_GOAL_TYPE;
   })();
@@ -1096,8 +1099,8 @@ export default function InventoryTab() {
 
   const handleShareTargetAdd = () => {
     const stockId = String(shareTargetDraft.stockId || '').trim().toUpperCase();
-    const quantity = Number(shareTargetDraft.quantity);
-    if (!stockId || !Number.isFinite(quantity) || quantity <= 0) {
+    const quantityValue = +shareTargetDraft.quantity;
+    if (!stockId || !Number.isFinite(quantityValue) || quantityValue <= 0) {
       alert(msg.shareGoalInputRequired);
       return;
     }
@@ -1114,7 +1117,7 @@ export default function InventoryTab() {
       const entry = {
         stockId,
         stockName,
-        targetQuantity: String(quantity)
+        targetQuantity: String(quantityValue)
       };
       if (existingIndex >= 0) {
         targets[existingIndex] = entry;
@@ -1131,16 +1134,6 @@ export default function InventoryTab() {
 
   const handleGoalSubmit = event => {
     event.preventDefault();
-    const parseGoal = value => {
-      if (typeof value === 'string') {
-        const trimmed = value.trim();
-        if (trimmed === '') return 0;
-        const num = Number(trimmed);
-        return Number.isFinite(num) && num >= 0 ? num : 0;
-      }
-      const num = Number(value);
-      return Number.isFinite(num) && num >= 0 ? num : 0;
-    };
     const normalizedGoalType = GOAL_TYPES.includes(goalForm.goalType)
       ? goalForm.goalType
       : DEFAULT_GOAL_TYPE;
@@ -1152,8 +1145,8 @@ export default function InventoryTab() {
     shareTargetsRaw.forEach(item => {
       const stockId = typeof item?.stockId === 'string' ? item.stockId.trim().toUpperCase() : '';
       if (!stockId || seen.has(stockId)) return;
-      const quantity = Number(item?.targetQuantity);
-      if (!Number.isFinite(quantity) || quantity <= 0) return;
+      const quantityValue = +item?.targetQuantity;
+      if (!Number.isFinite(quantityValue) || quantityValue <= 0) return;
       let stockName = typeof item?.stockName === 'string'
         ? item.stockName.trim().slice(0, 60)
         : '';
@@ -1164,17 +1157,27 @@ export default function InventoryTab() {
       sanitizedShareTargets.push({
         stockId,
         stockName,
-        targetQuantity: quantity
+        targetQuantity: quantityValue
       });
       seen.add(stockId);
     });
 
+    const annualTargetValue = +goalForm.annualTarget;
+    const monthlyTargetValue = +goalForm.monthlyTarget;
+    const minimumTargetValue = +goalForm.minimumTarget;
+
     const updated = {
       goalName: typeof goalForm.name === 'string' ? goalForm.name.trim().slice(0, 60) : '',
       goalType: normalizedGoalType,
-      totalTarget: isShareGoalType ? 0 : parseGoal(goalForm.annualTarget),
-      monthlyTarget: isShareGoalType ? 0 : parseGoal(goalForm.monthlyTarget),
-      minimumTarget: isShareGoalType ? 0 : parseGoal(goalForm.minimumTarget),
+      totalTarget: isShareGoalType || !Number.isFinite(annualTargetValue) || annualTargetValue < 0
+        ? 0
+        : annualTargetValue,
+      monthlyTarget: isShareGoalType || !Number.isFinite(monthlyTargetValue) || monthlyTargetValue < 0
+        ? 0
+        : monthlyTargetValue,
+      minimumTarget: isShareGoalType || !Number.isFinite(minimumTargetValue) || minimumTargetValue < 0
+        ? 0
+        : minimumTargetValue,
       shareTargets: sanitizedShareTargets
     };
 
@@ -1207,18 +1210,21 @@ export default function InventoryTab() {
 
     const prevGoalName = typeof goals.goalName === 'string' ? goals.goalName : '';
     const prevGoalType = GOAL_TYPES.includes(goals.goalType) ? goals.goalType : DEFAULT_GOAL_TYPE;
-    const prevTotalTarget = Number.isFinite(Number(goals.totalTarget)) ? Number(goals.totalTarget) : 0;
-    const prevMonthlyTarget = Number.isFinite(Number(goals.monthlyTarget)) ? Number(goals.monthlyTarget) : 0;
-    const prevMinimumTarget = Number.isFinite(Number(goals.minimumTarget)) ? Number(goals.minimumTarget) : 0;
+    const prevTotalTargetRaw = +goals.totalTarget;
+    const prevTotalTarget = Number.isFinite(prevTotalTargetRaw) ? prevTotalTargetRaw : 0;
+    const prevMonthlyTargetRaw = +goals.monthlyTarget;
+    const prevMonthlyTarget = Number.isFinite(prevMonthlyTargetRaw) ? prevMonthlyTargetRaw : 0;
+    const prevMinimumTargetRaw = +goals.minimumTarget;
+    const prevMinimumTarget = Number.isFinite(prevMinimumTargetRaw) ? prevMinimumTargetRaw : 0;
     const prevShareTargets = Array.isArray(goals.shareTargets) ? goals.shareTargets : [];
     const prevShareTargetMap = new Map();
     prevShareTargets.forEach(item => {
       const stockId = typeof item?.stockId === 'string' ? item.stockId.trim().toUpperCase() : '';
       if (!stockId || prevShareTargetMap.has(stockId)) return;
-      const quantity = Number(item?.targetQuantity);
+      const quantityValue = +item?.targetQuantity;
       prevShareTargetMap.set(stockId, {
         stockName: typeof item?.stockName === 'string' ? item.stockName.trim().slice(0, 60) : '',
-        targetQuantity: Number.isFinite(quantity) ? quantity : 0
+        targetQuantity: Number.isFinite(quantityValue) ? quantityValue : 0
       });
     });
     const shareTargetsChanged = sanitizedShareTargets.length !== prevShareTargetMap.size
@@ -1248,8 +1254,9 @@ export default function InventoryTab() {
   };
 
   const formatCurrency = useCallback(value => {
-    if (!Number.isFinite(value)) return '0.00';
-    return Number(value).toLocaleString('en-US', {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) return '0.00';
+    return numericValue.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
@@ -1314,20 +1321,22 @@ export default function InventoryTab() {
       inventoryMap.set(stockId, item);
     });
     const formatLots = value => {
-      if (!Number.isFinite(value)) return '0';
-      return Number(value).toLocaleString('en-US', {
+      const numericValue = Number(value);
+      if (!Number.isFinite(numericValue)) return '0';
+      return numericValue.toLocaleString('en-US', {
         minimumFractionDigits: 0,
-        maximumFractionDigits: Math.abs(value % 1) > 0 ? 2 : 0
+        maximumFractionDigits: Math.abs(numericValue % 1) > 0 ? 2 : 0
       });
     };
     return shareTargets.map(target => {
       const stockId = typeof target?.stockId === 'string' ? target.stockId.trim().toUpperCase() : '';
-      const targetLots = Number(target?.targetQuantity);
+      const targetLots = +target?.targetQuantity;
       if (!stockId || !Number.isFinite(targetLots) || targetLots <= 0) {
         return null;
       }
       const inventoryItem = inventoryMap.get(stockId);
-      const currentShares = Number(inventoryItem?.total_quantity) || 0;
+      const currentSharesRaw = +inventoryItem?.total_quantity;
+      const currentShares = Number.isFinite(currentSharesRaw) ? currentSharesRaw : 0;
       const currentLots = currentShares / SHARES_PER_LOT;
       const targetShares = targetLots * SHARES_PER_LOT;
       const percent = targetShares > 0 ? Math.min(1, currentShares / targetShares) : 0;
@@ -1555,8 +1564,8 @@ export default function InventoryTab() {
         stock_id: form.stock_id,
         stock_name: form.stock_name,
         date: form.date,
-        quantity: Number(form.quantity),
-        price: Number(form.price),
+        quantity: +form.quantity,
+        price: +form.price,
         type: 'buy'
       }
     ];
@@ -1576,10 +1585,10 @@ export default function InventoryTab() {
     updated[idx] = {
       ...updated[idx],
       date: editForm.date,
-      quantity: Number(editForm.quantity)
+      quantity: +editForm.quantity
     };
     if (original.type === 'buy') {
-      updated[idx].price = Number(editForm.price);
+      updated[idx].price = +editForm.price;
     }
     setTransactionHistory(updated);
     setEditingIdx(null);
@@ -1602,7 +1611,7 @@ export default function InventoryTab() {
     }
     const updatedHistory = [
       ...transactionHistory,
-      { stock_id, stock_name: stock.stock_name, date: getToday(), quantity: Number(qty), type: 'sell' }
+      { stock_id, stock_name: stock.stock_name, date: getToday(), quantity: +qty, type: 'sell' }
     ];
     setTransactionHistory(updatedHistory);
     setSellModal({ show: false, stock: null });
