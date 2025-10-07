@@ -117,6 +117,19 @@ function buildInventoryHoldings(inventoryList = []) {
   return holdings;
 }
 
+function getEventCurrency(event) {
+  const raw = event?.currency
+    ?? event?.dividend_currency
+    ?? event?.payment_currency;
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (trimmed) {
+      return trimmed.toUpperCase();
+    }
+  }
+  return 'TWD';
+}
+
 export function calculateDividendSummary({
   inventoryList = [],
   dividendEvents = [],
@@ -135,10 +148,7 @@ export function calculateDividendSummary({
   }
 
   const currentYear = now.getFullYear();
-  const totalsByYear = new Map();
-  const monthlyTotals = new Map();
-  let accumulatedTotal = 0;
-  let maxMonthIndex = -1;
+  const currencyBuckets = new Map();
 
   const holdingsTimeline = getHoldingsTimeline(transactionHistory);
   const fallbackHoldings = holdingsTimeline ? null : buildInventoryHoldings(inventoryList);
@@ -160,48 +170,83 @@ export function calculateDividendSummary({
     if (!quantity) return;
     const monthIndex = eventDate.getMonth();
 
+    const currency = getEventCurrency(event);
+    if (!currencyBuckets.has(currency)) {
+      currencyBuckets.set(currency, {
+        totalsByYear: new Map(),
+        monthlyTotals: new Map(),
+        accumulatedTotal: 0,
+        maxMonthIndex: -1
+      });
+    }
+    const bucket = currencyBuckets.get(currency);
+
     const amount = perShareDividend * quantity;
     const eventYear = eventDate.getFullYear();
-    totalsByYear.set(eventYear, (totalsByYear.get(eventYear) || 0) + amount);
-    accumulatedTotal += amount;
+    bucket.totalsByYear.set(eventYear, (bucket.totalsByYear.get(eventYear) || 0) + amount);
+    bucket.accumulatedTotal += amount;
 
     if (eventYear === currentYear) {
-      monthlyTotals.set(monthIndex, (monthlyTotals.get(monthIndex) || 0) + amount);
-      if (monthIndex > maxMonthIndex) {
-        maxMonthIndex = monthIndex;
+      bucket.monthlyTotals.set(monthIndex, (bucket.monthlyTotals.get(monthIndex) || 0) + amount);
+      if (monthIndex > bucket.maxMonthIndex) {
+        bucket.maxMonthIndex = monthIndex;
       }
     }
   });
 
-  const annualTotal = totalsByYear.get(currentYear) || 0;
-  const monthsElapsed = maxMonthIndex >= 0
-    ? maxMonthIndex + 1
-    : now.getFullYear() === currentYear
-      ? now.getMonth() + 1
-      : 0;
-  const monthlyAverage = annualTotal > 0 && monthsElapsed > 0 ? annualTotal / monthsElapsed : 0;
+  const perCurrency = {};
+  const currencyOrder = [];
+  currencyBuckets.forEach((bucket, currency) => {
+    const annualTotal = bucket.totalsByYear.get(currentYear) || 0;
+    const monthsElapsed = bucket.maxMonthIndex >= 0
+      ? bucket.maxMonthIndex + 1
+      : now.getFullYear() === currentYear
+        ? now.getMonth() + 1
+        : 0;
+    const monthlyAverage = annualTotal > 0 && monthsElapsed > 0 ? annualTotal / monthsElapsed : 0;
 
-  let monthlyMinimum = 0;
-  const currentMonthIndex = now.getFullYear() === currentYear ? now.getMonth() : maxMonthIndex;
-  if (currentMonthIndex !== null && currentMonthIndex >= 0) {
-    let min = Infinity;
-    for (let month = 0; month <= currentMonthIndex; month += 1) {
-      const value = monthlyTotals.get(month) || 0;
-      if (value < min) {
-        min = value;
+    let monthlyMinimum = 0;
+    const currentMonthIndex = now.getFullYear() === currentYear ? now.getMonth() : bucket.maxMonthIndex;
+    if (currentMonthIndex !== null && currentMonthIndex >= 0) {
+      let min = Infinity;
+      for (let month = 0; month <= currentMonthIndex; month += 1) {
+        const value = bucket.monthlyTotals.get(month) || 0;
+        if (value < min) {
+          min = value;
+        }
       }
+      monthlyMinimum = Number.isFinite(min) ? min : 0;
+    } else if (bucket.monthlyTotals.size) {
+      monthlyMinimum = Math.min(...bucket.monthlyTotals.values());
     }
-    monthlyMinimum = Number.isFinite(min) ? min : 0;
-  } else if (monthlyTotals.size) {
-    monthlyMinimum = Math.min(...monthlyTotals.values());
-  }
+
+    perCurrency[currency] = {
+      accumulatedTotal: bucket.accumulatedTotal,
+      annualTotal,
+      monthlyAverage,
+      monthlyMinimum
+    };
+    currencyOrder.push(currency);
+  });
+
+  const preferredCurrency = currencyOrder.includes('TWD')
+    ? 'TWD'
+    : (currencyOrder[0] || 'TWD');
+  const baseSummary = perCurrency[preferredCurrency] || {
+    accumulatedTotal: 0,
+    annualTotal: 0,
+    monthlyAverage: 0,
+    monthlyMinimum: 0
+  };
 
   const result = {
-    accumulatedTotal,
-    annualTotal,
+    accumulatedTotal: baseSummary.accumulatedTotal,
+    annualTotal: baseSummary.annualTotal,
     annualYear: currentYear,
-    monthlyAverage,
-    monthlyMinimum
+    monthlyAverage: baseSummary.monthlyAverage,
+    monthlyMinimum: baseSummary.monthlyMinimum,
+    perCurrency,
+    baseCurrency: preferredCurrency
   };
 
   summaryCache.set(cacheKey, result);
@@ -221,8 +266,70 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
     annualTotal = 0,
     annualYear,
     monthlyAverage = 0,
-    monthlyMinimum = 0
+    monthlyMinimum = 0,
+    perCurrency = {},
+    baseCurrency = 'TWD'
   } = summary;
+  const currencyLabelMap = {
+    TWD: 'NT$',
+    USD: 'US$',
+    HKD: 'HK$',
+    CNY: 'CN¥',
+    JPY: 'JP¥',
+    EUR: '€',
+    GBP: '£',
+    SGD: 'S$',
+    AUD: 'A$',
+    CAD: 'CA$',
+    CHF: 'CHF',
+    KRW: '₩',
+    NZD: 'NZ$',
+    SEK: 'SEK',
+    NOK: 'NOK',
+    DKK: 'DKK'
+  };
+
+  const resolveCurrencyLabel = (currency) => {
+    if (typeof currency !== 'string' || !currency) return '';
+    return currencyLabelMap[currency] || currency;
+  };
+
+  const formatCurrencyWithLabel = (value, currency = baseCurrency) => {
+    const safeCurrency = typeof currency === 'string' && currency ? currency : baseCurrency;
+    const numericValue = Number(value);
+    const formatted = formatCurrency(Number.isFinite(numericValue) ? numericValue : 0, safeCurrency);
+    const label = resolveCurrencyLabel(safeCurrency);
+    return label ? `${label} ${formatted}` : formatted;
+  };
+
+  const formatMultiCurrencyValue = (key) => {
+    const entries = Object.entries(perCurrency || {});
+    if (!entries.length) {
+      return formatCurrencyWithLabel(0, baseCurrency);
+    }
+    const positiveEntries = entries
+      .map(([currency, data]) => ({
+        currency,
+        amount: Number(data?.[key]) || 0
+      }))
+      .filter(item => item.amount > 0);
+
+    const valuesToUse = positiveEntries.length ? positiveEntries : entries.map(([currency, data]) => ({
+      currency,
+      amount: Number(data?.[key]) || 0
+    }));
+
+    valuesToUse.sort((a, b) => {
+      if (a.currency === baseCurrency) return -1;
+      if (b.currency === baseCurrency) return 1;
+      return a.currency.localeCompare(b.currency);
+    });
+
+    return valuesToUse
+      .map(entry => formatCurrencyWithLabel(entry.amount, entry.currency))
+      .join(' + ');
+  };
+
   const annualGoal = Number(goals.totalTarget) || 0;
   const monthlyGoal = Number(goals.monthlyTarget) || 0;
   const minimumGoal = Number(goals.minimumTarget) || 0;
@@ -267,26 +374,26 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
     {
       id: 'ytd',
       label: messages.goalDividendYtdLabel,
-      value: formatCurrency(accumulatedTotal)
+      value: formatMultiCurrencyValue('accumulatedTotal')
     },
     {
       id: 'annual',
       label: annualTotal > 0 && annualYear
         ? `${messages.goalDividendAnnualLabel} (${annualYear})`
         : messages.goalDividendAnnualLabel,
-      value: formatCurrency(annualTotal),
+      value: formatMultiCurrencyValue('annualTotal'),
       isActive: activeGoalType === 'annual'
     },
     {
       id: 'monthly',
       label: messages.goalDividendMonthlyLabel,
-      value: formatCurrency(monthlyAverage),
+      value: formatMultiCurrencyValue('monthlyAverage'),
       isActive: activeGoalType === 'monthly'
     },
     {
       id: 'minimum',
       label: messages.goalDividendMinimumLabel,
-      value: formatCurrency(monthlyMinimum),
+      value: formatMultiCurrencyValue('monthlyMinimum'),
       isActive: activeGoalType === 'minimum'
     },
     {
@@ -303,8 +410,8 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
     rows.push({
       id: 'annual',
       label: messages.annualGoal,
-      current: `${messages.goalDividendAccumulated}${formatCurrency(accumulatedTotal)}`,
-      target: `${messages.goalTargetAnnual}${formatCurrency(annualGoal)}`,
+      current: `${messages.goalDividendAccumulated}${formatMultiCurrencyValue('accumulatedTotal')}`,
+      target: `${messages.goalTargetAnnual}${formatCurrencyWithLabel(annualGoal, baseCurrency)}`,
       percent: annualPercentValue,
       percentLabel: `${Math.min(100, Math.round(annualPercentValue * 100))}%`,
       encouragement: annualPercentValue >= 1
@@ -317,8 +424,8 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
     rows.push({
       id: 'monthly',
       label: messages.monthlyGoal,
-      current: `${messages.goalDividendMonthly}${formatCurrency(monthlyAverage)}`,
-      target: `${messages.goalTargetMonthly}${formatCurrency(monthlyGoal)}`,
+      current: `${messages.goalDividendMonthly}${formatMultiCurrencyValue('monthlyAverage')}`,
+      target: `${messages.goalTargetMonthly}${formatCurrencyWithLabel(monthlyGoal, baseCurrency)}`,
       percent: monthlyPercentValue,
       percentLabel: `${Math.min(100, Math.round(monthlyPercentValue * 100))}%`,
       encouragement: monthlyPercentValue >= 1
@@ -331,8 +438,8 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
     rows.push({
       id: 'minimum',
       label: messages.minimumGoal,
-      current: `${messages.goalDividendMinimum}${formatCurrency(monthlyMinimum)}`,
-      target: `${messages.goalTargetMinimum}${formatCurrency(minimumGoal)}`,
+      current: `${messages.goalDividendMinimum}${formatMultiCurrencyValue('monthlyMinimum')}`,
+      target: `${messages.goalTargetMinimum}${formatCurrencyWithLabel(minimumGoal, baseCurrency)}`,
       percent: minimumPercentValue,
       percentLabel: `${Math.min(100, Math.round(minimumPercentValue * 100))}%`,
       encouragement: minimumPercentValue >= 1

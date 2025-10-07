@@ -15,10 +15,10 @@ describe('dividend goal helpers', () => {
       { stock_id: '00878', date: '2024-01-10', quantity: 500, type: 'buy' }
     ];
     const dividendEvents = [
-      { stock_id: '0050', dividend_date: '2024-01-10', dividend: '1' },
-      { stock_id: '0050', dividend_date: '2024-06-10', dividend: '0.8' },
-      { stock_id: '00878', dividend_date: '2024-03-15', dividend: '0.5' },
-      { stock_id: '0050', dividend_date: '2023-12-10', dividend: '0.6' }
+      { stock_id: '0050', dividend_date: '2024-01-10', dividend: '1', currency: 'TWD' },
+      { stock_id: '0050', dividend_date: '2024-06-10', dividend: '0.8', currency: 'TWD' },
+      { stock_id: '00878', dividend_date: '2024-03-15', dividend: '0.5', currency: 'TWD' },
+      { stock_id: '0050', dividend_date: '2023-12-10', dividend: '0.6', currency: 'TWD' }
     ];
 
     const summary = calculateDividendSummary({
@@ -28,12 +28,22 @@ describe('dividend goal helpers', () => {
       asOfDate: new Date('2024-07-01')
     });
 
-    expect(summary).toEqual({
-      accumulatedTotal: 1000 * 1 + 1000 * 0.8 + 500 * 0.5,
-      annualTotal: 1000 * 1 + 1000 * 0.8 + 500 * 0.5,
+    const total = 1000 * 1 + 1000 * 0.8 + 500 * 0.5;
+    expect(summary).toMatchObject({
+      accumulatedTotal: total,
+      annualTotal: total,
       annualYear: 2024,
-      monthlyAverage: (1000 * 1 + 1000 * 0.8 + 500 * 0.5) / 6,
-      monthlyMinimum: 0
+      monthlyAverage: total / 6,
+      monthlyMinimum: 0,
+      baseCurrency: 'TWD',
+      perCurrency: {
+        TWD: {
+          accumulatedTotal: total,
+          annualTotal: total,
+          monthlyAverage: total / 6,
+          monthlyMinimum: 0
+        }
+      }
     });
   });
 
@@ -43,8 +53,8 @@ describe('dividend goal helpers', () => {
       { stock_id: '0050', date: '2024-02-01', quantity: 1000, type: 'sell' }
     ];
     const dividendEvents = [
-      { stock_id: '0050', dividend_date: '2024-01-10', dividend: '1' },
-      { stock_id: '0050', dividend_date: '2024-03-10', dividend: '1' }
+      { stock_id: '0050', dividend_date: '2024-01-10', dividend: '1', currency: 'TWD' },
+      { stock_id: '0050', dividend_date: '2024-03-10', dividend: '1', currency: 'TWD' }
     ];
 
     const summary = calculateDividendSummary({
@@ -54,12 +64,21 @@ describe('dividend goal helpers', () => {
       asOfDate: new Date('2024-04-01')
     });
 
-    expect(summary).toEqual({
+    expect(summary).toMatchObject({
       accumulatedTotal: 1000,
       annualTotal: 1000,
       annualYear: 2024,
       monthlyAverage: 1000,
-      monthlyMinimum: 0
+      monthlyMinimum: 0,
+      baseCurrency: 'TWD',
+      perCurrency: {
+        TWD: {
+          accumulatedTotal: 1000,
+          annualTotal: 1000,
+          monthlyAverage: 1000,
+          monthlyMinimum: 0
+        }
+      }
     });
   });
 
@@ -68,7 +87,7 @@ describe('dividend goal helpers', () => {
       { stock_id: '0050', total_quantity: 100 }
     ];
     const dividendEvents = [
-      { stock_id: '0050', dividend_date: '2024-01-10', dividend: '2' }
+      { stock_id: '0050', dividend_date: '2024-01-10', dividend: '2', currency: 'TWD' }
     ];
 
     const summary = calculateDividendSummary({
@@ -78,12 +97,52 @@ describe('dividend goal helpers', () => {
       asOfDate: new Date('2024-02-01')
     });
 
-    expect(summary).toEqual({
+    expect(summary).toMatchObject({
       accumulatedTotal: 200,
       annualTotal: 200,
       annualYear: 2024,
       monthlyAverage: 200,
-      monthlyMinimum: 0
+      monthlyMinimum: 0,
+      baseCurrency: 'TWD',
+      perCurrency: {
+        TWD: {
+          accumulatedTotal: 200,
+          annualTotal: 200,
+          monthlyAverage: 200,
+          monthlyMinimum: 0
+        }
+      }
+    });
+  });
+
+  test('separates dividend totals by currency', () => {
+    const inventoryList = [
+      { stock_id: '0050', total_quantity: 100 },
+      { stock_id: 'VUSD', total_quantity: 50 }
+    ];
+    const dividendEvents = [
+      { stock_id: '0050', dividend_date: '2024-01-10', dividend: '2', currency: 'TWD' },
+      { stock_id: 'VUSD', dividend_date: '2024-02-15', dividend: '0.5', currency: 'usd' }
+    ];
+
+    const summary = calculateDividendSummary({
+      inventoryList,
+      dividendEvents,
+      transactionHistory: [],
+      asOfDate: new Date('2024-03-01')
+    });
+
+    expect(summary.baseCurrency).toBe('TWD');
+    expect(summary.accumulatedTotal).toBeCloseTo(200);
+    expect(summary.perCurrency).toMatchObject({
+      TWD: {
+        accumulatedTotal: 200,
+        annualTotal: 200
+      },
+      USD: {
+        accumulatedTotal: 25,
+        annualTotal: 25
+      }
     });
   });
 
@@ -93,7 +152,16 @@ describe('dividend goal helpers', () => {
       annualTotal: 2400,
       annualYear: 2024,
       monthlyAverage: 200,
-      monthlyMinimum: 120
+      monthlyMinimum: 120,
+      baseCurrency: 'TWD',
+      perCurrency: {
+        TWD: {
+          accumulatedTotal: 1800,
+          annualTotal: 2400,
+          monthlyAverage: 200,
+          monthlyMinimum: 120
+        }
+      }
     };
     const goals = { totalTarget: 3600, monthlyTarget: 250, minimumTarget: 100, goalType: 'annual' };
     const messages = {
@@ -130,10 +198,10 @@ describe('dividend goal helpers', () => {
     });
 
     expect(metrics).toEqual([
-      expect.objectContaining({ id: 'ytd', label: '累積股息', value: '1800' }),
-      expect.objectContaining({ id: 'annual', label: '年度股息 (2024)', value: '2400', isActive: true }),
-      expect.objectContaining({ id: 'monthly', label: '每月平均股息', value: '200' }),
-      expect.objectContaining({ id: 'minimum', label: '每月最低股息', value: '120' }),
+      expect.objectContaining({ id: 'ytd', label: '累積股息', value: 'NT$ 1800' }),
+      expect.objectContaining({ id: 'annual', label: '年度股息 (2024)', value: 'NT$ 2400', isActive: true }),
+      expect.objectContaining({ id: 'monthly', label: '每月平均股息', value: 'NT$ 200' }),
+      expect.objectContaining({ id: 'minimum', label: '每月最低股息', value: 'NT$ 120' }),
       expect.objectContaining({ id: 'achievement', label: '達成率', value: '50%', highlight: true, showCelebration: false })
     ]);
     expect(rows).toHaveLength(1);
@@ -142,6 +210,8 @@ describe('dividend goal helpers', () => {
       percentLabel: '50%',
       encouragement: '年度過半'
     });
+    expect(rows[0].current).toBe('累積股息：NT$ 1800');
+    expect(rows[0].target).toBe('年度目標：NT$ 3600');
     expect(goalType).toBe('annual');
     expect(achievementPercent).toBeCloseTo(0.5);
   });
@@ -152,7 +222,16 @@ describe('dividend goal helpers', () => {
       annualTotal: 1500,
       annualYear: 2023,
       monthlyAverage: 120,
-      monthlyMinimum: 80
+      monthlyMinimum: 80,
+      baseCurrency: 'TWD',
+      perCurrency: {
+        TWD: {
+          accumulatedTotal: 900,
+          annualTotal: 1500,
+          monthlyAverage: 120,
+          monthlyMinimum: 80
+        }
+      }
     };
     const messages = {
       annualGoal: '年度目標',
@@ -188,6 +267,7 @@ describe('dividend goal helpers', () => {
 
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ id: 'minimum', percentLabel: '67%' });
+    expect(rows[0].current).toBe('每月最低股息：NT$ 80');
     expect(goalType).toBe('minimum');
     expect(emptyState).toBe('');
 
@@ -208,7 +288,16 @@ describe('dividend goal helpers', () => {
       annualTotal: 1800,
       annualYear: 2023,
       monthlyAverage: 150,
-      monthlyMinimum: 90
+      monthlyMinimum: 90,
+      baseCurrency: 'TWD',
+      perCurrency: {
+        TWD: {
+          accumulatedTotal: 900,
+          annualTotal: 1800,
+          monthlyAverage: 150,
+          monthlyMinimum: 90
+        }
+      }
     };
     const messages = {
       annualGoal: '年度目標',
@@ -242,10 +331,9 @@ describe('dividend goal helpers', () => {
       formatCurrency: value => Number(value).toFixed(0)
     });
 
-    const achievementMetric = metrics.find(metric => metric.id === 'achievement');
-    expect(achievementMetric.value).toBe('50%');
-    expect(achievementMetric.highlight).toBe(true);
-    expect(achievementMetric.showCelebration).toBe(false);
+    const annualMetric = metrics.find(metric => metric.id === 'annual');
+    expect(annualMetric.value).toBe('NT$ 1800');
+    expect(annualMetric.isActive).toBe(true);
   });
 
   test('celebrates achievement when reaching 100 percent', () => {
@@ -254,7 +342,16 @@ describe('dividend goal helpers', () => {
       annualTotal: 3600,
       annualYear: 2024,
       monthlyAverage: 300,
-      monthlyMinimum: 200
+      monthlyMinimum: 200,
+      baseCurrency: 'TWD',
+      perCurrency: {
+        TWD: {
+          accumulatedTotal: 3600,
+          annualTotal: 3600,
+          monthlyAverage: 300,
+          monthlyMinimum: 200
+        }
+      }
     };
     const messages = {
       annualGoal: '年度目標',
