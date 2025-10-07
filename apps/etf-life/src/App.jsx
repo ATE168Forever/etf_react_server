@@ -350,6 +350,7 @@ function App() {
     const fData = arr.filter(
       item => new Date(item.dividend_date).getFullYear() === Number(selectedYear)
     );
+    console.log('fData:', fData);
     const stocks = [];
     const stockMap = {};
     fData.forEach(item => {
@@ -415,6 +416,10 @@ function App() {
       }
 
       dividendTable[item.stock_id][month] = cell;
+      const dividend = dividendTable[item.stock_id][month];
+      if (item.stock_id === '00943') {
+        console.log('dividend for 00943:', dividend);
+      }
     });
 
     // Calculate months span and per-month yield for each dividend entry
