@@ -195,7 +195,7 @@ describe('dividend goal helpers', () => {
       goalEmpty: ''
     };
 
-    const { metrics, rows, currencyBreakdown } = buildDividendGoalViewModel({
+    const { metrics, rows, currencyBreakdown, currencyMetrics } = buildDividendGoalViewModel({
       summary,
       goals,
       messages,
@@ -212,6 +212,24 @@ describe('dividend goal helpers', () => {
     expect(currencyBreakdown).toEqual([
       { currency: 'TWD', label: 'NT$', value: 'NT$ 200' },
       { currency: 'USD', label: 'US$', value: 'US$ 25' }
+    ]);
+    expect(currencyMetrics).toEqual([
+      {
+        currency: 'TWD',
+        label: 'NT$',
+        accumulatedTotal: 'NT$ 200',
+        annualTotal: 'NT$ 200',
+        monthlyAverage: 'NT$ 40',
+        monthlyMinimum: 'NT$ 10'
+      },
+      {
+        currency: 'USD',
+        label: 'US$',
+        accumulatedTotal: 'US$ 25',
+        annualTotal: 'US$ 25',
+        monthlyAverage: 'US$ 5',
+        monthlyMinimum: 'US$ 0'
+      }
     ]);
   });
 

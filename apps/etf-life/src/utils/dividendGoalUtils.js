@@ -302,23 +302,32 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
     return label ? `${label} ${formatted}` : formatted;
   };
 
-  const getSortedCurrencyEntries = (key) => {
-    const entries = Object.entries(perCurrency || {});
-    if (!entries.length) {
+  const getSortedCurrencies = () => {
+    const currencies = Object.keys(perCurrency || {});
+    if (!currencies.length) {
       return [];
     }
-    const normalized = entries.map(([currency, data]) => ({
-      currency,
-      amount: Number(data?.[key]) || 0
-    }));
-    const positiveEntries = normalized.filter(item => item.amount > 0);
-    const valuesToUse = positiveEntries.length ? positiveEntries : normalized;
-
-    return valuesToUse.sort((a, b) => {
-      if (a.currency === baseCurrency) return -1;
-      if (b.currency === baseCurrency) return 1;
-      return a.currency.localeCompare(b.currency);
+    return currencies.sort((a, b) => {
+      if (a === baseCurrency) return -1;
+      if (b === baseCurrency) return 1;
+      return a.localeCompare(b);
     });
+  };
+
+  const getSortedCurrencyEntries = (key, { includeZero = false } = {}) => {
+    const currencies = getSortedCurrencies();
+    if (!currencies.length) {
+      return [];
+    }
+    const normalized = currencies.map(currency => ({
+      currency,
+      amount: Number(perCurrency?.[currency]?.[key]) || 0
+    }));
+    if (includeZero) {
+      return normalized;
+    }
+    const positiveEntries = normalized.filter(item => item.amount > 0);
+    return positiveEntries.length ? positiveEntries : normalized;
   };
 
   const formatMultiCurrencyValue = (key) => {
@@ -337,6 +346,19 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
       label: resolveCurrencyLabel(entry.currency),
       value: formatCurrencyWithLabel(entry.amount, entry.currency)
     }));
+
+  const currencyMetrics = getSortedCurrencyEntries('accumulatedTotal', { includeZero: true })
+    .map(entry => {
+      const data = perCurrency?.[entry.currency] || {};
+      return {
+        currency: entry.currency,
+        label: resolveCurrencyLabel(entry.currency),
+        accumulatedTotal: formatCurrencyWithLabel(data.accumulatedTotal, entry.currency),
+        annualTotal: formatCurrencyWithLabel(data.annualTotal, entry.currency),
+        monthlyAverage: formatCurrencyWithLabel(data.monthlyAverage, entry.currency),
+        monthlyMinimum: formatCurrencyWithLabel(data.monthlyMinimum, entry.currency)
+      };
+    });
 
   const annualGoal = Number(goals.totalTarget) || 0;
   const monthlyGoal = Number(goals.monthlyTarget) || 0;
@@ -466,6 +488,7 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
     emptyState,
     goalType: activeGoalType,
     achievementPercent: achievementPercentValue,
-    currencyBreakdown
+    currencyBreakdown,
+    currencyMetrics
   };
 }
