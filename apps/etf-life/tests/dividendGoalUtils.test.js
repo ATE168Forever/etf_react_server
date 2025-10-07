@@ -146,6 +146,75 @@ describe('dividend goal helpers', () => {
     });
   });
 
+  test('builds multi-currency labels when summary includes foreign dividends', () => {
+    const summary = {
+      accumulatedTotal: 200,
+      annualTotal: 200,
+      annualYear: 2024,
+      monthlyAverage: 40,
+      monthlyMinimum: 10,
+      baseCurrency: 'TWD',
+      perCurrency: {
+        TWD: {
+          accumulatedTotal: 200,
+          annualTotal: 200,
+          monthlyAverage: 40,
+          monthlyMinimum: 10
+        },
+        USD: {
+          accumulatedTotal: 25,
+          annualTotal: 25,
+          monthlyAverage: 5,
+          monthlyMinimum: 0
+        }
+      }
+    };
+    const goals = { totalTarget: 400, monthlyTarget: 0, minimumTarget: 0, goalType: 'annual' };
+    const messages = {
+      annualGoal: '年度目標',
+      monthlyGoal: '月平均目標',
+      minimumGoal: '每月最低目標',
+      goalDividendAccumulated: '累積股息：',
+      goalDividendMonthly: '每月平均股息：',
+      goalDividendMinimum: '每月最低股息：',
+      goalDividendYtdLabel: '累積股息',
+      goalDividendAnnualLabel: '年度股息',
+      goalDividendMonthlyLabel: '每月平均股息',
+      goalDividendMinimumLabel: '每月最低股息',
+      goalAchievementLabel: '達成率',
+      goalTargetAnnual: '年度目標：',
+      goalTargetMonthly: '月平均目標：',
+      goalTargetMinimum: '每月最低目標：',
+      goalPercentPlaceholder: '--',
+      goalAnnualHalf: '年度過半',
+      goalAnnualDone: '年度完成',
+      goalMonthlyHalf: '月過半',
+      goalMonthlyDone: '月完成',
+      goalMinimumHalf: '月最低過半',
+      goalMinimumDone: '月最低完成',
+      goalEmpty: ''
+    };
+
+    const { metrics, rows, currencyBreakdown } = buildDividendGoalViewModel({
+      summary,
+      goals,
+      messages,
+      formatCurrency: value => Number(value).toFixed(0)
+    });
+
+    const ytdMetric = metrics.find(metric => metric.id === 'ytd');
+    expect(ytdMetric.value).toBe('NT$ 200 + US$ 25');
+
+    const annualMetric = metrics.find(metric => metric.id === 'annual');
+    expect(annualMetric.value).toBe('NT$ 200 + US$ 25');
+
+    expect(rows[0].current).toBe('累積股息：NT$ 200 + US$ 25');
+    expect(currencyBreakdown).toEqual([
+      { currency: 'TWD', label: 'NT$', value: 'NT$ 200' },
+      { currency: 'USD', label: 'US$', value: 'US$ 25' }
+    ]);
+  });
+
   test('builds goal view model with metrics and rows', () => {
     const summary = {
       accumulatedTotal: 1800,

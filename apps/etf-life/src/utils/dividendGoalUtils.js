@@ -302,33 +302,41 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
     return label ? `${label} ${formatted}` : formatted;
   };
 
-  const formatMultiCurrencyValue = (key) => {
+  const getSortedCurrencyEntries = (key) => {
     const entries = Object.entries(perCurrency || {});
     if (!entries.length) {
-      return formatCurrencyWithLabel(0, baseCurrency);
+      return [];
     }
-    const positiveEntries = entries
-      .map(([currency, data]) => ({
-        currency,
-        amount: Number(data?.[key]) || 0
-      }))
-      .filter(item => item.amount > 0);
-
-    const valuesToUse = positiveEntries.length ? positiveEntries : entries.map(([currency, data]) => ({
+    const normalized = entries.map(([currency, data]) => ({
       currency,
       amount: Number(data?.[key]) || 0
     }));
+    const positiveEntries = normalized.filter(item => item.amount > 0);
+    const valuesToUse = positiveEntries.length ? positiveEntries : normalized;
 
-    valuesToUse.sort((a, b) => {
+    return valuesToUse.sort((a, b) => {
       if (a.currency === baseCurrency) return -1;
       if (b.currency === baseCurrency) return 1;
       return a.currency.localeCompare(b.currency);
     });
+  };
 
-    return valuesToUse
+  const formatMultiCurrencyValue = (key) => {
+    const entries = getSortedCurrencyEntries(key);
+    if (!entries.length) {
+      return formatCurrencyWithLabel(0, baseCurrency);
+    }
+    return entries
       .map(entry => formatCurrencyWithLabel(entry.amount, entry.currency))
       .join(' + ');
   };
+
+  const currencyBreakdown = getSortedCurrencyEntries('accumulatedTotal')
+    .map(entry => ({
+      currency: entry.currency,
+      label: resolveCurrencyLabel(entry.currency),
+      value: formatCurrencyWithLabel(entry.amount, entry.currency)
+    }));
 
   const annualGoal = Number(goals.totalTarget) || 0;
   const monthlyGoal = Number(goals.monthlyTarget) || 0;
@@ -457,6 +465,7 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
     rows,
     emptyState,
     goalType: activeGoalType,
-    achievementPercent: achievementPercentValue
+    achievementPercent: achievementPercentValue,
+    currencyBreakdown
   };
 }
