@@ -12,6 +12,7 @@ const ALLOWED_YEARS = [CURRENT_YEAR, PREVIOUS_YEAR];
 
 export default function StockDetail({ stockId }) {
   const { lang } = useLanguage();
+  const normalizedStockId = useMemo(() => (typeof stockId === 'string' ? stockId.toUpperCase() : ''), [stockId]);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -62,23 +63,24 @@ export default function StockDetail({ stockId }) {
   });
 
   const { data: returns = {}, isLoading: returnsLoading } = useQuery({
-    queryKey: ['returns', stockId],
+    queryKey: ['returns', normalizedStockId],
     queryFn: async () => {
-      const res = await fetch(`${API_HOST}/get_returns?stock_id=${stockId}`);
+      const res = await fetch(`${API_HOST}/get_returns?stock_id=${normalizedStockId}`);
       return await res.json();
     },
     staleTime: 2 * 60 * 60 * 1000,
+    enabled: Boolean(normalizedStockId),
   });
 
   const stock = useMemo(() => {
-    return stockList.find(item => item.stock_id === stockId) || {};
-  }, [stockList, stockId]);
+    return stockList.find(item => item.stock_id?.toUpperCase() === normalizedStockId) || {};
+  }, [stockList, normalizedStockId]);
 
   const dividends = useMemo(() => {
-    const arr = dividendList.filter(item => item.stock_id === stockId);
+    const arr = dividendList.filter(item => item.stock_id?.toUpperCase() === normalizedStockId);
     arr.sort((a, b) => new Date(b.dividend_date) - new Date(a.dividend_date));
     return arr;
-  }, [dividendList, stockId]);
+  }, [dividendList, normalizedStockId]);
 
   if (stockLoading || dividendLoading || returnsLoading) {
     return <div>{lang === 'en' ? 'Loading...' : '載入中...'}</div>;
@@ -93,7 +95,7 @@ export default function StockDetail({ stockId }) {
   return (
     <>
       <div className="stock-detail">
-      <h3>{stock.stock_id} {stock.stock_name}</h3>
+      <h3>{stock.stock_id || normalizedStockId} {stock.stock_name}</h3>
       {stockUpdatedAt && (
         <div style={{ textAlign: 'right', fontSize: 12 }}>
           {lang === 'en' ? 'Data updated at:' : '資料更新時間:'} {new Date(stockUpdatedAt).toLocaleString()}
@@ -157,13 +159,13 @@ export default function StockDetail({ stockId }) {
 
       <p style={{marginTop: 6}}>{lang === 'en' ? 'External Date:' : '外部資料'}</p>
       <ul className="link-list">
-        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.cmoney.tw/etf/tw/${stockId}/intro`} target="_blank" rel="noreferrer">{lang === 'en' ? 'CMoney ETF Intro' : 'CMoney ETF介紹'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
-        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.moneydj.com/etf/x/basic/basic0003.xdjhtm?etfid=${stockId}.tw`} target="_blank" rel="noreferrer">{lang === 'en' ? 'MoneyDJ Basic Info' : 'MoneyDJ 基本資料'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
-        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://goodinfo.tw/tw/StockDetail.asp?STOCK_ID=${stockId}`} target="_blank" rel="noreferrer">{lang === 'en' ? 'Goodinfo Stock Info' : 'Goodinfo 股市資訊'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
-        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://tw.stock.yahoo.com/quote/${stockId}.TW`} target="_blank" rel="noreferrer">{lang === 'en' ? 'Yahoo Price' : 'Yahoo 股價'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
-        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://histock.tw/stock/${stockId}`} target="_blank" rel="noreferrer">{lang === 'en' ? 'HiStock Info' : 'HiStock 個股資訊'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
-        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.cnyes.com/twstock/${stockId}`} target="_blank" rel="noreferrer">{lang === 'en' ? 'Cnyes Stock Info' : '鉅亨網 個股資訊'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
-        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.stockq.org/etf/${stockId}.php`} target="_blank" rel="noreferrer">{lang === 'en' ? 'StockQ ETF Data' : 'StockQ ETF資料'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
+        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.cmoney.tw/etf/tw/${normalizedStockId}/intro`} target="_blank" rel="noreferrer">{lang === 'en' ? 'CMoney ETF Intro' : 'CMoney ETF介紹'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
+        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.moneydj.com/etf/x/basic/basic0003.xdjhtm?etfid=${normalizedStockId}.tw`} target="_blank" rel="noreferrer">{lang === 'en' ? 'MoneyDJ Basic Info' : 'MoneyDJ 基本資料'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
+        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://goodinfo.tw/tw/StockDetail.asp?STOCK_ID=${normalizedStockId}`} target="_blank" rel="noreferrer">{lang === 'en' ? 'Goodinfo Stock Info' : 'Goodinfo 股市資訊'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
+        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://tw.stock.yahoo.com/quote/${normalizedStockId}.TW`} target="_blank" rel="noreferrer">{lang === 'en' ? 'Yahoo Price' : 'Yahoo 股價'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
+        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://histock.tw/stock/${normalizedStockId}`} target="_blank" rel="noreferrer">{lang === 'en' ? 'HiStock Info' : 'HiStock 個股資訊'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
+        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.cnyes.com/twstock/${normalizedStockId}`} target="_blank" rel="noreferrer">{lang === 'en' ? 'Cnyes Stock Info' : '鉅亨網 個股資訊'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
+        <li>{lang === 'en' ? 'Data source:' : '資料來源：'}<a href={`https://www.stockq.org/etf/${normalizedStockId}.php`} target="_blank" rel="noreferrer">{lang === 'en' ? 'StockQ ETF Data' : 'StockQ ETF資料'}</a>{lang === 'en' ? ' (external site)' : '（外部網站）'}</li>
       </ul>
 
       <div className="disclaimer">
