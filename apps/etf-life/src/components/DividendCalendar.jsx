@@ -3,11 +3,8 @@ import { useLanguage } from '../i18n';
 
 const DEFAULT_CURRENCY = 'TWD';
 
-const currencyLabel = (currency, lang) => {
-  if (lang === 'zh') {
-    return currency === 'USD' ? '美金' : '台幣';
-  }
-  return currency === 'USD' ? 'USD' : 'TWD';
+const currencyLabel = (currency) => {
+  return currency === 'USD' ? 'US$' : 'NT$';
 };
 
 const sortCurrencies = (currencies) => {
@@ -102,7 +99,7 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
                 if (total <= 0) return null;
                 return (
                   <span key={`ex-${currency}`} style={{ marginLeft: 8 }}>
-                    {currencyLabel(currency, lang)} {Math.round(total).toLocaleString()}
+                    {currencyLabel(currency)} {Math.round(total).toLocaleString()}
                   </span>
                 );
               })}
@@ -114,7 +111,7 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
                 if (total <= 0) return null;
                 return (
                   <span key={`pay-${currency}`} style={{ marginLeft: 8 }}>
-                    {currencyLabel(currency, lang)} {Math.round(total).toLocaleString()}
+                    {currencyLabel(currency)} {Math.round(total).toLocaleString()}
                   </span>
                 );
               })}

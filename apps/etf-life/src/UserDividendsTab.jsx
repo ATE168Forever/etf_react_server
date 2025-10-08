@@ -249,7 +249,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     });
 
     const currencyUnitZh = (currency) => (currency === 'USD' ? '美元' : '元');
-    const currencyHeaderLabel = (currency) => (lang === 'en' ? (currency === 'USD' ? 'USD' : 'TWD') : (currency === 'USD' ? '美金' : '台幣'));
+    const currencyHeaderLabel = (currency) => (currency === 'USD' ? 'US$' : 'NT$');
 
     const formatCurrencyValue = (currency, value, { allowZero = false } = {}) => {
         if (!Number.isFinite(value)) return '';
