@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 // Removed react-window virtualization to avoid invalid table markup
 import FilterDropdown from './FilterDropdown';
 import AdvancedFilterDropdown from './AdvancedFilterDropdown';
@@ -39,7 +39,9 @@ export default function StockTable({
   const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
   const [showIdDropdown, setShowIdDropdown] = useState(false);
   const [showExtraDropdown, setShowExtraDropdown] = useState(false);
+  const [idDropdownPosition, setIdDropdownPosition] = useState(null);
   const tableContainerRef = useRef(null);
+  const idFilterButtonRef = useRef(null);
   const { lang, t } = useLanguage();
   const MONTHS = lang === 'zh'
     ? ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
@@ -100,6 +102,55 @@ export default function StockTable({
   }, [stocks, sortConfig, showDividendYield, dividendTable, latestPrice, totalPerStock, yieldSum, estAnnualYield]);
 
   const limitedStocks = showAllStocks ? sortedStocks : sortedStocks.slice(0, 20);
+
+  const updateIdDropdownPosition = useCallback(() => {
+    if (!showIdDropdown) return;
+    if (!idFilterButtonRef.current) return;
+    if (typeof window === 'undefined') return;
+
+    const rect = idFilterButtonRef.current.getBoundingClientRect();
+    const scrollX = window.scrollX ?? window.pageXOffset ?? 0;
+    const scrollY = window.scrollY ?? window.pageYOffset ?? 0;
+    const dropdownWidth = 260;
+    const viewportRight = scrollX + window.innerWidth;
+    const horizontalPadding = 16;
+
+    let left = rect.left + scrollX;
+    if (left + dropdownWidth > viewportRight - horizontalPadding) {
+      left = Math.max(scrollX + horizontalPadding, viewportRight - dropdownWidth - horizontalPadding);
+    }
+
+    const verticalOffset = 8;
+    const top = rect.bottom + scrollY + verticalOffset;
+
+    setIdDropdownPosition({ top, left });
+  }, [showIdDropdown]);
+
+  useEffect(() => {
+    if (!showIdDropdown) return;
+    if (typeof window === 'undefined') return;
+
+    const handleReposition = () => updateIdDropdownPosition();
+
+    updateIdDropdownPosition();
+
+    window.addEventListener('scroll', handleReposition, true);
+    window.addEventListener('resize', handleReposition);
+    const containerEl = tableContainerRef.current;
+    containerEl?.addEventListener('scroll', handleReposition);
+
+    return () => {
+      window.removeEventListener('scroll', handleReposition, true);
+      window.removeEventListener('resize', handleReposition);
+      containerEl?.removeEventListener('scroll', handleReposition);
+    };
+  }, [showIdDropdown, updateIdDropdownPosition]);
+
+  useEffect(() => {
+    if (!showIdDropdown) {
+      setIdDropdownPosition(null);
+    }
+  }, [showIdDropdown]);
 
   const Row = ({ stock }) => {
     const totalVal = showDividendYield
@@ -264,15 +315,17 @@ export default function StockTable({
                 tabIndex={0}
                 onClick={() => setShowIdDropdown(true)}
                 title={t('filter_by_id')}
+                ref={idFilterButtonRef}
               >
                 🔎
               </span>
-              {showIdDropdown && (
+              {showIdDropdown && idDropdownPosition && (
                 <FilterDropdown
                   options={stockOptions}
                   selected={selectedStockIds}
                   setSelected={setSelectedStockIds}
                   onClose={() => setShowIdDropdown(false)}
+                  position={idDropdownPosition}
                 />
               )}
             </th>
