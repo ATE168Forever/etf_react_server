@@ -1,7 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 // Removed react-window virtualization to avoid invalid table markup
 import FilterDropdown from './FilterDropdown';
-import AdvancedFilterDropdown from './AdvancedFilterDropdown';
 import TooltipText from './TooltipText';
 import { HOST_URL } from '../config';
 import { useLanguage } from '../i18n';
@@ -33,12 +32,10 @@ export default function StockTable({
   showInfoAxis,
   getIncomeGoalInfo,
   freqMap,
-  extraFilters,
-  setExtraFilters
+  activeCurrencies
 }) {
   const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
   const [showIdDropdown, setShowIdDropdown] = useState(false);
-  const [showExtraDropdown, setShowExtraDropdown] = useState(false);
   const tableContainerRef = useRef(null);
   const { lang, t } = useLanguage();
   const MONTHS = lang === 'zh'
@@ -47,6 +44,8 @@ export default function StockTable({
   const freqNameMap = lang === 'zh'
     ? { 1: '年配', 2: '半年配', 4: '季配', 6: '雙月配', 12: '月配' }
     : { 1: 'Annual', 2: 'Semi-annual', 4: 'Quarterly', 6: 'Bimonthly', 12: 'Monthly' };
+  const currencyLabel = (currency) => (currency === 'USD' ? 'US$' : 'NT$');
+  const currencyUnitZh = (currency) => (currency === 'USD' ? '美元' : '元');
 
   usePreserveScroll(tableContainerRef, 'stockTableScrollLeft', [showInfoAxis]);
 
@@ -57,6 +56,35 @@ export default function StockTable({
       }
       return { column, direction: 'asc' };
     });
+  };
+
+  const getTotalForStock = (stockId) => {
+    return activeCurrencies.reduce((sum, currency) => {
+      return sum + (totalPerStock[stockId]?.[currency] || 0);
+    }, 0);
+  };
+
+  const getYieldSumForStock = (stockId) => {
+    return activeCurrencies.reduce((sum, currency) => {
+      return sum + (yieldSum[stockId]?.[currency] || 0);
+    }, 0);
+  };
+
+  const getAnnualYieldForStock = (stockId) => {
+    return activeCurrencies.reduce((sum, currency) => {
+      return sum + (estAnnualYield[stockId]?.[currency] || 0);
+    }, 0);
+  };
+
+  const getMonthValue = (stockId, idx) => {
+    return activeCurrencies.reduce((sum, currency) => {
+      const cell = dividendTable[stockId]?.[idx]?.[currency];
+      if (!cell) return sum;
+      if (showDividendYield) {
+        return sum + (parseFloat(cell.dividend_yield) || 0);
+      }
+      return sum + (Number(cell.dividend) || 0);
+    }, 0);
   };
 
   const sortedStocks = useMemo(() => {
@@ -73,46 +101,65 @@ export default function StockTable({
           return (aPrice - bPrice) * dir;
         }
         case 'total': {
-          const aTotal = showDividendYield ? (yieldSum[a.stock_id] || 0) : (totalPerStock[a.stock_id] || 0);
-          const bTotal = showDividendYield ? (yieldSum[b.stock_id] || 0) : (totalPerStock[b.stock_id] || 0);
+          const aTotal = showDividendYield ? getYieldSumForStock(a.stock_id) : getTotalForStock(a.stock_id);
+          const bTotal = showDividendYield ? getYieldSumForStock(b.stock_id) : getTotalForStock(b.stock_id);
           return (aTotal - bTotal) * dir;
         }
         case 'annual_yield': {
-          const aYield = estAnnualYield[a.stock_id] || 0;
-          const bYield = estAnnualYield[b.stock_id] || 0;
+          const aYield = getAnnualYieldForStock(a.stock_id);
+          const bYield = getAnnualYieldForStock(b.stock_id);
           return (aYield - bYield) * dir;
         }
         default: {
           if (sortConfig.column?.startsWith('month')) {
             const idx = Number(sortConfig.column.slice(5));
-            const aVal = showDividendYield
-              ? parseFloat(dividendTable[a.stock_id]?.[idx]?.dividend_yield) || 0
-              : dividendTable[a.stock_id]?.[idx]?.dividend || 0;
-            const bVal = showDividendYield
-              ? parseFloat(dividendTable[b.stock_id]?.[idx]?.dividend_yield) || 0
-              : dividendTable[b.stock_id]?.[idx]?.dividend || 0;
+            const aVal = getMonthValue(a.stock_id, idx);
+            const bVal = getMonthValue(b.stock_id, idx);
             return (aVal - bVal) * dir;
           }
           return 0;
         }
       }
     });
-  }, [stocks, sortConfig, showDividendYield, dividendTable, latestPrice, totalPerStock, yieldSum, estAnnualYield]);
+  }, [stocks, sortConfig, showDividendYield, dividendTable, latestPrice, activeCurrencies, totalPerStock, yieldSum, estAnnualYield]);
 
   const limitedStocks = showAllStocks ? sortedStocks : sortedStocks.slice(0, 20);
 
   const Row = ({ stock }) => {
-    const totalVal = showDividendYield
-      ? (yieldSum[stock.stock_id] > 0 ? `${yieldSum[stock.stock_id].toFixed(1)}%` : '')
-      : (totalPerStock[stock.stock_id] > 0 ? totalPerStock[stock.stock_id].toFixed(1) : '');
-    const annualVal = estAnnualYield[stock.stock_id] > 0 ? (
-      <TooltipText tooltip={`${lang === 'zh' ? '目前已累積殖利率' : 'Accumulated yield so far'}: ${(yieldSum[stock.stock_id] || 0).toFixed(1)}%`}>
-        {estAnnualYield[stock.stock_id].toFixed(1)}%
-        {estAnnualYield[stock.stock_id] === maxAnnualYield && maxAnnualYield > 0 && (
-          <span className="crown-icon" role="img" aria-label="crown">👑</span>
-        )}
-      </TooltipText>
-    ) : '';
+    const price = latestPrice[stock.stock_id]?.price;
+    const freq = freqMap[stock.stock_id];
+
+    const totalsContent = activeCurrencies.map(currency => {
+      const total = totalPerStock[stock.stock_id]?.[currency] || 0;
+      const yieldAccumulated = yieldSum[stock.stock_id]?.[currency] || 0;
+      const annual = estAnnualYield[stock.stock_id]?.[currency] || 0;
+      if (showDividendYield) {
+        if (yieldAccumulated <= 0) return null;
+        return (
+          <div key={`${stock.stock_id}-total-${currency}`}>
+            {currencyLabel(currency)} {yieldAccumulated.toFixed(1)}%
+          </div>
+        );
+      }
+      if (total <= 0 && annual <= 0) return null;
+      const tooltipText = lang === 'zh'
+        ? `目前已累積殖利率: ${yieldAccumulated.toFixed(1)}%`
+        : `Accumulated yield so far: ${yieldAccumulated.toFixed(1)}%`;
+      const annualContent = annual > 0 ? (
+        <TooltipText tooltip={tooltipText}>
+          {annual.toFixed(1)}%
+          {annual === (maxAnnualYield[currency] || 0) && annual > 0 && (
+            <span className="crown-icon" role="img" aria-label="crown">👑</span>
+          )}
+        </TooltipText>
+      ) : null;
+      return (
+        <div key={`${stock.stock_id}-total-${currency}`} style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span>{`${currencyLabel(currency)}${total.toFixed(3)}`}</span>
+          {annualContent && <span>/ {annualContent}</span>}
+        </div>
+      );
+    }).filter(Boolean);
 
     return (
       <tr>
@@ -121,61 +168,80 @@ export default function StockTable({
             {stock.stock_id} {stock.stock_name}
           </a>
         </td>
-        <td style={{ width: NUM_COL_WIDTH }}>{latestPrice[stock.stock_id]?.price ?? ''}</td>
-        <td style={{ width: NUM_COL_WIDTH }}></td>
-        {MONTHS.map((m, idx) => {
-          const cell = dividendTable[stock.stock_id] && dividendTable[stock.stock_id][idx];
-          if (!cell) return <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: NUM_COL_WIDTH }}></td>;
-          const freq = freqMap[stock.stock_id];
-          const perYield = cell.perYield || 0;
-          const rawDividend = Number(cell.dividend);
-          const rawYield = Number(cell.dividend_yield);
-          const hasValidDividend = Boolean(cell.hasValidDividend);
-          const hasValidYield = Boolean(cell.hasValidYield);
-          const isDividendValid = hasValidDividend && Number.isFinite(rawDividend);
-          const isYieldValid = hasValidYield && Number.isFinite(rawYield);
-          const hasPendingDividend = Boolean(cell.hasPendingDividend);
-          const hasPendingYield = Boolean(cell.hasPendingYield);
-          const pendingText = lang === 'zh' ? '待確認' : 'Pending';
-          const displayDividend = isDividendValid
-            ? rawDividend.toFixed(3)
-            : hasPendingDividend
-              ? pendingText
-              : '';
-          const displayYield = isYieldValid
-            ? `${rawYield.toFixed(1)}%`
-            : (hasPendingYield || hasPendingDividend)
-              ? pendingText
-              : '';
-          const displayVal = showDividendYield ? displayYield : displayDividend;
-          const price = latestPrice[stock.stock_id]?.price;
-          const extraInfo = getIncomeGoalInfo(isDividendValid ? rawDividend : 0, price, monthlyIncomeGoal, freq || 12);
-          const tooltipYield = isYieldValid
-            ? `${rawYield.toFixed(1)}%`
-            : (hasPendingYield || hasPendingDividend)
-              ? pendingText
-              : '';
-          const lastClose = cell.last_close_price ?? '-';
-          const dividendDate = cell.dividend_date || '-';
-          const paymentDate = cell.payment_date || '-';
-          return (
-            <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: NUM_COL_WIDTH }}>
-              <TooltipText
-                tooltip={`${t('prev_close')}: ${lastClose}\n${t('current_yield')}: ${tooltipYield}\n${t('avg_month_yield')}: ${perYield.toFixed(2)}%\n${t('payout_frequency')}: ${freqNameMap[freq] || t('irregular')}\n${t('dividend_date')}: ${dividendDate}\n${t('payment_date')}: ${paymentDate}${extraInfo}`}
+        <td style={{ width: NUM_COL_WIDTH }}>{price ?? ''}</td>
+        {MONTHS.map((m, idx) => (
+          activeCurrencies.map(currency => {
+            const cell = dividendTable[stock.stock_id]?.[idx]?.[currency];
+            if (!cell) {
+              return (
+                <td
+                  key={`${stock.stock_id}-${idx}-${currency}`}
+                  className={idx === currentMonth ? 'current-month' : ''}
+                  style={{ width: NUM_COL_WIDTH }}
+                ></td>
+              );
+            }
+            const perYield = cell.perYield || 0;
+            const rawDividend = Number(cell.dividend);
+            const rawYield = Number(cell.dividend_yield);
+            const hasValidDividend = Boolean(cell.hasValidDividend);
+            const hasValidYield = Boolean(cell.hasValidYield);
+            const hasPendingDividend = Boolean(cell.hasPendingDividend);
+            const hasPendingYield = Boolean(cell.hasPendingYield);
+            const pendingText = lang === 'zh' ? '待確認' : 'Pending';
+            const isDividendValid = hasValidDividend && Number.isFinite(rawDividend);
+            const isYieldValid = hasValidYield && Number.isFinite(rawYield);
+            const displayDividend = isDividendValid
+              ? rawDividend.toFixed(3)
+              : hasPendingDividend
+                ? pendingText
+                : '';
+            const displayYield = isYieldValid
+              ? `${rawYield.toFixed(1)}%`
+              : (hasPendingYield || hasPendingDividend)
+                ? pendingText
+                : '';
+            const displayVal = showDividendYield ? displayYield : displayDividend;
+            const tooltipLines = [];
+            if (isDividendValid) {
+              tooltipLines.push(
+                lang === 'zh'
+                  ? `每股配息: ${rawDividend.toFixed(3)} ${currencyUnitZh(currency)}`
+                  : `Dividend per share: ${currencyLabel(currency)}${rawDividend.toFixed(3)}`
+              );
+            }
+            const tooltipYield = isYieldValid
+              ? `${rawYield.toFixed(1)}%`
+              : (hasPendingYield || hasPendingDividend)
+                ? pendingText
+                : '';
+            tooltipLines.push(
+              `${t('prev_close')}: ${cell.last_close_price ?? '-'}`,
+              `${t('current_yield')}: ${tooltipYield}`,
+              `${t('avg_month_yield')}: ${perYield.toFixed(2)}%`,
+              `${t('payout_frequency')}: ${freqNameMap[freq] || t('irregular')}`,
+              `${t('dividend_date')}: ${cell.dividend_date || '-'}`,
+              `${t('payment_date')}: ${cell.payment_date || '-'}`
+            );
+            const extraInfo = getIncomeGoalInfo(isDividendValid ? rawDividend : 0, price, monthlyIncomeGoal, freq || 12);
+            const tooltip = `${tooltipLines.join('\n')}${extraInfo}`;
+            return (
+              <td
+                key={`${stock.stock_id}-${idx}-${currency}`}
+                className={idx === currentMonth ? 'current-month' : ''}
+                style={{ width: NUM_COL_WIDTH }}
               >
-                {displayVal}
-                {perYield === maxYieldPerMonth[idx] && maxYieldPerMonth[idx] > 0 && (
-                  <span className="diamond-icon" role="img" aria-label="diamond">💎</span>
-                )}
-              </TooltipText>
-            </td>
-          );
-        })}
-        <td>
-          {totalVal}
-          {totalVal && annualVal && ' / '}
-          {annualVal}
-        </td>
+                <TooltipText tooltip={tooltip}>
+                  {displayVal}
+                  {perYield === (maxYieldPerMonth[currency]?.[idx] || 0) && perYield > 0 && (
+                    <span className="diamond-icon" role="img" aria-label="diamond">💎</span>
+                  )}
+                </TooltipText>
+              </td>
+            );
+          })
+        ))}
+        <td>{totalsContent.length > 0 ? totalsContent : ''}</td>
       </tr>
     );
   };
@@ -199,10 +265,10 @@ export default function StockTable({
           <tbody>
             {limitedStocks.map(stock => {
               const price = latestPrice[stock.stock_id]?.price;
-              const dividendTotal = totalPerStock[stock.stock_id] || 0;
-              const avgYield = yieldCount[stock.stock_id] > 0
-                ? (yieldSum[stock.stock_id] / yieldCount[stock.stock_id])
-                : 0;
+              const dividendTotal = getTotalForStock(stock.stock_id);
+              const totalYieldSum = activeCurrencies.reduce((sum, currency) => sum + (yieldSum[stock.stock_id]?.[currency] || 0), 0);
+              const totalYieldCount = activeCurrencies.reduce((sum, currency) => sum + (yieldCount[stock.stock_id]?.[currency] || 0), 0);
+              const avgYield = totalYieldCount > 0 ? (totalYieldSum / totalYieldCount) : 0;
               let lotsNeeded = '';
               let cost = '';
               if (price && dividendTotal > 0) {
@@ -250,7 +316,7 @@ export default function StockTable({
         <table className="table table-bordered table-striped" style={{ minWidth: 1380 }}>
         <thead>
           <tr>
-            <th className="stock-col">
+            <th className="stock-col" rowSpan={activeCurrencies.length > 1 ? 2 : 1}>
               <span className="sortable" onClick={() => handleSort('stock_id')}>
                 {t('stock_code_name')}
                 <span className="sort-indicator">
@@ -276,7 +342,7 @@ export default function StockTable({
                 />
               )}
             </th>
-            <th style={{ width: NUM_COL_WIDTH }}>
+            <th style={{ width: NUM_COL_WIDTH }} rowSpan={activeCurrencies.length > 1 ? 2 : 1}>
               <span className="sortable" onClick={() => handleSort('latest_price')}>
                 {lang === 'zh' ? <>最新<br></br>股價</> : <>Latest<br></br>Price</>}
                 <span className="sort-indicator">
@@ -286,49 +352,37 @@ export default function StockTable({
                 </span>
               </span>
             </th>
-              <th style={{ width: NUM_COL_WIDTH, zIndex: showExtraDropdown ? 9999 : undefined }}>
-                {t('filter')}
-                <span
-                  className="filter-btn"
-                  tabIndex={0}
-                  onClick={() => setShowExtraDropdown(true)}
-                  title={t('advanced_filter')}
-                >
-                  🔎
-                </span>
-                {showExtraDropdown && (
-                  <AdvancedFilterDropdown
-                    filters={extraFilters}
-                    setFilters={setExtraFilters}
-                    onClose={() => setShowExtraDropdown(false)}
-                  />
-                )}
-              </th>
             {MONTHS.map((m, idx) => (
-              <th key={m} className={idx === currentMonth ? 'current-month' : ''} style={{ width: NUM_COL_WIDTH }}>
-                <span className="sortable" onClick={() => handleSort(`month${idx}`)}>
-                  {m}
-                  <span className="sort-indicator">
-                    {sortConfig.column === `month${idx}`
-                      ? (sortConfig.direction === 'asc' ? '▲' : '▼')
-                      : '↕'}
+              <th
+                key={m}
+                className={idx === currentMonth ? 'current-month' : ''}
+                colSpan={activeCurrencies.length}
+                style={{ minWidth: NUM_COL_WIDTH * activeCurrencies.length }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  <span className="sortable" onClick={() => handleSort(`month${idx}`)}>
+                    {m}
+                    <span className="sort-indicator">
+                      {sortConfig.column === `month${idx}`
+                        ? (sortConfig.direction === 'asc' ? '▲' : '▼')
+                        : '↕'}
+                    </span>
                   </span>
-                </span>
-                <br />
-                <label style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
-                  <input
-                    type="checkbox"
-                    checked={monthHasValue[idx]}
-                    onChange={e => {
-                      const arr = [...monthHasValue];
-                      arr[idx] = e.target.checked;
-                      setMonthHasValue(arr);
-                    }}
-                  />&nbsp;{t('payout')}
-                </label>
+                  <label style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                    <input
+                      type="checkbox"
+                      checked={monthHasValue[idx]}
+                      onChange={e => {
+                        const arr = [...monthHasValue];
+                        arr[idx] = e.target.checked;
+                        setMonthHasValue(arr);
+                      }}
+                    />&nbsp;{t('payout')}
+                  </label>
+                </div>
               </th>
             ))}
-            <th>
+            <th rowSpan={activeCurrencies.length > 1 ? 2 : 1}>
               <span className="sortable" onClick={() => handleSort('total')}>
                 {showDividendYield ? t('total_yield') : t('total_dividend')}
                 <span className="sort-indicator">
@@ -337,8 +391,7 @@ export default function StockTable({
                     : '↕'}
                 </span>
               </span>
-              {'/ '}
-              <br></br>
+              {' / '}
               <span className="sortable" onClick={() => handleSort('annual_yield')}>
                 {t('estimated_yield')}
                 <span className="sort-indicator">
@@ -349,6 +402,21 @@ export default function StockTable({
               </span>
             </th>
           </tr>
+          {activeCurrencies.length > 1 && (
+            <tr>
+              {MONTHS.map((m, idx) => (
+                activeCurrencies.map(currency => (
+                  <th
+                    key={`${m}-${currency}`}
+                    className={idx === currentMonth ? 'current-month' : ''}
+                    style={{ width: NUM_COL_WIDTH }}
+                  >
+                    {currencyLabel(currency)}
+                  </th>
+                ))
+              ))}
+            </tr>
+          )}
         </thead>
         <tbody>
           {limitedStocks.map(stock => (
