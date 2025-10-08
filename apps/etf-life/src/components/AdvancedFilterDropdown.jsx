@@ -2,12 +2,18 @@ import { useState, useRef } from 'react';
 import useClickOutside from './useClickOutside';
 import { useLanguage } from '../i18n';
 
-export default function AdvancedFilterDropdown({ filters, setFilters, onClose }) {
+export default function AdvancedFilterDropdown({ filters, setFilters, onClose, availableCurrencies = ['TWD', 'USD'] }) {
   const ref = useRef();
   useClickOutside(ref, onClose);
   const { lang } = useLanguage();
 
-  const [temp, setTemp] = useState(filters);
+  const [temp, setTemp] = useState({
+    minYield: filters.minYield || '',
+    freq: filters.freq || [],
+    upcomingWithin: filters.upcomingWithin || '',
+    diamond: filters.diamond || false,
+    currencies: filters.currencies || []
+  });
 
   const toggleFreq = (val) => {
     setTemp(t => ({
@@ -16,8 +22,17 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose })
     }));
   };
 
+  const toggleCurrency = (val) => {
+    setTemp(t => ({
+      ...t,
+      currencies: t.currencies.includes(val)
+        ? t.currencies.filter(c => c !== val)
+        : [...t.currencies, val]
+    }));
+  };
+
   const handleClear = () => {
-    setTemp({ minYield: '', freq: [], upcomingWithin: '', diamond: false });
+    setTemp({ minYield: '', freq: [], upcomingWithin: '', diamond: false, currencies: [] });
   };
 
   const handleApply = () => {
@@ -32,6 +47,13 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose })
     { v: 2, zh: '半年配', en: 'Semi-annual' },
     { v: 1, zh: '年配', en: 'Annual' }
   ];
+
+  const normalizedCurrencies = Array.from(new Set((availableCurrencies || []).map(c => c.toUpperCase())));
+  const currencyOptions = normalizedCurrencies.length > 0 ? normalizedCurrencies : ['TWD', 'USD'];
+  const currencyLabels = {
+    TWD: lang === 'en' ? 'TWD' : '台幣',
+    USD: lang === 'en' ? 'USD' : '美金'
+  };
 
   return (
     <div className="dropdown advanced-dropdown" ref={ref}>
@@ -59,6 +81,22 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose })
                 onChange={() => toggleFreq(opt.v)}
               />
               <span>{lang === 'en' ? opt.en : opt.zh}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+      <hr />
+      <div className="dropdown-section advanced-dropdown__section">
+        <span className="advanced-dropdown__label">{lang === 'en' ? 'Currency' : '幣別'}</span>
+        <div className="advanced-dropdown__freq-grid">
+          {currencyOptions.map(code => (
+            <label key={code} className="dropdown-item advanced-dropdown__checkbox">
+              <input
+                type="checkbox"
+                checked={temp.currencies.includes(code)}
+                onChange={() => toggleCurrency(code)}
+              />
+              <span>{currencyLabels[code] || code}</span>
             </label>
           ))}
         </div>
