@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import useClickOutside from './useClickOutside';
 import { useLanguage } from '../i18n';
 
-export default function FilterDropdown({ options, selected, setSelected, onClose }) {
+export default function FilterDropdown({ options, selected, setSelected, onClose, position }) {
   const ref = useRef();
   useClickOutside(ref, onClose);
   const { lang } = useLanguage();
@@ -38,8 +39,17 @@ export default function FilterDropdown({ options, selected, setSelected, onClose
     setTempSelected([]);
   };
 
-  return (
-    <div className="dropdown" ref={ref}>
+  const dropdownStyle = position
+    ? {
+        position: 'absolute',
+        top: position.top,
+        left: position.left,
+        zIndex: 2000
+      }
+    : undefined;
+
+  const dropdownContent = (
+    <div className="dropdown" ref={ref} style={dropdownStyle}>
       <input
         type="text"
         className="dropdown-search"
@@ -82,4 +92,10 @@ export default function FilterDropdown({ options, selected, setSelected, onClose
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') {
+    return dropdownContent;
+  }
+
+  return createPortal(dropdownContent, document.body);
 }
