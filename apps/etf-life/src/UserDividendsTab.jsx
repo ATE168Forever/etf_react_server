@@ -8,6 +8,28 @@ import { fetchWithCache } from './api';
 import TooltipText from './components/TooltipText';
 
 const MONTH_COL_WIDTH = 80;
+const DEFAULT_CURRENCY = 'TWD';
+const CURRENCY_SYMBOLS = {
+    TWD: 'NT$',
+    USD: 'US$'
+};
+const CURRENCY_NAME_ZH = {
+    TWD: '台股配息',
+    USD: '美股股息'
+};
+const CURRENCY_NAME_EN = {
+    TWD: 'NT$ dividends',
+    USD: 'US$ dividends'
+};
+
+function normalizeCurrency(currency) {
+    if (!currency) return DEFAULT_CURRENCY;
+    const upper = String(currency).toUpperCase();
+    if (upper === 'NTD') return 'TWD';
+    if (upper === 'NT$') return 'TWD';
+    if (upper === 'US$') return 'USD';
+    return upper;
+}
 function getTransactionHistory() {
     return readTransactionHistory().map(item => ({
         stock_id: item.stock_id,
@@ -116,6 +138,52 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         return getHolding(item.stock_id, checkDate) > 0;
     });
 
+    const normalizedDividendData = useMemo(() => dividendData.map(item => ({
+        ...item,
+        currency: normalizeCurrency(item.currency)
+    })), [dividendData]);
+
+    const availableCurrencies = useMemo(() => {
+        const set = new Set(normalizedDividendData.map(item => item.currency));
+        if (set.size === 0) {
+            return [DEFAULT_CURRENCY];
+        }
+        const order = { TWD: 0, USD: 1 };
+        return Array.from(set).sort((a, b) => {
+            const aOrder = order[a] ?? 99;
+            const bOrder = order[b] ?? 99;
+            if (aOrder !== bOrder) {
+                return aOrder - bOrder;
+            }
+            return a.localeCompare(b);
+        });
+    }, [normalizedDividendData]);
+
+    const [selectedCurrency, setSelectedCurrency] = useState(() => availableCurrencies[0] || DEFAULT_CURRENCY);
+
+    useEffect(() => {
+        if (!availableCurrencies.includes(selectedCurrency)) {
+            setSelectedCurrency(availableCurrencies[0] || DEFAULT_CURRENCY);
+        }
+    }, [availableCurrencies, selectedCurrency]);
+
+    const dividendsForDisplay = useMemo(
+        () => normalizedDividendData.filter(item => item.currency === selectedCurrency),
+        [normalizedDividendData, selectedCurrency]
+    );
+
+    const stockCurrencyMap = useMemo(() => {
+        const map = {};
+        normalizedDividendData.forEach(item => {
+            if (!map[item.stock_id]) {
+                map[item.stock_id] = item.currency;
+            }
+        });
+        return map;
+    }, [normalizedDividendData]);
+
+    const baseCurrency = availableCurrencies[0] || DEFAULT_CURRENCY;
+
     const dividendStockIds = Array.from(new Set(dividendData.map(item => item.stock_id)));
     const allRelevantStockIds = Array.from(new Set([...holdingIds, ...dividendStockIds]));
 
@@ -126,6 +194,47 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         stockMap[id] = stockNameMap[id] || info?.stock_name || '';
     });
     const myStocks = allRelevantStockIds.map(id => ({ stock_id: id, stock_name: stockMap[id] }));
+
+    const stocksForCurrency = useMemo(() => {
+        return myStocks.filter(stock => {
+            const mapped = stockCurrencyMap[stock.stock_id];
+            if (mapped) {
+                return mapped === selectedCurrency;
+            }
+            return selectedCurrency === baseCurrency;
+        });
+    }, [myStocks, stockCurrencyMap, selectedCurrency, baseCurrency]);
+
+    const currencySymbol = CURRENCY_SYMBOLS[selectedCurrency] || `${selectedCurrency} `;
+    const currencyUnitZh = selectedCurrency === 'USD' ? '美元' : '元';
+
+    const formatCurrencyValue = (value, { allowZero = false } = {}) => {
+        if (!Number.isFinite(value)) return '';
+        if (!allowZero && value === 0) return '';
+        return `${currencySymbol}${Math.round(value).toLocaleString()}`;
+    };
+
+    const currencyDescription = lang === 'en'
+        ? `Showing ${CURRENCY_NAME_EN[selectedCurrency] || `${selectedCurrency} dividends`} (${currencySymbol})`
+        : `顯示：${CURRENCY_NAME_ZH[selectedCurrency] || `${selectedCurrency} 股息`}（${currencySymbol}）`;
+
+    const handleCurrencyToggle = () => {
+        if (availableCurrencies.length <= 1) return;
+        const currentIdx = availableCurrencies.indexOf(selectedCurrency);
+        const nextIdx = (currentIdx + 1) % availableCurrencies.length;
+        setSelectedCurrency(availableCurrencies[nextIdx]);
+    };
+
+    const toggleButtonLabel = useMemo(() => {
+        if (availableCurrencies.length <= 1) return '';
+        const nextIdx = (availableCurrencies.indexOf(selectedCurrency) + 1) % availableCurrencies.length;
+        const nextCurrency = availableCurrencies[nextIdx];
+        if (lang === 'en') {
+            const nextSymbol = CURRENCY_SYMBOLS[nextCurrency] || `${nextCurrency} `;
+            return `Switch to ${nextSymbol} dividends`;
+        }
+        return nextCurrency === 'USD' ? '切換為美股配息' : '切換為台股配息';
+    }, [availableCurrencies, selectedCurrency, lang]);
 
     // Events for calendar view
     const calendarEvents = dividendData.flatMap(item => {
@@ -174,7 +283,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
 
     // 3. 建 monthlyDividendTable: stock_id => {month: cell}
     const dividendTable = {};
-    myStocks.forEach(stock => {
+    stocksForCurrency.forEach(stock => {
         dividendTable[stock.stock_id] = {};
     });
 
@@ -217,7 +326,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         return totalCost / totalQty;
     };
 
-    dividendData.forEach(item => {
+    dividendsForDisplay.forEach(item => {
         const thisDate = item.dividend_date;
         if (!thisDate) return;
         const month = new Date(thisDate).getMonth();
@@ -243,7 +352,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const totalYield = {};
     const latestClosePrice = {};
     const monthsCount = {};
-    myStocks.forEach(stock => {
+    stocksForCurrency.forEach(stock => {
         totalPerStock[stock.stock_id] = 0;
         totalYield[stock.stock_id] = 0;
         latestClosePrice[stock.stock_id] = null;
@@ -310,7 +419,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         return { sumYield, monthsCount: lastMonth };
     };
 
-    const sortedStocks = [...myStocks].sort((a, b) => {
+    const sortedStocks = [...stocksForCurrency].sort((a, b) => {
         const dir = sortConfig.direction === 'asc' ? 1 : -1;
         if (sortConfig.column === 'stock_id') {
             return a.stock_id.localeCompare(b.stock_id) * dir;
@@ -388,8 +497,14 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
 
     return (
         <div className="App" style={{ margin: '0 auto' }}>
-            <div style={{ display: "flex", alignItems: "center", margin: "10px 0 0 0", gap: "8px"}}>
+            <div style={{ display: "flex", alignItems: "center", margin: "10px 0 0 0", gap: "8px", flexWrap: 'wrap'}}>
                 <h3>{selectedYear} {lang === 'en' ? 'Dividend Overview' : '配息總覽'}</h3>
+                <span style={{ fontSize: 14, color: '#555' }}>{currencyDescription}</span>
+                {availableCurrencies.length > 1 && (
+                    <button onClick={handleCurrencyToggle}>
+                        {toggleButtonLabel}
+                    </button>
+                )}
             </div>
             <div style={{ margin: '10px 0' }}>
                 <button
@@ -514,9 +629,9 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                         tooltip={tooltip}
                                                         style={{ borderBottom: '1px dotted #777' }}
                                                     >
-                                                        {Math.round(total).toLocaleString()}
+                                                        {formatCurrencyValue(total)}
                                                     </TooltipText>
-                                                ) : Math.round(total).toLocaleString()
+                                                ) : formatCurrencyValue(total)
                                             ) : ''}
                                         </td>
                                     );
@@ -528,16 +643,16 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                     {displayGrandTotal > 0 ? (
                                         <TooltipText
                                             tooltip={lang === 'en'
-                                                ? `Average per month: ${Math.round(displayAvgPerMonth).toLocaleString()}`
-                                                : `每月平均領取: ${Math.round(displayAvgPerMonth).toLocaleString()}`}
+                                                ? `Average per month: ${formatCurrencyValue(displayAvgPerMonth, { allowZero: true })}`
+                                                : `每月平均領取: ${formatCurrencyValue(displayAvgPerMonth, { allowZero: true })}`}
                                             style={{ borderBottom: '1px dotted #777' }}
                                         >
-                                            {Math.round(displayGrandTotal).toLocaleString()}
+                                            {formatCurrencyValue(displayGrandTotal)}
                                         </TooltipText>
                                     ) : ''}
                                 </td>
                                 {displayTotalsPerMonth.map((total, idx) => (
-                                    <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>{total > 0 ? Math.round(total).toLocaleString() : ''}</td>
+                                    <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>{total > 0 ? formatCurrencyValue(total) : ''}</td>
                                 ))}
                             </tr>
                             {filteredStocks.map(stock => {
@@ -560,7 +675,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                         : `最新收盤價: ${latestClosePrice[stock.stock_id]?.price || '-'}\n加總殖利率: ${sumYield.toFixed(1)}%\n預估年化殖利率: ${estAnnual.toFixed(1)}%`}
                                                     style={{ borderBottom: '1px dotted #777' }}
                                                 >
-                                                    {Math.round(stockTotal).toLocaleString()}
+                                                    {formatCurrencyValue(stockTotal)}
                                                 </TooltipText>
                                             );
                                         })() : ''}</td>
@@ -572,11 +687,11 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                 <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
                                                     <TooltipText
                                                         tooltip={lang === 'en'
-                                                            ? `Shares held: ${cell.quantity} (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} lots)\nDividend per share: ${cell.dividend} \nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
-                                                            : `持有數量: ${cell.quantity} 股 (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)\n每股配息: ${cell.dividend} 元\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`}
+                                                            ? `Shares held: ${cell.quantity} (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} lots)\nDividend per share: ${currencySymbol}${cell.dividend}\nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
+                                                            : `持有數量: ${cell.quantity} 股 (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)\n每股配息: ${cell.dividend} ${currencyUnitZh}\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`}
                                                         style={{ borderBottom: '1px dotted #777' }}
                                                     >
-                                                        {total > 0 ? Math.round(total).toLocaleString() : ''}
+                                                        {total > 0 ? formatCurrencyValue(total) : ''}
                                                     </TooltipText>
                                                 </td>
                                             );

@@ -1,10 +1,11 @@
 /* eslint-env jest */
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import UserDividendsTab from '../src/UserDividendsTab';
 import { readTransactionHistory } from '../src/utils/transactionStorage';
 
 jest.mock('../src/utils/transactionStorage');
 jest.mock('../src/config', () => ({ API_HOST: '' }));
+jest.mock('../src/api', () => ({ fetchWithCache: jest.fn(() => Promise.resolve({ data: [] })) }));
 
 test('displays stock id and dynamic name from dividend data', async () => {
   readTransactionHistory.mockReturnValue([
@@ -91,4 +92,50 @@ test('shows dividends for stocks sold before year end', async () => {
 
   expect(await screen.findByText('0056 高股息ETF')).toBeInTheDocument();
   expect(screen.queryByText('尚無庫存，請先新增交易紀錄')).not.toBeInTheDocument();
+});
+
+test('allows switching between TWD and USD dividend summaries', async () => {
+  readTransactionHistory.mockReturnValue([
+    { stock_id: '0050', date: '2024-01-01', quantity: 1000, type: 'buy' },
+    { stock_id: 'VUSD', date: '2024-01-01', quantity: 200, type: 'buy' }
+  ]);
+
+  const data = [
+    {
+      stock_id: '0050',
+      stock_name: '台股ETF',
+      dividend: '1',
+      dividend_date: '2024-03-15',
+      payment_date: '2024-04-15',
+      currency: 'TWD'
+    },
+    {
+      stock_id: 'VUSD',
+      stock_name: 'Vanguard USD',
+      dividend: '0.5',
+      dividend_date: '2024-05-10',
+      payment_date: '2024-05-20',
+      currency: 'USD'
+    }
+  ];
+
+  render(<UserDividendsTab allDividendData={data} selectedYear={2024} />);
+
+  expect(await screen.findByText('0050 台股ETF')).toBeInTheDocument();
+  expect(screen.getAllByText('NT$1,000').length).toBeGreaterThan(0);
+  expect(screen.queryByText('VUSD Vanguard USD')).not.toBeInTheDocument();
+
+  const toUsdButton = await screen.findByRole('button', { name: /切換為美股配息|Switch to US\$ dividends/ });
+  fireEvent.click(toUsdButton);
+
+  expect(await screen.findByText('VUSD Vanguard USD')).toBeInTheDocument();
+  expect(screen.getAllByText('US$100').length).toBeGreaterThan(0);
+  expect(screen.queryAllByText('NT$1,000')).toHaveLength(0);
+
+  const toTwdButton = await screen.findByRole('button', { name: /切換為台股配息|Switch to NT\$ dividends/ });
+  fireEvent.click(toTwdButton);
+
+  expect(await screen.findByText('0050 台股ETF')).toBeInTheDocument();
+  expect(screen.getAllByText('NT$1,000').length).toBeGreaterThan(0);
+  expect(screen.queryAllByText('US$100')).toHaveLength(0);
 });
