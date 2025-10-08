@@ -17,6 +17,7 @@ import NLHelper from './NLHelper';
 import { API_HOST } from './config';
 import { fetchWithCache } from './api';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
+import { buildMarketMap, inferMarket, MARKET_ORDER, MARKET_LABELS, getCurrencySymbol } from './utils/marketUtils';
 import { fetchDividendsByYears, clearDividendsCache } from './dividendApi';
 
 const DEFAULT_MONTHLY_GOAL = 10000;
@@ -45,14 +46,16 @@ const DEFAULT_WATCH_GROUPS = [
   }
 ];
 
-function calcIncomeGoalInfo(dividend, price, goal, freq = 12, lang = 'zh') {
+function calcIncomeGoalInfo(dividend, price, goal, freq = 12, lang = 'zh', currencySymbol = 'NT$') {
   if (!price || dividend <= 0 || freq <= 0) return '';
   const annualDividend = dividend * freq;
   const lotsNeeded = Math.ceil((goal * 12) / (annualDividend * 1000));
   const cost = Math.round(lotsNeeded * 1000 * price).toLocaleString();
+  const formattedGoal = `${currencySymbol}${goal.toLocaleString()}`;
+  const formattedCost = `${currencySymbol}${cost}`;
   return lang === 'en'
-    ? `\nTo reach a monthly return of ${goal.toLocaleString()}, you need ${lotsNeeded} lots\nCost: ${cost}`
-    : `\n月報酬${goal.toLocaleString()}需: ${lotsNeeded}張\n成本: ${cost}元`;
+    ? `\nTo reach a monthly return of ${formattedGoal}, you need ${lotsNeeded} lots\nCost: ${formattedCost}`
+    : `\n月報酬${formattedGoal}需: ${lotsNeeded}張\n成本: ${formattedCost}`;
 }
 
 const isChineseLanguage = (lang) => lang && lang.toLowerCase().startsWith('zh');
@@ -81,6 +84,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [upcomingAlerts, setUpcomingAlerts] = useState([]);
+  const [dividendMarket, setDividendMarket] = useState('TW');
 
   // Toggle calendar visibility
   const [showCalendar, setShowCalendar] = useState(() => {
@@ -138,8 +142,35 @@ function App() {
   const [freqMap, setFreqMap] = useState({});
   const timeZone = 'Asia/Taipei';
   const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
+  const marketMap = useMemo(() => buildMarketMap(data), [data]);
+  const availableDividendMarketSet = useMemo(() => {
+    const set = new Set();
+    (Array.isArray(data) ? data : []).forEach(item => {
+      const dividendDate = item?.dividend_date;
+      if (!dividendDate) return;
+      if (new Date(dividendDate).getFullYear() !== Number(selectedYear)) return;
+      const market = inferMarket(item.stock_id, marketMap);
+      if (market) set.add(market);
+    });
+    return set;
+  }, [data, selectedYear, marketMap]);
+
+  useEffect(() => {
+    if (dividendMarket !== 'TW') return;
+    if (!availableDividendMarketSet || availableDividendMarketSet.size === 0) return;
+    if (availableDividendMarketSet.has('TW')) return;
+    for (const market of MARKET_ORDER) {
+      if (availableDividendMarketSet.has(market)) {
+        setDividendMarket(market);
+        break;
+      }
+    }
+  }, [availableDividendMarketSet, dividendMarket]);
+
+  const dividendCurrencySymbol = getCurrencySymbol(dividendMarket);
+
   const getIncomeGoalInfo = (dividend, price, goal, freq = 12) =>
-    calcIncomeGoalInfo(dividend, price, goal, freq, lang);
+    calcIncomeGoalInfo(dividend, price, goal, freq, lang, dividendCurrencySymbol);
   const renderGroupName = (name) => {
     const map = {
       '現金流導向（月月配息）': lang === 'en' ? 'Cash Flow Focus (Monthly Dividends)' : '現金流導向（月月配息）',
@@ -347,9 +378,13 @@ function App() {
 
   const { filteredData, stocks, stockOptions, dividendTable } = useMemo(() => {
     const arr = Array.isArray(data) ? data : [];
-    const fData = arr.filter(
-      item => new Date(item.dividend_date).getFullYear() === Number(selectedYear)
-    );
+    const fData = arr.filter(item => {
+      const dividendDate = item?.dividend_date;
+      if (!dividendDate) return false;
+      if (new Date(dividendDate).getFullYear() !== Number(selectedYear)) return false;
+      const market = inferMarket(item.stock_id, marketMap);
+      return market === dividendMarket;
+    });
     const stocks = [];
     const stockMap = {};
     fData.forEach(item => {
@@ -441,7 +476,7 @@ function App() {
     });
 
     return { filteredData: fData, stocks, stockOptions, dividendTable };
-  }, [data, selectedYear, freqMap]);
+  }, [data, selectedYear, freqMap, dividendMarket, marketMap]);
 
   const filteredStocks = stocks.filter(stock => {
     if (selectedStockIds.length && !selectedStockIds.includes(stock.stock_id)) return false;
@@ -620,9 +655,14 @@ function App() {
         <div className="dividend-alert">
           {upcomingAlerts.map(a => (
             <div key={`${a.stock_id}-${a.type}`}>
-              {lang === 'en'
-                ? `${a.stock_id} ${a.stock_name} will ${a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'} tomorrow. ${a.dividend} per share, estimated ${Math.round(a.total).toLocaleString()}`
-                : `${a.stock_id} ${a.stock_name} 明天即將${a.type === 'ex' ? '除息' : '配息'} 每股 ${a.dividend} 元，預估領取 ${Math.round(a.total).toLocaleString()} 元`}
+              {(() => {
+                const alertCurrency = getCurrencySymbol(inferMarket(a.stock_id, marketMap));
+                const totalText = `${alertCurrency}${Math.round(a.total).toLocaleString()}`;
+                const dividendText = `${alertCurrency}${a.dividend}`;
+                return lang === 'en'
+                  ? `${a.stock_id} ${a.stock_name} will ${a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'} tomorrow. ${dividendText} per share, estimated ${totalText}`
+                  : `${a.stock_id} ${a.stock_name} 明天即將${a.type === 'ex' ? '除息' : '配息'} 每股 ${dividendText}，預估領取 ${totalText}`;
+              })()}
             </div>
           ))}
         </div>
@@ -700,6 +740,30 @@ function App() {
                 {lang === 'en' ? 'Create' : '建立'}
               </button>
             </div>
+            <div className="control-pair" style={{ alignItems: 'center' }}>
+              <label>{lang === 'en' ? 'Market:' : '市場：'}</label>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {MARKET_ORDER.map(market => {
+                  const label = lang === 'en'
+                    ? (MARKET_LABELS[market]?.en || market)
+                    : (MARKET_LABELS[market]?.zh || market);
+                  const isActive = dividendMarket === market;
+                  const hasData = availableDividendMarketSet.has(market);
+                  return (
+                    <button
+                      key={market}
+                      type="button"
+                      onClick={() => setDividendMarket(market)}
+                      className={isActive ? 'btn-selected' : 'btn-unselected'}
+                      aria-pressed={isActive}
+                      style={{ minWidth: 64, opacity: hasData || isActive ? 1 : 0.6 }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
           <button
             onClick={() => setShowCalendar(v => !v)}
@@ -740,7 +804,7 @@ function App() {
                       {lang === 'en' ? 'Ex/Paid Date' : '除息/發放日'}
                     </button>
                   </div>
-                  <DividendCalendar year={selectedYear} events={filteredCalendarEvents} showTotals={false} />
+          <DividendCalendar year={selectedYear} events={filteredCalendarEvents} showTotals={false} currencySymbol={dividendCurrencySymbol} />
                 </>
               )}
 
@@ -813,6 +877,7 @@ function App() {
                 freqMap={freqMap}
                 extraFilters={extraFilters}
                 setExtraFilters={setExtraFilters}
+                currencySymbol={dividendCurrencySymbol}
               />
             </>
           )}

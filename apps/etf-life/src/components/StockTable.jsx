@@ -34,7 +34,8 @@ export default function StockTable({
   getIncomeGoalInfo,
   freqMap,
   extraFilters,
-  setExtraFilters
+  setExtraFilters,
+  currencySymbol = 'NT$'
 }) {
   const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
   const [showIdDropdown, setShowIdDropdown] = useState(false);
@@ -101,10 +102,29 @@ export default function StockTable({
 
   const limitedStocks = showAllStocks ? sortedStocks : sortedStocks.slice(0, 20);
 
+  const formatCurrencyValue = (value, options = {}) => {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return '';
+    const {
+      minimumFractionDigits = 0,
+      maximumFractionDigits = 3
+    } = options;
+    return `${currencySymbol}${num.toLocaleString(undefined, {
+      minimumFractionDigits,
+      maximumFractionDigits
+    })}`;
+  };
+
+  const formatDividendText = (value) => {
+    const num = Number(value);
+    if (!Number.isFinite(num) || num <= 0) return '';
+    return formatCurrencyValue(num, { maximumFractionDigits: 3 });
+  };
+
   const Row = ({ stock }) => {
     const totalVal = showDividendYield
       ? (yieldSum[stock.stock_id] > 0 ? `${yieldSum[stock.stock_id].toFixed(1)}%` : '')
-      : (totalPerStock[stock.stock_id] > 0 ? totalPerStock[stock.stock_id].toFixed(1) : '');
+      : (totalPerStock[stock.stock_id] > 0 ? formatDividendText(totalPerStock[stock.stock_id]) : '');
     const annualVal = estAnnualYield[stock.stock_id] > 0 ? (
       <TooltipText tooltip={`${lang === 'zh' ? '目前已累積殖利率' : 'Accumulated yield so far'}: ${(yieldSum[stock.stock_id] || 0).toFixed(1)}%`}>
         {estAnnualYield[stock.stock_id].toFixed(1)}%
@@ -138,10 +158,15 @@ export default function StockTable({
           const hasPendingYield = Boolean(cell.hasPendingYield);
           const pendingText = lang === 'zh' ? '待確認' : 'Pending';
           const displayDividend = isDividendValid
-            ? rawDividend.toFixed(3)
+            ? formatDividendText(rawDividend)
             : hasPendingDividend
               ? pendingText
               : '';
+          const perShareTooltip = isDividendValid
+            ? formatDividendText(rawDividend) || `${currencySymbol}0`
+            : hasPendingDividend
+              ? pendingText
+              : '-';
           const displayYield = isYieldValid
             ? `${rawYield.toFixed(1)}%`
             : (hasPendingYield || hasPendingDividend)
@@ -161,7 +186,7 @@ export default function StockTable({
           return (
             <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: NUM_COL_WIDTH }}>
               <TooltipText
-                tooltip={`${t('prev_close')}: ${lastClose}\n${t('current_yield')}: ${tooltipYield}\n${t('avg_month_yield')}: ${perYield.toFixed(2)}%\n${t('payout_frequency')}: ${freqNameMap[freq] || t('irregular')}\n${t('dividend_date')}: ${dividendDate}\n${t('payment_date')}: ${paymentDate}${extraInfo}`}
+                tooltip={`${t('prev_close')}: ${lastClose}\n${t('per_share_dividend') || t('dividend')}: ${perShareTooltip}\n${t('current_yield')}: ${tooltipYield}\n${t('avg_month_yield')}: ${perYield.toFixed(2)}%\n${t('payout_frequency')}: ${freqNameMap[freq] || t('irregular')}\n${t('dividend_date')}: ${dividendDate}\n${t('payment_date')}: ${paymentDate}${extraInfo}`}
               >
                 {displayVal}
                 {perYield === maxYieldPerMonth[idx] && maxYieldPerMonth[idx] > 0 && (
@@ -208,7 +233,8 @@ export default function StockTable({
               if (price && dividendTotal > 0) {
                 const lots = Math.ceil((monthlyIncomeGoal * 12) / (dividendTotal * 1000));
                 lotsNeeded = lots;
-                cost = Math.round(lots * 1000 * price).toLocaleString();
+                const costValue = Math.round(lots * 1000 * price);
+                cost = costValue > 0 ? formatCurrencyValue(costValue, { maximumFractionDigits: 0 }) : '';
               }
               const lastYield = latestYield[stock.stock_id]?.yield;
               return (
@@ -219,11 +245,11 @@ export default function StockTable({
                     </a>
                   </td>
                   <td>{price ?? ''}</td>
-                  <td>{dividendTotal > 0 ? dividendTotal.toFixed(3) : ''}</td>
+                  <td>{dividendTotal > 0 ? formatDividendText(dividendTotal) : ''}</td>
                   <td>{lastYield > 0 ? `${lastYield.toFixed(1)}%` : ''}</td>
                   <td>{avgYield > 0 ? `${avgYield.toFixed(1)}%` : ''}</td>
                   <td>{lotsNeeded}</td>
-                  <td>{cost && (lang === 'en' ? `NT$${cost}` : `${cost}元`)}</td>
+                  <td>{cost}</td>
                 </tr>
               );
             })}

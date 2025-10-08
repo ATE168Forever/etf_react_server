@@ -10,8 +10,8 @@ test('displays monthly ex and pay totals', () => {
     { date: `${year}-${month}-15`, type: 'pay', amount: 200 }
   ];
   render(<DividendCalendar year={Number(year)} events={events} />);
-  expect(screen.getByText('除息金額: 100')).toBeInTheDocument();
-  expect(screen.getByText('發放金額: 200')).toBeInTheDocument();
+  expect(screen.getByText(/除息金額/)).toHaveTextContent(/NT\$\s*100/);
+  expect(screen.getByText(/發放金額/)).toHaveTextContent(/NT\$\s*200/);
 });
 
 test('hides monthly totals when showTotals is false', () => {
@@ -22,6 +22,6 @@ test('hides monthly totals when showTotals is false', () => {
     { date: `${year}-${month}-15`, type: 'pay', amount: 200 }
   ];
   render(<DividendCalendar year={Number(year)} events={events} showTotals={false} />);
-  expect(screen.queryByText('除息金額: 100')).not.toBeInTheDocument();
-  expect(screen.queryByText('發放金額: 200')).not.toBeInTheDocument();
+  expect(screen.queryByText(/除息金額/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/發放金額/)).not.toBeInTheDocument();
 });

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLanguage } from '../i18n';
 
-export default function DividendCalendar({ year, events, showTotals = true }) {
+export default function DividendCalendar({ year, events, showTotals = true, currencySymbol = 'NT$' }) {
   const timeZone = 'Asia/Taipei';
   const nowStr = new Date().toLocaleDateString('en-CA', { timeZone });
   const [month, setMonth] = useState(Number(nowStr.slice(5, 7)) - 1);
@@ -62,8 +62,8 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
         </div>
         {showTotals && (exTotal > 0 || payTotal > 0) && (
           <div className="calendar-summary">
-            <div>{t('dividend')}: {Math.round(exTotal).toLocaleString()}</div>
-            <span style={{ marginLeft: 8 }}>{t('payment')}: {Math.round(payTotal).toLocaleString()}</span>
+            <div>{t('dividend')}: {currencySymbol}{Math.round(exTotal).toLocaleString()}</div>
+            <span style={{ marginLeft: 8 }}>{t('payment')}: {currencySymbol}{Math.round(payTotal).toLocaleString()}</span>
           </div>
         )}
       </div>
@@ -90,10 +90,9 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
                         const lotText = ev.quantity != null
                           ? (ev.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')
                           : '';
-                        const currency = lang === 'en' ? 'NT$' : '元';
                         const tooltip = ev.quantity != null
-                          ? `${t('quantity')}: ${ev.quantity} ${lang === 'en' ? 'shares' : '股'} (${lotText} ${lang === 'en' ? 'lots' : '張'})\n${t('per_share_dividend')}: ${ev.dividend} ${currency}\n${t('dividend_receivable')}: ${Number(ev.amount).toFixed(1)} ${currency}\n${t('prev_close')}: ${ev.last_close_price}\n${t('current_yield')}: ${ev.dividend_yield}%\n${t('dividend_date')}: ${ev.dividend_date || '-'}\n${t('payment_date')}: ${ev.payment_date || '-'}`
-                          : `${t('per_share_dividend')}: ${Number(ev.amount).toFixed(3)} ${currency}\n${t('prev_close')}: ${ev.last_close_price}\n${t('current_yield')}: ${ev.dividend_yield}%\n${t('dividend_date')}: ${ev.dividend_date || '-'}\n${t('payment_date')}: ${ev.payment_date || '-'}`;
+                          ? `${t('quantity')}: ${ev.quantity} ${lang === 'en' ? 'shares' : '股'} (${lotText} ${lang === 'en' ? 'lots' : '張'})\n${t('per_share_dividend')}: ${currencySymbol}${ev.dividend}\n${t('dividend_receivable')}: ${currencySymbol}${Number(ev.amount).toFixed(1)}\n${t('prev_close')}: ${ev.last_close_price}\n${t('current_yield')}: ${ev.dividend_yield}%\n${t('dividend_date')}: ${ev.dividend_date || '-'}\n${t('payment_date')}: ${ev.payment_date || '-'}`
+                          : `${t('per_share_dividend')}: ${currencySymbol}${Number(ev.amount).toFixed(3)}\n${t('prev_close')}: ${ev.last_close_price}\n${t('current_yield')}: ${ev.dividend_yield}%\n${t('dividend_date')}: ${ev.dividend_date || '-'}\n${t('payment_date')}: ${ev.payment_date || '-'}`;
                         return (
                           <div
                             key={j}

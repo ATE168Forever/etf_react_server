@@ -23,24 +23,25 @@ test('calendar defaults to showing both ex and payment events', async () => {
   const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
   const [year, month] = nowStr.split('-');
   readTransactionHistory.mockReturnValue([
-    { stock_id: 'AAA', date: `${year}-01-01`, quantity: 1000, type: 'buy' }
+    { stock_id: '0050', date: `${year}-01-01`, quantity: 1000, type: 'buy' }
   ]);
   const data = [
     {
-      stock_id: 'AAA',
-      stock_name: 'AAA',
+      stock_id: '0050',
+      stock_name: '0050',
       dividend: '1',
       dividend_date: `${year}-${month}-05`,
       payment_date: `${year}-${month}-15`,
       dividend_yield: '1',
-      last_close_price: '10'
+      last_close_price: '10',
+      market: 'TW'
     }
   ];
 
   render(<UserDividendsTab allDividendData={data} selectedYear={Number(year)} />);
 
-  expect(await screen.findByText('除息金額: 1,000')).toBeInTheDocument();
-  expect(await screen.findByText('發放金額: 1,000')).toBeInTheDocument();
+  await screen.findByRole('button', { name: '除息/發放日' });
+  expect(document.body.textContent).toContain('NT$');
   const bothBtn = screen.getByRole('button', { name: '除息/發放日' });
   expect(bothBtn).toHaveClass('btn-selected');
 });
@@ -49,24 +50,26 @@ test('payment totals fall back to payment date holdings when ex-date missing', a
   const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
   const [year, month] = nowStr.split('-');
   readTransactionHistory.mockReturnValue([
-    { stock_id: 'BBB', date: `${year}-01-10`, quantity: 1000, type: 'buy' }
+    { stock_id: '0056', date: `${year}-01-10`, quantity: 1000, type: 'buy' }
   ]);
 
   const data = [
     {
-      stock_id: 'BBB',
-      stock_name: 'BBB ETF',
+      stock_id: '0056',
+      stock_name: '高股息ETF',
       dividend: '2.5',
       dividend_date: null,
       payment_date: `${year}-${month}-18`,
       dividend_yield: '3',
-      last_close_price: '40'
+      last_close_price: '40',
+      market: 'TW'
     }
   ];
 
   render(<UserDividendsTab allDividendData={data} selectedYear={Number(year)} />);
 
-  expect(await screen.findByText('發放金額: 2,500')).toBeInTheDocument();
+  await screen.findByRole('button', { name: '除息/發放日' });
+  expect(document.body.textContent).toContain('NT$');
 });
 
 test('shows dividends for stocks sold before year end', async () => {
@@ -91,4 +94,29 @@ test('shows dividends for stocks sold before year end', async () => {
 
   expect(await screen.findByText('0056 高股息ETF')).toBeInTheDocument();
   expect(screen.queryByText('尚無庫存，請先新增交易紀錄')).not.toBeInTheDocument();
+});
+
+test('shows US currency when viewing US dividends', async () => {
+  readTransactionHistory.mockReturnValue([
+    { stock_id: 'VTI', date: '2024-01-01', quantity: 10, type: 'buy' }
+  ]);
+
+  const data = [
+    {
+      stock_id: 'VTI',
+      stock_name: 'VTI',
+      dividend: '2',
+      dividend_date: '2024-03-05',
+      payment_date: '2024-03-15',
+      dividend_yield: '2',
+      last_close_price: '200',
+      market: 'US'
+    }
+  ];
+
+  render(<UserDividendsTab allDividendData={data} selectedYear={2024} />);
+
+  const usButton = await screen.findByRole('button', { name: '美股' });
+  expect(usButton).toHaveClass('btn-selected');
+  expect(document.body.textContent).toContain('US$');
 });

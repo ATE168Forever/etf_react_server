@@ -6,6 +6,7 @@ import { useLanguage } from './i18n';
 import usePreserveScroll from './hooks/usePreserveScroll';
 import { fetchWithCache } from './api';
 import TooltipText from './components/TooltipText';
+import { buildMarketMap, inferMarket, MARKET_ORDER, MARKET_LABELS, getCurrencySymbol } from './utils/marketUtils';
 
 const MONTH_COL_WIDTH = 80;
 function getTransactionHistory() {
@@ -36,8 +37,12 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
     const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
     const [monthFilters, setMonthFilters] = useState(() => Array(12).fill(false));
+    const [activeMarket, setActiveMarket] = useState('TW');
     const tableContainerRef = useRef(null);
     usePreserveScroll(tableContainerRef, 'userDividendsTableScroll');
+
+    const marketMap = useMemo(() => buildMarketMap(allDividendData), [allDividendData]);
+    const getMarketForStock = (stockId) => inferMarket(stockId, marketMap);
 
     const historyByStock = useMemo(() => {
         const map = {};
@@ -103,21 +108,70 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     };
 
     // 1. 取得持有股票清單（包含年末持股與當年度已領息後賣出的持股）
-    const stockIdSet = new Set(history.map(h => h.stock_id));
-    const holdingIds = Array.from(stockIdSet).filter(id => getHolding(id, `${selectedYear}-12-31`) > 0);
+    const holdingIds = useMemo(() => {
+        const stockIdSet = new Set(history.map(h => h.stock_id));
+        return Array.from(stockIdSet).filter(id => getHolding(id, `${selectedYear}-12-31`) > 0);
+    }, [history, selectedYear]);
 
     // 2. 只取有配息紀錄的資料（若有除息日則以除息日為主，否則使用發放日）
-    const dividendData = (allDividendData || []).filter(item => {
-        const refDate = item.dividend_date || item.payment_date;
-        if (!refDate) return false;
-        const yearMatches = new Date(refDate).getFullYear() === Number(selectedYear);
-        if (!yearMatches) return false;
-        const checkDate = item.dividend_date || refDate;
-        return getHolding(item.stock_id, checkDate) > 0;
-    });
+    const baseDividendData = useMemo(() => (
+        (allDividendData || []).filter(item => {
+            const refDate = item.dividend_date || item.payment_date;
+            if (!refDate) return false;
+            const yearMatches = new Date(refDate).getFullYear() === Number(selectedYear);
+            if (!yearMatches) return false;
+            const checkDate = item.dividend_date || refDate;
+            return getHolding(item.stock_id, checkDate) > 0;
+        })
+    ), [allDividendData, selectedYear, history]);
 
-    const dividendStockIds = Array.from(new Set(dividendData.map(item => item.stock_id)));
-    const allRelevantStockIds = Array.from(new Set([...holdingIds, ...dividendStockIds]));
+    const availableMarketSet = useMemo(() => {
+        const set = new Set();
+        holdingIds.forEach(id => {
+            if (!id) return;
+            const market = getMarketForStock(id);
+            if (market) set.add(market);
+        });
+        baseDividendData.forEach(item => {
+            const market = getMarketForStock(item.stock_id);
+            if (market) set.add(market);
+        });
+        return set;
+    }, [holdingIds, baseDividendData, marketMap]);
+
+    useEffect(() => {
+        if (activeMarket !== 'TW') return;
+        if (!availableMarketSet || availableMarketSet.size === 0) return;
+        if (availableMarketSet.has('TW')) return;
+        for (const market of MARKET_ORDER) {
+            if (availableMarketSet.has(market)) {
+                setActiveMarket(market);
+                break;
+            }
+        }
+    }, [availableMarketSet, activeMarket]);
+
+    const dividendData = useMemo(
+        () => baseDividendData.filter(item => getMarketForStock(item.stock_id) === activeMarket),
+        [baseDividendData, activeMarket, marketMap]
+    );
+
+    const dividendStockIds = useMemo(
+        () => Array.from(new Set(dividendData.map(item => item.stock_id))),
+        [dividendData]
+    );
+
+    const filteredHoldingIds = useMemo(
+        () => holdingIds.filter(id => getMarketForStock(id) === activeMarket),
+        [holdingIds, activeMarket, marketMap]
+    );
+
+    const allRelevantStockIds = useMemo(
+        () => Array.from(new Set([...filteredHoldingIds, ...dividendStockIds])),
+        [filteredHoldingIds, dividendStockIds]
+    );
+
+    const currencySymbol = getCurrencySymbol(activeMarket);
 
     // 建立股票代號到名稱的對應（名稱由股息資料提供）
     const stockMap = {};
@@ -388,8 +442,32 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
 
     return (
         <div className="App" style={{ margin: '0 auto' }}>
-            <div style={{ display: "flex", alignItems: "center", margin: "10px 0 0 0", gap: "8px"}}>
+            <div style={{ display: "flex", alignItems: "center", margin: "10px 0 0 0", gap: "8px", flexWrap: 'wrap'}}>
                 <h3>{selectedYear} {lang === 'en' ? 'Dividend Overview' : '配息總覽'}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span>{lang === 'en' ? 'Market:' : '市場：'}</span>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {MARKET_ORDER.map(market => {
+                            const label = lang === 'en'
+                                ? (MARKET_LABELS[market]?.en || market)
+                                : (MARKET_LABELS[market]?.zh || market);
+                            const isActive = activeMarket === market;
+                            const hasData = availableMarketSet.has(market);
+                            return (
+                                <button
+                                    key={market}
+                                    type="button"
+                                    onClick={() => setActiveMarket(market)}
+                                    className={isActive ? 'btn-selected' : 'btn-unselected'}
+                                    aria-pressed={isActive}
+                                    style={{ minWidth: 64, opacity: hasData || isActive ? 1 : 0.6 }}
+                                >
+                                    {label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
             </div>
             <div style={{ margin: '10px 0' }}>
                 <button
@@ -423,7 +501,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                             {lang === 'en' ? 'Ex/Paid Date' : '除息/發放日'}
                         </button>
                     </div>
-                    <DividendCalendar year={selectedYear} events={filteredCalendarEvents} showTotals />
+                    <DividendCalendar year={selectedYear} events={filteredCalendarEvents} showTotals currencySymbol={currencySymbol} />
                 </>
             )}
 
@@ -506,6 +584,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                             })
                                         ].join('\n')
                                         : '';
+                                    const formattedTotal = `${currencySymbol}${Math.round(total).toLocaleString()}`;
                                     return (
                                         <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
                                             {total > 0 ? (
@@ -514,9 +593,9 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                         tooltip={tooltip}
                                                         style={{ borderBottom: '1px dotted #777' }}
                                                     >
-                                                        {Math.round(total).toLocaleString()}
+                                                        {formattedTotal}
                                                     </TooltipText>
-                                                ) : Math.round(total).toLocaleString()
+                                                ) : formattedTotal
                                             ) : ''}
                                         </td>
                                     );
@@ -525,20 +604,31 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                             <tr style={{ background: '#ffe066', fontWeight: 'bold' }}>
                                 <td>{lang === 'en' ? 'Monthly Total' : '月合計'}</td>
                                 <td>
-                                    {displayGrandTotal > 0 ? (
-                                        <TooltipText
-                                            tooltip={lang === 'en'
-                                                ? `Average per month: ${Math.round(displayAvgPerMonth).toLocaleString()}`
-                                                : `每月平均領取: ${Math.round(displayAvgPerMonth).toLocaleString()}`}
-                                            style={{ borderBottom: '1px dotted #777' }}
-                                        >
-                                            {Math.round(displayGrandTotal).toLocaleString()}
-                                        </TooltipText>
-                                    ) : ''}
+                                    {displayGrandTotal > 0 ? (() => {
+                                        const formattedTotal = `${currencySymbol}${Math.round(displayGrandTotal).toLocaleString()}`;
+                                        const formattedAverage = `${currencySymbol}${Math.round(displayAvgPerMonth).toLocaleString()}`;
+                                        const tooltip = lang === 'en'
+                                            ? `Average per month: ${formattedAverage}`
+                                            : `每月平均領取: ${formattedAverage}`;
+                                        return (
+                                            <TooltipText
+                                                tooltip={tooltip}
+                                                style={{ borderBottom: '1px dotted #777' }}
+                                            >
+                                                {formattedTotal}
+                                            </TooltipText>
+                                        );
+                                    })() : ''}
                                 </td>
-                                {displayTotalsPerMonth.map((total, idx) => (
-                                    <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>{total > 0 ? Math.round(total).toLocaleString() : ''}</td>
-                                ))}
+                                {displayTotalsPerMonth.map((total, idx) => {
+                                    if (total <= 0) {
+                                        return <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}></td>;
+                                    }
+                                    const formatted = `${currencySymbol}${Math.round(total).toLocaleString()}`;
+                                    return (
+                                        <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>{formatted}</td>
+                                    );
+                                })}
                             </tr>
                             {filteredStocks.map(stock => {
                                 const stockTotal = getTotalForStock(stock.stock_id);
@@ -553,6 +643,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                         <td>{stockTotal > 0 ? (() => {
                                             const avgYield = yieldMonthsCount > 0 ? sumYield / yieldMonthsCount : 0;
                                             const estAnnual = avgYield * 12;
+                                            const formattedTotal = `${currencySymbol}${Math.round(stockTotal).toLocaleString()}`;
                                             return (
                                                 <TooltipText
                                                     tooltip={lang === 'en'
@@ -560,7 +651,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                         : `最新收盤價: ${latestClosePrice[stock.stock_id]?.price || '-'}\n加總殖利率: ${sumYield.toFixed(1)}%\n預估年化殖利率: ${estAnnual.toFixed(1)}%`}
                                                     style={{ borderBottom: '1px dotted #777' }}
                                                 >
-                                                    {Math.round(stockTotal).toLocaleString()}
+                                                    {formattedTotal}
                                                 </TooltipText>
                                             );
                                         })() : ''}</td>
@@ -572,11 +663,11 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                 <td key={idx} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
                                                     <TooltipText
                                                         tooltip={lang === 'en'
-                                                            ? `Shares held: ${cell.quantity} (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} lots)\nDividend per share: ${cell.dividend} \nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
-                                                            : `持有數量: ${cell.quantity} 股 (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)\n每股配息: ${cell.dividend} 元\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`}
+                                                            ? `Shares held: ${cell.quantity} (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} lots)\nDividend per share: ${currencySymbol}${cell.dividend}\nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
+                                                            : `持有數量: ${cell.quantity} 股 (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)\n每股配息: ${currencySymbol}${cell.dividend}\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`}
                                                         style={{ borderBottom: '1px dotted #777' }}
                                                     >
-                                                        {total > 0 ? Math.round(total).toLocaleString() : ''}
+                                                        {total > 0 ? `${currencySymbol}${Math.round(total).toLocaleString()}` : ''}
                                                     </TooltipText>
                                                 </td>
                                             );
