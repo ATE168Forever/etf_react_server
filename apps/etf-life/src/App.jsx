@@ -159,57 +159,6 @@ function App() {
   // Month value existence filters
   const [monthHasValue, setMonthHasValue] = useState(Array(12).fill(false));
   const [freqMap, setFreqMap] = useState({});
-  const hasTwd = availableCurrencies.includes('TWD');
-  const hasUsd = availableCurrencies.includes('USD');
-  const fallbackView = hasTwd && hasUsd ? 'BOTH' : hasTwd ? 'TWD' : hasUsd ? 'USD' : 'TWD';
-  const [viewMode, setViewMode] = useState(fallbackView);
-  useEffect(() => {
-    const expected = hasTwd && hasUsd ? 'BOTH' : hasTwd ? 'TWD' : hasUsd ? 'USD' : 'TWD';
-    if (viewMode === 'TWD' && !hasTwd) {
-      setViewMode(expected);
-    } else if (viewMode === 'USD' && !hasUsd) {
-      setViewMode(expected);
-    } else if (viewMode === 'BOTH' && !(hasTwd && hasUsd)) {
-      setViewMode(expected);
-    }
-  }, [hasTwd, hasUsd, viewMode]);
-
-  const activeCurrencies = useMemo(() => {
-    if (viewMode === 'BOTH') {
-      return availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
-    }
-    if (availableCurrencies.includes(viewMode)) {
-      return [viewMode];
-    }
-    return availableCurrencies.length > 0 ? [availableCurrencies[0]] : [DEFAULT_CURRENCY];
-  }, [availableCurrencies, viewMode]);
-
-  const viewDescription = useMemo(() => {
-    if (activeCurrencies.length === 1) {
-      const currency = activeCurrencies[0];
-      return lang === 'en'
-        ? `Showing ${CURRENCY_NAME_EN[currency] || `${currency} dividends`}`
-        : `顯示：${CURRENCY_NAME_ZH[currency] || `${currency} 股息`}`;
-    }
-    const names = activeCurrencies.map(currency => (
-      lang === 'en'
-        ? (currency === 'USD' ? 'US$ dividends' : 'NT$ dividends')
-        : (currency === 'USD' ? '美股股息' : '台股配息')
-    ));
-    return lang === 'en'
-      ? `Showing ${names.join(' & ')}`
-      : `顯示：${names.join('、')}`;
-  }, [activeCurrencies, lang]);
-
-  const getViewButtonStyle = (mode, disabled) => ({
-    padding: '4px 10px',
-    borderRadius: 4,
-    border: '1px solid #1971c2',
-    background: mode === viewMode ? '#1971c2' : 'transparent',
-    color: mode === viewMode ? '#fff' : '#1971c2',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.6 : 1,
-  });
   const timeZone = 'Asia/Taipei';
   const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
   const getIncomeGoalInfo = (dividend, price, goal, freq = 12) =>
@@ -557,6 +506,58 @@ function App() {
 
     return { filteredData: filtered, stocks, stockOptions, dividendTable, availableCurrencies, stockCurrencyMap };
   }, [data, selectedYear, freqMap]);
+
+  const hasTwd = availableCurrencies.includes('TWD');
+  const hasUsd = availableCurrencies.includes('USD');
+  const fallbackView = hasTwd && hasUsd ? 'BOTH' : hasTwd ? 'TWD' : hasUsd ? 'USD' : 'TWD';
+  const [viewMode, setViewMode] = useState(fallbackView);
+  useEffect(() => {
+    const expected = hasTwd && hasUsd ? 'BOTH' : hasTwd ? 'TWD' : hasUsd ? 'USD' : 'TWD';
+    if (viewMode === 'TWD' && !hasTwd) {
+      setViewMode(expected);
+    } else if (viewMode === 'USD' && !hasUsd) {
+      setViewMode(expected);
+    } else if (viewMode === 'BOTH' && !(hasTwd && hasUsd)) {
+      setViewMode(expected);
+    }
+  }, [hasTwd, hasUsd, viewMode]);
+
+  const activeCurrencies = useMemo(() => {
+    if (viewMode === 'BOTH') {
+      return availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
+    }
+    if (availableCurrencies.includes(viewMode)) {
+      return [viewMode];
+    }
+    return availableCurrencies.length > 0 ? [availableCurrencies[0]] : [DEFAULT_CURRENCY];
+  }, [availableCurrencies, viewMode]);
+
+  const viewDescription = useMemo(() => {
+    if (activeCurrencies.length === 1) {
+      const currency = activeCurrencies[0];
+      return lang === 'en'
+        ? `Showing ${CURRENCY_NAME_EN[currency] || `${currency} dividends`}`
+        : `顯示：${CURRENCY_NAME_ZH[currency] || `${currency} 股息`}`;
+    }
+    const names = activeCurrencies.map(currency => (
+      lang === 'en'
+        ? (currency === 'USD' ? 'US$ dividends' : 'NT$ dividends')
+        : (currency === 'USD' ? '美股股息' : '台股配息')
+    ));
+    return lang === 'en'
+      ? `Showing ${names.join(' & ')}`
+      : `顯示：${names.join('、')}`;
+  }, [activeCurrencies, lang]);
+
+  const getViewButtonStyle = (mode, disabled) => ({
+    padding: '4px 10px',
+    borderRadius: 4,
+    border: '1px solid #1971c2',
+    background: mode === viewMode ? '#1971c2' : 'transparent',
+    color: mode === viewMode ? '#fff' : '#1971c2',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.6 : 1,
+  });
 
   const filteredStocks = stocks.filter(stock => {
     if (selectedStockIds.length && !selectedStockIds.includes(stock.stock_id)) return false;
