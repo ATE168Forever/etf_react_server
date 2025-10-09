@@ -1,6 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 export default function usePreserveScroll(ref, storageKey, deps = []) {
+  const depsSignature = useMemo(() => {
+    try {
+      return JSON.stringify(deps);
+    } catch {
+      return String(deps);
+    }
+  }, [deps]);
+
   useEffect(() => {
     const node = ref.current;
     if (!node || typeof sessionStorage === 'undefined') {
@@ -25,5 +33,5 @@ export default function usePreserveScroll(ref, storageKey, deps = []) {
       sessionStorage.setItem(storageKey, String(node.scrollLeft));
       node.removeEventListener('scroll', handleScroll);
     };
-  }, [ref, storageKey, ...deps]);
+  }, [ref, storageKey, depsSignature]);
 }
