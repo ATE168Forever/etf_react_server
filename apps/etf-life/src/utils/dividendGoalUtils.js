@@ -270,6 +270,78 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
     perCurrency = {},
     baseCurrency = 'TWD'
   } = summary;
+  const supportedCurrencies = ['TWD', 'USD'];
+
+  const sanitizeGoalName = value => {
+    if (typeof value !== 'string') return '';
+    return value.trim().slice(0, 60);
+  };
+
+  const normalizeCurrency = value => {
+    const raw = typeof value === 'string' ? value.trim().toUpperCase() : '';
+    if (supportedCurrencies.includes(raw)) {
+      return raw;
+    }
+    if (typeof baseCurrency === 'string' && baseCurrency.trim()) {
+      return baseCurrency.trim();
+    }
+    return 'TWD';
+  };
+
+  const normalizeGoalType = value => {
+    const raw = typeof value === 'string' ? value.trim().toLowerCase() : '';
+    return ['annual', 'monthly', 'minimum'].includes(raw) ? raw : 'annual';
+  };
+
+  const normalizeCashflowGoalList = rawGoals => {
+    const normalized = Array.isArray(rawGoals) ? rawGoals : [];
+    const goalsList = normalized
+      .map((goal, index) => {
+        const targetValue = Number(goal?.target);
+        if (!Number.isFinite(targetValue) || targetValue <= 0) {
+          return null;
+        }
+        const goalType = normalizeGoalType(goal?.goalType);
+        const currency = normalizeCurrency(goal?.currency);
+        const id = typeof goal?.id === 'string' && goal.id.trim()
+          ? goal.id.trim()
+          : `goal-${index}`;
+        return {
+          id,
+          goalType,
+          target: targetValue,
+          currency,
+          name: sanitizeGoalName(goal?.name)
+        };
+      })
+      .filter(Boolean);
+
+    if (goalsList.length) {
+      return goalsList;
+    }
+
+    const fallbackGoals = [];
+    const appendFallback = (goalType, value) => {
+      const numericValue = Number(value);
+      if (!Number.isFinite(numericValue) || numericValue <= 0) {
+        return;
+      }
+      fallbackGoals.push({
+        id: `legacy-${goalType}`,
+        goalType,
+        target: numericValue,
+        currency: normalizeCurrency('TWD'),
+        name: ''
+      });
+    };
+    appendFallback('annual', goals?.totalTarget);
+    appendFallback('monthly', goals?.monthlyTarget);
+    appendFallback('minimum', goals?.minimumTarget);
+    return fallbackGoals;
+  };
+
+  const cashflowGoals = normalizeCashflowGoalList(goals?.cashflowGoals);
+
   const currencyLabelMap = {
     TWD: 'NT$',
     USD: 'US$',
@@ -360,46 +432,104 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
       };
     });
 
-  const annualGoal = Number(goals.totalTarget) || 0;
-  const monthlyGoal = Number(goals.monthlyTarget) || 0;
-  const minimumGoal = Number(goals.minimumTarget) || 0;
-  const rawGoalType = typeof goals.goalType === 'string' ? goals.goalType.toLowerCase() : '';
-  const goalType = ['annual', 'monthly', 'minimum'].includes(rawGoalType) ? rawGoalType : '';
-
-  const annualGoalSet = annualGoal > 0;
-  const monthlyGoalSet = monthlyGoal > 0;
-  const minimumGoalSet = minimumGoal > 0;
-  const annualPercentValue = annualGoalSet && annualGoal > 0
-    ? Math.min(1, accumulatedTotal / annualGoal)
-    : 0;
-  const monthlyPercentValue = monthlyGoalSet && monthlyGoal > 0
-    ? Math.min(1, monthlyAverage / monthlyGoal)
-    : 0;
-  const minimumPercentValue = minimumGoalSet && minimumGoal > 0
-    ? Math.min(1, monthlyMinimum / minimumGoal)
-    : 0;
-  let activeGoalType = goalType;
-  if (activeGoalType === 'annual' && !annualGoalSet) activeGoalType = '';
-  if (activeGoalType === 'monthly' && !monthlyGoalSet) activeGoalType = '';
-  if (activeGoalType === 'minimum' && !minimumGoalSet) activeGoalType = '';
-  if (!activeGoalType) {
-    if (annualGoalSet) {
-      activeGoalType = 'annual';
-    } else if (monthlyGoalSet) {
-      activeGoalType = 'monthly';
-    } else if (minimumGoalSet) {
-      activeGoalType = 'minimum';
+  const getCurrencySummary = currency => {
+    if (currency && perCurrency?.[currency]) {
+      const data = perCurrency[currency];
+      return {
+        accumulatedTotal: Number(data.accumulatedTotal) || 0,
+        annualTotal: Number(data.annualTotal) || 0,
+        monthlyAverage: Number(data.monthlyAverage) || 0,
+        monthlyMinimum: Number(data.monthlyMinimum) || 0
+      };
     }
-  }
+    if (currency === baseCurrency) {
+      return {
+        accumulatedTotal: Number(accumulatedTotal) || 0,
+        annualTotal: Number(annualTotal) || 0,
+        monthlyAverage: Number(monthlyAverage) || 0,
+        monthlyMinimum: Number(monthlyMinimum) || 0
+      };
+    }
+    return {
+      accumulatedTotal: 0,
+      annualTotal: 0,
+      monthlyAverage: 0,
+      monthlyMinimum: 0
+    };
+  };
 
-  const achievementPercentValue = activeGoalType === 'annual'
-    ? annualPercentValue
-    : activeGoalType === 'monthly'
-      ? monthlyPercentValue
-      : activeGoalType === 'minimum'
-        ? minimumPercentValue
-        : 0;
+  const typeLabelMap = {
+    annual: messages.annualGoal,
+    monthly: messages.monthlyGoal,
+    minimum: messages.minimumGoal
+  };
+
+  const encouragementMap = {
+    annual: { half: messages.goalAnnualHalf, done: messages.goalAnnualDone },
+    monthly: { half: messages.goalMonthlyHalf, done: messages.goalMonthlyDone },
+    minimum: { half: messages.goalMinimumHalf, done: messages.goalMinimumDone }
+  };
+
+  const labelPrefixMap = {
+    annual: messages.goalDividendAccumulated,
+    monthly: messages.goalDividendMonthly,
+    minimum: messages.goalDividendMinimum
+  };
+
+  const targetLabelMap = {
+    annual: messages.goalTargetAnnual,
+    monthly: messages.goalTargetMonthly,
+    minimum: messages.goalTargetMinimum
+  };
+
+  const buildGoalRow = goal => {
+    const currencySummary = getCurrencySummary(goal.currency);
+    let currentValue = 0;
+    if (goal.goalType === 'annual') {
+      currentValue = currencySummary.accumulatedTotal;
+    } else if (goal.goalType === 'monthly') {
+      currentValue = currencySummary.monthlyAverage;
+    } else if (goal.goalType === 'minimum') {
+      currentValue = currencySummary.monthlyMinimum;
+    }
+
+    const percent = goal.target > 0
+      ? Math.min(1, currentValue / goal.target)
+      : 0;
+    const encouragementConfig = encouragementMap[goal.goalType] || {};
+    const encouragement = percent >= 1
+      ? encouragementConfig.done
+      : percent >= 0.5
+        ? encouragementConfig.half
+        : '';
+
+    const baseLabel = goal.name || typeLabelMap[goal.goalType] || goal.goalType;
+    const currencyLabel = resolveCurrencyLabel(goal.currency);
+    const label = currencyLabel ? `${baseLabel} (${currencyLabel})` : baseLabel;
+    const currentLabelPrefix = labelPrefixMap[goal.goalType] || '';
+    const targetLabelPrefix = targetLabelMap[goal.goalType] || '';
+
+    return {
+      id: goal.id,
+      label,
+      current: currentLabelPrefix
+        ? `${currentLabelPrefix}${formatCurrencyWithLabel(currentValue, goal.currency)}`
+        : formatCurrencyWithLabel(currentValue, goal.currency),
+      target: targetLabelPrefix
+        ? `${targetLabelPrefix}${formatCurrencyWithLabel(goal.target, goal.currency)}`
+        : formatCurrencyWithLabel(goal.target, goal.currency),
+      percent,
+      percentLabel: `${Math.min(100, Math.round(percent * 100))}%`,
+      encouragement: encouragement || ''
+    };
+  };
+
+  const goalRows = cashflowGoals.map(buildGoalRow).filter(Boolean);
+
+  const primaryGoalType = goalRows.length > 0 ? cashflowGoals[0]?.goalType || '' : '';
+  const achievementPercentValue = goalRows[0]?.percent || 0;
   const achievementLabel = `${Math.min(100, Math.round(achievementPercentValue * 100))}%`;
+
   const metrics = [
     {
       id: 'ytd',
@@ -412,19 +542,19 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
         ? `${messages.goalDividendAnnualLabel} (${annualYear})`
         : messages.goalDividendAnnualLabel,
       value: formatMultiCurrencyValue('annualTotal'),
-      isActive: activeGoalType === 'annual'
+      isActive: primaryGoalType === 'annual'
     },
     {
       id: 'monthly',
       label: messages.goalDividendMonthlyLabel,
       value: formatMultiCurrencyValue('monthlyAverage'),
-      isActive: activeGoalType === 'monthly'
+      isActive: primaryGoalType === 'monthly'
     },
     {
       id: 'minimum',
       label: messages.goalDividendMinimumLabel,
       value: formatMultiCurrencyValue('monthlyMinimum'),
-      isActive: activeGoalType === 'minimum'
+      isActive: primaryGoalType === 'minimum'
     },
     {
       id: 'achievement',
@@ -435,50 +565,7 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
     }
   ].filter(metric => Boolean(metric.label));
 
-  const rows = [];
-  if (activeGoalType === 'annual' && annualGoalSet) {
-    rows.push({
-      id: 'annual',
-      label: messages.annualGoal,
-      current: `${messages.goalDividendAccumulated}${formatMultiCurrencyValue('accumulatedTotal')}`,
-      target: `${messages.goalTargetAnnual}${formatCurrencyWithLabel(annualGoal, baseCurrency)}`,
-      percent: annualPercentValue,
-      percentLabel: `${Math.min(100, Math.round(annualPercentValue * 100))}%`,
-      encouragement: annualPercentValue >= 1
-        ? messages.goalAnnualDone
-        : annualPercentValue >= 0.5
-          ? messages.goalAnnualHalf
-          : ''
-    });
-  } else if (activeGoalType === 'monthly' && monthlyGoalSet) {
-    rows.push({
-      id: 'monthly',
-      label: messages.monthlyGoal,
-      current: `${messages.goalDividendMonthly}${formatMultiCurrencyValue('monthlyAverage')}`,
-      target: `${messages.goalTargetMonthly}${formatCurrencyWithLabel(monthlyGoal, baseCurrency)}`,
-      percent: monthlyPercentValue,
-      percentLabel: `${Math.min(100, Math.round(monthlyPercentValue * 100))}%`,
-      encouragement: monthlyPercentValue >= 1
-        ? messages.goalMonthlyDone
-        : monthlyPercentValue >= 0.5
-          ? messages.goalMonthlyHalf
-          : ''
-    });
-  } else if (activeGoalType === 'minimum' && minimumGoalSet) {
-    rows.push({
-      id: 'minimum',
-      label: messages.minimumGoal,
-      current: `${messages.goalDividendMinimum}${formatMultiCurrencyValue('monthlyMinimum')}`,
-      target: `${messages.goalTargetMinimum}${formatCurrencyWithLabel(minimumGoal, baseCurrency)}`,
-      percent: minimumPercentValue,
-      percentLabel: `${Math.min(100, Math.round(minimumPercentValue * 100))}%`,
-      encouragement: minimumPercentValue >= 1
-        ? messages.goalMinimumDone
-        : minimumPercentValue >= 0.5
-          ? messages.goalMinimumHalf
-          : ''
-    });
-  }
+  const rows = goalRows;
 
   const emptyState = rows.length === 0 ? messages.goalEmpty || '' : '';
 
@@ -486,7 +573,7 @@ export function buildDividendGoalViewModel({ summary = {}, goals = {}, messages 
     metrics,
     rows,
     emptyState,
-    goalType: activeGoalType,
+    goalType: primaryGoalType,
     achievementPercent: achievementPercentValue,
     currencyBreakdown,
     currencyMetrics

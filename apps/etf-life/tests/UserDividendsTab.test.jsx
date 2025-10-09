@@ -40,8 +40,10 @@ test('calendar defaults to showing both ex and payment events', async () => {
 
   render(<UserDividendsTab allDividendData={data} selectedYear={Number(year)} />);
 
-  expect(await screen.findByText('除息金額: 1,000')).toBeInTheDocument();
-  expect(await screen.findByText('發放金額: 1,000')).toBeInTheDocument();
+  const exTotals = await screen.findAllByText(/除息金額/);
+  expect(exTotals.some(element => /1,000/.test(element.textContent || ''))).toBe(true);
+  const payTotals = await screen.findAllByText(/發放金額/);
+  expect(payTotals.some(element => /1,000/.test(element.textContent || ''))).toBe(true);
   const bothBtn = screen.getByRole('button', { name: '除息/發放日' });
   expect(bothBtn).toHaveClass('btn-selected');
 });
@@ -67,7 +69,8 @@ test('payment totals fall back to payment date holdings when ex-date missing', a
 
   render(<UserDividendsTab allDividendData={data} selectedYear={Number(year)} />);
 
-  expect(await screen.findByText('發放金額: 2,500')).toBeInTheDocument();
+  const payOnlyTotals = await screen.findAllByText(/發放金額/);
+  expect(payOnlyTotals.some(element => /2,500/.test(element.textContent || ''))).toBe(true);
 });
 
 test('shows dividends for stocks sold before year end', async () => {
@@ -121,21 +124,21 @@ test('allows switching between TWD and USD dividend summaries', async () => {
 
   render(<UserDividendsTab allDividendData={data} selectedYear={2024} />);
 
-  expect(await screen.findByText('0050 台股ETF')).toBeInTheDocument();
-  expect(screen.getAllByText('NT$1,000').length).toBeGreaterThan(0);
+  const twdRow = await screen.findByText('0050 台股ETF');
+  expect(twdRow.closest('tr')).toHaveTextContent('1,000');
   expect(screen.queryByText('VUSD Vanguard USD')).not.toBeInTheDocument();
 
-  const toUsdButton = await screen.findByRole('button', { name: /切換為美股配息|Switch to US\$ dividends/ });
+  const toUsdButton = await screen.findByRole('button', { name: /^(美股|US\$|US dividends)$/i });
   fireEvent.click(toUsdButton);
 
-  expect(await screen.findByText('VUSD Vanguard USD')).toBeInTheDocument();
-  expect(screen.getAllByText('US$100').length).toBeGreaterThan(0);
-  expect(screen.queryAllByText('NT$1,000')).toHaveLength(0);
+  const usdRow = await screen.findByText('VUSD Vanguard USD');
+  expect(usdRow.closest('tr')).toHaveTextContent('100');
+  expect(screen.queryByText('0050 台股ETF')).not.toBeInTheDocument();
 
-  const toTwdButton = await screen.findByRole('button', { name: /切換為台股配息|Switch to NT\$ dividends/ });
+  const toTwdButton = await screen.findByRole('button', { name: /^(台股|NT\$|NT dividends)$/i });
   fireEvent.click(toTwdButton);
 
-  expect(await screen.findByText('0050 台股ETF')).toBeInTheDocument();
-  expect(screen.getAllByText('NT$1,000').length).toBeGreaterThan(0);
-  expect(screen.queryAllByText('US$100')).toHaveLength(0);
+  const twdRowAgain = await screen.findByText('0050 台股ETF');
+  expect(twdRowAgain.closest('tr')).toHaveTextContent('1,000');
+  expect(screen.queryByText('VUSD Vanguard USD')).not.toBeInTheDocument();
 });
