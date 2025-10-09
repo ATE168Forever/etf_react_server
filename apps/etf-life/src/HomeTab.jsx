@@ -165,6 +165,7 @@ export default function HomeTab() {
       destinationsLabel: t('share_goal_destinations_label'),
       destinations: t('share_goal_destinations'),
       destinationsFallback: t('share_goal_destinations_fallback'),
+      destinationsNote: t('share_goal_destinations_note'),
       message,
       title: goalTitle
     };

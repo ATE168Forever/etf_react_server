@@ -237,6 +237,13 @@
   color: var(--muted-foreground, #6b7280);
 }
 
+.shareDestinationsNote {
+  margin: -8px 0 0;
+  font-size: 0.75rem;
+  color: var(--muted-foreground, #6b7280);
+  line-height: 1.45;
+}
+
 .sharePrimaryButton {
   padding: 6px 16px;
   border-radius: 6px;

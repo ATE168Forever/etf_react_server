@@ -35,6 +35,9 @@ export default function InvestmentGoalCard({
   const shareDestinationsFallback = typeof shareConfig?.destinationsFallback === 'string'
     ? shareConfig.destinationsFallback.trim()
     : '';
+  const shareDestinationsNote = typeof shareConfig?.destinationsNote === 'string'
+    ? shareConfig.destinationsNote.trim()
+    : '';
   const hasShareContent = Boolean(shareMessage);
   const [hasNativeShare, setHasNativeShare] = useState(false);
   const [shareStatus, setShareStatus] = useState('idle');
@@ -258,6 +261,9 @@ export default function InvestmentGoalCard({
                 {shareConfig?.destinationsLabel ? ' ' : null}
                 {hasNativeShare ? shareDestinations : shareDestinationsFallback || shareDestinations}
               </p>
+            ) : null}
+            {shareDestinationsNote ? (
+              <p className={styles.shareDestinationsNote}>{shareDestinationsNote}</p>
             ) : null}
             {shareStatusMessage ? (
               <div className={shareFeedbackClassName} role="status" aria-live="polite">
