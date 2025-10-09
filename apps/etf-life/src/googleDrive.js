@@ -59,7 +59,6 @@ function initialiseTokenClient() {
     callback: (response) => {
       const result = storeTokenResponse(response);
       if (result.error) {
-        // eslint-disable-next-line no-console
         console.error(result.error);
       }
     }

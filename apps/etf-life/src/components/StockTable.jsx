@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 // Removed react-window virtualization to avoid invalid table markup
 import FilterDropdown from './FilterDropdown';
 import TooltipText from './TooltipText';
@@ -58,25 +58,25 @@ export default function StockTable({
     });
   };
 
-  const getTotalForStock = (stockId) => {
+  const getTotalForStock = useCallback((stockId) => {
     return activeCurrencies.reduce((sum, currency) => {
       return sum + (totalPerStock[stockId]?.[currency] || 0);
     }, 0);
-  };
+  }, [activeCurrencies, totalPerStock]);
 
-  const getYieldSumForStock = (stockId) => {
+  const getYieldSumForStock = useCallback((stockId) => {
     return activeCurrencies.reduce((sum, currency) => {
       return sum + (yieldSum[stockId]?.[currency] || 0);
     }, 0);
-  };
+  }, [activeCurrencies, yieldSum]);
 
-  const getAnnualYieldForStock = (stockId) => {
+  const getAnnualYieldForStock = useCallback((stockId) => {
     return activeCurrencies.reduce((sum, currency) => {
       return sum + (estAnnualYield[stockId]?.[currency] || 0);
     }, 0);
-  };
+  }, [activeCurrencies, estAnnualYield]);
 
-  const getMonthValue = (stockId, idx) => {
+  const getMonthValue = useCallback((stockId, idx) => {
     return activeCurrencies.reduce((sum, currency) => {
       const cell = dividendTable[stockId]?.[idx]?.[currency];
       if (!cell) return sum;
@@ -85,7 +85,7 @@ export default function StockTable({
       }
       return sum + (Number(cell.dividend) || 0);
     }, 0);
-  };
+  }, [activeCurrencies, dividendTable, showDividendYield]);
 
   const sortedStocks = useMemo(() => {
     const dir = sortConfig.direction === 'asc' ? 1 : -1;
@@ -121,7 +121,7 @@ export default function StockTable({
         }
       }
     });
-  }, [stocks, sortConfig, showDividendYield, dividendTable, latestPrice, activeCurrencies, totalPerStock, yieldSum, estAnnualYield]);
+  }, [stocks, sortConfig, showDividendYield, latestPrice, getYieldSumForStock, getTotalForStock, getAnnualYieldForStock, getMonthValue]);
 
   const limitedStocks = showAllStocks ? sortedStocks : sortedStocks.slice(0, 20);
 

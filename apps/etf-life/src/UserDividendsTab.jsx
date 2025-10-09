@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import DividendCalendar from './components/DividendCalendar';
 import { readTransactionHistory } from './utils/transactionStorage';
 import { HOST_URL, API_HOST } from './config';
@@ -107,14 +107,14 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
             .catch(() => setStockNameMap({}));
     }, []);
 
-    function getHolding(stock_id, date) {
+    const getHolding = useCallback((stock_id, date) => {
         return history.reduce((sum, item) => {
             if (item.stock_id === stock_id && new Date(item.date) <= new Date(date)) {
                 return sum + (item.type === 'sell' ? -Number(item.quantity) : Number(item.quantity));
             }
             return sum;
         }, 0);
-    }
+    }, [history]);
 
     const formatLots = (quantity) => {
         if (!quantity) return '0';
@@ -304,7 +304,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         calendarFilter === 'both' || ev.type === calendarFilter
     );
 
-    const getAverageCostBeforeDate = (stockId, dateStr) => {
+    const getAverageCostBeforeDate = useCallback((stockId, dateStr) => {
         if (!dateStr) return 0;
         const entries = historyByStock[stockId];
         if (!entries || entries.length === 0) return 0;
@@ -341,11 +341,10 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         }
         if (totalQty <= 0) return 0;
         return totalCost / totalQty;
-    };
-
-    const currenciesForContext = availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
+    }, [historyByStock]);
 
     const currencyContexts = useMemo(() => {
+        const currenciesForContext = availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
         const contextMap = {};
         currenciesForContext.forEach(currency => {
             const stocksForCurrency = myStocks.filter(stock => {
@@ -422,7 +421,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
             };
         });
         return contextMap;
-    }, [currenciesForContext, myStocks, stockCurrencyMap, baseCurrency, normalizedDividendData, historyByStock, history]);
+    }, [availableCurrencies, myStocks, stockCurrencyMap, baseCurrency, normalizedDividendData, getAverageCostBeforeDate, getHolding]);
 
     const handleSort = (column) => {
         setSortConfig(prev => {

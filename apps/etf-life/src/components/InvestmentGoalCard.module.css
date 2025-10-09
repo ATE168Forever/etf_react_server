@@ -198,6 +198,132 @@
   font-weight: 600;
 }
 
+.shareSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px dashed var(--color-border, rgba(148, 163, 184, 0.35));
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.shareHeaderText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shareTitle {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.shareDescription {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted-foreground, #6b7280);
+}
+
+.shareButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shareDestinations {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted-foreground, #6b7280);
+}
+
+.shareDestinationsNote {
+  margin: -8px 0 0;
+  font-size: 0.75rem;
+  color: var(--muted-foreground, #6b7280);
+  line-height: 1.45;
+}
+
+.sharePrimaryButton {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  background: var(--accent-gold, #facc15);
+  color: #1f2937;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.sharePrimaryButton:hover,
+.sharePrimaryButton:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(250, 204, 21, 0.35);
+  filter: brightness(0.98);
+}
+
+.shareCopyButton {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border, rgba(148, 163, 184, 0.3));
+  background: rgba(148, 163, 184, 0.12);
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.shareCopyButton:hover,
+.shareCopyButton:focus-visible {
+  background: rgba(148, 163, 184, 0.2);
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+.shareFeedback {
+  font-size: 0.85rem;
+}
+
+.shareFeedbackSuccess {
+  color: #22c55e;
+}
+
+.shareFeedbackNeutral {
+  color: var(--accent-gold, #facc15);
+}
+
+.shareFeedbackError {
+  color: #ef4444;
+}
+
+.sharePreview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.65);
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.sharePreviewLabel {
+  font-size: 0.75rem;
+  color: var(--muted-foreground, #6b7280);
+  font-weight: 600;
+}
+
+.sharePreviewText {
+  margin: 0;
+  font-family: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.9rem;
+}
+
+.shareUnavailable {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted-foreground, #6b7280);
+}
+
 .inputGroup input,
 .inputGroup select {
   padding: 6px 8px;

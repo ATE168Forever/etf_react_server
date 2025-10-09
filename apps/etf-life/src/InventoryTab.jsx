@@ -810,6 +810,8 @@ export default function InventoryTab() {
     }
   };
 
+  const backupPrompt = msg.backupPrompt;
+
   useEffect(() => {
     if (transactionHistory.length === 0) return;
     const last = Cookies.get(BACKUP_COOKIE_KEY);
@@ -817,12 +819,12 @@ export default function InventoryTab() {
     if (!last) {
       Cookies.set(BACKUP_COOKIE_KEY, now.toISOString(), { expires: 365 });
     } else if (now - new Date(last) >= 30 * 24 * 60 * 60 * 1000) {
-      if (window.confirm(msg.backupPrompt)) {
+      if (window.confirm(backupPrompt)) {
         handleExport();
       }
       Cookies.set(BACKUP_COOKIE_KEY, now.toISOString(), { expires: 365 });
     }
-  }, [transactionHistory, handleExport]);
+  }, [transactionHistory, handleExport, backupPrompt]);
 
   useEffect(() => {
     const fetchAll = async () => {
