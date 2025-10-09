@@ -144,6 +144,7 @@ export default function HomeTab() {
         ? `${t('share_goal_message_target')} ${primaryRow.current} / ${primaryRow.target}`
         : '',
       t('share_goal_message_suffix'),
+      t('share_goal_message_highlights'),
       t('share_goal_message_invite')
     ].filter(Boolean);
     const message = messageParts.join('\n').trim();
