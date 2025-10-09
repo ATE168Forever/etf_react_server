@@ -45,9 +45,14 @@ describe('InventoryTab interactions', () => {
     const toggle = screen.getByRole('button', { name: '設定或更新目標' });
     fireEvent.click(toggle);
     expect(screen.getByLabelText('幫目標取個名字')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('例：50000')).toBeInTheDocument();
+    expect(screen.getByText('還沒有設定現金流目標，按「新增現金流目標」開始。')).toBeInTheDocument();
+    const addCashflowButton = screen.getByRole('button', { name: '新增現金流目標' });
+    fireEvent.click(addCashflowButton);
     const goalTypeSelect = screen.getByLabelText('選擇目標類型');
     expect(goalTypeSelect).toHaveValue('annual');
+    const currencySelect = screen.getByLabelText('目標幣別');
+    expect(currencySelect).toHaveValue('TWD');
+    expect(screen.getByPlaceholderText('例：50000')).toBeInTheDocument();
     fireEvent.change(goalTypeSelect, { target: { value: 'minimum' } });
     expect(screen.getByPlaceholderText('例：5000')).toBeInTheDocument();
   });
@@ -56,12 +61,6 @@ describe('InventoryTab interactions', () => {
     render(<InventoryTab />);
     const toggle = await screen.findByRole('button', { name: '設定或更新目標' });
     fireEvent.click(toggle);
-
-    expect(screen.queryByRole('button', { name: '新增存股目標' })).not.toBeInTheDocument();
-
-    const goalTypeSelect = screen.getByLabelText('選擇目標類型');
-    fireEvent.change(goalTypeSelect, { target: { value: 'shares' } });
-    expect(screen.queryByPlaceholderText('例：50000')).not.toBeInTheDocument();
 
     const codeInput = screen.getByLabelText('股票代碼 / 名稱');
     fireEvent.change(codeInput, { target: { value: '0056' } });
@@ -75,6 +74,7 @@ describe('InventoryTab interactions', () => {
     await screen.findByText('目標張數：100 張');
     const saved = JSON.parse(localStorage.getItem('investment_goals'));
     expect(saved.goalType).toBe('shares');
+    expect(saved.cashflowGoals).toEqual([]);
     expect(saved.shareTargets).toEqual([
       { stockId: '0056', stockName: '', targetQuantity: 100 }
     ]);

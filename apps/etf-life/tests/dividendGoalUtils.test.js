@@ -169,7 +169,11 @@ describe('dividend goal helpers', () => {
         }
       }
     };
-    const goals = { totalTarget: 400, monthlyTarget: 0, minimumTarget: 0, goalType: 'annual' };
+    const goals = {
+      cashflowGoals: [
+        { id: 'goal-twd', goalType: 'annual', target: 400, currency: 'TWD' }
+      ]
+    };
     const messages = {
       annualGoal: '年度目標',
       monthlyGoal: '月平均目標',
@@ -208,7 +212,9 @@ describe('dividend goal helpers', () => {
     const annualMetric = metrics.find(metric => metric.id === 'annual');
     expect(annualMetric.value).toBe('NT$ 200 + US$ 25');
 
-    expect(rows[0].current).toBe('累積股息：NT$ 200 + US$ 25');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].label).toBe('年度目標 (NT$)');
+    expect(rows[0].current).toBe('累積股息：NT$ 200');
     expect(currencyBreakdown).toEqual([
       { currency: 'TWD', label: 'NT$', value: 'NT$ 200' },
       { currency: 'USD', label: 'US$', value: 'US$ 25' }
@@ -250,7 +256,12 @@ describe('dividend goal helpers', () => {
         }
       }
     };
-    const goals = { totalTarget: 3600, monthlyTarget: 250, minimumTarget: 100, goalType: 'annual' };
+    const goals = {
+      cashflowGoals: [
+        { id: 'annual', goalType: 'annual', target: 3600, currency: 'TWD' },
+        { id: 'monthly', goalType: 'monthly', target: 250, currency: 'TWD' }
+      ]
+    };
     const messages = {
       annualGoal: '年度目標',
       monthlyGoal: '月平均目標',
@@ -291,14 +302,22 @@ describe('dividend goal helpers', () => {
       expect.objectContaining({ id: 'minimum', label: '每月最低股息', value: 'NT$ 120' }),
       expect.objectContaining({ id: 'achievement', label: '達成率', value: '50%', highlight: true, showCelebration: false })
     ]);
-    expect(rows).toHaveLength(1);
+    expect(rows).toHaveLength(2);
     expect(rows[0]).toMatchObject({
       id: 'annual',
       percentLabel: '50%',
       encouragement: '年度過半'
     });
+    expect(rows[0].label).toBe('年度目標 (NT$)');
     expect(rows[0].current).toBe('累積股息：NT$ 1800');
     expect(rows[0].target).toBe('年度目標：NT$ 3600');
+    expect(rows[1]).toMatchObject({
+      id: 'monthly',
+      percentLabel: '80%'
+    });
+    expect(rows[1].label).toBe('月平均目標 (NT$)');
+    expect(rows[1].current).toBe('每月平均股息：NT$ 200');
+    expect(rows[1].target).toBe('月平均目標：NT$ 250');
     expect(goalType).toBe('annual');
     expect(achievementPercent).toBeCloseTo(0.5);
   });
@@ -347,20 +366,25 @@ describe('dividend goal helpers', () => {
 
     const { rows, emptyState, goalType } = buildDividendGoalViewModel({
       summary,
-      goals: { totalTarget: 0, monthlyTarget: 0, minimumTarget: 120, goalType: 'minimum' },
+      goals: {
+        cashflowGoals: [
+          { id: 'minimum-goal', goalType: 'minimum', target: 120, currency: 'TWD' }
+        ]
+      },
       messages,
       formatCurrency: value => Number(value).toFixed(0)
     });
 
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ id: 'minimum', percentLabel: '67%' });
+    expect(rows[0]).toMatchObject({ id: 'minimum-goal', percentLabel: '67%' });
+    expect(rows[0].label).toBe('每月最低目標 (NT$)');
     expect(rows[0].current).toBe('每月最低股息：NT$ 80');
     expect(goalType).toBe('minimum');
     expect(emptyState).toBe('');
 
     const noGoals = buildDividendGoalViewModel({
       summary,
-      goals: { totalTarget: 0, monthlyTarget: 0, minimumTarget: 0 },
+      goals: { cashflowGoals: [] },
       messages,
       formatCurrency: value => Number(value).toFixed(0)
     });
@@ -413,7 +437,11 @@ describe('dividend goal helpers', () => {
 
     const { metrics } = buildDividendGoalViewModel({
       summary,
-      goals: { totalTarget: 1800, monthlyTarget: 0, minimumTarget: 0, goalType: 'annual' },
+      goals: {
+        cashflowGoals: [
+          { id: 'annual', goalType: 'annual', target: 1800, currency: 'TWD' }
+        ]
+      },
       messages,
       formatCurrency: value => Number(value).toFixed(0)
     });
@@ -467,7 +495,11 @@ describe('dividend goal helpers', () => {
 
     const { metrics } = buildDividendGoalViewModel({
       summary,
-      goals: { totalTarget: 3600, monthlyTarget: 0, minimumTarget: 0, goalType: 'annual' },
+      goals: {
+        cashflowGoals: [
+          { id: 'annual', goalType: 'annual', target: 3600, currency: 'TWD' }
+        ]
+      },
       messages,
       formatCurrency: value => Number(value).toFixed(0)
     });
