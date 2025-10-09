@@ -121,6 +121,53 @@ export default function HomeTab() {
 
   const goalTitle = goalSummary.goals.goalName?.trim() || t('investment_goals');
 
+  const goalShareConfig = useMemo(() => {
+    if (!Array.isArray(goalRows) || goalRows.length === 0) {
+      return null;
+    }
+    const metricValue = (id) => {
+      const metric = Array.isArray(goalMetrics)
+        ? goalMetrics.find((item) => item.id === id)
+        : null;
+      return metric?.value || '';
+    };
+    const primaryRow = goalRows[0];
+    const messageParts = [
+      `${t('share_goal_message_title')} ${goalTitle}`,
+      metricValue('achievement')
+        ? `${t('share_goal_message_achievement')} ${metricValue('achievement')}`
+        : '',
+      metricValue('ytd')
+        ? `${t('share_goal_message_ytd')} ${metricValue('ytd')}`
+        : '',
+      primaryRow
+        ? `${t('share_goal_message_target')} ${primaryRow.current} / ${primaryRow.target}`
+        : '',
+      t('share_goal_message_suffix')
+    ].filter(Boolean);
+    const message = messageParts.join('\n').trim();
+    if (!message) {
+      return null;
+    }
+    return {
+      heading: t('share_goal_heading'),
+      description: t('share_goal_description'),
+      shareButtonLabel: t('share_goal_share_button'),
+      shareAriaLabel: t('share_goal_share_button_aria'),
+      copyButtonLabel: t('share_goal_copy_button'),
+      copiedFeedback: t('share_goal_copied_feedback'),
+      copyError: t('share_goal_copy_error'),
+      sharedFeedback: t('share_goal_shared_feedback'),
+      shareUnavailable: t('share_goal_unavailable'),
+      previewLabel: t('share_goal_preview_label'),
+      destinationsLabel: t('share_goal_destinations_label'),
+      destinations: t('share_goal_destinations'),
+      destinationsFallback: t('share_goal_destinations_fallback'),
+      message,
+      title: goalTitle
+    };
+  }, [goalRows, goalMetrics, goalTitle, t]);
+
   return (
     <div className="container" style={{ maxWidth: 800 }}>
       <section className="mt-4">
@@ -232,6 +279,7 @@ export default function HomeTab() {
         metrics={goalMetrics}
         rows={goalRows}
         emptyState={goalEmptyState}
+        share={goalShareConfig}
       />
     </div>
   );
