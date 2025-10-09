@@ -6,6 +6,7 @@ import { useLanguage } from './i18n';
 import usePreserveScroll from './hooks/usePreserveScroll';
 import { fetchWithCache } from './api';
 import TooltipText from './components/TooltipText';
+import CurrencyViewToggle from './components/CurrencyViewToggle';
 
 const MONTH_COL_WIDTH = 80;
 const DEFAULT_CURRENCY = 'TWD';
@@ -222,31 +223,22 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         return availableCurrencies.length > 0 ? [availableCurrencies[0]] : [DEFAULT_CURRENCY];
     }, [availableCurrencies, viewMode]);
 
-    const viewDescription = useMemo(() => {
+    const viewDescriptionContent = useMemo(() => {
         if (activeCurrencies.length === 1) {
             const currency = activeCurrencies[0];
             return lang === 'en'
-                ? `Showing ${CURRENCY_NAME_EN[currency] || `${currency} dividends`}`
-                : `顯示：${CURRENCY_NAME_ZH[currency] || `${currency} 股息`}`;
+                ? CURRENCY_NAME_EN[currency] || `${currency} dividends`
+                : CURRENCY_NAME_ZH[currency] || `${currency} 股息`;
         }
         const names = activeCurrencies.map(currency => (lang === 'en'
             ? (currency === 'USD' ? 'US$ dividends' : 'NT$ dividends')
             : (currency === 'USD' ? '美股股息' : '台股配息')));
-        if (lang === 'en') {
-            return `Showing ${names.join(' & ')}`;
-        }
-        return `顯示：${names.join('、')}`;
+        return lang === 'en'
+            ? names.join(' & ')
+            : names.join('、');
     }, [activeCurrencies, lang]);
 
-    const getViewButtonStyle = (mode, disabled) => ({
-        padding: '4px 10px',
-        borderRadius: 4,
-        border: '1px solid #1971c2',
-        background: mode === viewMode ? '#1971c2' : '#fff',
-        color: mode === viewMode ? '#fff' : '#1971c2',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.6 : 1,
-    });
+    const viewLabelPrefix = lang === 'en' ? 'Showing:' : '顯示：';
 
     const currencyUnitZh = (currency) => (currency === 'USD' ? '美元' : '元');
     const currencyHeaderLabel = (currency) => (currency === 'USD' ? 'US$' : 'NT$');
@@ -631,30 +623,15 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         <div className="App" style={{ margin: '0 auto' }}>
             <div style={{ display: "flex", alignItems: "center", margin: "10px 0 0 0", gap: "12px", flexWrap: 'wrap'}}>
                 <h3>{selectedYear} {lang === 'en' ? 'Dividend Overview' : '配息總覽'}</h3>
-                <span style={{ fontSize: 14, color: '#555' }}>{viewDescription}</span>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    <button
-                        onClick={() => setViewMode('TWD')}
-                        disabled={!hasTwd}
-                        style={getViewButtonStyle('TWD', !hasTwd)}
-                    >
-                        {lang === 'en' ? 'TWD' : '台股'}
-                    </button>
-                    <button
-                        onClick={() => setViewMode('USD')}
-                        disabled={!hasUsd}
-                        style={getViewButtonStyle('USD', !hasUsd)}
-                    >
-                        {lang === 'en' ? 'USD' : '美股'}
-                    </button>
-                    <button
-                        onClick={() => setViewMode('BOTH')}
-                        disabled={!(hasTwd && hasUsd)}
-                        style={getViewButtonStyle('BOTH', !(hasTwd && hasUsd))}
-                    >
-                        {lang === 'en' ? 'TWD & USD' : '台股/美股'}
-                    </button>
-                </div>
+                <CurrencyViewToggle
+                    viewMode={viewMode}
+                    onChange={setViewMode}
+                    hasTwd={hasTwd}
+                    hasUsd={hasUsd}
+                    lang={lang}
+                    description={viewDescriptionContent}
+                    labelPrefix={viewLabelPrefix}
+                />
             </div>
             <div style={{ margin: '10px 0' }}>
                 <button

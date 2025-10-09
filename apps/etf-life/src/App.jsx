@@ -9,6 +9,7 @@ import DividendCalendar from './components/DividendCalendar';
 import StockTable from './components/StockTable';
 import Footer from './components/Footer';
 import AdvancedFilterDropdown from './components/AdvancedFilterDropdown';
+import CurrencyViewToggle from './components/CurrencyViewToggle';
 
 import './App.css';
 import styles from './App.module.css';
@@ -532,12 +533,12 @@ function App() {
     return availableCurrencies.length > 0 ? [availableCurrencies[0]] : [DEFAULT_CURRENCY];
   }, [availableCurrencies, viewMode]);
 
-  const viewDescription = useMemo(() => {
+  const viewDescriptionContent = useMemo(() => {
     if (activeCurrencies.length === 1) {
       const currency = activeCurrencies[0];
       return lang === 'en'
-        ? `Showing ${CURRENCY_NAME_EN[currency] || `${currency} dividends`}`
-        : `顯示：${CURRENCY_NAME_ZH[currency] || `${currency} 股息`}`;
+        ? CURRENCY_NAME_EN[currency] || `${currency} dividends`
+        : CURRENCY_NAME_ZH[currency] || `${currency} 股息`;
     }
     const names = activeCurrencies.map(currency => (
       lang === 'en'
@@ -545,19 +546,11 @@ function App() {
         : (currency === 'USD' ? '美股股息' : '台股配息')
     ));
     return lang === 'en'
-      ? `Showing ${names.join(' & ')}`
-      : `顯示：${names.join('、')}`;
+      ? names.join(' & ')
+      : names.join('、');
   }, [activeCurrencies, lang]);
 
-  const getViewButtonStyle = (mode, disabled) => ({
-    padding: '4px 10px',
-    borderRadius: 4,
-    border: '1px solid #1971c2',
-    background: mode === viewMode ? '#1971c2' : 'transparent',
-    color: mode === viewMode ? '#fff' : '#1971c2',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.6 : 1,
-  });
+  const viewLabelPrefix = lang === 'en' ? 'Showing:' : '顯示：';
 
   const filteredStocks = stocks.filter(stock => {
     if (selectedStockIds.length && !selectedStockIds.includes(stock.stock_id)) return false;
@@ -880,32 +873,16 @@ function App() {
               </button>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: 10 }}>
-            <span style={{ fontSize: 14, color: '#adb5bd' }}>{viewDescription}</span>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              <button
-                onClick={() => setViewMode('TWD')}
-                disabled={!hasTwd}
-                style={getViewButtonStyle('TWD', !hasTwd)}
-              >
-                {lang === 'en' ? 'TWD' : '台股'}
-              </button>
-              <button
-                onClick={() => setViewMode('USD')}
-                disabled={!hasUsd}
-                style={getViewButtonStyle('USD', !hasUsd)}
-              >
-                {lang === 'en' ? 'USD' : '美股'}
-              </button>
-              <button
-                onClick={() => setViewMode('BOTH')}
-                disabled={!(hasTwd && hasUsd)}
-                style={getViewButtonStyle('BOTH', !(hasTwd && hasUsd))}
-              >
-                {lang === 'en' ? 'TWD & USD' : '台股/美股'}
-              </button>
-            </div>
-          </div>
+          <CurrencyViewToggle
+            viewMode={viewMode}
+            onChange={setViewMode}
+            hasTwd={hasTwd}
+            hasUsd={hasUsd}
+            lang={lang}
+            description={viewDescriptionContent}
+            labelPrefix={viewLabelPrefix}
+            style={{ marginTop: 10 }}
+          />
           <button
             onClick={() => setShowCalendar(v => !v)}
             style={{ marginTop: 10 }}
