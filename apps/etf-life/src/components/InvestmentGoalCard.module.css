@@ -298,15 +298,19 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.65);
-  padding: 10px 12px;
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 10px;
+  background: var(--share-preview-bg, rgba(255, 255, 255, 0.85));
+  padding: 14px 16px;
+  border: 1px solid var(--share-preview-border, rgba(148, 163, 184, 0.35));
+  color: var(--share-preview-text, inherit);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
 }
 
 .sharePreviewLabel {
-  font-size: 0.75rem;
-  color: var(--muted-foreground, #6b7280);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--share-preview-label, var(--muted-foreground, #6b7280));
   font-weight: 600;
 }
 
@@ -315,7 +319,9 @@
   font-family: inherit;
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: inherit;
 }
 
 .shareUnavailable {
