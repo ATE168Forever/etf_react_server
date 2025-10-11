@@ -112,6 +112,8 @@ export default function StockDetail({ stockId }) {
   }
 
   const website = stock.website;
+  const isUsStock = (stock.country || '').toUpperCase() === 'US';
+  const shouldShowDividendNews = !isUsStock && dividends.length > 0;
 
   return (
     <>
@@ -257,43 +259,47 @@ export default function StockDetail({ stockId }) {
 
         {dividends.length > 0 && (
           <>
-            <div className="news" style={{ marginTop: 12 }}>
-              <div style={{ fontWeight: 600 }}>
-                {lang === 'en' ? 'Latest Income Distribution Announcement' : '最新分配收益資訊'}
-              </div>
-              <p style={{ paddingLeft: 20, margin: '6px 0' }}>
-                {lang === 'en' ? 'Announcement date:' : '公告日期：'} {formatDateStr(newsDate)}
-              </p>
-              <p style={{ paddingLeft: 20, margin: '6px 0' }}>
-                {lang === 'en' ? 'Link:' : '連結：'}
-                {newsUrl ? (
-                  <a href={newsUrl} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all' }}>
-                    {newsUrl}
-                  </a>
-                ) : (
-                  '-'
-                )}
-              </p>
-            </div>
-
-            {newsTextEntries.length > 0 && (
-              <div className="news-text" style={{ paddingLeft: 20 }}>
-                <div style={{ fontWeight: 600, marginTop: 6 }}>
-                  {lang === 'en' ? 'Income distribution breakdown:' : '收益來源占比：'}
+            {shouldShowDividendNews && (
+              <>
+                <div className="news" style={{ marginTop: 12 }}>
+                  <div style={{ fontWeight: 600 }}>
+                    {lang === 'en' ? 'Latest Income Distribution Announcement' : '最新分配收益資訊'}
+                  </div>
+                  <p style={{ paddingLeft: 20, margin: '6px 0' }}>
+                    {lang === 'en' ? 'Announcement date:' : '公告日期：'} {formatDateStr(newsDate)}
+                  </p>
+                  <p style={{ paddingLeft: 20, margin: '6px 0' }}>
+                    {lang === 'en' ? 'Link:' : '連結：'}
+                    {newsUrl ? (
+                      <a href={newsUrl} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all' }}>
+                        {newsUrl}
+                      </a>
+                    ) : (
+                      '-'
+                    )}
+                  </p>
                 </div>
-                <ul style={{ marginTop: 4 }}>
-                  {newsTextEntries.map(([key, value]) => {
-                    const label = distributionLabelMap[key];
-                    const displayLabel = label ? (lang === 'en' ? label.en : label.zh) : key;
-                    const v = typeof value === 'number' ? `${value}%` : (value ?? '-');
-                    return (
-                      <li key={key} style={{ lineHeight: 1.6 }}>
-                        <strong>{displayLabel}：</strong> {v}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
+
+                {newsTextEntries.length > 0 && (
+                  <div className="news-text" style={{ paddingLeft: 20 }}>
+                    <div style={{ fontWeight: 600, marginTop: 6 }}>
+                      {lang === 'en' ? 'Income distribution breakdown:' : '收益來源占比：'}
+                    </div>
+                    <ul style={{ marginTop: 4 }}>
+                      {newsTextEntries.map(([key, value]) => {
+                        const label = distributionLabelMap[key];
+                        const displayLabel = label ? (lang === 'en' ? label.en : label.zh) : key;
+                        const v = typeof value === 'number' ? `${value}%` : value ?? '-';
+                        return (
+                          <li key={key} style={{ lineHeight: 1.6 }}>
+                            <strong>{displayLabel}：</strong> {v}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </>
             )}
 
             <div className="table-responsive">
@@ -306,13 +312,16 @@ export default function StockDetail({ stockId }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {dividends.map((item) => (
-                    <tr key={`${item.dividend_date}-${item.dividend}-${item.dividend_yield}`}>
-                      <td>{item.dividend_date || '-'}</td>
+                  {dividends.map((item) => {
+                    const displayDate = item.dividend_date || item.payment_date || '-';
+                    return (
+                      <tr key={`${displayDate}-${item.dividend}-${item.dividend_yield}`}>
+                        <td>{displayDate}</td>
                       <td>{isNil(item.dividend) ? '-' : item.dividend}</td>
                       <td>{isNil(item.dividend_yield) ? '-' : item.dividend_yield}</td>
-                    </tr>
-                  ))}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
