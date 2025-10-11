@@ -70,6 +70,49 @@ export default function StockDetail({ stockId }) {
     staleTime: 2 * 60 * 60 * 1000,
   });
 
+  const { data: dividendNews = {}, isLoading: dividendNewsLoading } = useQuery({
+    queryKey: ['dividend_helper', stockId],
+    queryFn: async () => {
+      if (!stockId) return {};
+      const res = await fetch(`${API_HOST}/dividend_helper?stock_id=${stockId}`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch dividend helper data');
+      }
+      return await res.json();
+    },
+    staleTime: 30 * 60 * 1000,
+  });
+
+  const newsUrl = dividendNews?.news_url || '';
+  const newsTextEntries = Object.entries(
+    dividendNews?.news_text && typeof dividendNews.news_text === 'object'
+      ? dividendNews.news_text
+      : {}
+  );
+
+  const distributionLabelMap = {
+    股利所得占比: {
+      zh: '股利所得占比',
+      en: 'Dividend income ratio',
+    },
+    利息所得占比: {
+      zh: '利息所得占比',
+      en: 'Interest income ratio',
+    },
+    收益平準金占比: {
+      zh: '收益平準金占比',
+      en: 'Equalization reserve ratio',
+    },
+    已實現資本利得占比: {
+      zh: '已實現資本利得占比',
+      en: 'Realized capital gains ratio',
+    },
+    其他所得占比: {
+      zh: '其他所得占比',
+      en: 'Other income ratio',
+    },
+  };
+
   const stock = useMemo(() => {
     return stockList.find(item => item.stock_id === stockId) || {};
   }, [stockList, stockId]);
@@ -80,7 +123,7 @@ export default function StockDetail({ stockId }) {
     return arr;
   }, [dividendList, stockId]);
 
-  if (stockLoading || dividendLoading || returnsLoading) {
+  if (stockLoading || dividendLoading || returnsLoading || dividendNewsLoading) {
     return <div>{lang === 'en' ? 'Loading...' : '載入中...'}</div>;
   }
 
@@ -109,15 +152,30 @@ export default function StockDetail({ stockId }) {
         ) : (
           '-'
         )}
-        {news_text}
       </p>
       <p>
-        {lang === 'en' ? 'Latest Income Distribution Announcement:' : '最新分配收益資訊:'} {news_url ? (
-          <a href={news_url} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all' }}>{news_url}</a>
+        {lang === 'en' ? 'Latest Income Distribution Announcement:' : '最新分配收益資訊:'} {newsUrl ? (
+          <a href={newsUrl} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all' }}>{newsUrl}</a>
         ) : (
           '-'
         )}
       </p>
+      {newsTextEntries.length > 0 && (
+        <div className="news-text">
+          <p style={{ marginBottom: 4 }}>{lang === 'en' ? 'Income distribution breakdown:' : '收益來源占比:'}</p>
+          <ul style={{ marginTop: 0, marginBottom: 12 }}>
+            {newsTextEntries.map(([key, value]) => {
+              const label = distributionLabelMap[key];
+              const displayLabel = label ? (lang === 'en' ? label.en : label.zh) : key;
+              return (
+                <li key={key} style={{ lineHeight: 1.6 }}>
+                  <strong>{displayLabel}:</strong> {typeof value === 'number' ? `${value}%` : value}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
       <p>{lang === 'en' ? 'Listing date:' : '上市日期:'} {stock.listing_date || '-'}</p>
 
       {returns.stock_id && (
