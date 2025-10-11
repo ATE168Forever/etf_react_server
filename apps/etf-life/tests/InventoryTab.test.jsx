@@ -3,8 +3,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Cookies from 'js-cookie';
 import InventoryTab from '../src/InventoryTab';
 import { fetchWithCache } from '../src/api';
+import { fetchStockList } from '../src/stockApi';
 
 jest.mock('../src/api');
+jest.mock('../src/stockApi', () => ({
+  fetchStockList: jest.fn(() => Promise.resolve({ list: [], meta: [] }))
+}));
 jest.mock('../src/config', () => ({
   API_HOST: 'http://localhost'
 }));
@@ -16,17 +20,16 @@ describe('InventoryTab interactions', () => {
   beforeEach(() => {
     localStorage.clear();
     Cookies.remove('my_transaction_history');
+    fetchStockList.mockReset();
     fetchWithCache.mockImplementation((url) => {
-      if (url.includes('/get_stock_list')) {
-        return Promise.resolve({ data: [{ stock_id: '0050', stock_name: 'Test ETF', dividend_frequency: 1 }] });
-      }
-      if (url.includes(`/get_dividend?year=${currentYear}`)) {
-        return Promise.resolve({ data: [{ stock_id: '0050', dividend_date: '2024-01-02', last_close_price: 20 }] });
-      }
-      if (url.includes(`/get_dividend?year=${previousYear}`)) {
+      if (url.includes(`/get_dividend?year=${currentYear}`) || url.includes(`/get_dividend?year=${previousYear}`)) {
         return Promise.resolve({ data: [{ stock_id: '0050', dividend_date: '2024-01-02', last_close_price: 20 }] });
       }
       return Promise.resolve({ data: [] });
+    });
+    fetchStockList.mockResolvedValue({
+      list: [{ stock_id: '0050', stock_name: 'Test ETF', dividend_frequency: 1, country: 'TW' }],
+      meta: [{ country: 'TW', cacheStatus: 'fresh', timestamp: new Date().toISOString() }]
     });
   });
 
@@ -89,6 +92,28 @@ describe('InventoryTab interactions', () => {
     await screen.findByText('預期的股息目標');
     expect(await screen.findByText('總投資金額：10,000.00')).toBeInTheDocument();
     expect(await screen.findByText('目前總價值：20,000.00')).toBeInTheDocument();
+  });
+
+  test('omits lot information for US ETF holdings', async () => {
+    localStorage.setItem('my_transaction_history', JSON.stringify([
+      { stock_id: 'VOO', date: '2024-01-01', quantity: 10, type: 'buy', price: 1 }
+    ]));
+    fetchStockList.mockResolvedValue({
+      list: [
+        { stock_id: 'VOO', stock_name: 'Vanguard S&P 500', dividend_frequency: '季配', country: 'US' }
+      ],
+      meta: [{ country: 'US', cacheStatus: 'fresh', timestamp: new Date().toISOString() }]
+    });
+
+    render(<InventoryTab />);
+
+    const link = await screen.findByRole('link', { name: /VOO Vanguard S&P 500/ });
+    const row = link.closest('tr');
+    expect(row).not.toBeNull();
+    const cells = row.querySelectorAll('td');
+    expect(cells[2].textContent).toContain('10');
+    expect(cells[2].textContent).not.toMatch(/張/);
+    expect(cells[2].textContent).not.toMatch(/lots/i);
   });
 
   test('edits existing transaction', async () => {

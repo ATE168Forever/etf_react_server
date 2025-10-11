@@ -4,6 +4,8 @@ import { API_HOST } from './config';
 import './App.css';
 import Footer from './components/Footer';
 import { useLanguage } from './i18n';
+import { fetchStockList } from './stockApi';
+import { fetchDividendsByYears } from './dividendApi';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const PREVIOUS_YEAR = CURRENT_YEAR - 1;
@@ -31,15 +33,8 @@ export default function StockDetail({ stockId }) {
   } = useQuery({
     queryKey: ['stockList'],
     queryFn: async () => {
-      const res = await fetch(`${API_HOST}/get_stock_list`);
-      const data = await res.json();
-      return Array.isArray(data)
-        ? data
-        : Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data?.items)
-            ? data.items
-            : [];
+      const { list } = await fetchStockList();
+      return list;
     },
     staleTime: 2 * 60 * 60 * 1000,
   });
@@ -47,29 +42,13 @@ export default function StockDetail({ stockId }) {
   const { data: dividendList = [], isLoading: dividendLoading } = useQuery({
     queryKey: ['dividend', ...ALLOWED_YEARS],
     queryFn: async () => {
-      const results = await Promise.allSettled(
-        ALLOWED_YEARS.map(async (year) => {
-          const res = await fetch(`${API_HOST}/get_dividend?year=${year}`);
-          const data = await res.json();
-          return Array.isArray(data)
-            ? data
-            : Array.isArray(data?.data)
-              ? data.data
-              : Array.isArray(data?.items)
-                ? data.items
-                : [];
-        })
-      );
-      const fulfilledResults = results.filter((r) => r.status === 'fulfilled');
-      if (!fulfilledResults.length) {
-        const firstRejection = results.find((r) => r.status === 'rejected');
-        if (firstRejection?.reason) throw firstRejection.reason;
-        throw new Error('Failed to fetch dividend data');
-      }
-      const data = fulfilledResults.flatMap((r) => r.value);
-      return data.filter((item) =>
-        ALLOWED_YEARS.includes(new Date(item.dividend_date).getFullYear())
-      );
+      const { data } = await fetchDividendsByYears(ALLOWED_YEARS);
+      return data.filter((item) => {
+        const date = item.dividend_date || item.payment_date;
+        if (!date) return false;
+        const year = new Date(date).getFullYear();
+        return ALLOWED_YEARS.includes(year);
+      });
     },
     staleTime: 2 * 60 * 60 * 1000,
   });

@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import DividendCalendar from './components/DividendCalendar';
 import { readTransactionHistory } from './utils/transactionStorage';
-import { HOST_URL, API_HOST } from './config';
+import { HOST_URL } from './config';
 import { useLanguage } from './i18n';
 import usePreserveScroll from './hooks/usePreserveScroll';
-import { fetchWithCache } from './api';
 import TooltipText from './components/TooltipText';
 import CurrencyViewToggle from './components/CurrencyViewToggle';
+import { fetchStockList } from './stockApi';
 
 const MONTH_COL_WIDTH = 80;
 const DEFAULT_CURRENCY = 'TWD';
@@ -94,9 +94,8 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     }, [showCalendar]);
 
     useEffect(() => {
-        fetchWithCache(`${API_HOST}/get_stock_list`)
-            .then(({ data }) => {
-                const list = Array.isArray(data) ? data : data?.items || [];
+        fetchStockList()
+            .then(({ list }) => {
                 const map = {};
                 list.forEach(item => {
                     if (!item?.stock_id) return;

@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Cookies from 'js-cookie';
 import CreatableSelect from 'react-select/creatable';
-import { API_HOST, HOST_URL } from './config';
-import { fetchWithCache } from './api';
+import { HOST_URL } from './config';
 import { fetchDividendsByYears } from './dividendApi';
+import { fetchStockList } from './stockApi';
 import {
   migrateTransactionHistory,
   saveTransactionHistory,
@@ -829,20 +829,13 @@ export default function InventoryTab() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const { data, cacheStatus, timestamp } = await fetchWithCache(
-          `${API_HOST}/get_stock_list`
-        );
-        const list = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.data)
-            ? data.data
-            : Array.isArray(data?.items)
-              ? data.items
-              : [];
+        const { list, meta } = await fetchStockList();
         setStockList(list);
-        setCacheInfo({ cacheStatus, timestamp });
+        const primaryMeta = meta.find(entry => entry.country === 'TW') || meta[0] || null;
+        setCacheInfo(primaryMeta ? { cacheStatus: primaryMeta.cacheStatus, timestamp: primaryMeta.timestamp } : null);
       } catch {
         setStockList([]);
+        setCacheInfo(null);
       }
     };
 
@@ -1989,7 +1982,16 @@ export default function InventoryTab() {
                             </a>
                           </td>
                           <td>{item.avg_price.toFixed(2)}</td>
-                          <td>{item.total_quantity} ({(item.total_quantity / 1000).toFixed(3).replace(/\.0+$/, '')} {lang === 'en' ? 'lots' : '張'})</td>
+                          <td>
+                            {item.total_quantity}
+                            {(() => {
+                              const countryCode = typeof item.country === 'string' ? item.country.trim().toUpperCase() : '';
+                              const isUsEtf = countryCode === 'US' || countryCode === 'USA';
+                              if (isUsEtf) return null;
+                              const lots = (item.total_quantity / 1000).toFixed(3).replace(/\.0+$/, '');
+                              return ` (${lots} ${lang === 'en' ? 'lots' : '張'})`;
+                            })()}
+                          </td>
                           <td>
                             <button className={styles.sellButton} onClick={() => setSellModal({ show: true, stock: item })}>{msg.sell}</button>
                           </td>
