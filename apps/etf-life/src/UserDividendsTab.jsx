@@ -361,7 +361,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
 
             normalizedDividendData.forEach(item => {
                 if (item.currency !== currency) return;
-                const thisDate = item.dividend_date;
+                const thisDate = item.dividend_date || item.payment_date;
                 if (!thisDate) return;
                 const month = new Date(thisDate).getMonth();
                 const stockId = item.stock_id;
