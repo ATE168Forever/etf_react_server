@@ -20,6 +20,7 @@ import { API_HOST } from './config';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
 import { fetchDividendsByYears, clearDividendsCache } from './dividendApi';
 import { fetchStockList } from './stockApi';
+import useEffectOnce from './hooks/useEffectOnce';
 
 const DEFAULT_MONTHLY_GOAL = 10000;
 const DEFAULT_CURRENCY = 'TWD';
@@ -213,10 +214,14 @@ function App() {
 
   const [dividendCacheInfo, setDividendCacheInfo] = useState(null);
 
-  useEffect(() => {
+  useEffectOnce(() => {
+    let cancelled = false;
+
     const fetchData = async () => {
       try {
         const { data: dividendData, meta } = await fetchDividendsByYears(ALLOWED_YEARS);
+        if (cancelled) return;
+
         const filteredArr = dividendData.filter(item => ALLOWED_YEARS.includes(new Date(item.dividend_date).getFullYear()));
         setData(filteredArr);
         if (meta.length) {
@@ -245,22 +250,33 @@ function App() {
           setSelectedYear(yearList[0]);
         }
       } catch (error) {
-        setError(error);
+        if (!cancelled) {
+          setError(error);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
+
     fetchData();
-    // eslint-disable-next-line
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  });
 
   useEffect(() => {
     setUpcomingAlerts(getTomorrowDividendAlerts(data));
   }, [data]);
 
-  useEffect(() => {
+  useEffectOnce(() => {
+    let cancelled = false;
+
     fetchStockList()
       .then(({ list }) => {
+        if (cancelled) return;
         const map = {};
         const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12 };
         list.forEach(s => {
@@ -268,8 +284,16 @@ function App() {
         });
         setFreqMap(map);
       })
-      .catch(() => setFreqMap({}));
-  }, []);
+      .catch(() => {
+        if (!cancelled) {
+          setFreqMap({});
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  });
 
   // Load default watch groups from localStorage
   useEffect(() => {

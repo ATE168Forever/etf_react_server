@@ -7,6 +7,7 @@ import usePreserveScroll from './hooks/usePreserveScroll';
 import TooltipText from './components/TooltipText';
 import CurrencyViewToggle from './components/CurrencyViewToggle';
 import { fetchStockList } from './stockApi';
+import useEffectOnce from './hooks/useEffectOnce';
 
 const MONTH_COL_WIDTH = 80;
 const DEFAULT_CURRENCY = 'TWD';
@@ -93,9 +94,12 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         localStorage.setItem('userDividendsShowCalendar', showCalendar);
     }, [showCalendar]);
 
-    useEffect(() => {
+    useEffectOnce(() => {
+        let cancelled = false;
+
         fetchStockList()
             .then(({ list }) => {
+                if (cancelled) return;
                 const map = {};
                 list.forEach(item => {
                     if (!item?.stock_id) return;
@@ -103,8 +107,16 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 });
                 setStockNameMap(map);
             })
-            .catch(() => setStockNameMap({}));
-    }, []);
+            .catch(() => {
+                if (!cancelled) {
+                    setStockNameMap({});
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    });
 
     const getHolding = useCallback((stock_id, date) => {
         return history.reduce((sum, item) => {

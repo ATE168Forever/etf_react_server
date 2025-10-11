@@ -4,6 +4,7 @@ import CreatableSelect from 'react-select/creatable';
 import { HOST_URL } from './config';
 import { fetchDividendsByYears } from './dividendApi';
 import { fetchStockList } from './stockApi';
+import useEffectOnce from './hooks/useEffectOnce';
 import {
   migrateTransactionHistory,
   saveTransactionHistory,
@@ -826,21 +827,30 @@ export default function InventoryTab() {
     }
   }, [transactionHistory, handleExport, backupPrompt]);
 
-  useEffect(() => {
+  useEffectOnce(() => {
+    let cancelled = false;
+
     const fetchAll = async () => {
       try {
         const { list, meta } = await fetchStockList();
+        if (cancelled) return;
         setStockList(list);
         const primaryMeta = meta.find(entry => entry.country === 'TW') || meta[0] || null;
         setCacheInfo(primaryMeta ? { cacheStatus: primaryMeta.cacheStatus, timestamp: primaryMeta.timestamp } : null);
       } catch {
-        setStockList([]);
-        setCacheInfo(null);
+        if (!cancelled) {
+          setStockList([]);
+          setCacheInfo(null);
+        }
       }
     };
 
     fetchAll();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  });
 
   useEffect(() => {
     if (stockList.length === 0) return;
@@ -863,9 +873,12 @@ export default function InventoryTab() {
     });
   }, [stockList]);
 
-  useEffect(() => {
+  useEffectOnce(() => {
+    let cancelled = false;
+
     fetchDividendsByYears()
       .then(({ data }) => {
+        if (cancelled) return;
         const list = data;
         setDividendData(list);
         const priceMap = {};
@@ -883,10 +896,16 @@ export default function InventoryTab() {
         setLatestPrices(prices);
       })
       .catch(() => {
-        setDividendData([]);
-        setLatestPrices({});
+        if (!cancelled) {
+          setDividendData([]);
+          setLatestPrices({});
+        }
       });
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  });
 
   useEffect(() => {
     saveTransactionHistory(transactionHistory);
