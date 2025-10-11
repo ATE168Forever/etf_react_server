@@ -29,7 +29,7 @@ export async function fetchDividendsByYears(years = DIVIDEND_YEARS, countries = 
   const normalizedCountries = Array.from(new Set(requestedCountries.map(country => normalizeCountryCode(country)).filter(Boolean)));
 
   if (!normalizedCountries.length) {
-    normalizedCountries.push('tw');
+    normalizedCountries.push(...DEFAULT_DIVIDEND_COUNTRIES);
   }
 
   const combinations = normalizedCountries.flatMap(country =>
@@ -72,7 +72,7 @@ export function clearDividendsCache(years = DIVIDEND_YEARS, countries = DEFAULT_
   const normalizedCountries = Array.from(new Set(requestedCountries.map(country => normalizeCountryCode(country)).filter(Boolean)));
 
   if (!normalizedCountries.length) {
-    normalizedCountries.push('tw');
+    normalizedCountries.push(...DEFAULT_DIVIDEND_COUNTRIES);
   }
 
   uniqueYears.forEach(year => {
