@@ -22,8 +22,18 @@ describe('InventoryTab interactions', () => {
     Cookies.remove('my_transaction_history');
     fetchStockList.mockReset();
     fetchWithCache.mockImplementation((url) => {
-      if (url.includes(`/get_dividend?year=${currentYear}`) || url.includes(`/get_dividend?year=${previousYear}`)) {
-        return Promise.resolve({ data: [{ stock_id: '0050', dividend_date: '2024-01-02', last_close_price: 20 }] });
+      if (url.includes('/get_dividend')) {
+        const queryString = url.split('?')[1] || '';
+        const params = new URLSearchParams(queryString);
+        const year = Number(params.get('year'));
+        const country = params.get('country');
+        const supportedCountries = ['tw', 'us'];
+        if (
+          [currentYear, previousYear].includes(year) &&
+          supportedCountries.includes((country || '').toLowerCase())
+        ) {
+          return Promise.resolve({ data: [{ stock_id: '0050', dividend_date: '2024-01-02', last_close_price: 20 }] });
+        }
       }
       return Promise.resolve({ data: [] });
     });
