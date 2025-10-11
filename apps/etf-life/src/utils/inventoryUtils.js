@@ -15,6 +15,7 @@ export function summarizeInventory(transactionHistory, stockList = [], latestPri
       inventoryMap.set(stockId, {
         stock_id: stockId,
         stock_name: stockInfo.stock_name || item.stock_name || '',
+        country: (stockInfo.country || item.country || '').toUpperCase() || '',
         total_quantity: 0,
         total_cost: 0
       });
@@ -39,6 +40,14 @@ export function summarizeInventory(transactionHistory, stockList = [], latestPri
         const stockInfo = stockMap.get(stockId);
         if (stockInfo?.stock_name) {
           info.stock_name = stockInfo.stock_name;
+        }
+      }
+      if (!info.country) {
+        const stockInfo = stockMap.get(stockId);
+        const fromHistory = typeof item.country === 'string' ? item.country.trim() : '';
+        const candidate = stockInfo?.country || fromHistory;
+        if (candidate) {
+          info.country = candidate.toUpperCase();
         }
       }
     }

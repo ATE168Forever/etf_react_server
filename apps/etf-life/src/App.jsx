@@ -17,9 +17,9 @@ import dividendLogoDark from './assets/conceptB-ETF-Life-dark.svg';
 import dividendLogoLight from './assets/conceptB-ETF-Life-light.svg';
 import NLHelper from './NLHelper';
 import { API_HOST } from './config';
-import { fetchWithCache } from './api';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
 import { fetchDividendsByYears, clearDividendsCache } from './dividendApi';
+import { fetchStockList } from './stockApi';
 
 const DEFAULT_MONTHLY_GOAL = 10000;
 const DEFAULT_CURRENCY = 'TWD';
@@ -220,7 +220,10 @@ function App() {
         const filteredArr = dividendData.filter(item => ALLOWED_YEARS.includes(new Date(item.dividend_date).getFullYear()));
         setData(filteredArr);
         if (meta.length) {
-          const primaryMeta = meta.find(entry => entry.year === CURRENT_YEAR) || meta[0];
+          const primaryMeta = meta.find(entry => entry.year === CURRENT_YEAR && entry.country === 'TW')
+            || meta.find(entry => entry.year === CURRENT_YEAR)
+            || meta.find(entry => entry.country === 'TW')
+            || meta[0];
           setDividendCacheInfo(primaryMeta
             ? {
                 cacheStatus: primaryMeta.cacheStatus || 'unknown',
@@ -256,9 +259,8 @@ function App() {
   }, [data]);
 
   useEffect(() => {
-    fetchWithCache(`${API_HOST}/get_stock_list`)
-      .then(({ data }) => {
-        const list = Array.isArray(data) ? data : data?.items || [];
+    fetchStockList()
+      .then(({ list }) => {
         const map = {};
         const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12 };
         list.forEach(s => {

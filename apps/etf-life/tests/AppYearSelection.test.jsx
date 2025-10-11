@@ -5,10 +5,15 @@ jest.mock('../src/assets/conceptB-ETF-Life-dark.svg', () => 'data:image/svg+xml;
 jest.mock('../src/assets/conceptB-ETF-Life-light.svg', () => 'data:image/svg+xml;base64,PHN2Zy8+');
 
 const mockFetchWithCache = jest.fn();
+const mockFetchStockList = jest.fn();
 
 jest.mock('../src/api', () => ({
   fetchWithCache: (...args) => mockFetchWithCache(...args),
   clearCache: jest.fn()
+}));
+
+jest.mock('../src/stockApi', () => ({
+  fetchStockList: (...args) => mockFetchStockList(...args)
 }));
 
 const mockFetchDividendsByYears = jest.fn();
@@ -28,6 +33,9 @@ beforeEach(() => {
   sessionStorage.clear();
   localStorage.setItem('lang', 'zh');
   mockFetchWithCache.mockReset();
+  mockFetchWithCache.mockResolvedValue({ data: [] });
+  mockFetchStockList.mockReset();
+  mockFetchStockList.mockResolvedValue({ list: [], meta: [] });
   mockFetchDividendsByYears.mockReset();
   globalThis.fetch = jest.fn(() => Promise.resolve({}));
 });
@@ -59,9 +67,6 @@ test('falls back to the latest available year when current year has no data', as
   });
 
   mockFetchWithCache.mockImplementation((url) => {
-    if (url.includes('/get_stock_list')) {
-      return Promise.resolve({ data: [] });
-    }
     if (url.includes('/site_stats')) {
       return Promise.resolve({ data: { milestones: [], latest: [], tip: '' } });
     }
