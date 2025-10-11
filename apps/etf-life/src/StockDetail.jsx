@@ -109,6 +109,14 @@ export default function StockDetail({ stockId }) {
         ) : (
           '-'
         )}
+        {news_text}
+      </p>
+      <p>
+        {lang === 'en' ? 'Latest Income Distribution Announcement:' : '最新分配收益資訊:'} {news_url ? (
+          <a href={news_url} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all' }}>{news_url}</a>
+        ) : (
+          '-'
+        )}
       </p>
       <p>{lang === 'en' ? 'Listing date:' : '上市日期:'} {stock.listing_date || '-'}</p>
 
