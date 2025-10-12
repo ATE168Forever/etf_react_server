@@ -124,6 +124,9 @@ test('allows switching between TWD and USD dividend summaries', async () => {
 
   render(<UserDividendsTab allDividendData={data} selectedYear={2024} />);
 
+  const toTwdButtonInitial = await screen.findByRole('button', { name: /^(台股|NT\$|NT dividends)$/i });
+  fireEvent.click(toTwdButtonInitial);
+
   const twdRow = await screen.findByText('0050 台股ETF');
   expect(twdRow.closest('tr')).toHaveTextContent('1,000');
   expect(screen.queryByText('VUSD Vanguard USD')).not.toBeInTheDocument();
@@ -132,7 +135,7 @@ test('allows switching between TWD and USD dividend summaries', async () => {
   fireEvent.click(toUsdButton);
 
   const usdRow = await screen.findByText('VUSD Vanguard USD');
-  expect(usdRow.closest('tr')).toHaveTextContent('100');
+  expect(usdRow.closest('tr')).toHaveTextContent('100.000');
   expect(screen.queryByText('0050 台股ETF')).not.toBeInTheDocument();
 
   const toTwdButton = await screen.findByRole('button', { name: /^(台股|NT\$|NT dividends)$/i });
