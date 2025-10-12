@@ -5,7 +5,7 @@ import { readTransactionHistory } from '../src/utils/transactionStorage';
 
 jest.mock('../src/utils/transactionStorage');
 jest.mock('../src/config', () => ({ API_HOST: '' }));
-jest.mock('../src/stockApi', () => ({ fetchStockList: jest.fn(() => Promise.resolve({ list: [], meta: [] })) }));
+jest.mock('../src/stockApi', () => ({ fetchStockList: jest.fn(() => Promise.resolve({ list: [], meta: null })) }));
 
 test('displays stock id and dynamic name from dividend data', async () => {
   readTransactionHistory.mockReturnValue([

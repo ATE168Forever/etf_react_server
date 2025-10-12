@@ -35,7 +35,7 @@ beforeEach(() => {
   mockFetchWithCache.mockReset();
   mockFetchWithCache.mockResolvedValue({ data: [] });
   mockFetchStockList.mockReset();
-  mockFetchStockList.mockResolvedValue({ list: [], meta: [] });
+  mockFetchStockList.mockResolvedValue({ list: [], meta: null });
   mockFetchDividendsByYears.mockReset();
   globalThis.fetch = jest.fn(() => Promise.resolve({}));
 });
