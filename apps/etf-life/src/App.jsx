@@ -538,16 +538,23 @@ function App() {
   const hasUsd = availableCurrencies.includes('USD');
   const fallbackView = hasTwd && hasUsd ? 'BOTH' : hasTwd ? 'TWD' : hasUsd ? 'USD' : 'TWD';
   const [viewMode, setViewMode] = useState(fallbackView);
+  const [hasUserSetViewMode, setHasUserSetViewMode] = useState(false);
   useEffect(() => {
-    const expected = hasTwd && hasUsd ? 'BOTH' : hasTwd ? 'TWD' : hasUsd ? 'USD' : 'TWD';
-    if (viewMode === 'TWD' && !hasTwd) {
-      setViewMode(expected);
-    } else if (viewMode === 'USD' && !hasUsd) {
-      setViewMode(expected);
-    } else if (viewMode === 'BOTH' && !(hasTwd && hasUsd)) {
-      setViewMode(expected);
+    if (!hasUserSetViewMode) {
+      if (viewMode !== fallbackView) {
+        setViewMode(fallbackView);
+      }
+      return;
     }
-  }, [hasTwd, hasUsd, viewMode]);
+    if ((viewMode === 'TWD' && !hasTwd) || (viewMode === 'USD' && !hasUsd) || (viewMode === 'BOTH' && !(hasTwd && hasUsd))) {
+      setViewMode(fallbackView);
+    }
+  }, [fallbackView, hasTwd, hasUsd, hasUserSetViewMode, viewMode]);
+
+  const handleViewModeChange = (mode) => {
+    setHasUserSetViewMode(true);
+    setViewMode(mode);
+  };
 
   const activeCurrencies = useMemo(() => {
     if (viewMode === 'BOTH') {
@@ -901,7 +908,7 @@ function App() {
           </div>
           <CurrencyViewToggle
             viewMode={viewMode}
-            onChange={setViewMode}
+            onChange={handleViewModeChange}
             hasTwd={hasTwd}
             hasUsd={hasUsd}
             lang={lang}

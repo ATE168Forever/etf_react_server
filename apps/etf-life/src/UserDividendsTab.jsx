@@ -174,7 +174,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const hasTwd = availableCurrencies.includes('TWD');
     const hasUsd = availableCurrencies.includes('USD');
 
-    const initialViewMode = hasTwd && hasUsd
+    const fallbackView = hasTwd && hasUsd
         ? 'BOTH'
         : hasTwd
             ? 'TWD'
@@ -182,24 +182,25 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 ? 'USD'
                 : 'TWD';
 
-    const [viewMode, setViewMode] = useState(initialViewMode);
+    const [viewMode, setViewMode] = useState(fallbackView);
+    const [hasUserSetViewMode, setHasUserSetViewMode] = useState(false);
 
     useEffect(() => {
-        const fallback = hasTwd && hasUsd
-            ? 'BOTH'
-            : hasTwd
-                ? 'TWD'
-                : hasUsd
-                    ? 'USD'
-                    : 'TWD';
-        if (viewMode === 'TWD' && !hasTwd) {
-            setViewMode(fallback);
-        } else if (viewMode === 'USD' && !hasUsd) {
-            setViewMode(fallback);
-        } else if (viewMode === 'BOTH' && !(hasTwd && hasUsd)) {
-            setViewMode(fallback);
+        if (!hasUserSetViewMode) {
+            if (viewMode !== fallbackView) {
+                setViewMode(fallbackView);
+            }
+            return;
         }
-    }, [hasTwd, hasUsd, viewMode]);
+        if ((viewMode === 'TWD' && !hasTwd) || (viewMode === 'USD' && !hasUsd) || (viewMode === 'BOTH' && !(hasTwd && hasUsd))) {
+            setViewMode(fallbackView);
+        }
+    }, [fallbackView, hasTwd, hasUsd, hasUserSetViewMode, viewMode]);
+
+    const handleViewModeChange = (mode) => {
+        setHasUserSetViewMode(true);
+        setViewMode(mode);
+    };
 
     const stockCurrencyMap = useMemo(() => {
         const map = {};
@@ -635,7 +636,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 <h3>{selectedYear} {lang === 'en' ? 'Dividend Overview' : '配息總覽'}</h3>
                 <CurrencyViewToggle
                     viewMode={viewMode}
-                    onChange={setViewMode}
+                    onChange={handleViewModeChange}
                     hasTwd={hasTwd}
                     hasUsd={hasUsd}
                     lang={lang}
