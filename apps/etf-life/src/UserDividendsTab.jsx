@@ -254,6 +254,13 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
 
     const currencyUnitZh = (currency) => (currency === 'USD' ? '美元' : '元');
     const currencyHeaderLabel = (currency) => (currency === 'USD' ? 'US$' : 'NT$');
+    const formatDividendAmount = (value) => {
+        const num = Number(value);
+        if (!Number.isFinite(num)) {
+            return value;
+        }
+        return num.toFixed(3);
+    };
 
     const formatCurrencyValue = (currency, value, { allowZero = false } = {}) => {
         if (!Number.isFinite(value)) return '';
@@ -885,12 +892,23 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                 }
                                                 const total = cell.dividend * cell.quantity;
                                                 const currencySymbol = CURRENCY_SYMBOLS[currency] || `${currency} `;
+                                                const lotText = (cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '');
+                                                const quantityLineEn = currency === 'USD'
+                                                    ? `Shares held: ${cell.quantity}`
+                                                    : `Shares held: ${cell.quantity} (${lotText} lots)`;
+                                                const quantityLineZh = currency === 'USD'
+                                                    ? `持有數量: ${cell.quantity} 股`
+                                                    : `持有數量: ${cell.quantity} 股 (${lotText} 張)`;
+                                                const dividendPerShareEn = `Dividend per share: ${currencySymbol}${formatDividendAmount(cell.dividend)}`;
+                                                const dividendPerShareZh = `每股配息: ${formatDividendAmount(cell.dividend)} ${currencyUnitZh(currency)}`;
+                                                const tooltipContent = lang === 'en'
+                                                    ? `${quantityLineEn}\n${dividendPerShareEn}\nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
+                                                    : `${quantityLineZh}\n${dividendPerShareZh}\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`;
+
                                                 return (
                                                     <td key={`cell-${stock.stock_id}-${idx}-${currency}`} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
                                                         <TooltipText
-                                                            tooltip={lang === 'en'
-                                                                ? `Shares held: ${cell.quantity} (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} lots)\nDividend per share: ${currencySymbol}${cell.dividend}\nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
-                                                                : `持有數量: ${cell.quantity} 股 (${(cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} 張)\n每股配息: ${cell.dividend} ${currencyUnitZh(currency)}\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`}
+                                                            tooltip={tooltipContent}
                                                             style={{ borderBottom: '1px dotted #777' }}
                                                         >
                                                             {total > 0 ? formatPlainAmount(total) : ''}
