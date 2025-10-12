@@ -30,6 +30,9 @@ export default function HomeTab() {
 
   useEffect(() => {
     let cancelled = false;
+    // React StrictMode purposely invokes effects twice in development to surface
+    // side effects. The call is still idempotent because fetchWithCache
+    // short-circuits repeat network requests within the TTL window.
     fetchWithCache(`${API_HOST}/site_stats?en=${lang === 'en'}`, 2 * 60 * 60 * 1000)
       .then(({ data }) => {
         if (!cancelled) {
