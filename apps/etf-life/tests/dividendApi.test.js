@@ -21,24 +21,34 @@ describe('dividendApi', () => {
     expect(url).toBe('https://api.example.com/get_dividend?year=2025&country=us');
   });
 
-  test('fetchDividendsByYears requests both TW and US data by default', async () => {
-    fetchWithCache.mockResolvedValue({ data: [], cacheStatus: 'fresh', timestamp: '2024-01-01T00:00:00Z' });
-
-    await fetchDividendsByYears([2024]);
-
-    expect(fetchWithCache).toHaveBeenCalledTimes(2);
-    const urls = fetchWithCache.mock.calls.map(([url]) => url);
-    expect(urls).toContain('https://api.example.com/get_dividend?year=2024&country=tw');
-    expect(urls).toContain('https://api.example.com/get_dividend?year=2024&country=us');
+  test('buildDividendRequestUrl accepts option object', () => {
+    const url = buildDividendRequestUrl(undefined, undefined, { years: [2024, '2023'], countries: ['TW', ' us '], fields: ['a', 'b'] });
+    expect(url).toBe('https://api.example.com/get_dividend?year=2024%2C2023&country=tw%2Cus&fields=a%2Cb');
   });
 
-  test('clearDividendsCache removes cached TW and US entries by default', () => {
-    clearDividendsCache([2024]);
+  test('fetchDividendsByYears requests base endpoint when no filters provided', async () => {
+    fetchWithCache.mockResolvedValue({ data: [], cacheStatus: 'fresh', timestamp: '2024-01-01T00:00:00Z' });
 
-    expect(clearCache).toHaveBeenCalledTimes(2);
-    const urls = clearCache.mock.calls.map(([url]) => url);
-    expect(urls).toContain('https://api.example.com/get_dividend?year=2024&country=tw');
-    expect(urls).toContain('https://api.example.com/get_dividend?year=2024&country=us');
+    await fetchDividendsByYears();
+
+    expect(fetchWithCache).toHaveBeenCalledTimes(1);
+    expect(fetchWithCache).toHaveBeenCalledWith('https://api.example.com/get_dividend');
+  });
+
+  test('fetchDividendsByYears combines filters into single request', async () => {
+    fetchWithCache.mockResolvedValue({ data: [], cacheStatus: 'fresh', timestamp: '2024-01-01T00:00:00Z' });
+
+    await fetchDividendsByYears([2024, 2023], [' TW ', 'US']);
+
+    expect(fetchWithCache).toHaveBeenCalledTimes(1);
+    expect(fetchWithCache).toHaveBeenCalledWith('https://api.example.com/get_dividend?year=2024%2C2023&country=tw%2Cus');
+  });
+
+  test('clearDividendsCache clears base endpoint when no filters provided', () => {
+    clearDividendsCache();
+
+    expect(clearCache).toHaveBeenCalledTimes(1);
+    expect(clearCache).toHaveBeenCalledWith('https://api.example.com/get_dividend');
   });
 
   test('fetchDividendsByYears falls back to TW and US when countries list empty', async () => {
@@ -46,18 +56,14 @@ describe('dividendApi', () => {
 
     await fetchDividendsByYears([2024], []);
 
-    expect(fetchWithCache).toHaveBeenCalledTimes(2);
-    const urls = fetchWithCache.mock.calls.map(([url]) => url);
-    expect(urls).toContain('https://api.example.com/get_dividend?year=2024&country=tw');
-    expect(urls).toContain('https://api.example.com/get_dividend?year=2024&country=us');
+    expect(fetchWithCache).toHaveBeenCalledTimes(1);
+    expect(fetchWithCache).toHaveBeenCalledWith('https://api.example.com/get_dividend?year=2024&country=tw%2Cus');
   });
 
   test('clearDividendsCache falls back to TW and US when countries list empty', () => {
     clearDividendsCache([2024], []);
 
-    expect(clearCache).toHaveBeenCalledTimes(2);
-    const urls = clearCache.mock.calls.map(([url]) => url);
-    expect(urls).toContain('https://api.example.com/get_dividend?year=2024&country=tw');
-    expect(urls).toContain('https://api.example.com/get_dividend?year=2024&country=us');
+    expect(clearCache).toHaveBeenCalledTimes(1);
+    expect(clearCache).toHaveBeenCalledWith('https://api.example.com/get_dividend?year=2024&country=tw%2Cus');
   });
 });
