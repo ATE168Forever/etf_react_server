@@ -51,6 +51,7 @@ export default function InventoryTab() {
   const autoSaveDirectoryHandleRef = useRef(null);
   const autoSaveFileHandleRef = useRef(null);
   const [cacheInfo, setCacheInfo] = useState(null);
+  const [dividendCacheInfo, setDividendCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [selectedDataSource, setSelectedDataSource] = useState('csv');
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
@@ -146,6 +147,8 @@ export default function InventoryTab() {
       currentInventory: '目前庫存',
       showHistory: '顯示：交易歷史',
       cache: '快取',
+      stockCache: '股票清單快取',
+      dividendCache: '股息資料快取',
       totalInvestment: '總投資金額：',
       totalValue: '目前總價值：',
       investmentGoals: '預期的股息目標',
@@ -245,6 +248,8 @@ export default function InventoryTab() {
       currentInventory: 'Inventory',
       showHistory: 'Show: Transaction',
       cache: 'Cache',
+      stockCache: 'Stock list cache',
+      dividendCache: 'Dividend cache',
       totalInvestment: 'Total Investment:',
       totalValue: 'Total Value:',
       investmentGoals: 'Expected Dividend Targets',
@@ -875,11 +880,22 @@ export default function InventoryTab() {
   useEffectOnce(() => {
     let cancelled = false;
 
+    // The dividend feed reuses fetchWithCache, so if the previous payload is still
+    // fresh we may reuse the localStorage entry without issuing another
+    // network call. Surface the cache metadata so it's clear why the API
+    // wasn't contacted again after a cached /get_stock_list response.
     fetchDividendsByYears()
-      .then(({ data }) => {
+      .then(({ data, meta }) => {
         if (cancelled) return;
         const list = data;
         setDividendData(list);
+        const primaryMeta = Array.isArray(meta) && meta.length ? meta[0] : null;
+        setDividendCacheInfo(primaryMeta
+          ? {
+              cacheStatus: primaryMeta.cacheStatus ?? null,
+              timestamp: primaryMeta.timestamp ?? null
+            }
+          : null);
         const priceMap = {};
         list.forEach(item => {
           const price = parseFloat(item.last_close_price);
@@ -897,6 +913,7 @@ export default function InventoryTab() {
       .catch(() => {
         if (!cancelled) {
           setDividendData([]);
+          setDividendCacheInfo(null);
           setLatestPrices({});
         }
       });
@@ -1928,8 +1945,14 @@ export default function InventoryTab() {
             
             {cacheInfo && (
               <div className={styles.cacheInfo}>
-                {msg.cache}: {cacheInfo.cacheStatus}
+                {msg.stockCache}: {cacheInfo.cacheStatus}
                 {cacheInfo.timestamp ? ` (${new Date(cacheInfo.timestamp).toLocaleString()})` : ''}
+              </div>
+            )}
+            {dividendCacheInfo && (
+              <div className={styles.cacheInfo}>
+                {msg.dividendCache}: {dividendCacheInfo.cacheStatus}
+                {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
               </div>
             )}
 
