@@ -35,7 +35,7 @@ jest.mock('../src/icloud', () => ({
   importTransactionsFromICloud: jest.fn(() => Promise.resolve([]))
 }));
 jest.mock('../src/stockApi', () => ({
-  fetchStockList: jest.fn(() => Promise.resolve({ list: [], meta: [] }))
+  fetchStockList: jest.fn(() => Promise.resolve({ list: [], meta: null }))
 }));
 
 const STOCK_LIST_RESPONSE = {
@@ -49,7 +49,7 @@ function setupFetchMock() {
   fetchWithCache.mockImplementation(() => Promise.resolve({ data: [] }));
   fetchStockList.mockResolvedValue({
     list: STOCK_LIST_RESPONSE.data.map(item => ({ ...item, country: 'TW' })),
-    meta: [{ country: 'TW', cacheStatus: 'miss', timestamp: new Date().toISOString() }]
+    meta: { cacheStatus: 'miss', timestamp: new Date().toISOString() }
   });
 }
 

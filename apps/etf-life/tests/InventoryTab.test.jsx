@@ -7,7 +7,7 @@ import { fetchStockList } from '../src/stockApi';
 
 jest.mock('../src/api');
 jest.mock('../src/stockApi', () => ({
-  fetchStockList: jest.fn(() => Promise.resolve({ list: [], meta: [] }))
+  fetchStockList: jest.fn(() => Promise.resolve({ list: [], meta: null }))
 }));
 jest.mock('../src/config', () => ({
   API_HOST: 'http://localhost'
@@ -44,7 +44,7 @@ describe('InventoryTab interactions', () => {
     });
     fetchStockList.mockResolvedValue({
       list: [{ stock_id: '0050', stock_name: 'Test ETF', dividend_frequency: 1, country: 'TW' }],
-      meta: [{ country: 'TW', cacheStatus: 'fresh', timestamp: new Date().toISOString() }]
+      meta: { cacheStatus: 'fresh', timestamp: new Date().toISOString() }
     });
   });
 
@@ -117,7 +117,7 @@ describe('InventoryTab interactions', () => {
       list: [
         { stock_id: 'VOO', stock_name: 'Vanguard S&P 500', dividend_frequency: '季配', country: 'US' }
       ],
-      meta: [{ country: 'US', cacheStatus: 'fresh', timestamp: new Date().toISOString() }]
+      meta: { cacheStatus: 'fresh', timestamp: new Date().toISOString() }
     });
 
     render(<InventoryTab />);

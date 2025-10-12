@@ -8,7 +8,7 @@ jest.mock('../src/config', () => ({
 }));
 
 jest.mock('../src/stockApi', () => ({
-  fetchStockList: jest.fn(() => Promise.resolve({ list: [{ stock_id: '0056', stock_name: 'Test ETF' }], meta: [] }))
+  fetchStockList: jest.fn(() => Promise.resolve({ list: [{ stock_id: '0056', stock_name: 'Test ETF' }], meta: null }))
 }));
 
 jest.mock('../src/dividendApi', () => ({
@@ -17,7 +17,7 @@ jest.mock('../src/dividendApi', () => ({
 
 beforeEach(() => {
   const { fetchStockList } = require('../src/stockApi');
-  fetchStockList.mockResolvedValue({ list: [{ stock_id: '0056', stock_name: 'Test ETF' }], meta: [] });
+  fetchStockList.mockResolvedValue({ list: [{ stock_id: '0056', stock_name: 'Test ETF' }], meta: null });
   const { fetchDividendsByYears } = require('../src/dividendApi');
   fetchDividendsByYears.mockResolvedValue({ data: [] });
   globalThis.fetch = jest.fn((url) => {

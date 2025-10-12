@@ -835,8 +835,7 @@ export default function InventoryTab() {
         const { list, meta } = await fetchStockList();
         if (cancelled) return;
         setStockList(list);
-        const primaryMeta = meta.find(entry => entry.country === 'TW') || meta[0] || null;
-        setCacheInfo(primaryMeta ? { cacheStatus: primaryMeta.cacheStatus, timestamp: primaryMeta.timestamp } : null);
+        setCacheInfo(meta ? { cacheStatus: meta.cacheStatus ?? null, timestamp: meta.timestamp ?? null } : null);
       } catch {
         if (!cancelled) {
           setStockList([]);
