@@ -10,20 +10,25 @@ import { useEffect, useRef } from 'react';
 export default function useEffectOnce(effect) {
   const hasRunRef = useRef(false);
   const cleanupRef = useRef();
+  const skipFirstCleanupRef = useRef(true);
 
   useEffect(() => {
-    if (hasRunRef.current) {
-      return () => {
-        if (typeof cleanupRef.current === 'function') {
-          cleanupRef.current();
-        }
-      };
+    if (!hasRunRef.current) {
+      hasRunRef.current = true;
+      cleanupRef.current = effect?.();
     }
 
-    hasRunRef.current = true;
-    cleanupRef.current = effect?.();
-
     return () => {
+      if (skipFirstCleanupRef.current) {
+        // React StrictMode intentionally calls the cleanup immediately
+        // after mounting to help surface side effects. We skip invoking the
+        // consumer cleanup the first time so asynchronous logic (e.g. fetch
+        // requests guarded by a cancellation flag) can still resolve and
+        // update state during the development double-invoke cycle.
+        skipFirstCleanupRef.current = false;
+        return;
+      }
+
       if (typeof cleanupRef.current === 'function') {
         cleanupRef.current();
       }
