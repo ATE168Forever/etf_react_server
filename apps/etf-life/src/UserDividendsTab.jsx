@@ -266,13 +266,23 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         if (!Number.isFinite(value)) return '';
         if (!allowZero && value === 0) return '';
         const symbol = CURRENCY_SYMBOLS[currency] || `${currency} `;
-        return `${symbol}${Math.round(value).toLocaleString()}`;
+        const isUsd = currency === 'USD';
+        const normalizedValue = isUsd ? value : Math.round(value);
+        const formatOptions = isUsd
+            ? { minimumFractionDigits: 3, maximumFractionDigits: 3 }
+            : undefined;
+        return `${symbol}${normalizedValue.toLocaleString(undefined, formatOptions)}`;
     };
 
-    const formatPlainAmount = (value, { allowZero = false } = {}) => {
+    const formatPlainAmount = (value, { allowZero = false, currency } = {}) => {
         if (!Number.isFinite(value)) return '';
         if (!allowZero && value === 0) return '';
-        return Math.round(value).toLocaleString();
+        const isUsd = currency === 'USD';
+        const normalizedValue = isUsd ? value : Math.round(value);
+        const formatOptions = isUsd
+            ? { minimumFractionDigits: 3, maximumFractionDigits: 3 }
+            : undefined;
+        return normalizedValue.toLocaleString(undefined, formatOptions);
     };
 
     // Events for calendar view
@@ -799,9 +809,9 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                             tooltip={tooltip}
                                                             style={{ borderBottom: '1px dotted #777' }}
                                                         >
-                                                            {formatPlainAmount(total)}
+                                                            {formatPlainAmount(total, { currency })}
                                                         </TooltipText>
-                                                    ) : formatPlainAmount(total)
+                                                    ) : formatPlainAmount(total, { currency })
                                                 ) : ''}
                                             </td>
                                         );
@@ -829,7 +839,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                 tooltip={tooltipLines.join('\n\n')}
                                                 style={{ borderBottom: '1px dotted #777' }}
                                             >
-                                                {formatPlainAmount(aggregatedGrandTotal)}
+                                                {formatPlainAmount(aggregatedGrandTotal, { currency: activeCurrencies.length === 1 ? activeCurrencies[0] : undefined })}
                                             </TooltipText>
                                         );
                                     })() : ''}
@@ -840,7 +850,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                         const total = totals[idx] || 0;
                                         return (
                                             <td key={`total-${idx}-${currency}`} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
-                                                {total > 0 ? formatPlainAmount(total) : ''}
+                                                {total > 0 ? formatPlainAmount(total, { currency }) : ''}
                                             </td>
                                         );
                                     })
@@ -852,6 +862,8 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                     totalsByCurrency[currency] = getTotalForStockByCurrency(stock.stock_id, currency);
                                 });
                                 const stockTotal = Object.values(totalsByCurrency).reduce((sum, val) => sum + val, 0);
+                                const nonZeroCurrenciesForStock = activeCurrencies.filter(currency => (totalsByCurrency[currency] || 0) > 0);
+                                const stockTotalCurrency = nonZeroCurrenciesForStock.length === 1 ? nonZeroCurrenciesForStock[0] : undefined;
                                 const { detail: yieldDetail } = getYieldInfo(stock.stock_id);
                                 const totalTooltipLines = activeCurrencies.map(currency => {
                                     const info = yieldDetail[currency];
@@ -880,9 +892,9 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                     tooltip={totalTooltipLines.join('\n\n')}
                                                     style={{ borderBottom: '1px dotted #777' }}
                                                 >
-                                                    {formatPlainAmount(stockTotal)}
+                                                    {formatPlainAmount(stockTotal, { currency: stockTotalCurrency })}
                                                 </TooltipText>
-                                            ) : formatPlainAmount(stockTotal)
+                                            ) : formatPlainAmount(stockTotal, { currency: stockTotalCurrency })
                                         ) : ''}</td>
                                         {MONTHS.map((m, idx) => (
                                             activeCurrencies.map(currency => {
@@ -911,7 +923,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                             tooltip={tooltipContent}
                                                             style={{ borderBottom: '1px dotted #777' }}
                                                         >
-                                                            {total > 0 ? formatPlainAmount(total) : ''}
+                                                            {total > 0 ? formatPlainAmount(total, { currency }) : ''}
                                                         </TooltipText>
                                                     </td>
                                                 );
