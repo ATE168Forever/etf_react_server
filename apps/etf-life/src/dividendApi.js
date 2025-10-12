@@ -4,82 +4,147 @@ import { normalizeDividendResponse, DIVIDEND_YEARS } from './utils/dividendGoalU
 
 const DEFAULT_DIVIDEND_COUNTRIES = ['tw', 'us'];
 
-function normalizeCountryCode(country, fallback = 'tw') {
+function toArray(value) {
+  if (Array.isArray(value)) return value;
+  if (value === undefined || value === null) return [];
+  return [value];
+}
+
+function normalizeCountryCode(country) {
   if (typeof country === 'string') {
     const trimmed = country.trim();
     if (trimmed) {
       return trimmed.toLowerCase();
     }
   }
-  return fallback.toLowerCase();
+  return '';
 }
 
-function buildDividendUrl(year, country) {
-  const params = new URLSearchParams();
-  params.set('year', String(year));
-  const normalizedCountry = normalizeCountryCode(country, 'tw');
-  params.set('country', normalizedCountry);
-  return `${API_HOST}/get_dividend?${params.toString()}`;
-}
-
-export async function fetchDividendsByYears(years = DIVIDEND_YEARS, countries = DEFAULT_DIVIDEND_COUNTRIES) {
-  const requestedYears = Array.isArray(years) ? years : [years];
-  const uniqueYears = Array.from(new Set(requestedYears.map(year => Number(year)).filter(year => !Number.isNaN(year))));
-  const requestedCountries = Array.isArray(countries) ? countries : [countries];
-  const normalizedCountries = Array.from(new Set(requestedCountries.map(country => normalizeCountryCode(country)).filter(Boolean)));
-
-  if (!normalizedCountries.length) {
-    normalizedCountries.push(...DEFAULT_DIVIDEND_COUNTRIES);
-  }
-
-  const combinations = normalizedCountries.flatMap(country =>
-    uniqueYears.map(year => ({ year, country, request: fetchWithCache(buildDividendUrl(year, country)) }))
-  );
-
-  const results = await Promise.allSettled(combinations.map(entry => entry.request));
-
-  const fulfilled = results
-    .map((result, index) => (result.status === 'fulfilled'
-      ? {
-          year: combinations[index].year,
-          country: combinations[index].country.toUpperCase(),
-          ...result.value
-        }
-      : null))
+function normalizeCountryList(input) {
+  const values = toArray(input)
+    .map(country => normalizeCountryCode(country))
     .filter(Boolean);
-
-  if (!fulfilled.length) {
-    const firstRejection = results.find(result => result.status === 'rejected');
-    if (firstRejection?.reason) throw firstRejection.reason;
-    throw new Error('Failed to fetch dividend data');
-  }
-
-  const data = fulfilled.flatMap(({ data }) => normalizeDividendResponse(data));
-  const meta = fulfilled.map(({ year, country, cacheStatus, timestamp }) => ({
-    year,
-    country,
-    cacheStatus: cacheStatus || null,
-    timestamp: timestamp || null
-  }));
-
-  return { data, meta };
+  return Array.from(new Set(values));
 }
 
-export function clearDividendsCache(years = DIVIDEND_YEARS, countries = DEFAULT_DIVIDEND_COUNTRIES) {
-  const requestedYears = Array.isArray(years) ? years : [years];
-  const uniqueYears = Array.from(new Set(requestedYears.map(year => Number(year)).filter(year => !Number.isNaN(year))));
-  const requestedCountries = Array.isArray(countries) ? countries : [countries];
-  const normalizedCountries = Array.from(new Set(requestedCountries.map(country => normalizeCountryCode(country)).filter(Boolean)));
+function normalizeYearList(input) {
+  const values = toArray(input)
+    .map(year => Number(year))
+    .filter(year => Number.isFinite(year));
+  return Array.from(new Set(values));
+}
 
-  if (!normalizedCountries.length) {
-    normalizedCountries.push(...DEFAULT_DIVIDEND_COUNTRIES);
+function normalizeFieldsList(input) {
+  const values = toArray(input)
+    .map(field => (typeof field === 'string' ? field.trim() : ''))
+    .filter(Boolean);
+  return Array.from(new Set(values));
+}
+
+function buildDividendUrl(yearOrOptions, maybeCountry) {
+  const options = (yearOrOptions && typeof yearOrOptions === 'object' && !Array.isArray(yearOrOptions))
+    ? yearOrOptions
+    : { years: yearOrOptions, countries: maybeCountry };
+
+  const params = new URLSearchParams();
+
+  const normalizedYears = normalizeYearList(options?.years);
+  if (normalizedYears.length) {
+    params.set('year', normalizedYears.map(year => String(year)).join(','));
   }
 
-  uniqueYears.forEach(year => {
-    normalizedCountries.forEach(country => {
-      clearCache(buildDividendUrl(year, country));
-    });
+  const normalizedCountries = normalizeCountryList(options?.countries);
+  if (normalizedCountries.length) {
+    params.set('country', normalizedCountries.join(','));
+  }
+
+  const stockId = typeof options?.stockId === 'string' ? options.stockId.trim() : '';
+  if (stockId) {
+    params.set('stock_id', stockId);
+  }
+
+  const fields = normalizeFieldsList(options?.fields);
+  if (fields.length) {
+    params.set('fields', fields.join(','));
+  }
+
+  const query = params.toString();
+  return query ? `${API_HOST}/get_dividend?${query}` : `${API_HOST}/get_dividend`;
+}
+
+function buildFetchContext(years, countries) {
+  const hasYearInput = years !== undefined;
+  const hasCountryInput = countries !== undefined;
+
+  const normalizedYears = hasYearInput
+    ? normalizeYearList(years)
+    : [];
+  const normalizedCountries = hasCountryInput
+    ? normalizeCountryList(countries)
+    : [];
+
+  if (!normalizedYears.length && hasYearInput) {
+    normalizedYears.push(...normalizeYearList(DIVIDEND_YEARS));
+  }
+
+  if (!normalizedCountries.length && hasCountryInput) {
+    normalizedCountries.push(...normalizeCountryList(DEFAULT_DIVIDEND_COUNTRIES));
+  }
+
+  return {
+    years: normalizedYears,
+    countries: normalizedCountries
+  };
+}
+
+export async function fetchDividendsByYears(years, countries) {
+  const { years: normalizedYears, countries: normalizedCountries } = buildFetchContext(years, countries);
+
+  const url = buildDividendUrl({
+    years: normalizedYears.length ? normalizedYears : undefined,
+    countries: normalizedCountries.length ? normalizedCountries : undefined
   });
+
+  const response = await fetchWithCache(url);
+  const payload = response?.data ?? response ?? [];
+  const data = normalizeDividendResponse(payload);
+
+  const metaEntry = {
+    year: normalizedYears.length === 1 ? normalizedYears[0] : null,
+    years: normalizedYears.length ? [...normalizedYears] : null,
+    country: normalizedCountries.length === 1 ? normalizedCountries[0].toUpperCase() : null,
+    countries: normalizedCountries.length
+      ? normalizedCountries.map(code => code.toUpperCase())
+      : null,
+    cacheStatus: response?.cacheStatus || null,
+    timestamp: response?.timestamp || null
+  };
+
+  return {
+    data,
+    meta: [metaEntry]
+  };
 }
 
-export { buildDividendUrl as buildDividendRequestUrl };
+export function clearDividendsCache(years, countries) {
+  const { years: normalizedYears, countries: normalizedCountries } = buildFetchContext(years, countries);
+
+  const url = buildDividendUrl({
+    years: normalizedYears.length ? normalizedYears : undefined,
+    countries: normalizedCountries.length ? normalizedCountries : undefined
+  });
+
+  clearCache(url);
+}
+
+export function buildDividendRequestUrl(year, country, options = {}) {
+  const mergedOptions = {
+    years: options?.years ?? year,
+    countries: options?.countries ?? country,
+    stockId: options?.stockId,
+    fields: options?.fields
+  };
+  return buildDividendUrl(mergedOptions);
+}
+
+export { buildDividendUrl };

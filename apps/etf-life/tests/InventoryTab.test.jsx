@@ -25,13 +25,18 @@ describe('InventoryTab interactions', () => {
       if (url.includes('/get_dividend')) {
         const queryString = url.split('?')[1] || '';
         const params = new URLSearchParams(queryString);
-        const year = Number(params.get('year'));
-        const country = params.get('country');
         const supportedCountries = ['tw', 'us'];
-        if (
-          [currentYear, previousYear].includes(year) &&
-          supportedCountries.includes((country || '').toLowerCase())
-        ) {
+        const yearsParam = params.get('year');
+        const countriesParam = params.get('country');
+        const years = yearsParam
+          ? yearsParam.split(',').map(value => Number(value.trim())).filter(Number.isFinite)
+          : [currentYear, previousYear];
+        const countries = countriesParam
+          ? countriesParam.split(',').map(value => value.trim().toLowerCase()).filter(Boolean)
+          : supportedCountries;
+        const hasValidYear = years.some(year => [currentYear, previousYear].includes(year));
+        const hasValidCountry = countries.some(country => supportedCountries.includes(country));
+        if (hasValidYear && hasValidCountry) {
           return Promise.resolve({ data: [{ stock_id: '0050', dividend_date: '2024-01-02', last_close_price: 20 }] });
         }
       }
