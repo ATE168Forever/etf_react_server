@@ -18,6 +18,22 @@ test('displays monthly ex and pay totals', () => {
   ).toBeInTheDocument();
 });
 
+test('displays USD totals with three decimal places', () => {
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const [year, month] = nowStr.split('-');
+  const events = [
+    { date: `${year}-${month}-05`, type: 'ex', amount: 10.1, currency: 'USD' },
+    { date: `${year}-${month}-15`, type: 'pay', amount: 20.1234, currency: 'USD' }
+  ];
+  render(<DividendCalendar year={Number(year)} events={events} />);
+  expect(
+    screen.getByText((_, element) => element.textContent && element.textContent.replace(/\s/g, '') === '除息金額:US$10.100')
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText((_, element) => element.textContent && element.textContent.replace(/\s/g, '') === '發放金額:US$20.123')
+  ).toBeInTheDocument();
+});
+
 test('hides monthly totals when showTotals is false', () => {
   const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
   const [year, month] = nowStr.split('-');

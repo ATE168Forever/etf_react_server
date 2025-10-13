@@ -17,6 +17,33 @@ const sortCurrencies = (currencies) => {
   });
 };
 
+const formatSummaryAmount = (currency, value) => {
+  if (!Number.isFinite(value)) {
+    return '';
+  }
+  if (currency === 'USD') {
+    return value.toLocaleString(undefined, {
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 3,
+    });
+  }
+  return Math.round(value).toLocaleString();
+};
+
+const formatEventAmount = (currency, value, { hasQuantity } = {}) => {
+  if (!Number.isFinite(value)) {
+    return '0';
+  }
+  if (currency === 'USD') {
+    return value.toLocaleString(undefined, {
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 3,
+    });
+  }
+  const precision = hasQuantity ? 1 : 3;
+  return value.toFixed(precision);
+};
+
 export default function DividendCalendar({ year, events, showTotals = true }) {
   const timeZone = 'Asia/Taipei';
   const nowStr = new Date().toLocaleDateString('en-CA', { timeZone });
@@ -99,7 +126,7 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
                 if (total <= 0) return null;
                 return (
                   <span key={`ex-${currency}`} style={{ marginLeft: 8 }}>
-                    {currencyLabel(currency)} {Math.round(total).toLocaleString()}
+                    {currencyLabel(currency)} {formatSummaryAmount(currency, total)}
                   </span>
                 );
               })}
@@ -111,7 +138,7 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
                 if (total <= 0) return null;
                 return (
                   <span key={`pay-${currency}`} style={{ marginLeft: 8 }}>
-                    {currencyLabel(currency)} {Math.round(total).toLocaleString()}
+                    {currencyLabel(currency)} {formatSummaryAmount(currency, total)}
                   </span>
                 );
               })}
@@ -146,10 +173,9 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
                         const currencySymbol = currencyCode === 'USD' ? 'US$' : 'NT$';
                         const currencyUnitZh = currencyCode === 'USD' ? '美元' : '元';
                         const amountValue = Number(ev.amount);
-                        const amountPrecision = ev.quantity != null ? 1 : 3;
-                        const amountFormatted = Number.isFinite(amountValue)
-                          ? amountValue.toFixed(amountPrecision)
-                          : '0';
+                        const amountFormatted = formatEventAmount(currencyCode, amountValue, {
+                          hasQuantity: ev.quantity != null,
+                        });
                         const amountText = lang === 'en'
                           ? `${amountFormatted} ${currencySymbol}`
                           : `${amountFormatted} ${currencyUnitZh}`;
