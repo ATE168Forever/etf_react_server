@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 // Removed react-window virtualization to avoid invalid table markup
 import FilterDropdown from './FilterDropdown';
 import TooltipText from './TooltipText';
