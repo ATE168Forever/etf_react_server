@@ -35,11 +35,23 @@ beforeEach(() => {
     if (url.includes('/site_stats')) {
       return Promise.resolve({ data: mockData });
     }
-    if (url.includes(`/get_dividend?year=${currentYear}`)) {
-      return Promise.resolve({ data: mockDividendData });
-    }
-    if (url.includes(`/get_dividend?year=${previousYear}`)) {
-      return Promise.resolve({ data: mockDividendData });
+    if (url.includes('/get_dividend')) {
+      const queryString = url.split('?')[1] || '';
+      const params = new URLSearchParams(queryString);
+      const supportedCountries = ['tw', 'us'];
+      const yearsParam = params.get('year');
+      const countriesParam = params.get('country');
+      const years = yearsParam
+        ? yearsParam.split(',').map(value => Number(value.trim())).filter(Number.isFinite)
+        : [currentYear, previousYear];
+      const countries = countriesParam
+        ? countriesParam.split(',').map(value => value.trim().toLowerCase()).filter(Boolean)
+        : supportedCountries;
+      const hasValidYear = years.some(year => [currentYear, previousYear].includes(year));
+      const hasValidCountry = countries.some(country => supportedCountries.includes(country));
+      if (hasValidYear && hasValidCountry) {
+        return Promise.resolve({ data: mockDividendData });
+      }
     }
     return Promise.resolve({ data: [] });
   });

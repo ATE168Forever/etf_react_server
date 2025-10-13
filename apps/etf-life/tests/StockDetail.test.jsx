@@ -7,20 +7,20 @@ jest.mock('../src/config', () => ({
   API_HOST: 'http://localhost'
 }));
 
+jest.mock('../src/stockApi', () => ({
+  fetchStockList: jest.fn(() => Promise.resolve({ list: [{ stock_id: '0056', stock_name: 'Test ETF' }], meta: null }))
+}));
+
+jest.mock('../src/dividendApi', () => ({
+  fetchDividendsByYears: jest.fn(() => Promise.resolve({ data: [] }))
+}));
+
 beforeEach(() => {
-  const currentYear = new Date().getFullYear();
-  const previousYear = currentYear - 1;
+  const { fetchStockList } = require('../src/stockApi');
+  fetchStockList.mockResolvedValue({ list: [{ stock_id: '0056', stock_name: 'Test ETF' }], meta: null });
+  const { fetchDividendsByYears } = require('../src/dividendApi');
+  fetchDividendsByYears.mockResolvedValue({ data: [] });
   globalThis.fetch = jest.fn((url) => {
-    if (url.includes('/get_stock_list')) {
-      return Promise.resolve({
-        json: () => Promise.resolve([{ stock_id: '0056', stock_name: 'Test ETF' }])
-      });
-    }
-    if (url.includes(`/get_dividend?year=${currentYear}`) || url.includes(`/get_dividend?year=${previousYear}`)) {
-      return Promise.resolve({
-        json: () => Promise.resolve([])
-      });
-    }
     if (url.includes('/get_returns')) {
       return Promise.resolve({
         json: () => Promise.resolve({
@@ -42,6 +42,12 @@ beforeEach(() => {
           lowest_1y: 10,
           mean_1y: 50
         })
+      });
+    }
+    if (url.includes('/dividend_helper')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({})
       });
     }
     return Promise.reject(new Error('Unknown url'));

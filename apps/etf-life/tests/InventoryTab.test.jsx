@@ -3,8 +3,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Cookies from 'js-cookie';
 import InventoryTab from '../src/InventoryTab';
 import { fetchWithCache } from '../src/api';
+import { fetchStockList } from '../src/stockApi';
 
 jest.mock('../src/api');
+jest.mock('../src/stockApi', () => ({
+  fetchStockList: jest.fn(() => Promise.resolve({ list: [], meta: null }))
+}));
 jest.mock('../src/config', () => ({
   API_HOST: 'http://localhost'
 }));
@@ -16,17 +20,31 @@ describe('InventoryTab interactions', () => {
   beforeEach(() => {
     localStorage.clear();
     Cookies.remove('my_transaction_history');
+    fetchStockList.mockReset();
     fetchWithCache.mockImplementation((url) => {
-      if (url.includes('/get_stock_list')) {
-        return Promise.resolve({ data: [{ stock_id: '0050', stock_name: 'Test ETF', dividend_frequency: 1 }] });
-      }
-      if (url.includes(`/get_dividend?year=${currentYear}`)) {
-        return Promise.resolve({ data: [{ stock_id: '0050', dividend_date: '2024-01-02', last_close_price: 20 }] });
-      }
-      if (url.includes(`/get_dividend?year=${previousYear}`)) {
-        return Promise.resolve({ data: [{ stock_id: '0050', dividend_date: '2024-01-02', last_close_price: 20 }] });
+      if (url.includes('/get_dividend')) {
+        const queryString = url.split('?')[1] || '';
+        const params = new URLSearchParams(queryString);
+        const supportedCountries = ['tw', 'us'];
+        const yearsParam = params.get('year');
+        const countriesParam = params.get('country');
+        const years = yearsParam
+          ? yearsParam.split(',').map(value => Number(value.trim())).filter(Number.isFinite)
+          : [currentYear, previousYear];
+        const countries = countriesParam
+          ? countriesParam.split(',').map(value => value.trim().toLowerCase()).filter(Boolean)
+          : supportedCountries;
+        const hasValidYear = years.some(year => [currentYear, previousYear].includes(year));
+        const hasValidCountry = countries.some(country => supportedCountries.includes(country));
+        if (hasValidYear && hasValidCountry) {
+          return Promise.resolve({ data: [{ stock_id: '0050', dividend_date: '2024-01-02', last_close_price: 20 }] });
+        }
       }
       return Promise.resolve({ data: [] });
+    });
+    fetchStockList.mockResolvedValue({
+      list: [{ stock_id: '0050', stock_name: 'Test ETF', dividend_frequency: 1, country: 'TW' }],
+      meta: { cacheStatus: 'fresh', timestamp: new Date().toISOString() }
     });
   });
 
@@ -45,9 +63,14 @@ describe('InventoryTab interactions', () => {
     const toggle = screen.getByRole('button', { name: '設定或更新目標' });
     fireEvent.click(toggle);
     expect(screen.getByLabelText('幫目標取個名字')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('例：50000')).toBeInTheDocument();
+    expect(screen.getByText('還沒有設定現金流目標，按「新增現金流目標」開始。')).toBeInTheDocument();
+    const addCashflowButton = screen.getByRole('button', { name: '新增現金流目標' });
+    fireEvent.click(addCashflowButton);
     const goalTypeSelect = screen.getByLabelText('選擇目標類型');
     expect(goalTypeSelect).toHaveValue('annual');
+    const currencySelect = screen.getByLabelText('目標幣別');
+    expect(currencySelect).toHaveValue('TWD');
+    expect(screen.getByPlaceholderText('例：50000')).toBeInTheDocument();
     fireEvent.change(goalTypeSelect, { target: { value: 'minimum' } });
     expect(screen.getByPlaceholderText('例：5000')).toBeInTheDocument();
   });
@@ -56,12 +79,6 @@ describe('InventoryTab interactions', () => {
     render(<InventoryTab />);
     const toggle = await screen.findByRole('button', { name: '設定或更新目標' });
     fireEvent.click(toggle);
-
-    expect(screen.queryByRole('button', { name: '新增存股目標' })).not.toBeInTheDocument();
-
-    const goalTypeSelect = screen.getByLabelText('選擇目標類型');
-    fireEvent.change(goalTypeSelect, { target: { value: 'shares' } });
-    expect(screen.queryByPlaceholderText('例：50000')).not.toBeInTheDocument();
 
     const codeInput = screen.getByLabelText('股票代碼 / 名稱');
     fireEvent.change(codeInput, { target: { value: '0056' } });
@@ -75,6 +92,7 @@ describe('InventoryTab interactions', () => {
     await screen.findByText('目標張數：100 張');
     const saved = JSON.parse(localStorage.getItem('investment_goals'));
     expect(saved.goalType).toBe('shares');
+    expect(saved.cashflowGoals).toEqual([]);
     expect(saved.shareTargets).toEqual([
       { stockId: '0056', stockName: '', targetQuantity: 100 }
     ]);
@@ -89,6 +107,28 @@ describe('InventoryTab interactions', () => {
     await screen.findByText('預期的股息目標');
     expect(await screen.findByText('總投資金額：10,000.00')).toBeInTheDocument();
     expect(await screen.findByText('目前總價值：20,000.00')).toBeInTheDocument();
+  });
+
+  test('omits lot information for US ETF holdings', async () => {
+    localStorage.setItem('my_transaction_history', JSON.stringify([
+      { stock_id: 'VOO', date: '2024-01-01', quantity: 10, type: 'buy', price: 1 }
+    ]));
+    fetchStockList.mockResolvedValue({
+      list: [
+        { stock_id: 'VOO', stock_name: 'Vanguard S&P 500', dividend_frequency: '季配', country: 'US' }
+      ],
+      meta: { cacheStatus: 'fresh', timestamp: new Date().toISOString() }
+    });
+
+    render(<InventoryTab />);
+
+    const link = await screen.findByRole('link', { name: /VOO Vanguard S&P 500/ });
+    const row = link.closest('tr');
+    expect(row).not.toBeNull();
+    const cells = row.querySelectorAll('td');
+    expect(cells[2].textContent).toContain('10');
+    expect(cells[2].textContent).not.toMatch(/張/);
+    expect(cells[2].textContent).not.toMatch(/lots/i);
   });
 
   test('edits existing transaction', async () => {

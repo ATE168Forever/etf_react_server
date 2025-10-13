@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import InventoryTab from '../src/InventoryTab';
 import { fetchWithCache } from '../src/api';
 import { fetchDividendsByYears } from '../src/dividendApi';
+import { fetchStockList } from '../src/stockApi';
 import {
   exportTransactionsToDrive,
   importTransactionsFromDrive
@@ -33,6 +34,9 @@ jest.mock('../src/icloud', () => ({
   exportTransactionsToICloud: jest.fn(() => Promise.resolve()),
   importTransactionsFromICloud: jest.fn(() => Promise.resolve([]))
 }));
+jest.mock('../src/stockApi', () => ({
+  fetchStockList: jest.fn(() => Promise.resolve({ list: [], meta: null }))
+}));
 
 const STOCK_LIST_RESPONSE = {
   data: [
@@ -42,18 +46,10 @@ const STOCK_LIST_RESPONSE = {
 };
 
 function setupFetchMock() {
-  fetchWithCache.mockImplementation(url => {
-    if (url.includes('/get_stock_list')) {
-      return Promise.resolve({
-        data: STOCK_LIST_RESPONSE.data,
-        cacheStatus: 'miss',
-        timestamp: Date.now()
-      });
-    }
-    if (url.includes('/get_dividend')) {
-      return Promise.resolve({ data: [] });
-    }
-    return Promise.resolve({ data: [] });
+  fetchWithCache.mockImplementation(() => Promise.resolve({ data: [] }));
+  fetchStockList.mockResolvedValue({
+    list: STOCK_LIST_RESPONSE.data.map(item => ({ ...item, country: 'TW' })),
+    meta: { cacheStatus: 'miss', timestamp: new Date().toISOString() }
   });
 }
 

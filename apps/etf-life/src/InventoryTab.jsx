@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Cookies from 'js-cookie';
 import CreatableSelect from 'react-select/creatable';
-import { API_HOST, HOST_URL } from './config';
-import { fetchWithCache } from './api';
+import { HOST_URL } from './config';
 import { fetchDividendsByYears } from './dividendApi';
+import { fetchStockList } from './stockApi';
+import useEffectOnce from './hooks/useEffectOnce';
 import {
   migrateTransactionHistory,
   saveTransactionHistory,
@@ -31,7 +32,6 @@ import selectStyles from './selectStyles';
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
 const SHARES_PER_LOT = 1000;
 const DEFAULT_GOAL_TYPE = 'annual';
-const GOAL_TYPES = ['annual', 'monthly', 'minimum', 'shares'];
 
 function getToday() {
   return new Date().toISOString().slice(0, 10);
@@ -51,6 +51,7 @@ export default function InventoryTab() {
   const autoSaveDirectoryHandleRef = useRef(null);
   const autoSaveFileHandleRef = useRef(null);
   const [cacheInfo, setCacheInfo] = useState(null);
+  const [dividendCacheInfo, setDividendCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [selectedDataSource, setSelectedDataSource] = useState('csv');
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
@@ -67,21 +68,22 @@ export default function InventoryTab() {
     const quantityValue = +item?.targetQuantity;
     return Number.isFinite(quantityValue) && quantityValue > 0;
   });
-  const initialGoalType = (() => {
-    const candidate = typeof initialGoals.goalType === 'string' ? initialGoals.goalType.toLowerCase() : '';
-    if (GOAL_TYPES.includes(candidate)) {
-      return candidate;
+  const initialCashflowGoalList = Array.isArray(initialGoals.cashflowGoals) ? initialGoals.cashflowGoals : [];
+  const initialPrimaryGoalType = (() => {
+    const firstGoalType = initialCashflowGoalList.find(goal => {
+      const type = typeof goal?.goalType === 'string' ? goal.goalType.toLowerCase() : '';
+      return ['annual', 'monthly', 'minimum'].includes(type);
+    })?.goalType;
+    if (firstGoalType) {
+      return firstGoalType;
     }
-    const totalTargetValue = +initialGoals.totalTarget;
-    if (Number.isFinite(totalTargetValue) && totalTargetValue > 0) return 'annual';
-    const monthlyTargetValue = +initialGoals.monthlyTarget;
-    if (Number.isFinite(monthlyTargetValue) && monthlyTargetValue > 0) return 'monthly';
-    const minimumTargetValue = +initialGoals.minimumTarget;
-    if (Number.isFinite(minimumTargetValue) && minimumTargetValue > 0) return 'minimum';
     if (hasInitialShareTargets) return 'shares';
     return DEFAULT_GOAL_TYPE;
   })();
-  const [goals, setGoals] = useState({ ...initialGoals, goalType: initialGoalType });
+  const [goals, setGoals] = useState({
+    ...initialGoals,
+    goalType: initialPrimaryGoalType
+  });
   const initialShareTargets = initialShareTargetList.length
     ? initialShareTargetList.map(item => ({
         stockId: item?.stockId || '',
@@ -89,14 +91,27 @@ export default function InventoryTab() {
         targetQuantity: item?.targetQuantity ? String(item.targetQuantity) : ''
       }))
     : [];
+  const initialCashflowGoalEntries = initialCashflowGoalList.length
+    ? initialCashflowGoalList.map((goal, index) => {
+        const rawType = typeof goal?.goalType === 'string' ? goal.goalType.toLowerCase() : '';
+        const goalType = ['annual', 'monthly', 'minimum'].includes(rawType) ? rawType : 'annual';
+        const currencyRaw = typeof goal?.currency === 'string' ? goal.currency.toUpperCase() : '';
+        const currency = ['TWD', 'USD'].includes(currencyRaw) ? currencyRaw : 'TWD';
+        return {
+          id: typeof goal?.id === 'string' && goal.id.trim() ? goal.id.trim() : `goal-${index + 1}`,
+          goalType,
+          currency,
+          target: goal?.target ? String(goal.target) : '',
+          name: typeof goal?.name === 'string' ? goal.name : ''
+        };
+      })
+    : [];
   const [goalForm, setGoalForm] = useState(() => ({
     name: initialGoals.goalName ? String(initialGoals.goalName) : '',
-    goalType: initialGoalType,
-    annualTarget: initialGoals.totalTarget ? String(initialGoals.totalTarget) : '',
-    monthlyTarget: initialGoals.monthlyTarget ? String(initialGoals.monthlyTarget) : '',
-    minimumTarget: initialGoals.minimumTarget ? String(initialGoals.minimumTarget) : '',
+    cashflowGoals: initialCashflowGoalEntries,
     shareTargets: initialShareTargets
   }));
+  const cashflowGoalIdRef = useRef(initialCashflowGoalEntries.length);
   const [goalSaved, setGoalSaved] = useState('');
   const [isGoalFormVisible, setIsGoalFormVisible] = useState(false);
   const [shareTargetDraft, setShareTargetDraft] = useState({ stockId: '', stockName: '', quantity: '' });
@@ -132,6 +147,8 @@ export default function InventoryTab() {
       currentInventory: '目前庫存',
       showHistory: '顯示：交易歷史',
       cache: '快取',
+      stockCache: '股票清單快取',
+      dividendCache: '股息資料快取',
       totalInvestment: '總投資金額：',
       totalValue: '目前總價值：',
       investmentGoals: '預期的股息目標',
@@ -139,6 +156,13 @@ export default function InventoryTab() {
       goalNamePlaceholder: '例：一年滾出 10 萬股息',
       goalNameHelper: '清楚的名稱能提醒自己為什麼開始。',
       goalFormIntro: '替你的股息計畫取個名字，選擇年度、每月或最低目標，讓努力更有方向！',
+      goalCurrencyLabel: '目標幣別',
+      goalCurrencyTwd: '台幣（NT$）',
+      goalCurrencyUsd: '美金（US$）',
+      goalCashflowSectionTitle: '現金流目標',
+      goalCashflowEmpty: '還沒有設定現金流目標，按「新增現金流目標」開始。',
+      goalCashflowAdd: '新增現金流目標',
+      goalCashflowRemove: '移除目標',
       goalTypeLabel: '選擇目標類型',
       annualGoal: '年度目標',
       monthlyGoal: '月平均目標',
@@ -224,6 +248,8 @@ export default function InventoryTab() {
       currentInventory: 'Inventory',
       showHistory: 'Show: Transaction',
       cache: 'Cache',
+      stockCache: 'Stock list cache',
+      dividendCache: 'Dividend cache',
       totalInvestment: 'Total Investment:',
       totalValue: 'Total Value:',
       investmentGoals: 'Expected Dividend Targets',
@@ -231,6 +257,13 @@ export default function InventoryTab() {
       goalNamePlaceholder: 'e.g. Build a $5K dividend stream',
       goalNameHelper: 'A memorable name keeps your motivation high.',
       goalFormIntro: 'Give your dividend plan a motivating title, then choose an annual, monthly, or minimum target.',
+      goalCurrencyLabel: 'Currency',
+      goalCurrencyTwd: 'New Taiwan Dollar (NT$)',
+      goalCurrencyUsd: 'US Dollar (US$)',
+      goalCashflowSectionTitle: 'Cash-flow goals',
+      goalCashflowEmpty: 'No cash-flow goals yet. Click “Add cash-flow goal” to start.',
+      goalCashflowAdd: 'Add cash-flow goal',
+      goalCashflowRemove: 'Remove goal',
       goalTypeLabel: 'Choose goal type',
       annualGoal: 'Annual Goal',
       monthlyGoal: 'Monthly Goal',
@@ -783,6 +816,8 @@ export default function InventoryTab() {
     }
   };
 
+  const backupPrompt = msg.backupPrompt;
+
   useEffect(() => {
     if (transactionHistory.length === 0) return;
     const last = Cookies.get(BACKUP_COOKIE_KEY);
@@ -790,35 +825,36 @@ export default function InventoryTab() {
     if (!last) {
       Cookies.set(BACKUP_COOKIE_KEY, now.toISOString(), { expires: 365 });
     } else if (now - new Date(last) >= 30 * 24 * 60 * 60 * 1000) {
-      if (window.confirm(msg.backupPrompt)) {
+      if (window.confirm(backupPrompt)) {
         handleExport();
       }
       Cookies.set(BACKUP_COOKIE_KEY, now.toISOString(), { expires: 365 });
     }
-  }, [transactionHistory, handleExport]);
+  }, [transactionHistory, handleExport, backupPrompt]);
 
-  useEffect(() => {
+  useEffectOnce(() => {
+    let cancelled = false;
+
     const fetchAll = async () => {
       try {
-        const { data, cacheStatus, timestamp } = await fetchWithCache(
-          `${API_HOST}/get_stock_list`
-        );
-        const list = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.data)
-            ? data.data
-            : Array.isArray(data?.items)
-              ? data.items
-              : [];
+        const { list, meta } = await fetchStockList();
+        if (cancelled) return;
         setStockList(list);
-        setCacheInfo({ cacheStatus, timestamp });
+        setCacheInfo(meta ? { cacheStatus: meta.cacheStatus ?? null, timestamp: meta.timestamp ?? null } : null);
       } catch {
-        setStockList([]);
+        if (!cancelled) {
+          setStockList([]);
+          setCacheInfo(null);
+        }
       }
     };
 
     fetchAll();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  });
 
   useEffect(() => {
     if (stockList.length === 0) return;
@@ -841,11 +877,25 @@ export default function InventoryTab() {
     });
   }, [stockList]);
 
-  useEffect(() => {
+  useEffectOnce(() => {
+    let cancelled = false;
+
+    // The dividend feed reuses fetchWithCache, so if the previous payload is still
+    // fresh we may reuse the localStorage entry without issuing another
+    // network call. Surface the cache metadata so it's clear why the API
+    // wasn't contacted again after a cached /get_stock_list response.
     fetchDividendsByYears()
-      .then(({ data }) => {
+      .then(({ data, meta }) => {
+        if (cancelled) return;
         const list = data;
         setDividendData(list);
+        const primaryMeta = Array.isArray(meta) && meta.length ? meta[0] : null;
+        setDividendCacheInfo(primaryMeta
+          ? {
+              cacheStatus: primaryMeta.cacheStatus ?? null,
+              timestamp: primaryMeta.timestamp ?? null
+            }
+          : null);
         const priceMap = {};
         list.forEach(item => {
           const price = parseFloat(item.last_close_price);
@@ -861,10 +911,17 @@ export default function InventoryTab() {
         setLatestPrices(prices);
       })
       .catch(() => {
-        setDividendData([]);
-        setLatestPrices({});
+        if (!cancelled) {
+          setDividendData([]);
+          setDividendCacheInfo(null);
+          setLatestPrices({});
+        }
       });
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  });
 
   useEffect(() => {
     saveTransactionHistory(transactionHistory);
@@ -1132,19 +1189,126 @@ export default function InventoryTab() {
     setShareTargetDraft({ stockId: '', stockName: '', quantity: '' });
   };
 
+  const generateCashflowGoalId = useCallback(() => {
+    cashflowGoalIdRef.current += 1;
+    return `goal-${Date.now()}-${cashflowGoalIdRef.current}`;
+  }, []);
+
+  const normalizeFormCashflowGoals = useCallback((rawGoals) => {
+    if (!Array.isArray(rawGoals)) {
+      return [];
+    }
+    return rawGoals.map(goal => {
+      let id = typeof goal?.id === 'string' && goal.id.trim() ? goal.id.trim() : '';
+      if (!id) {
+        id = generateCashflowGoalId();
+      }
+      const goalTypeRaw = typeof goal?.goalType === 'string' ? goal.goalType.toLowerCase() : '';
+      const goalType = ['annual', 'monthly', 'minimum'].includes(goalTypeRaw) ? goalTypeRaw : 'annual';
+      const currencyRaw = typeof goal?.currency === 'string' ? goal.currency.toUpperCase() : '';
+      const currency = ['TWD', 'USD'].includes(currencyRaw) ? currencyRaw : 'TWD';
+      const targetValue = typeof goal?.target === 'string'
+        ? goal.target
+        : goal?.target
+          ? String(goal.target)
+          : '';
+      const name = typeof goal?.name === 'string' ? goal.name : '';
+      return {
+        id,
+        goalType,
+        currency,
+        target: targetValue,
+        name
+      };
+    });
+  }, [generateCashflowGoalId]);
+
+  const handleCashflowGoalAdd = () => {
+    setGoalForm(prev => {
+      const currentGoals = Array.isArray(prev.cashflowGoals) ? [...prev.cashflowGoals] : [];
+      currentGoals.push({
+        id: generateCashflowGoalId(),
+        goalType: 'annual',
+        currency: 'TWD',
+        target: '',
+        name: ''
+      });
+      return {
+        ...prev,
+        cashflowGoals: currentGoals
+      };
+    });
+  };
+
+  const handleCashflowGoalRemove = id => {
+    setGoalForm(prev => {
+      const currentGoals = Array.isArray(prev.cashflowGoals) ? prev.cashflowGoals.filter(goal => goal?.id !== id) : [];
+      return {
+        ...prev,
+        cashflowGoals: currentGoals
+      };
+    });
+  };
+
+  const handleCashflowGoalTypeChange = id => event => {
+    const value = String(event.target.value || '').toLowerCase();
+    setGoalForm(prev => {
+      const currentGoals = Array.isArray(prev.cashflowGoals) ? prev.cashflowGoals.map(goal => {
+        if (goal?.id !== id) {
+          return goal;
+        }
+        const nextType = ['annual', 'monthly', 'minimum'].includes(value) ? value : goal.goalType;
+        return { ...goal, goalType: nextType };
+      }) : [];
+      return {
+        ...prev,
+        cashflowGoals: currentGoals
+      };
+    });
+  };
+
+  const handleCashflowGoalCurrencyChange = id => event => {
+    const value = String(event.target.value || '').toUpperCase();
+    setGoalForm(prev => {
+      const currentGoals = Array.isArray(prev.cashflowGoals) ? prev.cashflowGoals.map(goal => {
+        if (goal?.id !== id) {
+          return goal;
+        }
+        const nextCurrency = ['TWD', 'USD'].includes(value) ? value : goal.currency;
+        return { ...goal, currency: nextCurrency };
+      }) : [];
+      return {
+        ...prev,
+        cashflowGoals: currentGoals
+      };
+    });
+  };
+
+  const handleCashflowGoalTargetChange = id => event => {
+    const value = event.target.value;
+    setGoalForm(prev => {
+      const currentGoals = Array.isArray(prev.cashflowGoals) ? prev.cashflowGoals.map(goal => (
+        goal?.id === id
+          ? { ...goal, target: value }
+          : goal
+      )) : [];
+      return {
+        ...prev,
+        cashflowGoals: currentGoals
+      };
+    });
+  };
+
   const handleGoalSubmit = event => {
     event.preventDefault();
-    const normalizedGoalType = GOAL_TYPES.includes(goalForm.goalType)
-      ? goalForm.goalType
-      : DEFAULT_GOAL_TYPE;
-    const isShareGoalType = normalizedGoalType === 'shares';
 
+    const normalizedFormGoals = normalizeFormCashflowGoals(goalForm.cashflowGoals);
     const shareTargetsRaw = Array.isArray(goalForm.shareTargets) ? goalForm.shareTargets : [];
-    const seen = new Set();
+    const seenShareTargets = new Set();
     const sanitizedShareTargets = [];
     shareTargetsRaw.forEach(item => {
       const stockId = typeof item?.stockId === 'string' ? item.stockId.trim().toUpperCase() : '';
-      if (!stockId || seen.has(stockId)) return;
+      if (!stockId || seenShareTargets.has(stockId)) return;
       const quantityValue = +item?.targetQuantity;
       if (!Number.isFinite(quantityValue) || quantityValue <= 0) return;
       let stockName = typeof item?.stockName === 'string'
@@ -1159,34 +1323,47 @@ export default function InventoryTab() {
         stockName,
         targetQuantity: quantityValue
       });
-      seen.add(stockId);
+      seenShareTargets.add(stockId);
     });
 
-    const annualTargetValue = +goalForm.annualTarget;
-    const monthlyTargetValue = +goalForm.monthlyTarget;
-    const minimumTargetValue = +goalForm.minimumTarget;
+    const sanitizedCashflowGoals = [];
+    normalizedFormGoals.forEach(goal => {
+      const targetValue = Number(goal?.target);
+      if (!Number.isFinite(targetValue) || targetValue <= 0) {
+        return;
+      }
+      sanitizedCashflowGoals.push({
+        id: goal.id,
+        goalType: goal.goalType,
+        target: targetValue,
+        currency: goal.currency,
+        name: typeof goal?.name === 'string' ? goal.name : ''
+      });
+    });
+
+    const goalName = typeof goalForm.name === 'string' ? goalForm.name.trim().slice(0, 60) : '';
+    const legacyAnnual = sanitizedCashflowGoals.find(goal => goal.goalType === 'annual' && goal.currency === 'TWD')?.target || 0;
+    const legacyMonthly = sanitizedCashflowGoals.find(goal => goal.goalType === 'monthly' && goal.currency === 'TWD')?.target || 0;
+    const legacyMinimum = sanitizedCashflowGoals.find(goal => goal.goalType === 'minimum' && goal.currency === 'TWD')?.target || 0;
+    const nextGoalType = sanitizedCashflowGoals.length
+      ? sanitizedCashflowGoals[0].goalType
+      : sanitizedShareTargets.length > 0
+        ? 'shares'
+        : DEFAULT_GOAL_TYPE;
 
     const updated = {
-      goalName: typeof goalForm.name === 'string' ? goalForm.name.trim().slice(0, 60) : '',
-      goalType: normalizedGoalType,
-      totalTarget: isShareGoalType || !Number.isFinite(annualTargetValue) || annualTargetValue < 0
-        ? 0
-        : annualTargetValue,
-      monthlyTarget: isShareGoalType || !Number.isFinite(monthlyTargetValue) || monthlyTargetValue < 0
-        ? 0
-        : monthlyTargetValue,
-      minimumTarget: isShareGoalType || !Number.isFinite(minimumTargetValue) || minimumTargetValue < 0
-        ? 0
-        : minimumTargetValue,
-      shareTargets: sanitizedShareTargets
+      goalName,
+      goalType: nextGoalType,
+      cashflowGoals: sanitizedCashflowGoals,
+      shareTargets: sanitizedShareTargets,
+      totalTarget: legacyAnnual,
+      monthlyTarget: legacyMonthly,
+      minimumTarget: legacyMinimum
     };
 
     const nextFormState = {
-      name: updated.goalName,
-      goalType: updated.goalType,
-      annualTarget: !isShareGoalType && updated.totalTarget ? String(updated.totalTarget) : '',
-      monthlyTarget: !isShareGoalType && updated.monthlyTarget ? String(updated.monthlyTarget) : '',
-      minimumTarget: !isShareGoalType && updated.minimumTarget ? String(updated.minimumTarget) : '',
+      name: goalName,
+      cashflowGoals: normalizedFormGoals,
       shareTargets: sanitizedShareTargets.map(target => ({
         stockId: target.stockId,
         stockName: target.stockName,
@@ -1196,11 +1373,7 @@ export default function InventoryTab() {
 
     setGoalForm(nextFormState);
 
-    const isEmptyGoal = !updated.goalName
-      && !updated.totalTarget
-      && !updated.monthlyTarget
-      && !updated.minimumTarget
-      && sanitizedShareTargets.length === 0;
+    const isEmptyGoal = !goalName && sanitizedCashflowGoals.length === 0 && sanitizedShareTargets.length === 0;
     if (isEmptyGoal) {
       setGoals(updated);
       saveInvestmentGoals(updated);
@@ -1208,15 +1381,34 @@ export default function InventoryTab() {
       return;
     }
 
-    const prevGoalName = typeof goals.goalName === 'string' ? goals.goalName : '';
-    const prevGoalType = GOAL_TYPES.includes(goals.goalType) ? goals.goalType : DEFAULT_GOAL_TYPE;
-    const prevTotalTargetRaw = +goals.totalTarget;
-    const prevTotalTarget = Number.isFinite(prevTotalTargetRaw) ? prevTotalTargetRaw : 0;
-    const prevMonthlyTargetRaw = +goals.monthlyTarget;
-    const prevMonthlyTarget = Number.isFinite(prevMonthlyTargetRaw) ? prevMonthlyTargetRaw : 0;
-    const prevMinimumTargetRaw = +goals.minimumTarget;
-    const prevMinimumTarget = Number.isFinite(prevMinimumTargetRaw) ? prevMinimumTargetRaw : 0;
+    const prevGoalName = typeof goals.goalName === 'string' ? goals.goalName.trim().slice(0, 60) : '';
+    const prevGoalTypeRaw = typeof goals.goalType === 'string' ? goals.goalType.toLowerCase() : DEFAULT_GOAL_TYPE;
+    const prevCashflowGoals = Array.isArray(goals.cashflowGoals) ? goals.cashflowGoals : [];
     const prevShareTargets = Array.isArray(goals.shareTargets) ? goals.shareTargets : [];
+
+    const prevCashflowMap = new Map();
+    prevCashflowGoals.forEach(goal => {
+      const id = typeof goal?.id === 'string' && goal.id.trim()
+        ? goal.id.trim()
+        : `${goal?.goalType || 'goal'}-${goal?.currency || 'TWD'}-${goal?.target || 0}`;
+      prevCashflowMap.set(id, {
+        goalType: typeof goal?.goalType === 'string' ? goal.goalType.toLowerCase() : '',
+        currency: typeof goal?.currency === 'string' ? goal.currency.toUpperCase() : 'TWD',
+        target: Number(goal?.target) || 0,
+        name: typeof goal?.name === 'string' ? goal.name : ''
+      });
+    });
+
+    const cashflowChanged = sanitizedCashflowGoals.length !== prevCashflowMap.size
+      || sanitizedCashflowGoals.some(goal => {
+        const prevGoal = prevCashflowMap.get(goal.id);
+        if (!prevGoal) return true;
+        return prevGoal.goalType !== goal.goalType
+          || prevGoal.currency !== goal.currency
+          || prevGoal.target !== goal.target
+          || (prevGoal.name || '') !== (goal.name || '');
+      });
+
     const prevShareTargetMap = new Map();
     prevShareTargets.forEach(item => {
       const stockId = typeof item?.stockId === 'string' ? item.stockId.trim().toUpperCase() : '';
@@ -1227,6 +1419,7 @@ export default function InventoryTab() {
         targetQuantity: Number.isFinite(quantityValue) ? quantityValue : 0
       });
     });
+
     const shareTargetsChanged = sanitizedShareTargets.length !== prevShareTargetMap.size
       || sanitizedShareTargets.some(target => {
         const prevTarget = prevShareTargetMap.get(target.stockId);
@@ -1236,11 +1429,9 @@ export default function InventoryTab() {
       });
 
     const hasChanged =
-      updated.goalName !== prevGoalName
-      || updated.goalType !== prevGoalType
-      || updated.totalTarget !== prevTotalTarget
-      || updated.monthlyTarget !== prevMonthlyTarget
-      || updated.minimumTarget !== prevMinimumTarget
+      goalName !== prevGoalName
+      || nextGoalType !== prevGoalTypeRaw
+      || cashflowChanged
       || shareTargetsChanged;
 
     if (!hasChanged) {
@@ -1351,20 +1542,14 @@ export default function InventoryTab() {
     }).filter(Boolean);
   }, [goals.shareTargets, inventoryList, msg.shareGoalCurrent, msg.shareGoalTargetDisplay, msg.shareGoalUnit, msg.shareGoalHalf, msg.shareGoalDone]);
 
-  const normalizedSavedGoalType = GOAL_TYPES.includes(goals.goalType)
-    ? goals.goalType
-    : DEFAULT_GOAL_TYPE;
-
   const combinedGoalRows = useMemo(
-    () => (normalizedSavedGoalType === 'shares'
-      ? [...goalRows, ...shareGoalRows]
-      : goalRows),
-    [goalRows, shareGoalRows, normalizedSavedGoalType]
+    () => [...goalRows, ...shareGoalRows],
+    [goalRows, shareGoalRows]
   );
 
-  const combinedGoalEmptyState = normalizedSavedGoalType === 'shares' && shareGoalRows.length > 0
-    ? ''
-    : goalEmptyState;
+  const combinedGoalEmptyState = goalRows.length === 0 && shareGoalRows.length === 0
+    ? goalEmptyState
+    : '';
 
   const goalSavedMessage = goalSaved === 'empty'
     ? msg.goalSavedEmpty
@@ -1372,38 +1557,134 @@ export default function InventoryTab() {
       ? msg.goalSaved
       : '';
   const goalTitle = goals.goalName?.trim() ? goals.goalName.trim() : msg.investmentGoals;
-  const normalizedGoalType = GOAL_TYPES.includes(goalForm.goalType)
-    ? goalForm.goalType
-    : DEFAULT_GOAL_TYPE;
-  const goalTypeOptions = [
+  const goalShareTargets = Array.isArray(goalForm.shareTargets) ? goalForm.shareTargets : [];
+  const goalCashflowGoals = Array.isArray(goalForm.cashflowGoals)
+    ? goalForm.cashflowGoals.map((goal, index) => {
+        const goalTypeRaw = typeof goal?.goalType === 'string' ? goal.goalType.toLowerCase() : '';
+        const goalType = ['annual', 'monthly', 'minimum'].includes(goalTypeRaw) ? goalTypeRaw : 'annual';
+        const currencyRaw = typeof goal?.currency === 'string' ? goal.currency.toUpperCase() : '';
+        const currency = ['TWD', 'USD'].includes(currencyRaw) ? currencyRaw : 'TWD';
+        const targetValue = typeof goal?.target === 'string'
+          ? goal.target
+          : goal?.target
+            ? String(goal.target)
+            : '';
+        const id = typeof goal?.id === 'string' && goal.id.trim() ? goal.id.trim() : `cashflow-${index}`;
+        return {
+          id,
+          goalType,
+          currency,
+          target: targetValue
+        };
+      })
+    : [];
+
+  const cashflowGoalTypeOptions = [
     { value: 'annual', label: msg.annualGoal },
     { value: 'monthly', label: msg.monthlyGoal },
-    { value: 'minimum', label: msg.minimumGoal },
-    { value: 'shares', label: msg.shareGoalTypeOption }
+    { value: 'minimum', label: msg.minimumGoal }
   ];
-  const goalTargetConfig = normalizedGoalType === 'shares'
-    ? null
-    : normalizedGoalType === 'monthly'
-      ? {
-          label: msg.goalTargetMonthly,
-          placeholder: msg.goalInputPlaceholderMonthly,
-          step: '100',
-          value: goalForm.monthlyTarget
-        }
-      : normalizedGoalType === 'minimum'
-        ? {
-            label: msg.goalTargetMinimum,
-            placeholder: msg.goalInputPlaceholderMonthly,
-            step: '100',
-            value: goalForm.minimumTarget
-          }
-        : {
-            label: msg.goalTargetAnnual,
-            placeholder: msg.goalInputPlaceholderTotal,
-            step: '1000',
-            value: goalForm.annualTarget
-          };
-  const goalShareTargets = Array.isArray(goalForm.shareTargets) ? goalForm.shareTargets : [];
+
+  const cashflowGoalCurrencyOptions = [
+    { value: 'TWD', label: msg.goalCurrencyTwd },
+    { value: 'USD', label: msg.goalCurrencyUsd }
+  ];
+
+  const getCashflowTargetConfig = goalType => {
+    if (goalType === 'monthly') {
+      return {
+        label: msg.goalTargetMonthly,
+        placeholder: msg.goalInputPlaceholderMonthly,
+        step: '100'
+      };
+    }
+    if (goalType === 'minimum') {
+      return {
+        label: msg.goalTargetMinimum,
+        placeholder: msg.goalInputPlaceholderMonthly,
+        step: '100'
+      };
+    }
+    return {
+      label: msg.goalTargetAnnual,
+      placeholder: msg.goalInputPlaceholderTotal,
+      step: '1000'
+    };
+  };
+
+  const cashflowGoalFormSection = {
+    id: 'cashflow-goals',
+    render: () => (
+      <div className={styles.cashflowGoalSection}>
+        <div className={styles.cashflowGoalHeader}>{msg.goalCashflowSectionTitle}</div>
+        {goalCashflowGoals.length ? (
+          <div className={styles.cashflowGoalList}>
+            {goalCashflowGoals.map(goal => {
+              const baseId = `cashflow-goal-${goal.id}`;
+              const targetConfig = getCashflowTargetConfig(goal.goalType);
+              return (
+                <div key={goal.id} className={styles.cashflowGoalRow}>
+                  <div className={`${styles.inputGroup} ${styles.cashflowGoalInput}`}>
+                    <label htmlFor={`${baseId}-type`}>{msg.goalTypeLabel}</label>
+                    <select
+                      id={`${baseId}-type`}
+                      value={goal.goalType}
+                      onChange={handleCashflowGoalTypeChange(goal.id)}
+                    >
+                      {cashflowGoalTypeOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={`${styles.inputGroup} ${styles.cashflowGoalInput}`}>
+                    <label htmlFor={`${baseId}-currency`}>{msg.goalCurrencyLabel}</label>
+                    <select
+                      id={`${baseId}-currency`}
+                      value={goal.currency}
+                      onChange={handleCashflowGoalCurrencyChange(goal.id)}
+                    >
+                      {cashflowGoalCurrencyOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={`${styles.inputGroup} ${styles.cashflowGoalInput}`}>
+                    <label htmlFor={`${baseId}-target`}>{targetConfig.label}</label>
+                    <input
+                      id={`${baseId}-target`}
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      step={targetConfig.step}
+                      value={goal.target}
+                      onChange={handleCashflowGoalTargetChange(goal.id)}
+                      placeholder={targetConfig.placeholder}
+                    />
+                  </div>
+                  <div className={styles.cashflowGoalActions}>
+                    <button type="button" onClick={() => handleCashflowGoalRemove(goal.id)}>
+                      {msg.goalCashflowRemove}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className={styles.cashflowGoalEmpty}>{msg.goalCashflowEmpty}</p>
+        )}
+        <div className={styles.cashflowGoalActionsRow}>
+          <button type="button" className={styles.cashflowGoalAddButton} onClick={handleCashflowGoalAdd}>
+            {msg.goalCashflowAdd}
+          </button>
+        </div>
+      </div>
+    )
+  };
 
   const shareGoalFormSection = {
     id: 'share-targets',
@@ -1506,7 +1787,7 @@ export default function InventoryTab() {
       );
     }
   };
-  const goalFormSections = normalizedGoalType === 'shares' ? [shareGoalFormSection] : [];
+  const goalFormSections = [cashflowGoalFormSection, shareGoalFormSection];
 
   const handleGoalFormToggle = () => {
     setIsGoalFormVisible(prev => !prev);
@@ -1515,32 +1796,6 @@ export default function InventoryTab() {
   const handleGoalNameChange = event => {
     const value = event.target.value;
     setGoalForm(prev => ({ ...prev, name: value }));
-  };
-
-  const handleGoalTypeChange = event => {
-    const value = String(event.target.value || '').toLowerCase();
-    setGoalForm(prev => ({
-      ...prev,
-      goalType: GOAL_TYPES.includes(value) ? value : prev.goalType
-    }));
-  };
-
-  const handleGoalTargetChange = event => {
-    const value = event.target.value;
-    setGoalForm(prev => {
-      if (prev.goalType === 'shares') {
-        return prev;
-      }
-      const key = prev.goalType === 'monthly'
-        ? 'monthlyTarget'
-        : prev.goalType === 'minimum'
-          ? 'minimumTarget'
-          : 'annualTarget';
-      return {
-        ...prev,
-        [key]: value
-      };
-    });
   };
 
   const handleAdd = () => {
@@ -1690,8 +1945,14 @@ export default function InventoryTab() {
             
             {cacheInfo && (
               <div className={styles.cacheInfo}>
-                {msg.cache}: {cacheInfo.cacheStatus}
+                {msg.stockCache}: {cacheInfo.cacheStatus}
                 {cacheInfo.timestamp ? ` (${new Date(cacheInfo.timestamp).toLocaleString()})` : ''}
+              </div>
+            )}
+            {dividendCacheInfo && (
+              <div className={styles.cacheInfo}>
+                {msg.dividendCache}: {dividendCacheInfo.cacheStatus}
+                {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
               </div>
             )}
 
@@ -1735,19 +1996,6 @@ export default function InventoryTab() {
                 nameHelper: msg.goalNameHelper,
                 onNameChange: handleGoalNameChange,
                 nameMaxLength: 60,
-                typeId: 'inventory-goal-type',
-                typeLabel: msg.goalTypeLabel,
-                typeValue: normalizedGoalType,
-                typeOptions: goalTypeOptions,
-                onTypeChange: handleGoalTypeChange,
-                targetId: 'inventory-goal-target',
-                targetLabel: goalTargetConfig?.label,
-                targetValue: goalTargetConfig?.value ?? '',
-                onTargetChange: handleGoalTargetChange,
-                targetPlaceholder: goalTargetConfig?.placeholder,
-                targetStep: goalTargetConfig?.step,
-                targetMin: '0',
-                targetHidden: !goalTargetConfig,
                 saveLabel: msg.goalText,
                 saveButton: msg.goalSave,
                 sections: goalFormSections
@@ -1775,7 +2023,16 @@ export default function InventoryTab() {
                             </a>
                           </td>
                           <td>{item.avg_price.toFixed(2)}</td>
-                          <td>{item.total_quantity} ({(item.total_quantity / 1000).toFixed(3).replace(/\.0+$/, '')} {lang === 'en' ? 'lots' : '張'})</td>
+                          <td>
+                            {item.total_quantity}
+                            {(() => {
+                              const countryCode = typeof item.country === 'string' ? item.country.trim().toUpperCase() : '';
+                              const isUsEtf = countryCode === 'US' || countryCode === 'USA';
+                              if (isUsEtf) return null;
+                              const lots = (item.total_quantity / 1000).toFixed(3).replace(/\.0+$/, '');
+                              return ` (${lots} ${lang === 'en' ? 'lots' : '張'})`;
+                            })()}
+                          </td>
                           <td>
                             <button className={styles.sellButton} onClick={() => setSellModal({ show: true, stock: item })}>{msg.sell}</button>
                           </td>

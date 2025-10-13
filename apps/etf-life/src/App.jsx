@@ -8,6 +8,8 @@ import DisplayDropdown from './components/DisplayDropdown';
 import DividendCalendar from './components/DividendCalendar';
 import StockTable from './components/StockTable';
 import Footer from './components/Footer';
+import AdvancedFilterDropdown from './components/AdvancedFilterDropdown';
+import CurrencyViewToggle from './components/CurrencyViewToggle';
 
 import './App.css';
 import styles from './App.module.css';
@@ -15,11 +17,33 @@ import dividendLogoDark from './assets/conceptB-ETF-Life-dark.svg';
 import dividendLogoLight from './assets/conceptB-ETF-Life-light.svg';
 import NLHelper from './NLHelper';
 import { API_HOST } from './config';
-import { fetchWithCache } from './api';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
 import { fetchDividendsByYears, clearDividendsCache } from './dividendApi';
+import { fetchStockList } from './stockApi';
+import useEffectOnce from './hooks/useEffectOnce';
 
 const DEFAULT_MONTHLY_GOAL = 10000;
+const DEFAULT_CURRENCY = 'TWD';
+const CURRENCY_NAME_ZH = {
+  TWD: '台股配息',
+  USD: '美股股息'
+};
+const CURRENCY_NAME_EN = {
+  TWD: 'NT$ dividends',
+  USD: 'US$ dividends'
+};
+const CURRENCY_LABEL = {
+  TWD: 'NT$',
+  USD: 'US$'
+};
+
+const normalizeCurrency = (currency) => {
+  if (!currency) return DEFAULT_CURRENCY;
+  const upper = String(currency).toUpperCase();
+  if (upper === 'NTD' || upper === 'NT$') return 'TWD';
+  if (upper === 'US$') return 'USD';
+  return upper;
+};
 
 const CURRENT_YEAR = new Date().getFullYear();
 const PREVIOUS_YEAR = CURRENT_YEAR - 1;
@@ -104,13 +128,14 @@ function App() {
 
     // Multi-select filters
     const [selectedStockIds, setSelectedStockIds] = useState([]);
-    const [extraFilters, setExtraFilters] = useState({ minYield: '', freq: [], upcomingWithin: '', diamond: false });
+    const [extraFilters, setExtraFilters] = useState({ minYield: '', freq: [], upcomingWithin: '', diamond: false, currencies: [] });
 
   // Watch groups
   const [watchGroups, setWatchGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState('');
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [showDisplays, setShowDisplays] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showAllStocks, setShowAllStocks] = useState(false);
 
   // Theme
@@ -159,7 +184,8 @@ function App() {
       if (!keepIds) setSelectedStockIds([]);
       setMonthHasValue(Array(12).fill(false));
       setShowAllStocks(false);
-      setExtraFilters({ minYield: '', freq: [], upcomingWithin: '', diamond: false });
+      setExtraFilters({ minYield: '', freq: [], upcomingWithin: '', diamond: false, currencies: [] });
+      setShowAdvancedFilters(false);
   };
 
   useEffect(() => {
@@ -188,14 +214,21 @@ function App() {
 
   const [dividendCacheInfo, setDividendCacheInfo] = useState(null);
 
-  useEffect(() => {
+  useEffectOnce(() => {
+    let cancelled = false;
+
     const fetchData = async () => {
       try {
         const { data: dividendData, meta } = await fetchDividendsByYears(ALLOWED_YEARS);
+        if (cancelled) return;
+
         const filteredArr = dividendData.filter(item => ALLOWED_YEARS.includes(new Date(item.dividend_date).getFullYear()));
         setData(filteredArr);
         if (meta.length) {
-          const primaryMeta = meta.find(entry => entry.year === CURRENT_YEAR) || meta[0];
+          const primaryMeta = meta.find(entry => entry.year === CURRENT_YEAR && entry.country === 'TW')
+            || meta.find(entry => entry.year === CURRENT_YEAR)
+            || meta.find(entry => entry.country === 'TW')
+            || meta[0];
           setDividendCacheInfo(primaryMeta
             ? {
                 cacheStatus: primaryMeta.cacheStatus || 'unknown',
@@ -217,23 +250,33 @@ function App() {
           setSelectedYear(yearList[0]);
         }
       } catch (error) {
-        setError(error);
+        if (!cancelled) {
+          setError(error);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
+
     fetchData();
-    // eslint-disable-next-line
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  });
 
   useEffect(() => {
     setUpcomingAlerts(getTomorrowDividendAlerts(data));
   }, [data]);
 
-  useEffect(() => {
-    fetchWithCache(`${API_HOST}/get_stock_list`)
-      .then(({ data }) => {
-        const list = Array.isArray(data) ? data : data?.items || [];
+  useEffectOnce(() => {
+    let cancelled = false;
+
+    fetchStockList()
+      .then(({ list }) => {
+        if (cancelled) return;
         const map = {};
         const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12 };
         list.forEach(s => {
@@ -241,8 +284,16 @@ function App() {
         });
         setFreqMap(map);
       })
-      .catch(() => setFreqMap({}));
-  }, []);
+      .catch(() => {
+        if (!cancelled) {
+          setFreqMap({});
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  });
 
   // Load default watch groups from localStorage
   useEffect(() => {
@@ -345,29 +396,49 @@ function App() {
     }
   };
 
-  const { filteredData, stocks, stockOptions, dividendTable } = useMemo(() => {
+  const {
+    filteredData,
+    stocks,
+    stockOptions,
+    dividendTable,
+    availableCurrencies,
+    stockCurrencyMap
+  } = useMemo(() => {
     const arr = Array.isArray(data) ? data : [];
-    const fData = arr.filter(
-      item => new Date(item.dividend_date).getFullYear() === Number(selectedYear)
-    );
+    const filtered = arr
+      .filter(item => new Date(item.dividend_date).getFullYear() === Number(selectedYear))
+      .map(item => ({
+        ...item,
+        currency: normalizeCurrency(item.currency)
+      }));
+
     const stocks = [];
     const stockMap = {};
-    fData.forEach(item => {
+    const stockCurrencySet = {};
+    filtered.forEach(item => {
       const key = `${item.stock_id}|${item.stock_name}`;
       if (!stockMap[key]) {
         stocks.push({ stock_id: item.stock_id, stock_name: item.stock_name });
         stockMap[key] = true;
       }
+      if (!stockCurrencySet[item.stock_id]) {
+        stockCurrencySet[item.stock_id] = new Set();
+      }
+      stockCurrencySet[item.stock_id].add(item.currency || DEFAULT_CURRENCY);
     });
+
     const stockOptions = stocks.map(s => ({
       value: s.stock_id,
       label: `${s.stock_id} ${s.stock_name}`
     }));
+
     const dividendTable = {};
-    fData.forEach(item => {
+    filtered.forEach(item => {
       const month = new Date(item.dividend_date).getMonth();
+      const currency = item.currency || DEFAULT_CURRENCY;
       if (!dividendTable[item.stock_id]) dividendTable[item.stock_id] = {};
-      const cell = dividendTable[item.stock_id][month] || {
+      if (!dividendTable[item.stock_id][month]) dividendTable[item.stock_id][month] = {};
+      const cell = dividendTable[item.stock_id][month][currency] || {
         dividend: 0,
         dividend_yield: 0,
         hasPendingDividend: false,
@@ -414,17 +485,16 @@ function App() {
         cell.payment_date = item.payment_date;
       }
 
-      dividendTable[item.stock_id][month] = cell;
+      dividendTable[item.stock_id][month][currency] = cell;
     });
 
-    // Calculate months span and per-month yield for each dividend entry
     Object.keys(dividendTable).forEach(id => {
       const months = Object.keys(dividendTable[id]).map(Number).sort((a, b) => a - b);
       let prev = null;
       const rawFreq = Number(freqMap[id]);
       const freq = [1, 2, 4, 6, 12].includes(rawFreq) ? rawFreq : 1;
       months.forEach(m => {
-        const cell = dividendTable[id][m];
+        const monthEntry = dividendTable[id][m];
         let span;
         if (prev === null) {
           span = freq ? 12 / freq : 1;
@@ -432,69 +502,174 @@ function App() {
           span = m - prev;
           if (span <= 0) span += 12;
         }
-        const totalYield = Number(cell.dividend_yield);
-        const safeTotalYield = Number.isFinite(totalYield) ? totalYield : 0;
-        cell.monthsSpan = span;
-        cell.perYield = safeTotalYield / span;
+        Object.values(monthEntry).forEach(cell => {
+          const totalYield = Number(cell.dividend_yield);
+          const safeTotalYield = Number.isFinite(totalYield) ? totalYield : 0;
+          cell.monthsSpan = span;
+          cell.perYield = safeTotalYield / span;
+        });
         prev = m;
       });
     });
 
-    return { filteredData: fData, stocks, stockOptions, dividendTable };
+    const availableCurrenciesSet = new Set(filtered.map(item => item.currency || DEFAULT_CURRENCY));
+    if (availableCurrenciesSet.size === 0) {
+      availableCurrenciesSet.add(DEFAULT_CURRENCY);
+    }
+    const order = { TWD: 0, USD: 1 };
+    const availableCurrencies = Array.from(availableCurrenciesSet).sort((a, b) => {
+      const aOrder = order[a] ?? 99;
+      const bOrder = order[b] ?? 99;
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder;
+      }
+      return a.localeCompare(b);
+    });
+
+    const stockCurrencyMap = {};
+    Object.keys(stockCurrencySet).forEach(id => {
+      stockCurrencyMap[id] = Array.from(stockCurrencySet[id]);
+    });
+
+    return { filteredData: filtered, stocks, stockOptions, dividendTable, availableCurrencies, stockCurrencyMap };
   }, [data, selectedYear, freqMap]);
+
+  const hasTwd = availableCurrencies.includes('TWD');
+  const hasUsd = availableCurrencies.includes('USD');
+  const fallbackView = hasTwd && hasUsd ? 'BOTH' : hasTwd ? 'TWD' : hasUsd ? 'USD' : 'TWD';
+  const [viewMode, setViewMode] = useState(fallbackView);
+  const [hasUserSetViewMode, setHasUserSetViewMode] = useState(false);
+  useEffect(() => {
+    if (!hasUserSetViewMode) {
+      if (viewMode !== fallbackView) {
+        setViewMode(fallbackView);
+      }
+      return;
+    }
+    if ((viewMode === 'TWD' && !hasTwd) || (viewMode === 'USD' && !hasUsd) || (viewMode === 'BOTH' && !(hasTwd && hasUsd))) {
+      setViewMode(fallbackView);
+    }
+  }, [fallbackView, hasTwd, hasUsd, hasUserSetViewMode, viewMode]);
+
+  const handleViewModeChange = (mode) => {
+    setHasUserSetViewMode(true);
+    setViewMode(mode);
+  };
+
+  const activeCurrencies = useMemo(() => {
+    if (viewMode === 'BOTH') {
+      return availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
+    }
+    if (availableCurrencies.includes(viewMode)) {
+      return [viewMode];
+    }
+    return availableCurrencies.length > 0 ? [availableCurrencies[0]] : [DEFAULT_CURRENCY];
+  }, [availableCurrencies, viewMode]);
+
+  const viewDescriptionContent = useMemo(() => {
+    if (activeCurrencies.length === 1) {
+      const currency = activeCurrencies[0];
+      return lang === 'en'
+        ? CURRENCY_NAME_EN[currency] || `${currency} dividends`
+        : CURRENCY_NAME_ZH[currency] || `${currency} 股息`;
+    }
+    const names = activeCurrencies.map(currency => (
+      lang === 'en'
+        ? (currency === 'USD' ? 'US$ dividends' : 'NT$ dividends')
+        : (currency === 'USD' ? '美股股息' : '台股配息')
+    ));
+    return lang === 'en'
+      ? names.join(' & ')
+      : names.join('、');
+  }, [activeCurrencies, lang]);
+
+  const viewLabelPrefix = lang === 'en' ? 'Showing:' : '顯示：';
 
   const filteredStocks = stocks.filter(stock => {
     if (selectedStockIds.length && !selectedStockIds.includes(stock.stock_id)) return false;
-    for (let m = 0; m < 12; ++m) {
-      if (monthHasValue[m]) {
-        if (!dividendTable[stock.stock_id] || !dividendTable[stock.stock_id][m]) return false;
-      }
+
+    if (extraFilters.currencies.length) {
+      const stockCurrencies = stockCurrencyMap[stock.stock_id] || [];
+      if (!extraFilters.currencies.some(currency => stockCurrencies.includes(currency))) return false;
     }
+
+    for (let m = 0; m < 12; ++m) {
+      if (!monthHasValue[m]) continue;
+      const monthEntry = dividendTable[stock.stock_id]?.[m];
+      if (!monthEntry) return false;
+      const currenciesToCheck = (extraFilters.currencies.length ? extraFilters.currencies : activeCurrencies);
+      const hasMatch = currenciesToCheck.some(currency => Boolean(monthEntry?.[currency]));
+      if (!hasMatch) return false;
+    }
+
     if (extraFilters.freq.length || extraFilters.minYield || extraFilters.upcomingWithin) {
       const { freq: freqFilters, minYield, upcomingWithin } = extraFilters;
       if (freqFilters.length && !freqFilters.includes(freqMap[stock.stock_id])) return false;
+      const currenciesToCheck = (extraFilters.currencies.length ? extraFilters.currencies : activeCurrencies);
       if (minYield) {
         let total = 0;
         let count = 0;
         for (let i = 0; i < 12; i++) {
-          const cell = dividendTable[stock.stock_id]?.[i];
-          const y = parseFloat(cell?.dividend_yield) || 0;
-          if (y > 0) {
-            total += y;
-            count += 1;
-          }
+          const monthEntry = dividendTable[stock.stock_id]?.[i];
+          if (!monthEntry) continue;
+          currenciesToCheck.forEach(currency => {
+            const cell = monthEntry?.[currency];
+            const yVal = Number(cell?.dividend_yield);
+            if (Number.isFinite(yVal) && yVal > 0) {
+              total += yVal;
+              count += 1;
+            }
+          });
         }
-        const freq = [1, 2, 4, 6, 12].includes(freqMap[stock.stock_id]) ? freqMap[stock.stock_id] : count;
+        const countForFreq = count;
+        const freq = [1, 2, 4, 6, 12].includes(freqMap[stock.stock_id]) ? freqMap[stock.stock_id] : countForFreq;
         const avg = count > 0 ? total / count : 0;
         if (avg * freq < Number(minYield)) return false;
       }
       if (upcomingWithin) {
-        const within = Number(upcomingWithin);
-        const now = new Date();
-        const future = new Date();
-        future.setDate(now.getDate() + within);
-        let hasUpcoming = false;
-        for (let i = 0; i < 12; i++) {
-          const cell = dividendTable[stock.stock_id]?.[i];
-          if (!cell) continue;
-          const ex = cell.dividend_date ? new Date(cell.dividend_date) : null;
-          const pay = cell.payment_date ? new Date(cell.payment_date) : null;
-          if ((ex && ex >= now && ex <= future) || (pay && pay >= now && pay <= future)) {
-            hasUpcoming = true;
-            break;
+        const days = Number(upcomingWithin);
+        if (Number.isFinite(days) && days > 0) {
+          const now = new Date();
+          const future = new Date();
+          future.setDate(now.getDate() + days);
+          let hasUpcoming = false;
+          for (let i = 0; i < 12; i++) {
+            const monthEntry = dividendTable[stock.stock_id]?.[i];
+            if (!monthEntry) continue;
+            if (currenciesToCheck.some(currency => {
+              const cell = monthEntry?.[currency];
+              if (!cell) return false;
+              const ex = cell.dividend_date ? new Date(cell.dividend_date) : null;
+              const pay = cell.payment_date ? new Date(cell.payment_date) : null;
+              return (ex && ex >= now && ex <= future) || (pay && pay >= now && pay <= future);
+            })) {
+              hasUpcoming = true;
+              break;
+            }
           }
+          if (!hasUpcoming) return false;
         }
-        if (!hasUpcoming) return false;
       }
     }
     return true;
   });
-  const maxYieldPerMonth = Array(12).fill(0);
+
+  const currenciesForMax = availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
+  const maxYieldPerMonth = currenciesForMax.reduce((acc, currency) => {
+    acc[currency] = Array(12).fill(0);
+    return acc;
+  }, {});
   filteredStocks.forEach(stock => {
     for (let m = 0; m < 12; m++) {
-      const cell = dividendTable[stock.stock_id]?.[m];
-      const y = cell?.perYield || 0;
-      if (y > maxYieldPerMonth[m]) maxYieldPerMonth[m] = y;
+      const monthEntry = dividendTable[stock.stock_id]?.[m];
+      if (!monthEntry) continue;
+      currenciesForMax.forEach(currency => {
+        const cell = monthEntry?.[currency];
+        const y = cell?.perYield || 0;
+        if (y > (maxYieldPerMonth[currency]?.[m] || 0)) {
+          maxYieldPerMonth[currency][m] = y;
+        }
+      });
     }
   });
 
@@ -510,67 +685,95 @@ function App() {
   const displayStocks = extraFilters.diamond
     ? filteredStocks.filter(stock => {
         for (let m = 0; m < 12; m++) {
-          const cell = dividendTable[stock.stock_id]?.[m];
-          const y = cell?.perYield || 0;
-          if (y === maxYieldPerMonth[m] && y > 0) return true;
+          const monthEntry = dividendTable[stock.stock_id]?.[m];
+          if (!monthEntry) continue;
+          const currenciesToCheck = (extraFilters.currencies.length ? extraFilters.currencies : activeCurrencies);
+          const hasDiamond = currenciesToCheck.some(currency => {
+            const cell = monthEntry?.[currency];
+            if (!cell) return false;
+            const y = cell.perYield || 0;
+            return y === (maxYieldPerMonth[currency]?.[m] || 0) && y > 0;
+          });
+          if (hasDiamond) return true;
         }
         return false;
       })
     : filteredStocks;
 
+  const currenciesForTotals = availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
   const totalPerStock = {};
   const yieldSum = {};
   const yieldCount = {};
   const latestPrice = {};
   const latestYield = {};
   displayStocks.forEach(stock => {
-    totalPerStock[stock.stock_id] = 0;
-    yieldSum[stock.stock_id] = 0;
-    yieldCount[stock.stock_id] = 0;
+    totalPerStock[stock.stock_id] = {};
+    yieldSum[stock.stock_id] = {};
+    yieldCount[stock.stock_id] = {};
     latestPrice[stock.stock_id] = { price: null, date: null };
     latestYield[stock.stock_id] = { yield: null, date: null };
     for (let m = 0; m < 12; m++) {
-      const cell = dividendTable[stock.stock_id]?.[m];
-      const dividendTotal = Number(cell?.dividend);
-      const val = Number.isFinite(dividendTotal) ? dividendTotal : 0;
-      const yValRaw = Number(cell?.dividend_yield);
-      const yVal = Number.isFinite(yValRaw) ? yValRaw : 0;
-      // track per-stock totals and yield sums
-      if (cell) {
-        totalPerStock[stock.stock_id] += val;
+      const monthEntry = dividendTable[stock.stock_id]?.[m];
+      if (!monthEntry) continue;
+      currenciesForTotals.forEach(currency => {
+        const cell = monthEntry?.[currency];
+        if (!cell) return;
+        const dividendTotal = Number(cell.dividend);
+        const val = Number.isFinite(dividendTotal) ? dividendTotal : 0;
+        const yValRaw = Number(cell.dividend_yield);
+        const yVal = Number.isFinite(yValRaw) ? yValRaw : 0;
+        totalPerStock[stock.stock_id][currency] = (totalPerStock[stock.stock_id][currency] || 0) + val;
         if (yVal > 0) {
-          yieldSum[stock.stock_id] += yVal;
-          yieldCount[stock.stock_id] += 1;
+          yieldSum[stock.stock_id][currency] = (yieldSum[stock.stock_id][currency] || 0) + yVal;
+          yieldCount[stock.stock_id][currency] = (yieldCount[stock.stock_id][currency] || 0) + 1;
         }
         const lastClose = Number(cell.last_close_price);
         const safeLastClose = Number.isFinite(lastClose) ? lastClose : cell.last_close_price ?? null;
-        if (!latestPrice[stock.stock_id].date || new Date(cell.dividend_date) > new Date(latestPrice[stock.stock_id].date)) {
-          latestPrice[stock.stock_id] = { price: safeLastClose, date: cell.dividend_date };
-          latestYield[stock.stock_id] = { yield: yVal, date: cell.dividend_date };
-        } else if (!latestYield[stock.stock_id].date || new Date(cell.dividend_date) > new Date(latestYield[stock.stock_id].date)) {
-          latestYield[stock.stock_id] = { yield: yVal, date: cell.dividend_date };
+        const cellDate = cell.dividend_date || cell.payment_date || null;
+        if (!latestPrice[stock.stock_id].date || (cellDate && new Date(cellDate) > new Date(latestPrice[stock.stock_id].date))) {
+          latestPrice[stock.stock_id] = { price: safeLastClose, date: cellDate };
         }
-      }
+        if (!latestYield[stock.stock_id].date || (cellDate && new Date(cellDate) > new Date(latestYield[stock.stock_id].date))) {
+          latestYield[stock.stock_id] = { yield: yVal, date: cellDate };
+        }
+      });
     }
   });
 
   const estAnnualYield = {};
+  const maxAnnualYield = currenciesForTotals.reduce((acc, currency) => {
+    acc[currency] = 0;
+    return acc;
+  }, {});
   Object.keys(yieldSum).forEach(id => {
-    const avgYield = yieldCount[id] > 0 ? yieldSum[id] / yieldCount[id] : 0;
-    const freq = [1, 2, 4, 6, 12].includes(freqMap[id]) ? freqMap[id] : yieldCount[id];
-    estAnnualYield[id] = avgYield * freq;
+    estAnnualYield[id] = {};
+    currenciesForTotals.forEach(currency => {
+      const sum = yieldSum[id][currency] || 0;
+      const count = yieldCount[id][currency] || 0;
+      if (count === 0) return;
+      const avgYield = sum / count;
+      const freq = [1, 2, 4, 6, 12].includes(freqMap[id]) ? freqMap[id] : count;
+      const est = avgYield * freq;
+      estAnnualYield[id][currency] = est;
+      if (est > (maxAnnualYield[currency] || 0)) {
+        maxAnnualYield[currency] = est;
+      }
+    });
   });
-
-  const maxAnnualYield = Math.max(...Object.values(estAnnualYield), 0);
 
   // Prepare events for calendar view
   const calendarEvents = filteredData
-    .filter(item =>
-      selectedStockIds.length === 0 || selectedStockIds.includes(item.stock_id)
-    )
+    .filter(item => {
+      if (selectedStockIds.length && !selectedStockIds.includes(item.stock_id)) return false;
+      const currency = item.currency || DEFAULT_CURRENCY;
+      if (extraFilters.currencies.length && !extraFilters.currencies.includes(currency)) return false;
+      if (!activeCurrencies.includes(currency)) return false;
+      return true;
+    })
     .flatMap(item => {
       const amount = parseFloat(item.dividend);
       const dividend_yield = parseFloat(item.dividend_yield) || 0;
+      const currency = item.currency || DEFAULT_CURRENCY;
       const arr = [];
       if (item.dividend_date) {
         arr.push({
@@ -583,6 +786,7 @@ function App() {
           last_close_price: item.last_close_price,
           dividend_date: item.dividend_date,
           payment_date: item.payment_date,
+          currency,
         });
       }
       if (item.payment_date) {
@@ -596,6 +800,7 @@ function App() {
           last_close_price: item.last_close_price,
           dividend_date: item.dividend_date,
           payment_date: item.payment_date,
+          currency,
         });
       }
       return arr;
@@ -701,6 +906,16 @@ function App() {
               </button>
             </div>
           </div>
+          <CurrencyViewToggle
+            viewMode={viewMode}
+            onChange={handleViewModeChange}
+            hasTwd={hasTwd}
+            hasUsd={hasUsd}
+            lang={lang}
+            description={viewDescriptionContent}
+            labelPrefix={viewLabelPrefix}
+            style={{ marginTop: 10 }}
+          />
           <button
             onClick={() => setShowCalendar(v => !v)}
             style={{ marginTop: 10 }}
@@ -760,10 +975,27 @@ function App() {
               {/* </div> */}
 
               {/* <div className={styles.tableHeader}> */}
-                <button onClick={handleResetFilters} style={{ marginRight: 10 }}>
-                  {lang === 'en' ? 'Reset All Filters' : '重置所有篩選'}
-                </button>
-                <span>{lang === 'en' ? 'Tip: Click the filter button to open the filter window.' : '提示：點下篩選鈕開啟篩選視窗。'}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+                  <button onClick={handleResetFilters}>
+                    {lang === 'en' ? 'Reset All Filters' : '重置所有篩選'}
+                  </button>
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <button onClick={() => setShowAdvancedFilters(v => !v)}>
+                      {lang === 'en' ? 'Advanced Filters' : '進階篩選'}
+                    </button>
+                    {showAdvancedFilters && (
+                      <AdvancedFilterDropdown
+                        filters={extraFilters}
+                        setFilters={setExtraFilters}
+                        onClose={() => setShowAdvancedFilters(false)}
+                        availableCurrencies={availableCurrencies}
+                      />
+                    )}
+                  </div>
+                  <span style={{ fontSize: 13, color: '#adb5bd' }}>
+                    {lang === 'en' ? 'Tip: Use advanced filters to refine the table.' : '提示：使用進階篩選調整顯示內容。'}
+                  </span>
+                </div>
               </div>
 
               {dividendCacheInfo && (
@@ -811,8 +1043,7 @@ function App() {
                 showInfoAxis={showInfoAxis}
                 getIncomeGoalInfo={getIncomeGoalInfo}
                 freqMap={freqMap}
-                extraFilters={extraFilters}
-                setExtraFilters={setExtraFilters}
+                activeCurrencies={activeCurrencies}
               />
             </>
           )}

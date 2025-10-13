@@ -10,6 +10,10 @@
   --accent-gold: #d4af37;
   --accent-gold-hover: #ffd700;
   --accent-green: #2f9e44;
+  --share-preview-bg: #f8fafc;
+  --share-preview-border: rgba(148, 163, 184, 0.35);
+  --share-preview-text: #1f2937;
+  --share-preview-label: #475569;
 
   /* Bootstrap color variables */
   --bs-body-color: var(--color-text);
@@ -49,6 +53,10 @@
   --color-hover: #374151;
   --color-header-bg: #374151;
   --color-text-muted: #9ca3af;
+  --share-preview-bg: rgba(30, 41, 59, 0.9);
+  --share-preview-border: rgba(148, 163, 184, 0.45);
+  --share-preview-text: #f8fafc;
+  --share-preview-label: #cbd5f5;
 }
 
 [data-theme='dark'] .nav-tabs .nav-link.active {

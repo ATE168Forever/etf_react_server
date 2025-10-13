@@ -159,11 +159,27 @@
   gap: 12px;
 }
 
+.cashflowGoalSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .shareGoalHeader {
   font-weight: 600;
 }
 
+.cashflowGoalHeader {
+  font-weight: 600;
+}
+
 .shareGoalList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cashflowGoalList {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -176,7 +192,19 @@
   align-items: flex-end;
 }
 
+.cashflowGoalRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
 .shareGoalInput {
+  flex: 1 1 160px;
+  min-width: 140px;
+}
+
+.cashflowGoalInput {
   flex: 1 1 160px;
   min-width: 140px;
 }
@@ -202,7 +230,21 @@
   align-items: flex-end;
 }
 
+.cashflowGoalActions {
+  display: flex;
+  align-items: flex-end;
+}
+
 .shareGoalActions button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border, rgba(148, 163, 184, 0.3));
+  background: var(--color-card-bg, #ffffff);
+  color: inherit;
+  cursor: pointer;
+}
+
+.cashflowGoalActions button {
   padding: 6px 12px;
   border-radius: 6px;
   border: 1px solid var(--color-border, rgba(148, 163, 184, 0.3));
@@ -216,10 +258,24 @@
   background: rgba(148, 163, 184, 0.12);
 }
 
+.cashflowGoalActions button:hover,
+.cashflowGoalActions button:focus-visible {
+  background: rgba(148, 163, 184, 0.12);
+}
+
 .shareGoalAddButton {
   background: var(--accent-gold);
   border: none;
   color: var(--color-text);
+}
+
+.cashflowGoalAddButton {
+  background: var(--accent-gold);
+  border: none;
+  color: var(--color-text);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
 .shareGoalAddButton:hover,
@@ -227,7 +283,22 @@
   opacity: 0.85;
 }
 
+.cashflowGoalAddButton:hover,
+.cashflowGoalAddButton:focus-visible {
+  opacity: 0.85;
+}
+
 .shareGoalEmpty {
   font-size: 0.85rem;
   color: var(--muted-foreground, #6b7280);
+}
+
+.cashflowGoalEmpty {
+  font-size: 0.85rem;
+  color: var(--muted-foreground, #6b7280);
+}
+
+.cashflowGoalActionsRow {
+  display: flex;
+  justify-content: flex-end;
 }
