@@ -41,11 +41,13 @@ export default function InvestmentGoalCard({
   const hasShareContent = Boolean(shareMessage);
   const [hasNativeShare, setHasNativeShare] = useState(false);
   const [shareStatus, setShareStatus] = useState('idle');
+  const [isShareContentVisible, setIsShareContentVisible] = useState(false);
   const statusResetRef = useRef(null);
 
   useEffect(() => {
     if (!hasShareContent) {
       setHasNativeShare(false);
+      setIsShareContentVisible(false);
       return;
     }
     setHasNativeShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function');
@@ -62,6 +64,7 @@ export default function InvestmentGoalCard({
     if (statusResetRef.current) {
       clearTimeout(statusResetRef.current);
     }
+    setIsShareContentVisible(false);
   }, [shareMessage]);
 
   const updateShareStatus = (nextStatus) => {
@@ -112,6 +115,9 @@ export default function InvestmentGoalCard({
   const handleCopyClick = async () => {
     const success = await copyShareMessage();
     updateShareStatus(success ? 'copied' : 'error');
+    if (!isShareContentVisible) {
+      setIsShareContentVisible(true);
+    }
   };
 
   const handleShareClick = async () => {
@@ -128,6 +134,9 @@ export default function InvestmentGoalCard({
           text: shareMessage
         });
         updateShareStatus('shared');
+        if (!isShareContentVisible) {
+          setIsShareContentVisible(true);
+        }
         return;
       } catch (error) {
         if (error?.name === 'AbortError') {
@@ -137,6 +146,9 @@ export default function InvestmentGoalCard({
     }
     const success = await copyShareMessage();
     updateShareStatus(success ? 'copied' : 'error');
+    if (!isShareContentVisible) {
+      setIsShareContentVisible(true);
+    }
   };
 
   const copyButtonLabel = shareStatus === 'copied'
@@ -270,17 +282,19 @@ export default function InvestmentGoalCard({
                 {shareStatusMessage}
               </div>
             ) : null}
-            <div className={styles.sharePreview}>
-              {shareConfig?.previewLabel ? (
-                <div className={styles.sharePreviewLabel}>{shareConfig.previewLabel}</div>
-              ) : null}
-              <pre
-                className={styles.sharePreviewText}
-                aria-label={shareConfig?.previewLabel || undefined}
-              >
-                {shareMessage}
-              </pre>
-            </div>
+            {isShareContentVisible ? (
+              <div className={styles.sharePreview}>
+                {shareConfig?.previewLabel ? (
+                  <div className={styles.sharePreviewLabel}>{shareConfig.previewLabel}</div>
+                ) : null}
+                <pre
+                  className={styles.sharePreviewText}
+                  aria-label={shareConfig?.previewLabel || undefined}
+                >
+                  {shareMessage}
+                </pre>
+              </div>
+            ) : null}
             {!hasNativeShare && shareConfig?.shareUnavailable ? (
               <p className={styles.shareUnavailable}>{shareConfig.shareUnavailable}</p>
             ) : null}
