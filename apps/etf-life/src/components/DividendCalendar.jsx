@@ -138,10 +138,8 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
                 }
                 return (
                   <div key={key} className="calendar-summary-group">
-                    <span className="calendar-summary-label">{label}</span>
-                    <div className="calendar-summary-values">
-                      {items}
-                    </div>
+                    {`${label}:`}
+                    {items}
                   </div>
                 );
               })

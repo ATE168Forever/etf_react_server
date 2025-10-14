@@ -432,25 +432,15 @@ button:active {
 .calendar-summary-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   padding: 8px 12px;
   border-radius: 16px;
   background: var(--color-card-bg);
   border: 1px solid rgba(148, 163, 184, 0.35);
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
-}
-
-.calendar-summary-label {
-  font-weight: 600;
-  color: var(--color-text-muted);
-  white-space: nowrap;
-}
-
-.calendar-summary-values {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   flex-wrap: wrap;
+  color: var(--color-text-muted);
+  font-weight: 600;
 }
 
 .calendar-summary-value {
@@ -590,12 +580,8 @@ button:active {
 
   .calendar-summary-group {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-start;
     padding: 10px 12px;
-  }
-
-  .calendar-summary-values {
-    justify-content: flex-end;
   }
 }
 
