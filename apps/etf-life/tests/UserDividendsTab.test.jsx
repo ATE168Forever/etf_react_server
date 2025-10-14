@@ -17,7 +17,7 @@ test('displays stock id and dynamic name from dividend data', async () => {
   ];
 
   render(<UserDividendsTab allDividendData={allDividendData} selectedYear={2024} />);
-  expect(await screen.findByText('0050 Test ETF')).toBeInTheDocument();
+  expect(await screen.findByText('0050 (Test ETF)')).toBeInTheDocument();
 });
 
 test('calendar defaults to showing both ex and payment events', async () => {
@@ -93,7 +93,7 @@ test('shows dividends for stocks sold before year end', async () => {
 
   render(<UserDividendsTab allDividendData={data} selectedYear={2024} />);
 
-  expect(await screen.findByText('0056 高股息ETF')).toBeInTheDocument();
+  expect(await screen.findByText('0056 (高股息ETF)')).toBeInTheDocument();
   expect(screen.queryByText('尚無庫存，請先新增交易紀錄')).not.toBeInTheDocument();
 });
 
@@ -127,21 +127,21 @@ test('allows switching between TWD and USD dividend summaries', async () => {
   const toTwdButtonInitial = await screen.findByRole('button', { name: /^(台股|NT\$|NT dividends)$/i });
   fireEvent.click(toTwdButtonInitial);
 
-  const twdRow = await screen.findByText('0050 台股ETF');
+  const twdRow = await screen.findByText('0050 (台股ETF)');
   expect(twdRow.closest('tr')).toHaveTextContent('1,000');
-  expect(screen.queryByText('VUSD Vanguard USD')).not.toBeInTheDocument();
+  expect(screen.queryByText('VUSD (Vanguard USD)')).not.toBeInTheDocument();
 
   const toUsdButton = await screen.findByRole('button', { name: /^(美股|US\$|US dividends)$/i });
   fireEvent.click(toUsdButton);
 
-  const usdRow = await screen.findByText('VUSD Vanguard USD');
+  const usdRow = await screen.findByText('VUSD (Vanguard USD)');
   expect(usdRow.closest('tr')).toHaveTextContent('100.000');
-  expect(screen.queryByText('0050 台股ETF')).not.toBeInTheDocument();
+  expect(screen.queryByText('0050 (台股ETF)')).not.toBeInTheDocument();
 
   const toTwdButton = await screen.findByRole('button', { name: /^(台股|NT\$|NT dividends)$/i });
   fireEvent.click(toTwdButton);
 
-  const twdRowAgain = await screen.findByText('0050 台股ETF');
+  const twdRowAgain = await screen.findByText('0050 (台股ETF)');
   expect(twdRowAgain.closest('tr')).toHaveTextContent('1,000');
-  expect(screen.queryByText('VUSD Vanguard USD')).not.toBeInTheDocument();
+  expect(screen.queryByText('VUSD (Vanguard USD)')).not.toBeInTheDocument();
 });
