@@ -61,6 +61,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
     const [monthFilters, setMonthFilters] = useState(() => Array(12).fill(false));
     const tableContainerRef = useRef(null);
+    const tableElementRef = useRef(null);
     usePreserveScroll(tableContainerRef, 'userDividendsTableScroll');
 
     const historyByStock = useMemo(() => {
@@ -234,6 +235,40 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         }
         return availableCurrencies.length > 0 ? [availableCurrencies[0]] : [DEFAULT_CURRENCY];
     }, [availableCurrencies, viewMode]);
+
+    const activeCurrencyKey = useMemo(() => activeCurrencies.join('|'), [activeCurrencies]);
+
+    useEffect(() => {
+        const updateStickyHeaderOffset = () => {
+            const container = tableContainerRef.current;
+            const table = tableElementRef.current;
+            if (!container) {
+                return;
+            }
+            if (!table) {
+                container.style.removeProperty('--secondary-header-top');
+                return;
+            }
+            const header = table.querySelector('thead');
+            if (!header || header.rows.length < 2) {
+                container.style.removeProperty('--secondary-header-top');
+                return;
+            }
+            const firstRow = header.rows[0];
+            if (!firstRow) {
+                container.style.removeProperty('--secondary-header-top');
+                return;
+            }
+            const height = firstRow.getBoundingClientRect().height;
+            container.style.setProperty('--secondary-header-top', `${height}px`);
+        };
+
+        updateStickyHeaderOffset();
+        window.addEventListener('resize', updateStickyHeaderOffset);
+        return () => {
+            window.removeEventListener('resize', updateStickyHeaderOffset);
+        };
+    }, [activeCurrencyKey, lang]);
 
     const viewDescriptionContent = useMemo(() => {
         if (activeCurrencies.length === 1) {
@@ -709,7 +744,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
             </div>
 
             <div className="table-responsive" ref={tableContainerRef}>
-            <table className="table table-bordered table-striped">
+            <table className="table table-bordered table-striped" ref={tableElementRef}>
                 <thead>
                     <tr>
                         <th className="stock-col" rowSpan={activeCurrencies.length > 1 ? 2 : 1}>
@@ -826,28 +861,49 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                             <tr style={{ background: '#ffe066', fontWeight: 'bold' }}>
                                 <td>{lang === 'en' ? 'Monthly Total' : '月合計'}</td>
                                 <td>
-                                    {aggregatedGrandTotal > 0 ? (() => {
-                                        const tooltipLines = activeCurrencies.map(currency => {
-                                            const total = grandTotalsByCurrency[currency] || 0;
-                                            const avg = avgPerMonthByCurrency[currency] || 0;
-                                            return lang === 'en'
-                                                ? `${currencyHeaderLabel(currency)} total: ${formatCurrencyValue(currency, total, { allowZero: true })}\nAvg per month: ${formatCurrencyValue(currency, avg, { allowZero: true })}`
-                                                : `${currencyHeaderLabel(currency)}總計: ${formatCurrencyValue(currency, total, { allowZero: true })}\n每月平均: ${formatCurrencyValue(currency, avg, { allowZero: true })}`;
-                                        });
-                                        if (activeCurrencies.length > 1) {
-                                            tooltipLines.push(lang === 'en'
-                                                ? `Combined avg per month: ${formatPlainAmount(aggregatedAvgPerMonth, { allowZero: true })}`
-                                                : `加總每月平均: ${formatPlainAmount(aggregatedAvgPerMonth, { allowZero: true })}`);
+                                    {(() => {
+                                        const currencySummaries = activeCurrencies
+                                            .map(currency => ({
+                                                currency,
+                                                total: grandTotalsByCurrency[currency] || 0,
+                                                avg: avgPerMonthByCurrency[currency] || 0,
+                                            }))
+                                            .filter(item => item.total > 0);
+                                        if (currencySummaries.length === 0) {
+                                            return '';
                                         }
+                                        const tooltipLines = currencySummaries.map(({ currency, total, avg }) => (
+                                            lang === 'en'
+                                                ? `${currencyHeaderLabel(currency)} total: ${formatCurrencyValue(currency, total, { allowZero: true })}\nAvg per month: ${formatCurrencyValue(currency, avg, { allowZero: true })}`
+                                                : `${currencyHeaderLabel(currency)}總計: ${formatCurrencyValue(currency, total, { allowZero: true })}\n每月平均: ${formatCurrencyValue(currency, avg, { allowZero: true })}`
+                                        ));
+                                        if (currencySummaries.length > 1) {
+                                            tooltipLines.push(
+                                                lang === 'en'
+                                                    ? `Combined avg per month: ${formatPlainAmount(aggregatedAvgPerMonth, { allowZero: true })}`
+                                                    : `加總每月平均: ${formatPlainAmount(aggregatedAvgPerMonth, { allowZero: true })}`
+                                            );
+                                        }
+                                        const content = currencySummaries.length === 1
+                                            ? formatCurrencyValue(currencySummaries[0].currency, currencySummaries[0].total, { allowZero: true })
+                                            : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+                                                    {currencySummaries.map(({ currency, total }) => (
+                                                        <span key={`monthly-total-${currency}`}>
+                                                            {formatCurrencyValue(currency, total, { allowZero: true })}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            );
                                         return (
                                             <TooltipText
                                                 tooltip={tooltipLines.join('\n\n')}
                                                 style={{ borderBottom: '1px dotted #777' }}
                                             >
-                                                {formatPlainAmount(aggregatedGrandTotal, { currency: activeCurrencies.length === 1 ? activeCurrencies[0] : undefined })}
+                                                {content}
                                             </TooltipText>
                                         );
-                                    })() : ''}
+                                    })()}
                                 </td>
                                 {MONTHS.map((m, idx) => (
                                     activeCurrencies.map(currency => {
@@ -867,8 +923,6 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                     totalsByCurrency[currency] = getTotalForStockByCurrency(stock.stock_id, currency);
                                 });
                                 const stockTotal = Object.values(totalsByCurrency).reduce((sum, val) => sum + val, 0);
-                                const nonZeroCurrenciesForStock = activeCurrencies.filter(currency => (totalsByCurrency[currency] || 0) > 0);
-                                const stockTotalCurrency = nonZeroCurrenciesForStock.length === 1 ? nonZeroCurrenciesForStock[0] : undefined;
                                 const { detail: yieldDetail } = getYieldInfo(stock.stock_id);
                                 const totalTooltipLines = activeCurrencies.map(currency => {
                                     const info = yieldDetail[currency];
@@ -891,16 +945,43 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                 {stock.stock_id} {stock.stock_name}
                                             </a>
                                         </td>
-                                        <td>{stockTotal > 0 ? (
-                                            totalTooltipLines.length > 0 ? (
-                                                <TooltipText
-                                                    tooltip={totalTooltipLines.join('\n\n')}
-                                                    style={{ borderBottom: '1px dotted #777' }}
-                                                >
-                                                    {formatPlainAmount(stockTotal, { currency: stockTotalCurrency })}
-                                                </TooltipText>
-                                            ) : formatPlainAmount(stockTotal, { currency: stockTotalCurrency })
-                                        ) : ''}</td>
+                                        <td>{stockTotal > 0 ? (() => {
+                                            const displayValues = activeCurrencies
+                                                .map(currency => ({
+                                                    currency,
+                                                    value: totalsByCurrency[currency] || 0,
+                                                }))
+                                                .filter(item => item.value > 0)
+                                                .map(item => ({
+                                                    ...item,
+                                                    text: formatCurrencyValue(item.currency, item.value, { allowZero: true }),
+                                                }));
+                                            if (displayValues.length === 0) {
+                                                return '';
+                                            }
+                                            const content = displayValues.length === 1
+                                                ? displayValues[0].text
+                                                : (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+                                                        {displayValues.map(item => (
+                                                            <span key={`stock-total-${stock.stock_id}-${item.currency}`}>
+                                                                {item.text}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                );
+                                            if (totalTooltipLines.length > 0) {
+                                                return (
+                                                    <TooltipText
+                                                        tooltip={totalTooltipLines.join('\n\n')}
+                                                        style={{ borderBottom: '1px dotted #777' }}
+                                                    >
+                                                        {content}
+                                                    </TooltipText>
+                                                );
+                                            }
+                                            return content;
+                                        })() : ''}</td>
                                         {MONTHS.map((m, idx) => (
                                             activeCurrencies.map(currency => {
                                                 const cell = currencyContexts[currency]?.dividendTable[stock.stock_id]?.[idx];
