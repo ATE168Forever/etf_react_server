@@ -119,8 +119,8 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
         </div>
         {showTotals && hasTotals && (
           <div className="calendar-summary">
-            <div className="calendar-summary-row">
-              <span className="calendar-summary-label">{t('dividend')}:</span>
+            <div className="calendar-summary-group">
+              {t('dividend')}:
               {currenciesInMonth.map(currency => {
                 const total = totalsByType.ex?.[currency] || 0;
                 if (total <= 0) return null;
@@ -131,8 +131,8 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
                 );
               })}
             </div>
-            <div className="calendar-summary-row">
-              <span className="calendar-summary-label">{t('payment')}:</span>
+            <div className="calendar-summary-group">
+              {t('payment')}:
               {currenciesInMonth.map(currency => {
                 const total = totalsByType.pay?.[currency] || 0;
                 if (total <= 0) return null;
