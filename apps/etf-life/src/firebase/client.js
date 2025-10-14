@@ -1,19 +1,37 @@
-import { initializeApp, getApps } from 'firebase/app';
-import {
+const FIREBASE_SDK_VERSION = '11.0.2';
+
+let appModule;
+let authModule;
+let firestoreModule;
+
+if (typeof window !== 'undefined') {
+  try {
+    [appModule, authModule, firestoreModule] = await Promise.all([
+      import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-app.js`),
+      import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-auth.js`),
+      import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`)
+    ]);
+  } catch (error) {
+    console.warn('Failed to load Firebase SDK modules, realtime sync disabled.', error);
+  }
+}
+
+const { initializeApp, getApps } = appModule ?? {};
+const {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
-  signOut as firebaseSignOut,
+  signOut: firebaseSignOut,
   onAuthStateChanged
-} from 'firebase/auth';
-import {
+} = authModule ?? {};
+const {
   getFirestore,
   doc,
   onSnapshot,
   setDoc,
   enableIndexedDbPersistence,
   serverTimestamp
-} from 'firebase/firestore';
+} = firestoreModule ?? {};
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -32,6 +50,10 @@ function createFirebaseApp() {
     console.warn('Firebase project ID is missing, realtime sync disabled.');
     return null;
   }
+  if (typeof initializeApp !== 'function' || typeof getApps !== 'function') {
+    console.warn('Firebase SDK is unavailable, realtime sync disabled.');
+    return null;
+  }
   if (getApps().length > 0) {
     return getApps()[0];
   }
@@ -39,10 +61,16 @@ function createFirebaseApp() {
 }
 
 export const firebaseApp = createFirebaseApp();
-export const auth = firebaseApp ? getAuth(firebaseApp) : null;
-export const db = firebaseApp ? getFirestore(firebaseApp) : null;
+export const auth =
+  firebaseApp && typeof getAuth === 'function' ? getAuth(firebaseApp) : null;
+export const db =
+  firebaseApp && typeof getFirestore === 'function' ? getFirestore(firebaseApp) : null;
 
-if (db && typeof window !== 'undefined') {
+if (
+  db &&
+  typeof enableIndexedDbPersistence === 'function' &&
+  typeof window !== 'undefined'
+) {
   enableIndexedDbPersistence(db).catch(error => {
     if (error?.code === 'failed-precondition') {
       console.warn('IndexedDB persistence can only be enabled in one tab at a time.');
@@ -55,36 +83,46 @@ if (db && typeof window !== 'undefined') {
 }
 
 export function createGoogleAuthProvider() {
-  if (!auth) throw new Error('Firebase Auth has not been initialised');
+  if (!auth || typeof GoogleAuthProvider !== 'function') {
+    throw new Error('Firebase Auth has not been initialised');
+  }
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   return provider;
 }
 
 export async function signInWithGoogle() {
-  if (!auth) throw new Error('Firebase Auth has not been initialised');
+  if (!auth || typeof signInWithPopup !== 'function') {
+    throw new Error('Firebase Auth has not been initialised');
+  }
   const provider = createGoogleAuthProvider();
   return signInWithPopup(auth, provider);
 }
 
 export function onAuthChange(callback) {
-  if (!auth) return () => {};
+  if (!auth || typeof onAuthStateChanged !== 'function') {
+    return () => {};
+  }
   return onAuthStateChanged(auth, callback);
 }
 
 export async function signOut() {
-  if (!auth) return;
+  if (!auth || typeof firebaseSignOut !== 'function') {
+    return;
+  }
   await firebaseSignOut(auth);
 }
 
 function getWorkspaceDocRef(workspaceId) {
-  if (!db) throw new Error('Firebase Firestore has not been initialised');
+  if (!db || typeof doc !== 'function') {
+    throw new Error('Firebase Firestore has not been initialised');
+  }
   if (!workspaceId) throw new Error('workspaceId is required');
   return doc(db, 'workspaces', workspaceId);
 }
 
 export function subscribeToWorkspaceTransactions(workspaceId, callback) {
-  if (!db || !workspaceId) return () => {};
+  if (!db || !workspaceId || typeof onSnapshot !== 'function') return () => {};
   const workspaceRef = getWorkspaceDocRef(workspaceId);
   return onSnapshot(workspaceRef, snapshot => {
     const data = snapshot.data();
@@ -93,7 +131,9 @@ export function subscribeToWorkspaceTransactions(workspaceId, callback) {
         ? {
             transactions: Array.isArray(data.transactions) ? data.transactions : [],
             updatedAt: data.updatedAt?.toMillis ? data.updatedAt.toMillis() : null,
-            clientUpdatedAt: Number.isFinite(data.clientUpdatedAt) ? data.clientUpdatedAt : null
+            clientUpdatedAt: Number.isFinite(data.clientUpdatedAt)
+              ? data.clientUpdatedAt
+              : null
           }
         : {
             transactions: [],
@@ -105,7 +145,13 @@ export function subscribeToWorkspaceTransactions(workspaceId, callback) {
 }
 
 export async function saveWorkspaceTransactions(workspaceId, transactions, clientUpdatedAt) {
-  if (!db) throw new Error('Firebase Firestore has not been initialised');
+  if (
+    !db ||
+    typeof setDoc !== 'function' ||
+    typeof serverTimestamp !== 'function'
+  ) {
+    throw new Error('Firebase Firestore has not been initialised');
+  }
   const workspaceRef = getWorkspaceDocRef(workspaceId);
   const payload = {
     transactions: Array.isArray(transactions) ? transactions : [],
