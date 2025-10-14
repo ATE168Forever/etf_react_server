@@ -37,11 +37,23 @@ function getToday() {
   return new Date().toISOString().slice(0, 10);
 }
 
+const createEmptyPurchaseEntry = () => ({
+  stock_id: '',
+  stock_name: '',
+  quantity: '',
+  price: ''
+});
+
+const createInitialFormState = () => ({
+  date: getToday(),
+  entries: [createEmptyPurchaseEntry()]
+});
+
 export default function InventoryTab() {
   const [stockList, setStockList] = useState([]);
   const [transactionHistory, setTransactionHistory] = useState(() => migrateTransactionHistory());
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ stock_id: '', stock_name: '', date: getToday(), quantity: '', price: '' });
+  const [form, setForm] = useState(createInitialFormState);
   const [showInventory, setShowInventory] = useState(true);
   const [editingIdx, setEditingIdx] = useState(null);
   const [editForm, setEditForm] = useState({ date: '', quantity: '', price: '' });
@@ -1799,23 +1811,54 @@ export default function InventoryTab() {
   };
 
   const handleAdd = () => {
-    if (!form.stock_id || !form.date || !form.quantity || !form.price) {
+    const date = form?.date;
+    const entries = Array.isArray(form?.entries) ? form.entries : [];
+    if (!date) {
       alert(msg.inputRequired);
       return;
     }
+
+    const hasPartialEntry = entries.some(entry => {
+      const hasAnyField = entry?.stock_id || entry?.quantity || entry?.price;
+      const isComplete = entry?.stock_id && entry?.quantity && entry?.price;
+      return hasAnyField && !isComplete;
+    });
+    if (hasPartialEntry) {
+      alert(msg.inputRequired);
+      return;
+    }
+
+    const normalizedEntries = entries
+      .map(entry => ({
+        stock_id: entry?.stock_id || '',
+        stock_name: entry?.stock_name || '',
+        quantity: Number(entry?.quantity),
+        price: Number(entry?.price)
+      }))
+      .filter(entry => (
+        entry.stock_id &&
+        Number.isFinite(entry.quantity) && entry.quantity > 0 &&
+        Number.isFinite(entry.price) && entry.price > 0
+      ));
+
+    if (normalizedEntries.length === 0) {
+      alert(msg.inputRequired);
+      return;
+    }
+
     const updatedHistory = [
       ...transactionHistory,
-      {
-        stock_id: form.stock_id,
-        stock_name: form.stock_name,
-        date: form.date,
-        quantity: +form.quantity,
-        price: +form.price,
+      ...normalizedEntries.map(entry => ({
+        stock_id: entry.stock_id,
+        stock_name: entry.stock_name,
+        date,
+        quantity: entry.quantity,
+        price: entry.price,
         type: 'buy'
-      }
+      }))
     ];
     setTransactionHistory(updatedHistory);
-    setForm({ stock_id: '', stock_name: '', date: getToday(), quantity: '', price: '' });
+    setForm(createInitialFormState());
     setShowModal(false);
     runAutoSave(updatedHistory);
   };
@@ -1873,7 +1916,7 @@ export default function InventoryTab() {
         <button
           className={styles.button}
           onClick={() => {
-            setForm({ stock_id: '', stock_name: '', date: getToday(), quantity: '', price: '' });
+            setForm(createInitialFormState());
             setShowModal(true);
           }}
         >
