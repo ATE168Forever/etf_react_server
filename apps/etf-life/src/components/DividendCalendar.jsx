@@ -119,30 +119,31 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
         </div>
         {showTotals && hasTotals && (
           <div className="calendar-summary">
-            <div className="calendar-summary-group">
-              {t('dividend')}:
-              {currenciesInMonth.map(currency => {
-                const total = totalsByType.ex?.[currency] || 0;
-                if (total <= 0) return null;
+            {[{ key: 'ex', label: t('dividend') }, { key: 'pay', label: t('payment') }]
+              .map(({ key, label }) => {
+                const items = currenciesInMonth
+                  .map(currency => {
+                    const total = totalsByType[key]?.[currency] || 0;
+                    if (total <= 0) return null;
+                    return (
+                      <span key={`${key}-${currency}`} className="calendar-summary-value">
+                        <span className="calendar-summary-currency">{currencyLabel(currency)}</span>
+                        <span className="calendar-summary-amount">{formatSummaryAmount(currency, total)}</span>
+                      </span>
+                    );
+                  })
+                  .filter(Boolean);
+                if (items.length === 0) {
+                  return null;
+                }
                 return (
-                  <span key={`ex-${currency}`} className="calendar-summary-value">
-                    {currencyLabel(currency)} {formatSummaryAmount(currency, total)}
-                  </span>
+                  <div key={key} className="calendar-summary-group">
+                    {`${label}:`}
+                    {items}
+                  </div>
                 );
-              })}
-            </div>
-            <div className="calendar-summary-group">
-              {t('payment')}:
-              {currenciesInMonth.map(currency => {
-                const total = totalsByType.pay?.[currency] || 0;
-                if (total <= 0) return null;
-                return (
-                  <span key={`pay-${currency}`} className="calendar-summary-value">
-                    {currencyLabel(currency)} {formatSummaryAmount(currency, total)}
-                  </span>
-                );
-              })}
-            </div>
+              })
+              .filter(Boolean)}
           </div>
         )}
       </div>
