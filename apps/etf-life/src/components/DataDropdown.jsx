@@ -13,11 +13,14 @@ export default function DataDropdown({
   handleOneDriveExport,
   handleICloudImport,
   handleICloudExport,
+  handleFirebaseImport,
+  handleFirebaseExport,
   selectedSource,
   onSelectChange,
   autoSaveEnabled,
   onToggleAutoSave,
-  autoSaveState
+  autoSaveState,
+  firebaseState
 }) {
   const ref = useRef();
   useClickOutside(ref, onClose);
@@ -55,7 +58,12 @@ export default function DataDropdown({
       autoSaveSuccess: 'Auto-save completed',
       autoSaveError: 'Auto-save failed',
       autoSaveDisabled: 'Auto-save is off',
-      autoSaveLocationLabel: 'Saved to'
+      autoSaveLocationLabel: 'Saved to',
+      firebaseSignIn: 'Sign in with Google',
+      firebaseSignOut: 'Sign out',
+      firebaseWorkspace: 'Workspace',
+      firebaseStatusSignedOut: 'Not signed in',
+      firebaseStatusLoading: 'Loading account…'
     }
   };
 
@@ -77,6 +85,10 @@ export default function DataDropdown({
     icloudDrive: {
       import: handleICloudImport,
       export: handleICloudExport
+    },
+    firebase: {
+      import: handleFirebaseImport,
+      export: handleFirebaseExport
     }
   };
 
@@ -99,7 +111,8 @@ export default function DataDropdown({
     csv: 'CSV',
     googleDrive: 'Google Drive',
     oneDrive: 'OneDrive',
-    icloudDrive: 'iCloudDrive'
+    icloudDrive: 'iCloudDrive',
+    firebase: 'Firebase'
   };
   const providerLabel = providerLabels?.[autoSaveState?.provider] || '';
   const locationTypeLabels = {
@@ -110,6 +123,10 @@ export default function DataDropdown({
     fileSystem: {
       zh: '本機資料夾',
       en: 'Local folder'
+    },
+    cloud: {
+      zh: '雲端',
+      en: 'Cloud'
     }
   };
   let statusMessage = '';
@@ -167,6 +184,7 @@ export default function DataDropdown({
           <option value="googleDrive">Google Drive</option>
           <option value="oneDrive">OneDrive</option>
           <option value="icloudDrive">iCloudDrive</option>
+          <option value="firebase">Firebase</option>
         </select>
       </div>
       <div className={styles.autoSaveRow}>
@@ -201,6 +219,34 @@ export default function DataDropdown({
         <button onClick={() => handleSelectAction('import')}>{importText}</button>
         <button onClick={() => handleSelectAction('export')}>{exportText}</button>
       </div>
+      {selectedSource === 'firebase' && (
+        <div className={styles.firebaseSection}>
+          <div className={styles.firebaseStatusRow}>
+            <span className={styles.firebaseStatusLabel}>{firebaseState?.workspaceLabel}</span>
+            <span className={styles.firebaseStatusValue}>
+              {firebaseState?.initialising
+                ? firebaseState?.loadingLabel
+                : firebaseState?.user
+                  ? firebaseState.user.email || firebaseState.user.displayName
+                  : firebaseState?.signedOutLabel}
+            </span>
+          </div>
+          <div className={styles.firebaseButtonRow}>
+            {firebaseState?.user ? (
+              <button type="button" onClick={firebaseState?.onSignOut}>
+                {firebaseState?.signOutLabel}
+              </button>
+            ) : (
+              <button type="button" onClick={firebaseState?.onSignIn}>
+                {firebaseState?.signInLabel}
+              </button>
+            )}
+          </div>
+          {firebaseState?.errorMessage && (
+            <div className={styles.firebaseError}>{firebaseState.errorMessage}</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

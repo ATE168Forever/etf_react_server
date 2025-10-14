@@ -28,6 +28,7 @@ import {
   buildDividendGoalViewModel
 } from './utils/dividendGoalUtils';
 import selectStyles from './selectStyles';
+import useFirebaseTransactionsSync from './hooks/useFirebaseTransactionsSync';
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
 const SHARES_PER_LOT = 1000;
@@ -74,6 +75,10 @@ export default function InventoryTab() {
   const [latestPrices, setLatestPrices] = useState({});
   const [dividendData, setDividendData] = useState([]);
   const { lang } = useLanguage();
+  const firebaseSync = useFirebaseTransactionsSync();
+  const localFingerprintRef = useRef('');
+  const localUpdatedAtRef = useRef(transactionHistoryUpdatedAt ?? 0);
+  const skipNextLocalTimestampRef = useRef(false);
   const initialGoals = useMemo(() => loadInvestmentGoals(), []);
   const initialShareTargetList = Array.isArray(initialGoals.shareTargets) ? initialGoals.shareTargets : [];
   const hasInitialShareTargets = initialShareTargetList.some(item => {
@@ -148,6 +153,16 @@ export default function InventoryTab() {
       exportICloudFail: '匯出到 iCloud Drive 失敗',
       importICloudSuccess: '已從 iCloud Drive 匯入資料',
       importICloudFail: '匯入 iCloud Drive 失敗',
+      firebaseSignIn: '使用 Google 登入',
+      firebaseSignOut: '登出',
+      firebaseWorkspace: '同步帳號',
+      firebaseStatusSignedOut: '尚未登入',
+      firebaseStatusLoading: '讀取帳號中…',
+      firebaseSignInRequired: '請先使用 Google 登入後再使用 Firebase 同步。',
+      firebaseExportSuccess: '交易紀錄已同步到 Firebase。',
+      firebaseExportFail: '同步到 Firebase 失敗，請稍後再試。',
+      firebaseImportFail: '從 Firebase 讀取資料失敗，請稍後再試。',
+      firebaseAuthFail: '登入失敗，請稍後再試。',
       backupPrompt: '距離上次備份已超過30天，是否匯出 CSV 備份？',
       inputRequired: '請輸入完整資料',
       invalidNumbers: '請輸入有效數字、價格和日期',
@@ -249,6 +264,16 @@ export default function InventoryTab() {
       exportICloudFail: 'Export to iCloud Drive failed',
       importICloudSuccess: 'Imported data from iCloud Drive',
       importICloudFail: 'Import from iCloud Drive failed',
+      firebaseSignIn: 'Sign in with Google',
+      firebaseSignOut: 'Sign out',
+      firebaseWorkspace: 'Sync account',
+      firebaseStatusSignedOut: 'Not signed in',
+      firebaseStatusLoading: 'Loading account…',
+      firebaseSignInRequired: 'Please sign in with Google before using Firebase sync.',
+      firebaseExportSuccess: 'Transactions synced to Firebase.',
+      firebaseExportFail: 'Failed to sync to Firebase. Please try again later.',
+      firebaseImportFail: 'Failed to load data from Firebase. Please try again later.',
+      firebaseAuthFail: 'Sign-in failed. Please try again later.',
       backupPrompt: 'It has been over 30 days since last backup. Export CSV backup?',
       inputRequired: 'Please enter all fields',
       invalidNumbers: 'Please enter valid numbers, price and date',
@@ -450,6 +475,25 @@ export default function InventoryTab() {
           return imported;
         }
 
+        if (provider === 'firebase') {
+          if (!firebaseSync?.user) {
+            alert(lang === 'en' ? 'Please sign in with Google to sync via Firebase.' : '請先使用 Google 登入後再使用 Firebase 同步。');
+            return null;
+          }
+          const remoteList = mapTransactionsWithStockNames(firebaseSync.remoteTransactions);
+          const remoteTimestamp = firebaseSync.remoteUpdatedAt || Date.now();
+          skipNextLocalTimestampRef.current = true;
+          setTransactionHistory(remoteList);
+          setTransactionHistoryUpdatedAt(remoteTimestamp);
+          setAutoSaveState({
+            status: 'success',
+            timestamp: remoteTimestamp,
+            provider: 'firebase',
+            location: { type: 'cloud', key: firebaseSync.workspaceId }
+          });
+          return remoteList;
+        }
+
         if (provider === 'googleDrive') {
           const result = await importTransactionsFromDrive({ includeMetadata: true });
           const list = Array.isArray(result) ? result : result?.list;
@@ -502,6 +546,8 @@ export default function InventoryTab() {
     },
     [
       ensurePermission,
+      firebaseSync,
+      lang,
       mapTransactionsWithStockNames,
       transactionHistoryUpdatedAt,
       resetCsvAutoSaveHandles
@@ -518,6 +564,37 @@ export default function InventoryTab() {
       const data = Array.isArray(list) ? list : transactionHistory;
       const requestId = Date.now();
       autoSaveRequestRef.current = requestId;
+
+      if (provider === 'firebase') {
+        if (!firebaseSync?.user) {
+          setAutoSaveState({ status: 'error', provider: 'firebase', timestamp: Date.now() });
+          return;
+        }
+        setAutoSaveState({
+          status: 'saving',
+          provider: 'firebase',
+          location: { type: 'cloud', key: firebaseSync.workspaceId }
+        });
+        try {
+          await firebaseSync.pushTransactions(data);
+          if (autoSaveRequestRef.current === requestId) {
+            setAutoSaveState({
+              status: 'success',
+              provider: 'firebase',
+              timestamp: firebaseSync.remoteUpdatedAt || Date.now(),
+              location: { type: 'cloud', key: firebaseSync.workspaceId }
+            });
+          }
+          return true;
+        } catch (error) {
+          console.error('Firebase auto-save failed', error);
+          if (autoSaveRequestRef.current === requestId) {
+            setAutoSaveState({ status: 'error', provider: 'firebase', timestamp: Date.now() });
+          }
+          return false;
+        }
+      }
+
       setAutoSaveState({ status: 'saving', provider });
 
       try {
@@ -637,6 +714,7 @@ export default function InventoryTab() {
     },
     [
       autoSaveEnabled,
+      firebaseSync,
       ensurePermission,
       resetCsvAutoSaveHandles,
       selectedDataSource,
@@ -665,12 +743,16 @@ export default function InventoryTab() {
       } catch (error) {
         console.error('Auto-save sync before enabling failed', error);
       }
+      if (selectedDataSource === 'firebase' && !firebaseSync?.user) {
+        return;
+      }
       setAutoSaveEnabled(true);
       const dataToPersist = Array.isArray(syncedList) ? syncedList : transactionHistory;
       runAutoSave(dataToPersist, { force: true, provider: selectedDataSource });
     })();
   }, [
     autoSaveEnabled,
+    firebaseSync,
     maybeRestoreFromBackup,
     runAutoSave,
     selectedDataSource,
@@ -828,6 +910,54 @@ export default function InventoryTab() {
     }
   };
 
+  const handleFirebaseExport = useCallback(async () => {
+    if (!firebaseSync?.user) {
+      alert(msg.firebaseSignInRequired);
+      return;
+    }
+    try {
+      const result = await runAutoSave(transactionHistory, { force: true, provider: 'firebase' });
+      if (result === false) {
+        alert(msg.firebaseExportFail);
+        return;
+      }
+      alert(msg.firebaseExportSuccess);
+    } catch (error) {
+      console.error('Firebase manual export failed', error);
+      alert(msg.firebaseExportFail);
+    }
+  }, [firebaseSync, msg, runAutoSave, transactionHistory]);
+
+  const handleFirebaseImport = useCallback(async () => {
+    if (!firebaseSync?.user) {
+      alert(msg.firebaseSignInRequired);
+      return;
+    }
+    try {
+      await maybeRestoreFromBackup('firebase');
+    } catch (error) {
+      console.error('Firebase manual import failed', error);
+      alert(msg.firebaseImportFail);
+    }
+  }, [firebaseSync, maybeRestoreFromBackup, msg]);
+
+  const handleFirebaseSignIn = useCallback(async () => {
+    try {
+      await firebaseSync.signIn();
+    } catch (error) {
+      console.error('Firebase sign-in failed', error);
+      alert(msg.firebaseAuthFail);
+    }
+  }, [firebaseSync, msg]);
+
+  const handleFirebaseSignOut = useCallback(async () => {
+    try {
+      await firebaseSync.signOut();
+    } catch (error) {
+      console.error('Firebase sign-out failed', error);
+    }
+  }, [firebaseSync]);
+
   const backupPrompt = msg.backupPrompt;
 
   useEffect(() => {
@@ -937,8 +1067,86 @@ export default function InventoryTab() {
 
   useEffect(() => {
     saveTransactionHistory(transactionHistory);
+    if (skipNextLocalTimestampRef.current) {
+      skipNextLocalTimestampRef.current = false;
+      return;
+    }
     setTransactionHistoryUpdatedAt(Date.now());
   }, [transactionHistory]);
+
+  useEffect(() => {
+    localFingerprintRef.current = JSON.stringify(transactionHistory);
+  }, [transactionHistory]);
+
+  useEffect(() => {
+    const updatedAt = transactionHistoryUpdatedAt ?? getTransactionHistoryUpdatedAt() ?? 0;
+    localUpdatedAtRef.current = updatedAt;
+  }, [transactionHistoryUpdatedAt]);
+
+  useEffect(() => {
+    if (selectedDataSource !== 'firebase') return;
+    if (!firebaseSync?.user) return;
+    const remoteList = mapTransactionsWithStockNames(firebaseSync.remoteTransactions);
+    const remoteFingerprint = JSON.stringify(remoteList);
+    if (remoteFingerprint === localFingerprintRef.current) {
+      return;
+    }
+    const remoteTimestamp = Number.isFinite(firebaseSync.remoteUpdatedAt)
+      ? firebaseSync.remoteUpdatedAt
+      : null;
+    const localTimestamp = Number.isFinite(localUpdatedAtRef.current)
+      ? localUpdatedAtRef.current
+      : getTransactionHistoryUpdatedAt() ?? 0;
+    if (remoteTimestamp && localTimestamp && remoteTimestamp < localTimestamp) {
+      return;
+    }
+    skipNextLocalTimestampRef.current = true;
+    setTransactionHistory(remoteList);
+    setTransactionHistoryUpdatedAt(remoteTimestamp || Date.now());
+  }, [
+    firebaseSync.remoteTransactions,
+    firebaseSync.remoteUpdatedAt,
+    firebaseSync.user,
+    mapTransactionsWithStockNames,
+    selectedDataSource
+  ]);
+
+  useEffect(() => {
+    if (selectedDataSource !== 'firebase') return;
+    if (!autoSaveEnabled) return;
+    if (!firebaseSync?.user) {
+      setAutoSaveState({ status: 'error', provider: 'firebase', timestamp: Date.now() });
+      return;
+    }
+    if (firebaseSync.syncStatus === 'saving') {
+      setAutoSaveState(prev => ({
+        ...prev,
+        status: 'saving',
+        provider: 'firebase',
+        location: { type: 'cloud', key: firebaseSync.workspaceId }
+      }));
+      return;
+    }
+    if (firebaseSync.syncStatus === 'error') {
+      setAutoSaveState({ status: 'error', provider: 'firebase', timestamp: Date.now() });
+      return;
+    }
+    if (Number.isFinite(firebaseSync.remoteUpdatedAt)) {
+      setAutoSaveState({
+        status: 'success',
+        provider: 'firebase',
+        timestamp: firebaseSync.remoteUpdatedAt,
+        location: { type: 'cloud', key: firebaseSync.workspaceId }
+      });
+    }
+  }, [
+    autoSaveEnabled,
+    firebaseSync.remoteUpdatedAt,
+    firebaseSync.syncStatus,
+    firebaseSync.user,
+    firebaseSync.workspaceId,
+    selectedDataSource
+  ]);
 
   useEffect(() => {
     if (!goalSaved) return undefined;
@@ -994,6 +1202,32 @@ export default function InventoryTab() {
       })
       .sort((a, b) => a.stockId.localeCompare(b.stockId));
   }, [shareTargetNameLookup, goals.shareTargets]);
+
+  const firebaseDropdownState = useMemo(() => {
+    const errorMessage = firebaseSync.error
+      ? `${lang === 'en' ? 'Sync error: ' : '同步錯誤：'}${firebaseSync.error.message}`
+      : '';
+    return {
+      user: firebaseSync.user,
+      initialising: firebaseSync.initialising,
+      signInLabel: msg.firebaseSignIn,
+      signOutLabel: msg.firebaseSignOut,
+      workspaceLabel: msg.firebaseWorkspace,
+      signedOutLabel: msg.firebaseStatusSignedOut,
+      loadingLabel: msg.firebaseStatusLoading,
+      errorMessage,
+      onSignIn: handleFirebaseSignIn,
+      onSignOut: handleFirebaseSignOut
+    };
+  }, [
+    firebaseSync.error,
+    firebaseSync.initialising,
+    firebaseSync.user,
+    handleFirebaseSignIn,
+    handleFirebaseSignOut,
+    lang,
+    msg
+  ]);
 
   const parseShareTargetInputValue = useCallback(
     rawValue => {
@@ -1940,11 +2174,14 @@ export default function InventoryTab() {
               handleOneDriveExport={handleOneDriveExport}
               handleICloudImport={handleICloudImport}
               handleICloudExport={handleICloudExport}
+              handleFirebaseImport={handleFirebaseImport}
+              handleFirebaseExport={handleFirebaseExport}
               selectedSource={selectedDataSource}
               onSelectChange={handleDataSourceChange}
               autoSaveEnabled={autoSaveEnabled}
               onToggleAutoSave={handleAutoSaveToggle}
               autoSaveState={autoSaveState}
+              firebaseState={firebaseDropdownState}
             />
           )}
         </div>

@@ -2,6 +2,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import StockDetail from '../src/StockDetail';
+import { fetchStockList } from '../src/stockApi';
+import { fetchDividendsByYears } from '../src/dividendApi';
 
 jest.mock('../src/config', () => ({
   API_HOST: 'http://localhost'
@@ -16,9 +18,7 @@ jest.mock('../src/dividendApi', () => ({
 }));
 
 beforeEach(() => {
-  const { fetchStockList } = require('../src/stockApi');
   fetchStockList.mockResolvedValue({ list: [{ stock_id: '0056', stock_name: 'Test ETF' }], meta: null });
-  const { fetchDividendsByYears } = require('../src/dividendApi');
   fetchDividendsByYears.mockResolvedValue({ data: [] });
   globalThis.fetch = jest.fn((url) => {
     if (url.includes('/get_returns')) {

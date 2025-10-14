@@ -39,6 +39,21 @@ docker run -p 3000:80 etf-view
 
 Rebuild the image whenever dependencies change so the container has the correct `node_modules`.
 
+## Firebase realtime sync
+
+The inventory screen now supports realtime backup via Firebase Authentication (Google sign-in) and Cloud Firestore. Configure the following variables in `apps/etf-life/.env` (or your preferred Vite environment file) before running the app:
+
+```
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+```
+
+Each workspace is stored at `workspaces/{uid}` with `updatedAt` managed by `serverTimestamp`. IndexedDB persistence is enabled for offline support. Deploy `apps/etf-life/firestore.rules` so only the authenticated owner can read or write the workspace document.
+
 ## OneDrive, Google Drive, and iCloud Drive Backup
 
 Environment variable documentation for the various backup providers lives inside the source files and comments. Set the values in a `.env` file at the package root so Vite exposes them to the client at build time.
