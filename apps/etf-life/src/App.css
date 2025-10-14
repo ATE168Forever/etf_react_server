@@ -625,6 +625,10 @@ button:active {
   z-index: 1;
 }
 
+.table-responsive thead tr:nth-child(2) th {
+  top: var(--secondary-header-top, 0);
+}
+
 .table-responsive table th:first-child,
 .table-responsive table td:first-child {
   position: sticky;
