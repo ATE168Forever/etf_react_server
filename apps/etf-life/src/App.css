@@ -412,6 +412,8 @@ button:active {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .calendar-nav {
   display: flex;
@@ -421,6 +423,25 @@ button:active {
 .calendar-summary {
   text-align: right;
   font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+  flex: 1 1 300px;
+  min-width: 0;
+}
+
+.calendar-summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.calendar-summary-label,
+.calendar-summary-value {
+  white-space: nowrap;
 }
 .calendar-legend {
   text-align: center;
@@ -527,6 +548,17 @@ button:active {
 
   .inventory-tables {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 600px) {
+  .calendar-summary {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .calendar-summary-row {
+    justify-content: flex-start;
   }
 }
 
