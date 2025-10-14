@@ -329,9 +329,14 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         return arr;
     });
 
-    const filteredCalendarEvents = calendarEvents.filter(ev =>
-        calendarFilter === 'both' || ev.type === calendarFilter
-    );
+    const filteredCalendarEvents = calendarEvents.filter(ev => {
+        const matchesType = calendarFilter === 'both' || ev.type === calendarFilter;
+        if (!matchesType) {
+            return false;
+        }
+        const currency = ev.currency || DEFAULT_CURRENCY;
+        return activeCurrencies.includes(currency);
+    });
 
     const getAverageCostBeforeDate = useCallback((stockId, dateStr) => {
         if (!dateStr) return 0;
