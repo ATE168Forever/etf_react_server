@@ -80,32 +80,6 @@ body {
   align-items: end;
 }
 
-.sync-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  font-size: 0.9rem;
-  color: #475569;
-}
-
-.sync-controls button {
-  align-self: flex-start;
-}
-
-.sync-hint {
-  margin: 0;
-  color: #64748b;
-  font-size: 0.85rem;
-  line-height: 1.4;
-}
-
-.sync-meta {
-  margin: 0;
-  font-weight: 600;
-  color: #1d4ed8;
-  font-size: 0.85rem;
-}
-
 .field {
   display: flex;
   flex-direction: column;

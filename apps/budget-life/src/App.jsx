@@ -6,7 +6,6 @@ import {
   db,
   doc,
   firestoreServerTimestamp,
-  getDocs,
   googleProvider,
   onAuthStateChanged,
   onSnapshot,
@@ -38,8 +37,6 @@ export default function App() {
   const [transactions, setTransactions] = useState([]);
   const [encryptionPassphrase, setEncryptionPassphrase] = useState('');
   const [encryptionKey, setEncryptionKey] = useState(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [form, setForm] = useState({
     description: '',
     amount: '',
@@ -88,12 +85,10 @@ export default function App() {
   useEffect(() => {
     if (!user) {
       setRawTransactions([]);
-      setLastSyncedAt(null);
       return undefined;
     }
 
     const workspaceDocRef = doc(db, 'users', user.uid, 'workspaces', workspaceId);
-    setLastSyncedAt(null);
     setDoc(
       workspaceDocRef,
       {
@@ -117,7 +112,6 @@ export default function App() {
         data: transactionDoc.data(),
       }));
       setRawTransactions(docs);
-      setLastSyncedAt(new Date());
     });
 
     return unsubscribe;
@@ -169,21 +163,6 @@ export default function App() {
   const total = useMemo(
     () => transactions.reduce((sum, transaction) => sum + (Number(transaction.amount) || 0), 0),
     [transactions]
-  );
-
-  const formattedLastSyncedAt = useMemo(
-    () =>
-      lastSyncedAt
-        ? lastSyncedAt.toLocaleString(undefined, {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-          })
-        : '',
-    [lastSyncedAt]
   );
 
   const handleSignIn = async () => {
@@ -251,36 +230,6 @@ export default function App() {
     }
   };
 
-  const handleManualSync = async () => {
-    if (!user) {
-      setStatusMessage('請先登入以觸發同步。');
-      return;
-    }
-
-    setIsSyncing(true);
-    setStatusMessage('手動同步中…');
-
-    try {
-      const workspaceDocRef = doc(db, 'users', user.uid, 'workspaces', workspaceId);
-      const transactionsCollection = collection(workspaceDocRef, 'transactions');
-      const transactionsQuery = query(transactionsCollection, orderBy('updatedAt', 'desc'));
-      const snapshot = await getDocs(transactionsQuery);
-      const docs = snapshot.docs.map((transactionDoc) => ({
-        id: transactionDoc.id,
-        data: transactionDoc.data(),
-      }));
-
-      setRawTransactions(docs);
-      setLastSyncedAt(new Date());
-      setStatusMessage('手動同步完成。');
-    } catch (error) {
-      console.error('Failed to manually sync transactions', error);
-      setStatusMessage('手動同步失敗，請稍後再試。');
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
   return (
     <div className="app">
       <header className="hero">
@@ -323,18 +272,6 @@ export default function App() {
             onChange={(event) => setEncryptionPassphrase(event.target.value)}
             placeholder="提供 Passphrase 以解密敏感資料"
           />
-        </div>
-        <div className="sync-controls" aria-live="polite">
-          <button
-            className="secondary"
-            type="button"
-            onClick={handleManualSync}
-            disabled={!user || isSyncing}
-          >
-            {isSyncing ? '同步中…' : '立即同步'}
-          </button>
-          <p className="sync-hint">登入後會自動同步交易紀錄，亦可隨時手動刷新。</p>
-          {formattedLastSyncedAt && <p className="sync-meta">上次同步：{formattedLastSyncedAt}</p>}
         </div>
       </section>
 
