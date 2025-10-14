@@ -45,8 +45,8 @@ export default function StockTable({
     ? ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
     : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const freqNameMap = lang === 'zh'
-    ? { 1: '年配', 2: '半年配', 4: '季配', 6: '雙月配', 12: '月配' }
-    : { 1: 'Annual', 2: 'Semi-annual', 4: 'Quarterly', 6: 'Bimonthly', 12: 'Monthly' };
+    ? { 1: '年配', 2: '半年配', 4: '季配', 6: '雙月配', 12: '月配', 52: '週配' }
+    : { 1: 'Annual', 2: 'Semi-annual', 4: 'Quarterly', 6: 'Bimonthly', 12: 'Monthly', 52: 'Weekly' };
   const currencyLabel = (currency) => (currency === 'USD' ? 'US$' : 'NT$');
   const currencyUnitZh = (currency) => (currency === 'USD' ? '美元' : '元');
 

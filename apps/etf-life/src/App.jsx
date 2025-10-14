@@ -278,7 +278,7 @@ function App() {
       .then(({ list }) => {
         if (cancelled) return;
         const map = {};
-        const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12 };
+        const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12, '週配': 52 };
         list.forEach(s => {
           map[s.stock_id] = freqMapRaw[s.dividend_frequency] || null;
         });
@@ -492,7 +492,7 @@ function App() {
       const months = Object.keys(dividendTable[id]).map(Number).sort((a, b) => a - b);
       let prev = null;
       const rawFreq = Number(freqMap[id]);
-      const freq = [1, 2, 4, 6, 12].includes(rawFreq) ? rawFreq : 1;
+      const freq = [1, 2, 4, 6, 12, 52].includes(rawFreq) ? rawFreq : 1;
       months.forEach(m => {
         const monthEntry = dividendTable[id][m];
         let span;
@@ -627,7 +627,7 @@ function App() {
           });
         }
         const countForFreq = count;
-        const freq = [1, 2, 4, 6, 12].includes(freqMap[stock.stock_id]) ? freqMap[stock.stock_id] : countForFreq;
+        const freq = [1, 2, 4, 6, 12, 52].includes(freqMap[stock.stock_id]) ? freqMap[stock.stock_id] : countForFreq;
         const avg = count > 0 ? total / count : 0;
         if (avg * freq < Number(minYield)) return false;
       }
@@ -757,7 +757,7 @@ function App() {
       const count = yieldCount[id][currency] || 0;
       if (count === 0) return;
       const avgYield = sum / count;
-      const freq = [1, 2, 4, 6, 12].includes(freqMap[id]) ? freqMap[id] : count;
+      const freq = [1, 2, 4, 6, 12, 52].includes(freqMap[id]) ? freqMap[id] : count;
       const est = avgYield * freq;
       estAnnualYield[id][currency] = est;
       if (est > (maxAnnualYield[currency] || 0)) {

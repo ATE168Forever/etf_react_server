@@ -41,6 +41,7 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose, a
   };
 
   const freqOptions = [
+    { v: 52, zh: '週配', en: 'Weekly' },
     { v: 12, zh: '月配', en: 'Monthly' },
     { v: 6, zh: '雙月配', en: 'Bimonthly' },
     { v: 4, zh: '季配', en: 'Quarterly' },
