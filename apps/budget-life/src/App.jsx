@@ -1,19 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  onAuthStateChanged,
-  signInWithPopup,
-  signOut,
-} from 'firebase/auth';
-import {
   addDoc,
+  auth,
   collection,
+  db,
   doc,
+  firestoreServerTimestamp,
+  googleProvider,
+  onAuthStateChanged,
   onSnapshot,
   orderBy,
   query,
   setDoc,
-} from 'firebase/firestore';
-import { auth, db, googleProvider, firestoreServerTimestamp } from './firebase';
+  signInWithPopup,
+  signOut,
+} from './firebase';
 import {
   decryptString,
   deriveKeyFromPassphrase,

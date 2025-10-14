@@ -1,6 +1,31 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence, serverTimestamp } from 'firebase/firestore';
+const FIREBASE_VERSION = '11.0.1';
+
+const [appModule, authModule, firestoreModule] = await Promise.all([
+  import(/* @vite-ignore */ `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`),
+  import(/* @vite-ignore */ `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`),
+  import(/* @vite-ignore */ `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`),
+]);
+
+const { initializeApp } = appModule;
+const {
+  getAuth,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut,
+} = authModule;
+const {
+  addDoc,
+  collection,
+  doc,
+  enableIndexedDbPersistence,
+  getFirestore,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+} = firestoreModule;
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -30,3 +55,15 @@ if (typeof window !== 'undefined') {
 }
 
 export const firestoreServerTimestamp = serverTimestamp;
+export {
+  addDoc,
+  collection,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  setDoc,
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut,
+};
