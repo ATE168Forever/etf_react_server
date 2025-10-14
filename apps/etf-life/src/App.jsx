@@ -588,6 +588,11 @@ function App() {
   const filteredStocks = stocks.filter(stock => {
     if (selectedStockIds.length && !selectedStockIds.includes(stock.stock_id)) return false;
 
+    if (viewMode !== 'BOTH') {
+      const stockCurrencies = stockCurrencyMap[stock.stock_id] || [];
+      if (!stockCurrencies.includes(viewMode)) return false;
+    }
+
     if (extraFilters.currencies.length) {
       const stockCurrencies = stockCurrencyMap[stock.stock_id] || [];
       if (!extraFilters.currencies.some(currency => stockCurrencies.includes(currency))) return false;

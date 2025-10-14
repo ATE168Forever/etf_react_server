@@ -78,7 +78,15 @@ export default function StockTable({
     }, 0);
   }, [activeCurrencies, estAnnualYield]);
 
-  const getMonthValue = useCallback((stockId, idx) => {
+  const getMonthValue = useCallback((stockId, idx, currencyKey = null) => {
+    if (currencyKey) {
+      const cell = dividendTable[stockId]?.[idx]?.[currencyKey];
+      if (!cell) return 0;
+      if (showDividendYield) {
+        return parseFloat(cell.dividend_yield) || 0;
+      }
+      return Number(cell.dividend) || 0;
+    }
     return activeCurrencies.reduce((sum, currency) => {
       const cell = dividendTable[stockId]?.[idx]?.[currency];
       if (!cell) return sum;
@@ -114,9 +122,11 @@ export default function StockTable({
         }
         default: {
           if (sortConfig.column?.startsWith('month')) {
-            const idx = Number(sortConfig.column.slice(5));
-            const aVal = getMonthValue(a.stock_id, idx);
-            const bVal = getMonthValue(b.stock_id, idx);
+            const [monthPart, currencyPart] = sortConfig.column.split(':');
+            const idx = Number(monthPart.slice(5));
+            const currency = currencyPart || null;
+            const aVal = getMonthValue(a.stock_id, idx, currency);
+            const bVal = getMonthValue(b.stock_id, idx, currency);
             return (aVal - bVal) * dir;
           }
           return 0;
@@ -405,36 +415,46 @@ export default function StockTable({
                 </span>
               </span>
             </th>
-            {MONTHS.map((m, idx) => (
-              <th
-                key={m}
-                className={idx === currentMonth ? 'current-month' : ''}
-                colSpan={activeCurrencies.length}
-                style={{ minWidth: NUM_COL_WIDTH * activeCurrencies.length }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  <span className="sortable" onClick={() => handleSort(`month${idx}`)}>
-                    {m}
-                    <span className="sort-indicator">
-                      {sortConfig.column === `month${idx}`
-                        ? (sortConfig.direction === 'asc' ? '▲' : '▼')
-                        : '↕'}
+            {MONTHS.map((m, idx) => {
+              const monthSortKey = `month${idx}`;
+              const showMonthSort = activeCurrencies.length === 1;
+              const isMonthActive = sortConfig.column === monthSortKey;
+              return (
+                <th
+                  key={m}
+                  className={idx === currentMonth ? 'current-month' : ''}
+                  colSpan={activeCurrencies.length}
+                  style={{ minWidth: NUM_COL_WIDTH * activeCurrencies.length }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <span
+                      className={showMonthSort ? 'sortable' : undefined}
+                      onClick={showMonthSort ? () => handleSort(monthSortKey) : undefined}
+                    >
+                      {m}
+                      {showMonthSort && (
+                        <span className="sort-indicator">
+                          {isMonthActive
+                            ? (sortConfig.direction === 'asc' ? '▲' : '▼')
+                            : '↕'}
+                        </span>
+                      )}
                     </span>
-                  </span>
-                  <label style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
-                    <input
-                      type="checkbox"
-                      checked={monthHasValue[idx]}
-                      onChange={e => {
-                        const arr = [...monthHasValue];
-                        arr[idx] = e.target.checked;
-                        setMonthHasValue(arr);
-                      }}
-                    />&nbsp;{t('payout')}
-                  </label>
-                </div>
-              </th>
-            ))}
+                    <label style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                      <input
+                        type="checkbox"
+                        checked={monthHasValue[idx]}
+                        onChange={e => {
+                          const arr = [...monthHasValue];
+                          arr[idx] = e.target.checked;
+                          setMonthHasValue(arr);
+                        }}
+                      />&nbsp;{t('payout')}
+                    </label>
+                  </div>
+                </th>
+              );
+            })}
             <th rowSpan={activeCurrencies.length > 1 ? 2 : 1}>
               <span className="sortable" onClick={() => handleSort('total')}>
                 {showDividendYield ? t('total_yield') : t('total_dividend')}
@@ -458,15 +478,30 @@ export default function StockTable({
           {activeCurrencies.length > 1 && (
             <tr>
               {MONTHS.map((m, idx) => (
-                activeCurrencies.map(currency => (
-                  <th
-                    key={`${m}-${currency}`}
-                    className={idx === currentMonth ? 'current-month' : ''}
-                    style={{ width: NUM_COL_WIDTH }}
-                  >
-                    {currencyLabel(currency)}
-                  </th>
-                ))
+                activeCurrencies.map(currency => {
+                  const currencySortKey = `month${idx}:${currency}`;
+                  const isActive = sortConfig.column === currencySortKey;
+                  return (
+                    <th
+                      key={`${m}-${currency}`}
+                      className={idx === currentMonth ? 'current-month' : ''}
+                      style={{ width: NUM_COL_WIDTH }}
+                    >
+                      <span
+                        className="sortable"
+                        onClick={() => handleSort(currencySortKey)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      >
+                        {currencyLabel(currency)}
+                        <span className="sort-indicator">
+                          {isActive
+                            ? (sortConfig.direction === 'asc' ? '▲' : '▼')
+                            : '↕'}
+                        </span>
+                      </span>
+                    </th>
+                  );
+                })
               ))}
             </tr>
           )}
