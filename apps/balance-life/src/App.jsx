@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   addMonths,
   endOfMonth,
@@ -15,22 +15,112 @@ import {
 import { rrulestr } from 'rrule'
 
 const currencyTemplates = {
-  TWD: { label: '新台幣 (TWD)', symbol: 'NT$' },
-  USD: { label: '美元 (USD)', symbol: 'US$' },
+  TWD: { label: { zh: '新台幣 (TWD)', en: 'New Taiwan Dollar (TWD)' }, symbol: 'NT$' },
+  USD: { label: { zh: '美元 (USD)', en: 'US Dollar (USD)' }, symbol: 'US$' },
+}
+
+const translations = {
+  zh: {
+    'Balance Life by ETF Life': 'Balance Life｜ETF Life 旗下品牌',
+  },
+  en: {
+    'Balance Life：固定收支雷達': 'Balance Life: Fixed Cashflow Radar',
+    '一眼掌握未來 12 個月的固定收入與支出。透過 RRULE 排程展開每筆固定項目，支援多幣別換算、指數調整、赤字預警與現金流投影。':
+      'Gain clarity on the next 12 months of fixed income and expenses. Expand each recurring item with RRULE scheduling and support multi-currency conversion, indexation, deficit alerts, and cash flow projection.',
+    '現金假設': 'Cash Assumptions',
+    'Balance Life by ETF Life': 'Balance Life by ETF Life',
+    '語言': 'Language',
+    '主題': 'Theme',
+    '每月 5 號': '5th of every month',
+    '雙月 (偶數月) 10 號': '10th every other month (even months)',
+    '季末最後一天': 'Last day of each quarter',
+    '每年 4 月 15 號': 'April 15 each year',
+    '新增固定項目': 'Add Recurring Item',
+    '起始現金': 'Starting Cash',
+    '安全線': 'Safety Line',
+    '提前提醒天數': 'Days in Advance for Alerts',
+    '只顯示赤字月份': 'Show Only Deficit Months',
+    '多幣別匯率': 'Multi-currency Rates',
+    '顯示主幣別': 'Display Base Currency',
+    '匯率以「兌換成 TWD」為基準，可每日更新一次作為快取。':
+      'Rates are based on conversion to TWD and can be refreshed daily as a quick reference.',
+    '現金安全檢核': 'Cash Safety Check',
+    '現金跌破安全線': 'Cash falls below the safety line',
+    '未偵測到跌破安全線的月份': 'No months fall below the safety line',
+    '現金流投影': 'Cash Flow Projection',
+    '月份': 'Month',
+    '結餘': 'Net',
+    '累計現金': 'Cumulative Cash',
+    '狀態': 'Status',
+    '低於安全線': 'Below Safety Line',
+    '穩定': 'Stable',
+    '提醒與風險提示': 'Alerts & Risk Warnings',
+    '未偵測到即將到期或赤字風險': 'No upcoming maturity or deficit risk detected',
+    '快速套用排程：': 'Quick Schedule Templates:',
+    '加入固定項目': 'Add Recurring Item',
+    '固定項目清單': 'Recurring Item List',
+    名稱: 'Name',
+    類型: 'Type',
+    類別: 'Category',
+    啟用: 'Enabled',
+    移除: 'Remove',
+    金額: 'Amount',
+    幣別: 'Currency',
+    排程: 'Schedule',
+    首次生效: 'Start Date',
+    首次生效日: 'Start Date',
+    結束日: 'End Date',
+    '結束日（可留空）': 'End Date (optional)',
+    年度調整: 'Annual Adjustment',
+    '年度調整（%）': 'Annual Adjustment (%)',
+    '快速情境切換': 'Quick Scenario Toggle',
+    '點擊類別即可暫時排除該類固定項目，立即查看 12 個月預估影響。':
+      'Click a category to temporarily exclude it and instantly review the 12-month impact.',
+    '月度收支總表': 'Monthly Balance Overview',
+    '固定收入': 'Fixed Income',
+    '固定支出': 'Fixed Expense',
+    赤字: 'Deficit',
+    盈餘: 'Surplus',
+    '平均固定收入': 'Average Fixed Income',
+    '平均固定支出': 'Average Fixed Expense',
+    儲蓄率: 'Savings Rate',
+    '支出/收入比': 'Expense / Income Ratio',
+    '月曆視圖': 'Calendar View',
+    明細: 'Details',
+    收入: 'Income',
+    支出: 'Expense',
+    佔比: 'Share',
+    帳戶: 'Account',
+    '排程（RRULE）': 'Schedule (RRULE)',
+    '現金流投影狀態-穩定': 'Stable',
+    '現金流投影狀態-警示': 'Below Safety Line',
+    '類別摘要': 'Category Summary',
+    收入支出摘要: 'Income / Expense',
+    'ETF Life 旗下品牌': 'An ETF Life sub-brand',
+    '返回 ETF Life': 'Back to ETF Life',
+    '切換為繁體中文': 'Switch to Traditional Chinese',
+    '切換為 English': 'Switch to English',
+    '亮色主題': 'Light Theme',
+    '暗色主題': 'Dark Theme',
+    '現金將跌至': 'Cash expected to drop to',
+    '預估赤字': 'Projected deficit',
+    '未來支出提醒': 'Upcoming expense',
+    '未來收入提醒': 'Upcoming income'
+  }
 }
 
 const rruleTemplates = [
-  { label: '每月 5 號', value: 'FREQ=MONTHLY;BYMONTHDAY=5' },
+  { labelKey: '每月 5 號', value: 'FREQ=MONTHLY;BYMONTHDAY=5' },
   {
-    label: '雙月 (偶數月) 10 號',
+    labelKey: '雙月 (偶數月) 10 號',
     value: 'FREQ=MONTHLY;INTERVAL=2;BYMONTH=2,4,6,8,10,12;BYMONTHDAY=10',
   },
   {
-    label: '季末最後一天',
+    labelKey: '季末最後一天',
     value: 'FREQ=MONTHLY;BYMONTH=3,6,9,12;BYMONTHDAY=-1',
   },
   {
-    label: '每年 4 月 15 號',
+    labelKey: '每年 4 月 15 號',
     value: 'FREQ=YEARLY;BYMONTH=4;BYMONTHDAY=15',
   },
 ]
@@ -258,14 +348,17 @@ const buildCalendarEvents = (occurrences, items, baseCurrency, rates) => {
   return events.sort((a, b) => a.date - b.date)
 }
 
-const determineWarnings = (months, cashProjection, safetyLine, upcomingEvents, baseCurrency) => {
+const determineWarnings = (months, cashProjection, safetyLine, upcomingEvents, baseCurrency, lang, t) => {
   const warnings = []
   months
     .filter((month) => month.net < 0)
     .forEach((month) => {
       warnings.push({
         type: 'deficit',
-        message: `${format(month.monthDate, 'yyyy MMM')} 預估赤字 ${formatBase(Math.abs(month.net), baseCurrency)}`,
+        message:
+          lang === 'en'
+            ? `${format(month.monthDate, 'yyyy MMM')} ${t('預估赤字')} ${formatBase(Math.abs(month.net), baseCurrency)}`
+            : `${format(month.monthDate, 'yyyy MMM')} ${t('預估赤字')} ${formatBase(Math.abs(month.net), baseCurrency)}`,
       })
     })
 
@@ -274,16 +367,24 @@ const determineWarnings = (months, cashProjection, safetyLine, upcomingEvents, b
     .forEach((month) => {
       warnings.push({
         type: 'cash',
-        message: `${format(month.monthDate, 'yyyy MMM')} 現金將跌至 ${formatBase(month.cashAfter, baseCurrency)} (低於安全線)` ,
+        message:
+          lang === 'en'
+            ? `${format(month.monthDate, 'yyyy MMM')} ${t('現金將跌至')} ${formatBase(month.cashAfter, baseCurrency)} (${t('低於安全線')})`
+            : `${format(month.monthDate, 'yyyy MMM')} ${t('現金將跌至')} ${formatBase(month.cashAfter, baseCurrency)} (${t('低於安全線')})`,
       })
     })
 
   upcomingEvents.forEach((event) => {
     warnings.push({
       type: 'upcoming',
-      message: `${format(event.date, 'MM/dd')} ${event.item.type === 'income' ? '入帳' : '支出'}：${
-        event.item.name
-      } ${formatBase(Math.abs(event.baseAmount), baseCurrency)}`,
+      message:
+        lang === 'en'
+          ? `${format(event.date, 'MM/dd')} ${
+              event.item.type === 'income' ? t('未來收入提醒') : t('未來支出提醒')
+            }: ${event.item.name} ${formatBase(Math.abs(event.baseAmount), baseCurrency)}`
+          : `${format(event.date, 'MM/dd')} ${event.item.type === 'income' ? '入帳' : '支出'}：${
+              event.item.name
+            } ${formatBase(Math.abs(event.baseAmount), baseCurrency)}`,
     })
   })
 
@@ -323,12 +424,14 @@ const ratioMetrics = (months) => {
   }
 }
 
-const MonthDetail = ({ month, baseCurrency }) => {
+const MonthDetail = ({ month, baseCurrency, t }) => {
   if (!month) return null
   const total = month.items.reduce((sum, item) => sum + (item.type === 'income' ? item.baseAmount : -item.baseAmount), 0)
   return (
     <div className="panel">
-      <h3>{month.label} 明細</h3>
+      <h3>
+        {month.label} {t('明細')}
+      </h3>
       <div className="month-grid">
         {month.items
           .sort((a, b) => Math.abs(b.baseAmount) - Math.abs(a.baseAmount))
@@ -339,7 +442,7 @@ const MonthDetail = ({ month, baseCurrency }) => {
               <div key={item.id} className={`month-item ${item.type}`}>
                 <div className="month-item-header">
                   <span>{item.name}</span>
-                  <span>{item.type === 'income' ? '收入' : '支出'}</span>
+                  <span>{t(item.type === 'income' ? '收入' : '支出')}</span>
                 </div>
                 <div className="month-item-body">
                   <div className="amount">{formatBase(Math.abs(value), baseCurrency)}</div>
@@ -350,7 +453,9 @@ const MonthDetail = ({ month, baseCurrency }) => {
                   <div className="progress">
                     <div className="progress-bar" style={{ width: `${Math.min(100, share)}%` }} />
                   </div>
-                  <div className="share">佔比 {share.toFixed(1)}%</div>
+                  <div className="share">
+                    {t('佔比')} {share.toFixed(1)}%
+                  </div>
                   {item.notes ? <p className="notes">{item.notes}</p> : null}
                 </div>
               </div>
@@ -361,7 +466,7 @@ const MonthDetail = ({ month, baseCurrency }) => {
   )
 }
 
-const CalendarView = ({ events, baseCurrency }) => {
+const CalendarView = ({ events, baseCurrency, t }) => {
   const grouped = events.reduce((acc, event) => {
     const key = format(event.date, 'yyyy MMM')
     if (!acc[key]) acc[key] = []
@@ -371,7 +476,7 @@ const CalendarView = ({ events, baseCurrency }) => {
 
   return (
     <div className="panel">
-      <h3>月曆視圖</h3>
+      <h3>{t('月曆視圖')}</h3>
       <div className="calendar-grid">
         {Object.entries(grouped).map(([month, items]) => (
           <div key={month} className="calendar-month">
@@ -392,7 +497,7 @@ const CalendarView = ({ events, baseCurrency }) => {
   )
 }
 
-const CashFlowView = ({ months, startCash, safetyLine, baseCurrency }) => {
+const CashFlowView = ({ months, startCash, safetyLine, baseCurrency, t }) => {
   let running = startCash
   const rows = months.map((month) => {
     running += month.net
@@ -404,14 +509,14 @@ const CashFlowView = ({ months, startCash, safetyLine, baseCurrency }) => {
 
   return (
     <div className="panel">
-      <h3>現金流投影</h3>
+      <h3>{t('現金流投影')}</h3>
       <table className="table">
         <thead>
           <tr>
-            <th>月份</th>
-            <th>結餘</th>
-            <th>累計現金</th>
-            <th>狀態</th>
+            <th>{t('月份')}</th>
+            <th>{t('結餘')}</th>
+            <th>{t('累計現金')}</th>
+            <th>{t('狀態')}</th>
           </tr>
         </thead>
         <tbody>
@@ -420,7 +525,7 @@ const CashFlowView = ({ months, startCash, safetyLine, baseCurrency }) => {
               <td>{row.label}</td>
               <td>{formatBase(row.net, baseCurrency)}</td>
               <td>{formatBase(row.cashAfter, baseCurrency)}</td>
-              <td>{row.cashAfter < safetyLine ? '低於安全線' : '穩定'}</td>
+              <td>{row.cashAfter < safetyLine ? t('低於安全線') : t('穩定')}</td>
             </tr>
           ))}
         </tbody>
@@ -429,39 +534,39 @@ const CashFlowView = ({ months, startCash, safetyLine, baseCurrency }) => {
   )
 }
 
-const UpcomingAlerts = ({ warnings }) => (
+const UpcomingAlerts = ({ warnings, t }) => (
   <div className="panel warnings">
-    <h3>提醒與風險提示</h3>
+    <h3>{t('提醒與風險提示')}</h3>
     <ul>
       {warnings.map((warning, index) => (
         <li key={index} className={warning.type}>{warning.message}</li>
       ))}
-      {warnings.length === 0 ? <li className="success">未偵測到即將到期或赤字風險</li> : null}
+      {warnings.length === 0 ? <li className="success">{t('未偵測到即將到期或赤字風險')}</li> : null}
     </ul>
   </div>
 )
 
-const RecurringItemForm = ({ newItem, onChange, onAdd }) => (
+const RecurringItemForm = ({ newItem, onChange, onAdd, t, lang }) => (
   <div className="panel">
-    <h3>新增固定項目</h3>
+    <h3>{t('新增固定項目')}</h3>
     <div className="form-grid">
       <label>
-        名稱
+        {t('名稱')}
         <input value={newItem.name} onChange={(event) => onChange('name', event.target.value)} />
       </label>
       <label>
-        類型
+        {t('類型')}
         <select value={newItem.type} onChange={(event) => onChange('type', event.target.value)}>
-          <option value="income">收入</option>
-          <option value="expense">支出</option>
+          <option value="income">{t('收入')}</option>
+          <option value="expense">{t('支出')}</option>
         </select>
       </label>
       <label>
-        類別
+        {t('類別')}
         <input value={newItem.category} onChange={(event) => onChange('category', event.target.value)} />
       </label>
       <label>
-        金額
+        {t('金額')}
         <input
           type="number"
           value={newItem.amount}
@@ -469,21 +574,21 @@ const RecurringItemForm = ({ newItem, onChange, onAdd }) => (
         />
       </label>
       <label>
-        幣別
+        {t('幣別')}
         <select value={newItem.currency} onChange={(event) => onChange('currency', event.target.value)}>
           {Object.keys(currencyTemplates).map((currency) => (
             <option key={currency} value={currency}>
-              {currencyTemplates[currency].label}
+              {currencyTemplates[currency].label?.[lang] || currencyTemplates[currency].label?.zh || currency}
             </option>
           ))}
         </select>
       </label>
       <label>
-        帳戶
+        {t('帳戶')}
         <input value={newItem.account} onChange={(event) => onChange('account', event.target.value)} />
       </label>
       <label>
-        首次生效日
+        {t('首次生效日')}
         <input
           type="date"
           value={newItem.start_date}
@@ -491,7 +596,7 @@ const RecurringItemForm = ({ newItem, onChange, onAdd }) => (
         />
       </label>
       <label>
-        結束日（可留空）
+        {t('結束日（可留空）')}
         <input
           type="date"
           value={newItem.end_date}
@@ -499,11 +604,11 @@ const RecurringItemForm = ({ newItem, onChange, onAdd }) => (
         />
       </label>
       <label className="full">
-        排程（RRULE）
+        {t('排程（RRULE）')}
         <input value={newItem.rrule} onChange={(event) => onChange('rrule', event.target.value)} />
       </label>
       <label>
-        年度調整（%）
+        {t('年度調整（%）')}
         <input
           type="number"
           step="0.1"
@@ -512,27 +617,27 @@ const RecurringItemForm = ({ newItem, onChange, onAdd }) => (
         />
       </label>
       <label className="full">
-        備註
+        {t('備註')}
         <textarea value={newItem.notes} onChange={(event) => onChange('notes', event.target.value)} />
       </label>
     </div>
     <div className="template-row">
-      <span>快速套用排程：</span>
+      <span>{t('快速套用排程：')}</span>
       {rruleTemplates.map((template) => (
         <button key={template.value} type="button" onClick={() => onChange('rrule', template.value)}>
-          {template.label}
+          {t(template.labelKey)}
         </button>
       ))}
     </div>
     <button className="primary" type="button" onClick={onAdd}>
-      加入固定項目
+      {t('加入固定項目')}
     </button>
   </div>
 )
 
-const RecurringItemList = ({ items, onToggle, onUpdate, onRemove }) => (
+const RecurringItemList = ({ items, onToggle, onUpdate, onRemove, t }) => (
   <div className="panel">
-    <h3>固定項目清單</h3>
+    <h3>{t('固定項目清單')}</h3>
     <div className="item-list">
       {items.map((item) => (
         <div key={item.id} className={`item ${item.type}`}>
@@ -544,16 +649,16 @@ const RecurringItemList = ({ items, onToggle, onUpdate, onRemove }) => (
             <div className="actions">
               <label className="switch">
                 <input type="checkbox" checked={item.enabled} onChange={() => onToggle(item.id)} />
-                <span>啟用</span>
+                <span>{t('啟用')}</span>
               </label>
               <button type="button" onClick={() => onRemove(item.id)} className="ghost">
-                移除
+                {t('移除')}
               </button>
             </div>
           </header>
           <div className="item-body">
             <div className="field">
-              <span>金額</span>
+              <span>{t('金額')}</span>
               <input
                 type="number"
                 value={item.amount}
@@ -561,7 +666,7 @@ const RecurringItemList = ({ items, onToggle, onUpdate, onRemove }) => (
               />
             </div>
             <div className="field">
-              <span>幣別</span>
+              <span>{t('幣別')}</span>
               <select value={item.currency} onChange={(event) => onUpdate(item.id, 'currency', event.target.value)}>
                 {Object.keys(currencyTemplates).map((currency) => (
                   <option key={currency} value={currency}>
@@ -571,11 +676,11 @@ const RecurringItemList = ({ items, onToggle, onUpdate, onRemove }) => (
               </select>
             </div>
             <div className="field">
-              <span>排程</span>
+              <span>{t('排程')}</span>
               <input value={item.rrule} onChange={(event) => onUpdate(item.id, 'rrule', event.target.value)} />
             </div>
             <div className="field">
-              <span>首次生效</span>
+              <span>{t('首次生效')}</span>
               <input
                 type="date"
                 value={item.start_date}
@@ -583,7 +688,7 @@ const RecurringItemList = ({ items, onToggle, onUpdate, onRemove }) => (
               />
             </div>
             <div className="field">
-              <span>結束日</span>
+              <span>{t('結束日')}</span>
               <input
                 type="date"
                 value={item.end_date || ''}
@@ -591,7 +696,7 @@ const RecurringItemList = ({ items, onToggle, onUpdate, onRemove }) => (
               />
             </div>
             <div className="field">
-              <span>年度調整</span>
+              <span>{t('年度調整')}</span>
               <input
                 type="number"
                 step="0.1"
@@ -609,9 +714,9 @@ const RecurringItemList = ({ items, onToggle, onUpdate, onRemove }) => (
   </div>
 )
 
-const ScenarioToggles = ({ categories, scenarioFilters, onToggle }) => (
+const ScenarioToggles = ({ categories, scenarioFilters, onToggle, t }) => (
   <div className="panel">
-    <h3>快速情境切換</h3>
+    <h3>{t('快速情境切換')}</h3>
     <div className="scenario-grid">
       {categories.map((category) => {
         const enabled = scenarioFilters[category] !== false
@@ -627,25 +732,25 @@ const ScenarioToggles = ({ categories, scenarioFilters, onToggle }) => (
         )
       })}
     </div>
-    <p className="helper">點擊類別即可暫時排除該類固定項目，立即查看 12 個月預估影響。</p>
+    <p className="helper">{t('點擊類別即可暫時排除該類固定項目，立即查看 12 個月預估影響。')}</p>
   </div>
 )
 
-const BalanceTable = ({ months, baseCurrency, onSelect, showOnlyDeficit }) => {
+const BalanceTable = ({ months, baseCurrency, onSelect, showOnlyDeficit, t }) => {
   const filtered = showOnlyDeficit ? months.filter((month) => month.net < 0) : months
   return (
     <div className="panel">
       <div className="panel-header">
-        <h3>月度收支總表</h3>
+        <h3>{t('月度收支總表')}</h3>
       </div>
       <table className="table">
         <thead>
           <tr>
-            <th>月份</th>
-            <th>固定收入</th>
-            <th>固定支出</th>
-            <th>結餘</th>
-            <th>狀態</th>
+            <th>{t('月份')}</th>
+            <th>{t('固定收入')}</th>
+            <th>{t('固定支出')}</th>
+            <th>{t('結餘')}</th>
+            <th>{t('狀態')}</th>
           </tr>
         </thead>
         <tbody>
@@ -655,7 +760,7 @@ const BalanceTable = ({ months, baseCurrency, onSelect, showOnlyDeficit }) => {
               <td>{formatBase(month.income, baseCurrency)}</td>
               <td>{formatBase(month.expense, baseCurrency)}</td>
               <td>{formatBase(month.net, baseCurrency)}</td>
-              <td>{month.net < 0 ? '赤字' : '盈餘'}</td>
+              <td>{month.net < 0 ? t('赤字') : t('盈餘')}</td>
             </tr>
           ))}
         </tbody>
@@ -664,28 +769,28 @@ const BalanceTable = ({ months, baseCurrency, onSelect, showOnlyDeficit }) => {
   )
 }
 
-const MetricsBar = ({ metrics, baseCurrency }) => (
+const MetricsBar = ({ metrics, baseCurrency, t }) => (
   <div className="panel metrics">
     <div>
-      <span className="label">平均固定收入</span>
+      <span className="label">{t('平均固定收入')}</span>
       <span className="value">{formatBase(metrics.averageIncome, baseCurrency)}</span>
     </div>
     <div>
-      <span className="label">平均固定支出</span>
+      <span className="label">{t('平均固定支出')}</span>
       <span className="value">{formatBase(metrics.averageExpense, baseCurrency)}</span>
     </div>
     <div>
-      <span className="label">儲蓄率</span>
+      <span className="label">{t('儲蓄率')}</span>
       <span className="value">{metrics.savingRate.toFixed(1)}%</span>
     </div>
     <div>
-      <span className="label">支出/收入比</span>
+      <span className="label">{t('支出/收入比')}</span>
       <span className="value">{metrics.expenseRatio.toFixed(1)}%</span>
     </div>
   </div>
 )
 
-const CashSummary = ({ months, startCash, baseCurrency, safetyLine }) => {
+const CashSummary = ({ months, startCash, baseCurrency, safetyLine, t }) => {
   let running = startCash
   const rows = months.map((month) => {
     running += month.net
@@ -694,27 +799,31 @@ const CashSummary = ({ months, startCash, baseCurrency, safetyLine }) => {
   const breachIndex = rows.findIndex((value) => value < safetyLine)
   return (
     <div className="panel">
-      <h3>現金安全檢核</h3>
-      <p>起始現金：{formatBase(startCash, baseCurrency)}</p>
-      <p>安全線：{formatBase(safetyLine, baseCurrency)}</p>
+      <h3>{t('現金安全檢核')}</h3>
+      <p>
+        {t('起始現金')}：{formatBase(startCash, baseCurrency)}
+      </p>
+      <p>
+        {t('安全線')}：{formatBase(safetyLine, baseCurrency)}
+      </p>
       <p>
         {breachIndex >= 0
-          ? `${format(addMonths(startOfMonth(new Date()), breachIndex), 'yyyy MMM')} 現金跌破安全線`
-          : '未偵測到跌破安全線的月份'}
+          ? `${format(addMonths(startOfMonth(new Date()), breachIndex), 'yyyy MMM')} ${t('現金跌破安全線')}`
+          : t('未偵測到跌破安全線的月份')}
       </p>
     </div>
   )
 }
 
-const RateManager = ({ baseCurrency, onBaseChange, rates, onRateChange }) => (
+const RateManager = ({ baseCurrency, onBaseChange, rates, onRateChange, t, lang }) => (
   <div className="panel">
-    <h3>多幣別匯率</h3>
+    <h3>{t('多幣別匯率')}</h3>
     <label>
-      顯示主幣別
+      {t('顯示主幣別')}
       <select value={baseCurrency} onChange={(event) => onBaseChange(event.target.value)}>
         {Object.keys(rates).map((currency) => (
           <option key={currency} value={currency}>
-            {currencyTemplates[currency]?.label || currency}
+            {currencyTemplates[currency]?.label?.[lang] || currencyTemplates[currency]?.label?.zh || currency}
           </option>
         ))}
       </select>
@@ -732,7 +841,7 @@ const RateManager = ({ baseCurrency, onBaseChange, rates, onRateChange }) => (
         </label>
       ))}
     </div>
-    <p className="helper">匯率以「兌換成 TWD」為基準，可每日更新一次作為快取。</p>
+    <p className="helper">{t('匯率以「兌換成 TWD」為基準，可每日更新一次作為快取。')}</p>
   </div>
 )
 
@@ -777,6 +886,38 @@ const App = () => {
   const [selectedMonth, setSelectedMonth] = useState(null)
   const [upcomingDays, setUpcomingDays] = useState(14)
 
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === 'undefined') return 'light'
+    return window.localStorage.getItem('balance-life-theme') || 'light'
+  })
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', theme)
+    }
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('balance-life-theme', theme)
+    }
+  }, [theme])
+
+  const [lang, setLang] = useState(() => {
+    if (typeof window === 'undefined') return 'zh'
+    return window.localStorage.getItem('balance-life-lang') || 'zh'
+  })
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('balance-life-lang', lang)
+    }
+  }, [lang])
+
+  const t = useMemo(() => {
+    return (value) => {
+      if (lang === 'en') {
+        return translations.en[value] || value
+      }
+      return translations.zh[value] || value
+    }
+  }, [lang])
+
   const { occurrenceMap, activeItems } = useOccurrences(items, scenarioFilters)
 
   const months = useMemo(
@@ -809,8 +950,8 @@ const App = () => {
   }, [months, startCash])
 
   const warnings = useMemo(
-    () => determineWarnings(months, cashProjection, safetyLine, upcomingEvents, baseCurrency),
-    [months, cashProjection, safetyLine, upcomingEvents, baseCurrency]
+    () => determineWarnings(months, cashProjection, safetyLine, upcomingEvents, baseCurrency, lang, t),
+    [months, cashProjection, safetyLine, upcomingEvents, baseCurrency, lang]
   )
 
   const categories = useMemo(() => {
@@ -881,17 +1022,66 @@ const App = () => {
   return (
     <div className="app">
       <header>
-        <h1>Balance Life：固定收支雷達</h1>
-        <p>
-          一眼掌握未來 12 個月的固定收入與支出。透過 RRULE 排程展開每筆固定項目，支援多幣別換算、指數調整、赤字預警與現金流投影。
-        </p>
+        <div className="top-bar">
+          <div className="brand">
+            <span className="brand-parent">ETF Life</span>
+            <span className="brand-divider">×</span>
+            <span className="brand-name">Balance Life</span>
+          </div>
+          <div className="top-actions">
+            <a className="brand-link" href="https://etf-life.tw" target="_blank" rel="noopener noreferrer">
+              {t('返回 ETF Life')}
+            </a>
+            <div className="toggle-group" role="group" aria-label={t('語言')}>
+              <button
+                type="button"
+                className={lang === 'zh' ? 'active' : ''}
+                onClick={() => setLang('zh')}
+                aria-pressed={lang === 'zh'}
+              >
+                中文
+              </button>
+              <button
+                type="button"
+                className={lang === 'en' ? 'active' : ''}
+                onClick={() => setLang('en')}
+                aria-pressed={lang === 'en'}
+              >
+                EN
+              </button>
+            </div>
+            <div className="toggle-group" role="group" aria-label={t('主題')}>
+              <button
+                type="button"
+                className={theme === 'light' ? 'active' : ''}
+                onClick={() => setTheme('light')}
+                title={t('亮色主題')}
+                aria-pressed={theme === 'light'}
+              >
+                ☀️
+              </button>
+              <button
+                type="button"
+                className={theme === 'dark' ? 'active' : ''}
+                onClick={() => setTheme('dark')}
+                title={t('暗色主題')}
+                aria-pressed={theme === 'dark'}
+              >
+                🌙
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="brand-subtitle">{t('Balance Life by ETF Life')}</div>
+        <h1>{t('Balance Life：固定收支雷達')}</h1>
+        <p>{t('一眼掌握未來 12 個月的固定收入與支出。透過 RRULE 排程展開每筆固定項目，支援多幣別換算、指數調整、赤字預警與現金流投影。')}</p>
       </header>
 
       <section className="controls">
         <div className="panel">
-          <h3>現金假設</h3>
+          <h3>{t('現金假設')}</h3>
           <label>
-            起始現金
+            {t('起始現金')}
             <input
               type="number"
               value={startCash}
@@ -899,7 +1089,7 @@ const App = () => {
             />
           </label>
           <label>
-            安全線
+            {t('安全線')}
             <input
               type="number"
               value={safetyLine}
@@ -907,7 +1097,7 @@ const App = () => {
             />
           </label>
           <label>
-            提前提醒天數
+            {t('提前提醒天數')}
             <input
               type="number"
               value={upcomingDays}
@@ -920,7 +1110,7 @@ const App = () => {
               checked={showOnlyDeficit}
               onChange={(event) => setShowOnlyDeficit(event.target.checked)}
             />
-            <span>只顯示赤字月份</span>
+            <span>{t('只顯示赤字月份')}</span>
           </label>
         </div>
         <RateManager
@@ -928,21 +1118,25 @@ const App = () => {
           onBaseChange={setBaseCurrency}
           rates={currencyRates}
           onRateChange={handleRateChange}
+          t={t}
+          lang={lang}
         />
         <CashSummary
           months={months}
           startCash={startCash}
           baseCurrency={baseCurrency}
           safetyLine={safetyLine}
+          t={t}
         />
       </section>
 
       <section className="metrics-row">
-        <MetricsBar metrics={metrics} baseCurrency={baseCurrency} />
+        <MetricsBar metrics={metrics} baseCurrency={baseCurrency} t={t} />
         <ScenarioToggles
           categories={categories}
           scenarioFilters={scenarioFilters}
           onToggle={handleScenarioToggle}
+          t={t}
         />
       </section>
 
@@ -952,30 +1146,32 @@ const App = () => {
           baseCurrency={baseCurrency}
           onSelect={setSelectedMonth}
           showOnlyDeficit={showOnlyDeficit}
+          t={t}
         />
-        <MonthDetail month={selectedMonth} baseCurrency={baseCurrency} />
+        <MonthDetail month={selectedMonth} baseCurrency={baseCurrency} t={t} />
       </section>
 
       <section className="calendar-section">
-        <CalendarView events={calendarEvents} baseCurrency={baseCurrency} />
+        <CalendarView events={calendarEvents} baseCurrency={baseCurrency} t={t} />
         <CashFlowView
           months={months}
           startCash={startCash}
           safetyLine={safetyLine}
           baseCurrency={baseCurrency}
+          t={t}
         />
       </section>
 
       <section className="alerts-section">
-        <UpcomingAlerts warnings={warnings} />
+        <UpcomingAlerts warnings={warnings} t={t} />
         <div className="panel">
-          <h3>類別摘要</h3>
+          <h3>{t('類別摘要')}</h3>
           <ul className="category-summary">
             {Object.entries(categorySummary).map(([category, value]) => (
               <li key={category}>
                 <span>{category}</span>
                 <span>
-                  收入 {value.income.toLocaleString()} / 支出 {value.expense.toLocaleString()}
+                  {t('收入')} {value.income.toLocaleString()} / {t('支出')} {value.expense.toLocaleString()}
                 </span>
               </li>
             ))}
@@ -988,8 +1184,10 @@ const App = () => {
           newItem={newItem}
           onChange={handleNewItemChange}
           onAdd={handleAddItem}
+          t={t}
+          lang={lang}
         />
-        <RecurringItemList items={items} onToggle={handleToggle} onUpdate={handleUpdate} onRemove={handleRemove} />
+        <RecurringItemList items={items} onToggle={handleToggle} onUpdate={handleUpdate} onRemove={handleRemove} t={t} />
       </section>
     </div>
   )
