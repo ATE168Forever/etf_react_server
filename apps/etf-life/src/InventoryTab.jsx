@@ -163,6 +163,8 @@ export default function InventoryTab() {
       firebaseExportFail: '同步到 Firebase 失敗，請稍後再試。',
       firebaseImportFail: '從 Firebase 讀取資料失敗，請稍後再試。',
       firebaseAuthFail: '登入失敗，請稍後再試。',
+      firebaseConfigMissing: 'Firebase 同步尚未設定。請在 .env 檔案加入：',
+      firebaseSdkUnavailable: 'Firebase SDK 無法載入，請檢查網路連線或瀏覽器設定。',
       backupPrompt: '距離上次備份已超過30天，是否匯出 CSV 備份？',
       inputRequired: '請輸入完整資料',
       invalidNumbers: '請輸入有效數字、價格和日期',
@@ -274,6 +276,8 @@ export default function InventoryTab() {
       firebaseExportFail: 'Failed to sync to Firebase. Please try again later.',
       firebaseImportFail: 'Failed to load data from Firebase. Please try again later.',
       firebaseAuthFail: 'Sign-in failed. Please try again later.',
+      firebaseConfigMissing: 'Firebase sync is disabled. Add these environment variables:',
+      firebaseSdkUnavailable: 'The Firebase SDK could not load. Check your network connection and browser settings.',
       backupPrompt: 'It has been over 30 days since last backup. Export CSV backup?',
       inputRequired: 'Please enter all fields',
       invalidNumbers: 'Please enter valid numbers, price and date',
@@ -911,6 +915,20 @@ export default function InventoryTab() {
   };
 
   const handleFirebaseExport = useCallback(async () => {
+    if (firebaseSync?.disabledReason === 'config') {
+      const missingList = Array.isArray(firebaseSync?.missingConfigVars)
+        ? firebaseSync.missingConfigVars.join(', ')
+        : '';
+      alert(`${msg.firebaseConfigMissing}${missingList ? ` ${missingList}` : ''}`);
+      return;
+    }
+    if (firebaseSync?.disabledReason) {
+      const errorDetail = firebaseSync?.sdkLoadError?.message;
+      alert(
+        errorDetail ? `${msg.firebaseSdkUnavailable}\n${errorDetail}` : msg.firebaseSdkUnavailable
+      );
+      return;
+    }
     if (!firebaseSync?.user) {
       alert(msg.firebaseSignInRequired);
       return;
@@ -929,6 +947,20 @@ export default function InventoryTab() {
   }, [firebaseSync, msg, runAutoSave, transactionHistory]);
 
   const handleFirebaseImport = useCallback(async () => {
+    if (firebaseSync?.disabledReason === 'config') {
+      const missingList = Array.isArray(firebaseSync?.missingConfigVars)
+        ? firebaseSync.missingConfigVars.join(', ')
+        : '';
+      alert(`${msg.firebaseConfigMissing}${missingList ? ` ${missingList}` : ''}`);
+      return;
+    }
+    if (firebaseSync?.disabledReason) {
+      const errorDetail = firebaseSync?.sdkLoadError?.message;
+      alert(
+        errorDetail ? `${msg.firebaseSdkUnavailable}\n${errorDetail}` : msg.firebaseSdkUnavailable
+      );
+      return;
+    }
     if (!firebaseSync?.user) {
       alert(msg.firebaseSignInRequired);
       return;
@@ -942,10 +974,31 @@ export default function InventoryTab() {
   }, [firebaseSync, maybeRestoreFromBackup, msg]);
 
   const handleFirebaseSignIn = useCallback(async () => {
+    if (firebaseSync?.disabledReason === 'config') {
+      const missingList = Array.isArray(firebaseSync?.missingConfigVars)
+        ? firebaseSync.missingConfigVars.join(', ')
+        : '';
+      alert(`${msg.firebaseConfigMissing}${missingList ? ` ${missingList}` : ''}`);
+      return;
+    }
+    if (firebaseSync?.disabledReason) {
+      const errorDetail = firebaseSync?.sdkLoadError?.message;
+      alert(
+        errorDetail ? `${msg.firebaseSdkUnavailable}\n${errorDetail}` : msg.firebaseSdkUnavailable
+      );
+      return;
+    }
     try {
       await firebaseSync.signIn();
     } catch (error) {
       console.error('Firebase sign-in failed', error);
+      if (error?.code === 'firebase/missing-config') {
+        const missingVars = Array.isArray(error?.missingEnvVars)
+          ? error.missingEnvVars.join(', ')
+          : '';
+        alert(`${msg.firebaseConfigMissing}${missingVars ? ` ${missingVars}` : ''}`);
+        return;
+      }
       alert(msg.firebaseAuthFail);
     }
   }, [firebaseSync, msg]);
@@ -1204,9 +1257,20 @@ export default function InventoryTab() {
   }, [shareTargetNameLookup, goals.shareTargets]);
 
   const firebaseDropdownState = useMemo(() => {
-    const errorMessage = firebaseSync.error
-      ? `${lang === 'en' ? 'Sync error: ' : '同步錯誤：'}${firebaseSync.error.message}`
-      : '';
+    let errorMessage = '';
+    if (firebaseSync.disabledReason === 'config') {
+      const missingList = Array.isArray(firebaseSync?.missingConfigVars)
+        ? firebaseSync.missingConfigVars.join(', ')
+        : '';
+      errorMessage = `${msg.firebaseConfigMissing}${missingList ? ` ${missingList}` : ''}`;
+    } else if (firebaseSync.disabledReason) {
+      const detail = firebaseSync?.sdkLoadError?.message;
+      errorMessage = detail
+        ? `${msg.firebaseSdkUnavailable} (${detail})`
+        : msg.firebaseSdkUnavailable;
+    } else if (firebaseSync.error) {
+      errorMessage = `${lang === 'en' ? 'Sync error: ' : '同步錯誤：'}${firebaseSync.error.message}`;
+    }
     return {
       user: firebaseSync.user,
       initialising: firebaseSync.initialising,
@@ -1216,12 +1280,16 @@ export default function InventoryTab() {
       signedOutLabel: msg.firebaseStatusSignedOut,
       loadingLabel: msg.firebaseStatusLoading,
       errorMessage,
+      signInDisabled: Boolean(firebaseSync.disabledReason),
       onSignIn: handleFirebaseSignIn,
       onSignOut: handleFirebaseSignOut
     };
   }, [
+    firebaseSync.disabledReason,
     firebaseSync.error,
     firebaseSync.initialising,
+    firebaseSync.missingConfigVars,
+    firebaseSync.sdkLoadError,
     firebaseSync.user,
     handleFirebaseSignIn,
     handleFirebaseSignOut,

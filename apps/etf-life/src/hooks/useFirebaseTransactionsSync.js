@@ -5,7 +5,10 @@ import {
   signOut,
   onAuthChange,
   subscribeToWorkspaceTransactions,
-  saveWorkspaceTransactions
+  saveWorkspaceTransactions,
+  isFirebaseConfigured,
+  missingFirebaseConfigEnvVars,
+  firebaseSdkLoadError
 } from '../firebase/client';
 
 const EMPTY_ARRAY = Object.freeze([]);
@@ -37,6 +40,10 @@ export default function useFirebaseTransactionsSync() {
   const [syncStatus, setSyncStatus] = useState('idle');
   const [error, setError] = useState(null);
   const pendingClientUpdates = useRef(new Set());
+
+  const missingConfigVars = missingFirebaseConfigEnvVars;
+  const sdkLoadError = firebaseSdkLoadError;
+  const disabledReason = !isFirebaseConfigured ? 'config' : !auth ? 'sdk' : null;
 
   const workspaceId = user?.uid || null;
 
@@ -71,11 +78,21 @@ export default function useFirebaseTransactionsSync() {
   }, [workspaceId]);
 
   const signIn = useCallback(async () => {
+    if (disabledReason === 'config') {
+      const configError = new Error('Firebase 尚未設定，請檢查環境變數');
+      configError.code = 'firebase/missing-config';
+      configError.missingEnvVars = missingConfigVars;
+      throw configError;
+    }
     if (!auth) {
-      throw new Error('Firebase 未初始化，請檢查設定');
+      const sdkError =
+        sdkLoadError instanceof Error
+          ? sdkLoadError
+          : new Error('Firebase 未初始化，請檢查設定');
+      throw sdkError;
     }
     await signInWithGoogle();
-  }, []);
+  }, [disabledReason, missingConfigVars, sdkLoadError]);
 
   const signOutUser = useCallback(async () => {
     await signOut();
@@ -115,7 +132,10 @@ export default function useFirebaseTransactionsSync() {
       error,
       signIn,
       signOut: signOutUser,
-      pushTransactions
+      pushTransactions,
+      disabledReason,
+      missingConfigVars,
+      sdkLoadError
     }),
     [
       initialising,
@@ -127,7 +147,10 @@ export default function useFirebaseTransactionsSync() {
       error,
       signIn,
       signOutUser,
-      pushTransactions
+      pushTransactions,
+      disabledReason,
+      missingConfigVars,
+      sdkLoadError
     ]
   );
 

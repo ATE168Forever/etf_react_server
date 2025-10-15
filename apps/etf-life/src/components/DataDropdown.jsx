@@ -237,7 +237,11 @@ export default function DataDropdown({
                 {firebaseState?.signOutLabel}
               </button>
             ) : (
-              <button type="button" onClick={firebaseState?.onSignIn}>
+              <button
+                type="button"
+                onClick={firebaseState?.onSignIn}
+                disabled={firebaseState?.signInDisabled}
+              >
                 {firebaseState?.signInLabel}
               </button>
             )}

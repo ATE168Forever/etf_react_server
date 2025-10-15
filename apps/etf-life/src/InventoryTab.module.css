@@ -151,11 +151,25 @@
   cursor: pointer;
 }
 
+.firebaseButtonRow button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: transparent;
+  border-color: var(--border-color, rgba(148, 163, 184, 0.4));
+}
+
 .firebaseButtonRow button:hover,
 .firebaseButtonRow button:focus-visible {
   background: var(--accent-gold, #fbbf24);
   border-color: transparent;
   color: var(--color-text, #1f2937);
+}
+
+.firebaseButtonRow button:disabled:hover,
+.firebaseButtonRow button:disabled:focus-visible {
+  background: transparent;
+  color: var(--color-text, #111827);
+  border-color: var(--border-color, rgba(148, 163, 184, 0.4));
 }
 
 .firebaseError {

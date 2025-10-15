@@ -10,6 +10,8 @@ const firebaseModuleUrls = [
   `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`
 ];
 
+export let firebaseSdkLoadError = null;
+
 async function loadFirebaseModules() {
   if (typeof window === 'undefined') {
     return [];
@@ -21,6 +23,7 @@ async function loadFirebaseModules() {
     );
     return modules;
   } catch (error) {
+    firebaseSdkLoadError = error;
     console.warn('Failed to load Firebase SDK modules, realtime sync disabled.', error);
     return [];
   }
@@ -56,12 +59,34 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+const firebaseConfigEnvVarMap = Object.freeze({
+  apiKey: 'VITE_FIREBASE_API_KEY',
+  authDomain: 'VITE_FIREBASE_AUTH_DOMAIN',
+  projectId: 'VITE_FIREBASE_PROJECT_ID',
+  storageBucket: 'VITE_FIREBASE_STORAGE_BUCKET',
+  messagingSenderId: 'VITE_FIREBASE_MESSAGING_SENDER_ID',
+  appId: 'VITE_FIREBASE_APP_ID'
+});
+
+const missingFirebaseConfigKeys = Object.entries(firebaseConfig)
+  .filter(([, value]) => !value)
+  .map(([key]) => key);
+
+export const missingFirebaseConfigEnvVars = Object.freeze(
+  missingFirebaseConfigKeys.map(key => firebaseConfigEnvVarMap[key] || key)
+);
+
+export const isFirebaseConfigured = missingFirebaseConfigKeys.length === 0;
+
 function createFirebaseApp() {
   if (typeof window === 'undefined') {
     return null;
   }
-  if (!firebaseConfig.projectId) {
-    console.warn('Firebase project ID is missing, realtime sync disabled.');
+  if (!isFirebaseConfigured) {
+    console.warn(
+      'Firebase configuration is incomplete, realtime sync disabled.',
+      missingFirebaseConfigKeys
+    );
     return null;
   }
   if (typeof initializeApp !== 'function' || typeof getApps !== 'function') {
