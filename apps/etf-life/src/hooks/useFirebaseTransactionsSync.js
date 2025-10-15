@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  auth,
+  ensureFirebaseInitialised,
+  getFirebaseStatus,
+  onFirebaseStatusChange,
   signInWithGoogle,
   signOut,
   onAuthChange,
   subscribeToWorkspaceTransactions,
   saveWorkspaceTransactions,
   isFirebaseConfigured,
-  missingFirebaseConfigEnvVars,
-  firebaseSdkLoadError
+  missingFirebaseConfigEnvVars
 } from '../firebase/client';
 
 const EMPTY_ARRAY = Object.freeze([]);
@@ -34,6 +35,8 @@ function sanitizeTransactions(list) {
 
 export default function useFirebaseTransactionsSync() {
   const [initialising, setInitialising] = useState(true);
+  const [firebaseStatus, setFirebaseStatus] = useState(() => getFirebaseStatus());
+  const auth = firebaseStatus.auth;
   const [user, setUser] = useState(() => (auth ? auth.currentUser : null));
   const [remoteTransactions, setRemoteTransactions] = useState(EMPTY_ARRAY);
   const [remoteUpdatedAt, setRemoteUpdatedAt] = useState(null);
@@ -42,13 +45,24 @@ export default function useFirebaseTransactionsSync() {
   const pendingClientUpdates = useRef(new Set());
 
   const missingConfigVars = missingFirebaseConfigEnvVars;
-  const sdkLoadError = firebaseSdkLoadError;
+  const sdkLoadError = firebaseStatus.sdkLoadError;
   const disabledReason = !isFirebaseConfigured ? 'config' : !auth ? 'sdk' : null;
 
   const workspaceId = user?.uid || null;
 
   useEffect(() => {
+    ensureFirebaseInitialised();
+  }, []);
+
+  useEffect(() => {
+    return onFirebaseStatusChange(status => {
+      setFirebaseStatus(status);
+    });
+  }, []);
+
+  useEffect(() => {
     if (!auth) {
+      setUser(null);
       setInitialising(false);
       return () => {};
     }
@@ -57,10 +71,10 @@ export default function useFirebaseTransactionsSync() {
       setInitialising(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [auth]);
 
   useEffect(() => {
-    if (!workspaceId) {
+    if (!workspaceId || !firebaseStatus.db) {
       setRemoteTransactions(EMPTY_ARRAY);
       setRemoteUpdatedAt(null);
       return () => {};
@@ -75,7 +89,7 @@ export default function useFirebaseTransactionsSync() {
       setSyncStatus('idle');
       setError(null);
     });
-  }, [workspaceId]);
+  }, [workspaceId, firebaseStatus.db]);
 
   const signIn = useCallback(async () => {
     if (disabledReason === 'config') {
@@ -92,7 +106,7 @@ export default function useFirebaseTransactionsSync() {
       throw sdkError;
     }
     await signInWithGoogle();
-  }, [disabledReason, missingConfigVars, sdkLoadError]);
+  }, [auth, disabledReason, missingConfigVars, sdkLoadError]);
 
   const signOutUser = useCallback(async () => {
     await signOut();

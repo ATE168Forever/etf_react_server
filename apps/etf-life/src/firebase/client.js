@@ -1,8 +1,10 @@
 const FIREBASE_SDK_VERSION = '11.0.2';
 
-let appModule;
-let authModule;
-let firestoreModule;
+const isBrowser = typeof window !== 'undefined';
+const globalProcess = typeof globalThis !== 'undefined' ? globalThis.process : undefined;
+const isTestEnvironment =
+  typeof globalProcess !== 'undefined' && typeof globalProcess.env?.JEST_WORKER_ID !== 'undefined';
+const shouldAttemptSdkLoad = isBrowser && !isTestEnvironment;
 
 const firebaseModuleUrls = [
   `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-app.js`,
@@ -10,58 +12,34 @@ const firebaseModuleUrls = [
   `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`
 ];
 
-export let firebaseSdkLoadError = null;
-
-async function loadFirebaseModules() {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  try {
-    const modules = await Promise.all(
-      firebaseModuleUrls.map(url => import(/* @vite-ignore */ url))
-    );
-    return modules;
-  } catch (error) {
-    firebaseSdkLoadError = error;
-    console.warn('Failed to load Firebase SDK modules, realtime sync disabled.', error);
-    return [];
-  }
+let importMetaEnv;
+try {
+  importMetaEnv = (0, eval)('import.meta.env');
+} catch {
+  importMetaEnv = undefined;
 }
 
-if (typeof window !== 'undefined') {
-  [appModule, authModule, firestoreModule] = await loadFirebaseModules();
-}
+const envSource =
+  importMetaEnv ?? (typeof globalProcess !== 'undefined' && globalProcess?.env ? globalProcess.env : {});
 
-const { initializeApp, getApps } = appModule ?? {};
-const {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signOut: firebaseSignOut,
-  onAuthStateChanged
-} = authModule ?? {};
-const {
-  getFirestore,
-  doc,
-  onSnapshot,
-  setDoc,
-  enableIndexedDbPersistence,
-  serverTimestamp
-} = firestoreModule ?? {};
+function readEnv(key) {
+  const value = envSource?.[key];
+  return typeof value === 'string' ? value : undefined;
+}
 
 const baseFirebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: readEnv('VITE_FIREBASE_API_KEY'),
+  authDomain: readEnv('VITE_FIREBASE_AUTH_DOMAIN'),
+  projectId: readEnv('VITE_FIREBASE_PROJECT_ID'),
+  storageBucket: readEnv('VITE_FIREBASE_STORAGE_BUCKET'),
+  messagingSenderId: readEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
+  appId: readEnv('VITE_FIREBASE_APP_ID')
 };
 
 const optionalFirebaseConfig = {};
-if (import.meta.env.VITE_FIREBASE_MEASUREMENT_ID) {
-  optionalFirebaseConfig.measurementId = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID;
+const measurementId = readEnv('VITE_FIREBASE_MEASUREMENT_ID');
+if (measurementId) {
+  optionalFirebaseConfig.measurementId = measurementId;
 }
 
 const firebaseConfig = Object.freeze({
@@ -88,92 +66,270 @@ export const missingFirebaseConfigEnvVars = Object.freeze(
 
 export const isFirebaseConfigured = missingFirebaseConfigKeys.length === 0;
 
-function createFirebaseApp() {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  if (!isFirebaseConfigured) {
-    console.warn(
-      'Firebase configuration is incomplete, realtime sync disabled.',
-      missingFirebaseConfigKeys
-    );
-    return null;
-  }
-  if (typeof initializeApp !== 'function' || typeof getApps !== 'function') {
-    console.warn('Firebase SDK is unavailable, realtime sync disabled.');
-    return null;
-  }
-  if (getApps().length > 0) {
-    return getApps()[0];
-  }
-  return initializeApp(firebaseConfig);
+export let firebaseSdkLoadError = null;
+
+let appModule;
+let authModule;
+let firestoreModule;
+
+let getAuthFn;
+let GoogleAuthProviderCtor;
+let signInWithPopupFn;
+let firebaseSignOutFn;
+let onAuthStateChangedFn;
+
+let getFirestoreFn;
+let docFn;
+let onSnapshotFn;
+let setDocFn;
+let enableIndexedDbPersistenceFn;
+let serverTimestampFn;
+
+let firebaseAppInstance = null;
+let authInstance = null;
+let dbInstance = null;
+
+let modulesLoaded = false;
+let initializationPromise = null;
+
+const firebaseStatusListeners = new Set();
+
+function buildFirebaseStatus() {
+  return {
+    app: firebaseAppInstance,
+    auth: authInstance,
+    db: dbInstance,
+    sdkLoadError: firebaseSdkLoadError,
+    modulesLoaded,
+    isConfigured: isFirebaseConfigured
+  };
 }
 
-export const firebaseApp = createFirebaseApp();
-export const auth =
-  firebaseApp && typeof getAuth === 'function' ? getAuth(firebaseApp) : null;
-export const db =
-  firebaseApp && typeof getFirestore === 'function' ? getFirestore(firebaseApp) : null;
+export function getFirebaseStatus() {
+  return buildFirebaseStatus();
+}
 
-if (
-  db &&
-  typeof enableIndexedDbPersistence === 'function' &&
-  typeof window !== 'undefined'
-) {
-  enableIndexedDbPersistence(db).catch(error => {
-    if (error?.code === 'failed-precondition') {
-      console.warn('IndexedDB persistence can only be enabled in one tab at a time.');
-    } else if (error?.code === 'unimplemented') {
-      console.warn('IndexedDB persistence is not available in this browser.');
-    } else {
-      console.warn('Failed to enable IndexedDB persistence', error);
+function notifyFirebaseStatusChange() {
+  const status = buildFirebaseStatus();
+  firebaseStatusListeners.forEach(listener => {
+    try {
+      listener(status);
+    } catch (error) {
+      console.error('Error in Firebase status listener', error);
     }
   });
 }
 
+async function loadFirebaseModules() {
+  if (!shouldAttemptSdkLoad) {
+    return [];
+  }
+
+  try {
+    return await Promise.all(
+      firebaseModuleUrls.map(url => import(/* @vite-ignore */ url))
+    );
+  } catch (error) {
+    firebaseSdkLoadError = error;
+    console.warn('Failed to load Firebase SDK modules, realtime sync disabled.', error);
+    return [];
+  }
+}
+
+async function initialiseFirebaseInstances() {
+  if (!shouldAttemptSdkLoad) {
+    modulesLoaded = true;
+    return;
+  }
+
+  if (modulesLoaded) {
+    return initializationPromise;
+  }
+
+  if (!initializationPromise) {
+    initializationPromise = loadFirebaseModules()
+      .then(modules => {
+        const [appMod, authMod, firestoreMod] = modules;
+
+        appModule = appMod;
+        authModule = authMod;
+        firestoreModule = firestoreMod;
+
+        if (!appModule || !authModule || !firestoreModule) {
+          modulesLoaded = true;
+          notifyFirebaseStatusChange();
+          return;
+        }
+
+        getAuthFn = typeof authModule.getAuth === 'function' ? authModule.getAuth : undefined;
+        GoogleAuthProviderCtor =
+          typeof authModule.GoogleAuthProvider === 'function'
+            ? authModule.GoogleAuthProvider
+            : undefined;
+        signInWithPopupFn =
+          typeof authModule.signInWithPopup === 'function' ? authModule.signInWithPopup : undefined;
+        firebaseSignOutFn =
+          typeof authModule.signOut === 'function' ? authModule.signOut : undefined;
+        onAuthStateChangedFn =
+          typeof authModule.onAuthStateChanged === 'function'
+            ? authModule.onAuthStateChanged
+            : undefined;
+
+        getFirestoreFn =
+          typeof firestoreModule.getFirestore === 'function'
+            ? firestoreModule.getFirestore
+            : undefined;
+        docFn = typeof firestoreModule.doc === 'function' ? firestoreModule.doc : undefined;
+        onSnapshotFn =
+          typeof firestoreModule.onSnapshot === 'function' ? firestoreModule.onSnapshot : undefined;
+        setDocFn = typeof firestoreModule.setDoc === 'function' ? firestoreModule.setDoc : undefined;
+        enableIndexedDbPersistenceFn =
+          typeof firestoreModule.enableIndexedDbPersistence === 'function'
+            ? firestoreModule.enableIndexedDbPersistence
+            : undefined;
+        serverTimestampFn =
+          typeof firestoreModule.serverTimestamp === 'function'
+            ? firestoreModule.serverTimestamp
+            : undefined;
+
+        const initializeAppFn =
+          typeof appModule.initializeApp === 'function' ? appModule.initializeApp : undefined;
+        const getAppsFn = typeof appModule.getApps === 'function' ? appModule.getApps : undefined;
+
+        if (!isFirebaseConfigured) {
+          modulesLoaded = true;
+          notifyFirebaseStatusChange();
+          return;
+        }
+
+        if (!initializeAppFn || !getAppsFn) {
+          console.warn('Firebase SDK is unavailable, realtime sync disabled.');
+          modulesLoaded = true;
+          notifyFirebaseStatusChange();
+          return;
+        }
+
+        try {
+          firebaseAppInstance =
+            getAppsFn().length > 0 ? getAppsFn()[0] : initializeAppFn(firebaseConfig);
+        } catch (error) {
+          firebaseSdkLoadError = error;
+          console.warn('Failed to initialise Firebase app, realtime sync disabled.', error);
+          modulesLoaded = true;
+          notifyFirebaseStatusChange();
+          return;
+        }
+
+        if (firebaseAppInstance && getAuthFn) {
+          authInstance = getAuthFn(firebaseAppInstance);
+        }
+
+        if (firebaseAppInstance && getFirestoreFn) {
+          dbInstance = getFirestoreFn(firebaseAppInstance);
+        }
+
+        if (
+          dbInstance &&
+          enableIndexedDbPersistenceFn &&
+          typeof enableIndexedDbPersistenceFn === 'function' &&
+          typeof window !== 'undefined'
+        ) {
+          enableIndexedDbPersistenceFn(dbInstance).catch(error => {
+            if (error?.code === 'failed-precondition') {
+              console.warn('IndexedDB persistence can only be enabled in one tab at a time.');
+            } else if (error?.code === 'unimplemented') {
+              console.warn('IndexedDB persistence is not available in this browser.');
+            } else {
+              console.warn('Failed to enable IndexedDB persistence', error);
+            }
+          });
+        }
+
+        modulesLoaded = true;
+        notifyFirebaseStatusChange();
+      })
+      .catch(error => {
+        firebaseSdkLoadError = error;
+        modulesLoaded = true;
+        notifyFirebaseStatusChange();
+      });
+  }
+
+  return initializationPromise;
+}
+
+export async function ensureFirebaseInitialised() {
+  await initialiseFirebaseInstances();
+  return buildFirebaseStatus();
+}
+
+export function onFirebaseStatusChange(listener) {
+  if (typeof listener !== 'function') {
+    return () => {};
+  }
+  firebaseStatusListeners.add(listener);
+  listener(buildFirebaseStatus());
+  return () => {
+    firebaseStatusListeners.delete(listener);
+  };
+}
+
+export function getFirebaseApp() {
+  return firebaseAppInstance;
+}
+
+export function getFirebaseAuth() {
+  return authInstance;
+}
+
+export function getFirestoreDb() {
+  return dbInstance;
+}
+
 export function createGoogleAuthProvider() {
-  if (!auth || typeof GoogleAuthProvider !== 'function') {
+  if (!authInstance || !GoogleAuthProviderCtor) {
     throw new Error('Firebase Auth has not been initialised');
   }
-  const provider = new GoogleAuthProvider();
+  const provider = new GoogleAuthProviderCtor();
   provider.setCustomParameters({ prompt: 'select_account' });
   return provider;
 }
 
 export async function signInWithGoogle() {
-  if (!auth || typeof signInWithPopup !== 'function') {
+  await ensureFirebaseInitialised();
+  if (!authInstance || !signInWithPopupFn) {
     throw new Error('Firebase Auth has not been initialised');
   }
   const provider = createGoogleAuthProvider();
-  return signInWithPopup(auth, provider);
+  return signInWithPopupFn(authInstance, provider);
 }
 
 export function onAuthChange(callback) {
-  if (!auth || typeof onAuthStateChanged !== 'function') {
+  if (!authInstance || !onAuthStateChangedFn) {
     return () => {};
   }
-  return onAuthStateChanged(auth, callback);
+  return onAuthStateChangedFn(authInstance, callback);
 }
 
 export async function signOut() {
-  if (!auth || typeof firebaseSignOut !== 'function') {
+  if (!authInstance || !firebaseSignOutFn) {
     return;
   }
-  await firebaseSignOut(auth);
+  await firebaseSignOutFn(authInstance);
 }
 
 function getWorkspaceDocRef(workspaceId) {
-  if (!db || typeof doc !== 'function') {
+  if (!dbInstance || !docFn) {
     throw new Error('Firebase Firestore has not been initialised');
   }
   if (!workspaceId) throw new Error('workspaceId is required');
-  return doc(db, 'workspaces', workspaceId);
+  return docFn(dbInstance, 'workspaces', workspaceId);
 }
 
 export function subscribeToWorkspaceTransactions(workspaceId, callback) {
-  if (!db || !workspaceId || typeof onSnapshot !== 'function') return () => {};
+  if (!dbInstance || !workspaceId || !onSnapshotFn || !docFn) return () => {};
   const workspaceRef = getWorkspaceDocRef(workspaceId);
-  return onSnapshot(workspaceRef, snapshot => {
+  return onSnapshotFn(workspaceRef, snapshot => {
     const data = snapshot.data();
     callback(
       data
@@ -194,22 +350,23 @@ export function subscribeToWorkspaceTransactions(workspaceId, callback) {
 }
 
 export async function saveWorkspaceTransactions(workspaceId, transactions, clientUpdatedAt) {
-  if (
-    !db ||
-    typeof setDoc !== 'function' ||
-    typeof serverTimestamp !== 'function'
-  ) {
+  if (!dbInstance || !setDocFn || !serverTimestampFn) {
     throw new Error('Firebase Firestore has not been initialised');
   }
   const workspaceRef = getWorkspaceDocRef(workspaceId);
   const payload = {
     transactions: Array.isArray(transactions) ? transactions : [],
     ownerUid: workspaceId,
-    updatedAt: serverTimestamp()
+    updatedAt: serverTimestampFn()
   };
   if (Number.isFinite(clientUpdatedAt)) {
     payload.clientUpdatedAt = clientUpdatedAt;
   }
-  await setDoc(workspaceRef, payload, { merge: true });
+  await setDocFn(workspaceRef, payload, { merge: true });
   return payload;
 }
+
+if (shouldAttemptSdkLoad) {
+  initialiseFirebaseInstances();
+}
+
