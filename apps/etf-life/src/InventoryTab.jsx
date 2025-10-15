@@ -163,7 +163,8 @@ export default function InventoryTab() {
       firebaseExportFail: '同步到 Firebase 失敗，請稍後再試。',
       firebaseImportFail: '從 Firebase 讀取資料失敗，請稍後再試。',
       firebaseAuthFail: '登入失敗，請稍後再試。',
-      firebaseConfigMissing: 'Firebase 同步尚未設定。請在 .env 檔案加入：',
+      firebaseConfigMissing:
+        'Firebase 同步尚未設定（僅需由專案維護者或自行部署者設定）。請在 .env 檔案加入：',
       firebaseSdkUnavailable: 'Firebase SDK 無法載入，請檢查網路連線或瀏覽器設定。',
       backupPrompt: '距離上次備份已超過30天，是否匯出 CSV 備份？',
       inputRequired: '請輸入完整資料',
@@ -276,7 +277,8 @@ export default function InventoryTab() {
       firebaseExportFail: 'Failed to sync to Firebase. Please try again later.',
       firebaseImportFail: 'Failed to load data from Firebase. Please try again later.',
       firebaseAuthFail: 'Sign-in failed. Please try again later.',
-      firebaseConfigMissing: 'Firebase sync is disabled. Add these environment variables:',
+      firebaseConfigMissing:
+        'Firebase sync is disabled. Project maintainers should supply these environment variables:',
       firebaseSdkUnavailable: 'The Firebase SDK could not load. Check your network connection and browser settings.',
       backupPrompt: 'It has been over 30 days since last backup. Export CSV backup?',
       inputRequired: 'Please enter all fields',

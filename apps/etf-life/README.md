@@ -52,6 +52,8 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_FIREBASE_APP_ID=
 ```
 
+Only one Firebase project is required for each deployment environment. Maintainers (or anyone self-hosting the app) should create the project, enable Google sign-in and Cloud Firestore, and then share the above configuration values with the build or deployment pipeline. End users simply sign in with Google; they do **not** need to provision their own Firebase project or API key.
+
 Each workspace is stored at `workspaces/{uid}` with `updatedAt` managed by `serverTimestamp`. IndexedDB persistence is enabled for offline support. Deploy `apps/etf-life/firestore.rules` so only the authenticated owner can read or write the workspace document.
 
 ## OneDrive, Google Drive, and iCloud Drive Backup
