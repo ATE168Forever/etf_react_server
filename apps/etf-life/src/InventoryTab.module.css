@@ -113,6 +113,56 @@
   color: #b91c1c;
 }
 
+.firebaseSection {
+  margin-top: 12px;
+  border-top: 1px solid var(--border-color, rgba(148, 163, 184, 0.4));
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.firebaseStatusRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.firebaseStatusLabel {
+  color: var(--muted-foreground, #6b7280);
+}
+
+.firebaseStatusValue {
+  font-weight: 600;
+  color: var(--color-text, #111827);
+}
+
+.firebaseButtonRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.firebaseButtonRow button {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.4));
+  background: transparent;
+  color: var(--color-text, #111827);
+  cursor: pointer;
+}
+
+.firebaseButtonRow button:hover,
+.firebaseButtonRow button:focus-visible {
+  background: var(--accent-gold, #fbbf24);
+  border-color: transparent;
+  color: var(--color-text, #1f2937);
+}
+
+.firebaseError {
+  color: #b91c1c;
+  font-size: 0.75rem;
+}
+
 .dataSelect:focus-visible {
   outline: 2px solid var(--accent-gold, #fbbf24);
   outline-offset: 2px;
