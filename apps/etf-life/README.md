@@ -41,15 +41,37 @@ Rebuild the image whenever dependencies change so the container has the correct 
 
 ## Firebase realtime sync
 
-The inventory screen now supports realtime backup via Firebase Authentication (Google sign-in) and Cloud Firestore. Configure the following variables in `apps/etf-life/.env` (or your preferred Vite environment file) before running the app:
+The inventory screen now supports realtime backup via Firebase Authentication (Google sign-in) and Cloud Firestore. Copy `.env.example` to `.env` (or your preferred Vite environment file) inside `apps/etf-life/` and fill in the Firebase values before running the app:
 
 ```
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
+cp apps/etf-life/.env.example apps/etf-life/.env
+```
+
+Then edit the file and paste the values from your Firebase web app configuration. When you register the web app, Firebase shows a snippet similar to:
+
+```js
+const firebaseConfig = {
+  apiKey: 'AIza...your-api-key',
+  authDomain: 'your-project.firebaseapp.com',
+  projectId: 'your-project-id',
+  storageBucket: 'your-project.appspot.com',
+  messagingSenderId: '1234567890',
+  appId: '1:1234567890:web:abcdef',
+  measurementId: 'G-XXXXXXX' // optional
+};
+```
+
+Map each entry to the matching environment variable in `.env`:
+
+```
+VITE_FIREBASE_API_KEY=AIza...your-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=1234567890
+VITE_FIREBASE_APP_ID=1:1234567890:web:abcdef
+# Optional: only if you enabled Google Analytics for this Firebase project
+VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXX
 ```
 
 Only one Firebase project is required for each deployment environment. Maintainers (or anyone self-hosting the app) should create the project, enable Google sign-in and Cloud Firestore, and then share the above configuration values with the build or deployment pipeline. End users simply sign in with Google; they do **not** need to provision their own Firebase project or API key.

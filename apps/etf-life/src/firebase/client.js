@@ -50,7 +50,7 @@ const {
   serverTimestamp
 } = firestoreModule ?? {};
 
-const firebaseConfig = {
+const baseFirebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
@@ -58,6 +58,16 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
+
+const optionalFirebaseConfig = {};
+if (import.meta.env.VITE_FIREBASE_MEASUREMENT_ID) {
+  optionalFirebaseConfig.measurementId = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID;
+}
+
+const firebaseConfig = Object.freeze({
+  ...baseFirebaseConfig,
+  ...optionalFirebaseConfig
+});
 
 const firebaseConfigEnvVarMap = Object.freeze({
   apiKey: 'VITE_FIREBASE_API_KEY',
@@ -68,9 +78,9 @@ const firebaseConfigEnvVarMap = Object.freeze({
   appId: 'VITE_FIREBASE_APP_ID'
 });
 
-const missingFirebaseConfigKeys = Object.entries(firebaseConfig)
-  .filter(([, value]) => !value)
-  .map(([key]) => key);
+const missingFirebaseConfigKeys = Object.keys(firebaseConfigEnvVarMap).filter(
+  key => !baseFirebaseConfig[key]
+);
 
 export const missingFirebaseConfigEnvVars = Object.freeze(
   missingFirebaseConfigKeys.map(key => firebaseConfigEnvVarMap[key] || key)
