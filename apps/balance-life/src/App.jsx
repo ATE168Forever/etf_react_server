@@ -135,10 +135,12 @@ const convertCurrency = (amount, from, to, rates) => {
 
 const formatBase = (amount, baseCurrency) => {
   const template = currencyTemplates[baseCurrency] || { symbol: '' }
-  return `${template.symbol}${amount.toLocaleString(undefined, {
-    maximumFractionDigits: 0,
-    minimumFractionDigits: amount % 1 === 0 ? 0 : 1,
-  })}`
+  const hasFraction = Math.abs(amount % 1) > 0
+  const formatOptions = hasFraction
+    ? { minimumFractionDigits: 1, maximumFractionDigits: 2 }
+    : { minimumFractionDigits: 0, maximumFractionDigits: 0 }
+
+  return `${template.symbol}${amount.toLocaleString(undefined, formatOptions)}`
 }
 
 const buildRule = (item) => {
