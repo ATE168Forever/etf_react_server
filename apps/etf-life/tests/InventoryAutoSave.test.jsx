@@ -13,6 +13,7 @@ import {
   importTransactionsFromOneDrive
 } from '../src/oneDrive';
 import { exportTransactionsToICloud } from '../src/icloud';
+import { resetFirebaseForTests } from '../src/firebase/config';
 
 jest.mock('../src/api');
 jest.mock('../src/config', () => ({
@@ -53,6 +54,55 @@ function setupFetchMock() {
   });
 }
 
+function createMockFirebaseModules() {
+  const authModule = {
+    getAuth: jest.fn(() => ({ uid: 'test-user' })),
+    GoogleAuthProvider: jest.fn(function MockGoogleProvider() {}),
+    onAuthStateChanged: jest.fn((auth, next, handleError) => {
+      if (typeof next === 'function') {
+        next(null);
+      }
+      return () => {};
+    }),
+    signInWithPopup: jest.fn(() => Promise.resolve()),
+    signOut: jest.fn(() => Promise.resolve())
+  };
+
+  const firestoreModule = {
+    initializeFirestore: jest.fn(() => ({ name: 'mock-firestore' })),
+    persistentLocalCache: jest.fn(config => config),
+    persistentMultipleTabManager: jest.fn(() => ({})),
+    collection: jest.fn((db, ...segments) => ({ db, segments })),
+    doc: jest.fn((collectionRef, id) => ({ ...collectionRef, id })),
+    onSnapshot: jest.fn((ref, next) => {
+      const snapshot = {
+        docs: [],
+        metadata: { hasPendingWrites: false, fromCache: false }
+      };
+      if (typeof next === 'function') {
+        next(snapshot);
+      }
+      return () => {};
+    }),
+    serverTimestamp: jest.fn(() => new Date()),
+    writeBatch: jest.fn(() => {
+      const operations = [];
+      return {
+        set: (docRef, data) => operations.push({ type: 'set', docRef, data }),
+        delete: docRef => operations.push({ type: 'delete', docRef }),
+        commit: () => Promise.resolve(operations)
+      };
+    }),
+    setDoc: jest.fn(() => Promise.resolve())
+  };
+
+  const appModule = {
+    initializeApp: jest.fn(() => ({ name: 'mock-app' }))
+  };
+
+  return { appModule, authModule, firestoreModule };
+}
+
 describe('InventoryTab auto-save providers', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -61,12 +111,16 @@ describe('InventoryTab auto-save providers', () => {
     fetchDividendsByYears.mockResolvedValue({ data: [] });
     window.alert = jest.fn();
     window.confirm = jest.fn(() => true);
+    resetFirebaseForTests();
+    globalThis.__FIREBASE_MODULES__ = createMockFirebaseModules();
   });
 
   afterEach(() => {
     delete window.showDirectoryPicker;
     delete window.showSaveFilePicker;
     delete window.showOpenFilePicker;
+    resetFirebaseForTests();
+    delete globalThis.__FIREBASE_MODULES__;
   });
 
   async function openDataMenu() {
