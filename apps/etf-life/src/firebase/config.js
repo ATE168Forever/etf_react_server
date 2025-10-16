@@ -1,10 +1,28 @@
 /* global __APP_ENV__ */
 
-const envSource =
-  (typeof __APP_ENV__ !== 'undefined' && __APP_ENV__) ||
-  (typeof globalThis !== 'undefined' && globalThis.__APP_ENV__) ||
-  (typeof process !== 'undefined' && process.env) ||
-  {};
+const envSource = (() => {
+  if (
+    typeof __APP_ENV__ !== 'undefined' &&
+    __APP_ENV__ &&
+    typeof __APP_ENV__ === 'object'
+  ) {
+    return __APP_ENV__;
+  }
+
+  if (
+    typeof globalThis !== 'undefined' &&
+    globalThis.__APP_ENV__ &&
+    typeof globalThis.__APP_ENV__ === 'object'
+  ) {
+    return globalThis.__APP_ENV__;
+  }
+
+  if (typeof process !== 'undefined' && typeof process.env === 'object') {
+    return process.env;
+  }
+
+  return {};
+})();
 
 const firebaseConfig = {
   apiKey: envSource.VITE_FIREBASE_API_KEY || '',
