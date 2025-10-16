@@ -123,14 +123,14 @@ describe('InventoryTab auto-save providers', () => {
 
     const savedHistory = JSON.parse(localStorage.getItem('my_transaction_history'));
     expect(savedHistory).toEqual([
-      {
+      expect.objectContaining({
         stock_id: '0050',
         stock_name: '同步資料',
         date: '2024-01-15',
         quantity: 20,
         price: 22,
         type: 'buy'
-      }
+      })
     ]);
 
     expect(write.mock.calls[0][0]).toContain('同步資料');
@@ -174,9 +174,12 @@ describe('InventoryTab auto-save providers', () => {
     });
     await waitFor(() => expect(exportTransactionsToDrive).toHaveBeenCalled());
 
-    expect(exportTransactionsToDrive.mock.calls[0][0]).toEqual(remoteList);
+    const exported = exportTransactionsToDrive.mock.calls[0][0];
+    expect(exported).toHaveLength(remoteList.length);
+    expect(exported[0]).toMatchObject(remoteList[0]);
     const savedHistory = JSON.parse(localStorage.getItem('my_transaction_history'));
-    expect(savedHistory).toEqual(remoteList);
+    expect(savedHistory).toHaveLength(remoteList.length);
+    expect(savedHistory[0]).toMatchObject(remoteList[0]);
     await waitFor(() => {
       expect(screen.getByText(/自動儲存完成 \(Google Drive\)/)).toBeInTheDocument();
     });
@@ -212,7 +215,9 @@ describe('InventoryTab auto-save providers', () => {
     });
     await waitFor(() => expect(exportTransactionsToOneDrive).toHaveBeenCalled());
 
-    expect(exportTransactionsToOneDrive.mock.calls[0][0]).toEqual(remoteList);
+    const exported = exportTransactionsToOneDrive.mock.calls[0][0];
+    expect(exported).toHaveLength(remoteList.length);
+    expect(exported[0]).toMatchObject(remoteList[0]);
     await waitFor(() => {
       expect(screen.getByText(/自動儲存完成 \(OneDrive\)/)).toBeInTheDocument();
     });
@@ -232,7 +237,9 @@ describe('InventoryTab auto-save providers', () => {
     fireEvent.click(toggle);
 
     await waitFor(() => expect(exportTransactionsToICloud).toHaveBeenCalled());
-    expect(exportTransactionsToICloud.mock.calls[0][0]).toEqual(history);
+    const exportedHistory = exportTransactionsToICloud.mock.calls[0][0];
+    expect(exportedHistory).toHaveLength(history.length);
+    expect(exportedHistory[0]).toMatchObject(history[0]);
     await waitFor(() => {
       expect(screen.getByText(/自動儲存完成 \(iCloudDrive\)/)).toBeInTheDocument();
     });

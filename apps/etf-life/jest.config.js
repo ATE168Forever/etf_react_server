@@ -7,6 +7,8 @@ export default {
     '^.+\\.(js|jsx)$': 'babel-jest'
   },
   moduleNameMapper: {
-    '\\.(css|scss)$': '<rootDir>/test-style-mock.js'
+    '\\.(css|scss)$': '<rootDir>/test-style-mock.js',
+    '^firebase/(.*)$': '<rootDir>/tests/__mocks__/firebase/$1.js',
+    '^\\./firebase/config$': '<rootDir>/tests/__mocks__/firebase/config.js'
   }
 };

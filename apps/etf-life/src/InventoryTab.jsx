@@ -28,6 +28,13 @@ import {
   buildDividendGoalViewModel
 } from './utils/dividendGoalUtils';
 import selectStyles from './selectStyles';
+import { useFirebaseAuth } from './firebase/AuthProvider';
+import { useWorkspaceTransactions } from './hooks/useWorkspaceTransactions';
+import {
+  areTransactionsEqual,
+  ensureTransactionListHasIds,
+  generateTransactionId
+} from './utils/transactionUtils';
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
 const SHARES_PER_LOT = 1000;
@@ -51,7 +58,9 @@ const createInitialFormState = () => ({
 
 export default function InventoryTab() {
   const [stockList, setStockList] = useState([]);
-  const [transactionHistory, setTransactionHistory] = useState(() => migrateTransactionHistory());
+  const [transactionHistory, setTransactionHistory] = useState(() =>
+    ensureTransactionListHasIds(migrateTransactionHistory())
+  );
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(createInitialFormState);
   const [showInventory, setShowInventory] = useState(true);
@@ -74,6 +83,54 @@ export default function InventoryTab() {
   const [latestPrices, setLatestPrices] = useState({});
   const [dividendData, setDividendData] = useState([]);
   const { lang } = useLanguage();
+  const {
+    user,
+    initializing: authInitializing,
+    error: authError,
+    signIn: signInWithGoogle,
+    signOut: signOutFromGoogle
+  } = useFirebaseAuth();
+  const workspaceId = user?.uid ?? null;
+  const {
+    transactions: remoteTransactions,
+    status: syncStatus,
+    error: syncError,
+    initialLoadComplete: remoteInitialLoadComplete,
+    addTransactions: addRemoteTransactions,
+    updateTransaction: updateRemoteTransaction,
+    deleteTransactions: deleteRemoteTransactions,
+    replaceAllTransactions: replaceRemoteTransactions
+  } = useWorkspaceTransactions(workspaceId);
+  const [hasUploadedLocalSnapshot, setHasUploadedLocalSnapshot] = useState(false);
+  const replaceRemoteWithList = useCallback(
+    async list => {
+      if (!workspaceId || !Array.isArray(list) || list.length === 0) {
+        return;
+      }
+      try {
+        const normalized = ensureTransactionListHasIds(list);
+        if (normalized.length === 0) return;
+        await replaceRemoteTransactions(normalized);
+      } catch (error) {
+        console.error('Failed to replace remote transactions', error);
+      }
+    },
+    [workspaceId, replaceRemoteTransactions]
+  );
+  const handleSignIn = useCallback(async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('Sign-in attempt failed', error);
+    }
+  }, [signInWithGoogle]);
+  const handleSignOut = useCallback(async () => {
+    try {
+      await signOutFromGoogle();
+    } catch (error) {
+      console.error('Sign-out attempt failed', error);
+    }
+  }, [signOutFromGoogle]);
   const initialGoals = useMemo(() => loadInvestmentGoals(), []);
   const initialShareTargetList = Array.isArray(initialGoals.shareTargets) ? initialGoals.shareTargets : [];
   const hasInitialShareTargets = initialShareTargetList.some(item => {
@@ -156,6 +213,17 @@ export default function InventoryTab() {
       notice: '這是一個免費網站，我們不會把你的資料存到後台或伺服器，所有的紀錄（像是你的設定或操作紀錄）都只會保存在你的瀏覽器裡，開啟自動儲存功能後會自動幫你儲存。簡單說：你的資料只在你這台電腦，不會上傳，也不會被我們看到，請安心使用！',
       addRecord: '新增購買',
       dataAccess: '存取資料',
+      syncSignIn: '登入雲端同步',
+      syncSigningIn: '登入中…',
+      syncSignOut: '登出',
+      syncSignedIn: '雲端同步已啟用',
+      syncSignedOut: '尚未登入雲端同步',
+      syncConnecting: '同步連線中…',
+      syncPending: '有待送出的修改',
+      syncOffline: '離線使用中，將於恢復後同步',
+      syncReady: '雲端同步完成',
+      syncError: '同步失敗，請稍後再試',
+      syncUserPrefix: '雲端帳號：',
       currentInventory: '目前庫存',
       showHistory: '顯示：交易歷史',
       cache: '快取',
@@ -257,6 +325,17 @@ export default function InventoryTab() {
       notice: 'This is a free website; we do not store your data on servers. All records stay in your browser. In short, your data remains on your computer and is not uploaded or seen by us.',
       addRecord: 'Add Purchase',
       dataAccess: 'Data Access',
+      syncSignIn: 'Sign in to sync',
+      syncSigningIn: 'Signing in…',
+      syncSignOut: 'Sign out',
+      syncSignedIn: 'Cloud sync active',
+      syncSignedOut: 'Not signed in',
+      syncConnecting: 'Connecting to cloud…',
+      syncPending: 'Pending local changes',
+      syncOffline: 'Offline mode – syncing when back online',
+      syncReady: 'Cloud sync up to date',
+      syncError: 'Sync failed. Please try again later.',
+      syncUserPrefix: 'Cloud account: ',
       currentInventory: 'Inventory',
       showHistory: 'Show: Transaction',
       cache: 'Cache',
@@ -332,16 +411,28 @@ export default function InventoryTab() {
     }
   };
   const msg = text[lang];
+  const syncStatusMap = {
+    connecting: msg.syncConnecting,
+    pending: msg.syncPending,
+    offline: msg.syncOffline,
+    synced: msg.syncReady,
+    error: msg.syncError,
+    idle: user ? msg.syncSignedIn : msg.syncSignedOut
+  };
+  const syncStatusMessage = syncStatusMap[syncStatus] || (user ? msg.syncSignedIn : msg.syncSignedOut);
+  const syncAccountLabel = user?.displayName || user?.email || '';
 
   const mapTransactionsWithStockNames = useCallback(
     list =>
-      (Array.isArray(list) ? list : []).map(item => {
-        const stock = stockList.find(s => s.stock_id === item.stock_id);
-        return {
-          ...item,
-          stock_name: item.stock_name || (stock ? stock.stock_name : '')
-        };
-      }),
+      ensureTransactionListHasIds(
+        (Array.isArray(list) ? list : []).map(item => {
+          const stock = stockList.find(s => s.stock_id === item.stock_id);
+          return {
+            ...item,
+            stock_name: item.stock_name || (stock ? stock.stock_name : '')
+          };
+        })
+      ),
     [stockList]
   );
 
@@ -418,6 +509,7 @@ export default function InventoryTab() {
 
           setTransactionHistory(imported);
           saveTransactionHistory(imported);
+          await replaceRemoteWithList(imported);
           const timestamp = modifiedTime || Date.now();
           setTransactionHistoryUpdatedAt(timestamp);
 
@@ -467,6 +559,7 @@ export default function InventoryTab() {
           }
           setTransactionHistory(imported);
           saveTransactionHistory(imported);
+          await replaceRemoteWithList(imported);
           const timestamp = remoteModified || Date.now();
           setTransactionHistoryUpdatedAt(timestamp);
           setAutoSaveState({ status: 'success', timestamp, provider: 'googleDrive' });
@@ -490,6 +583,7 @@ export default function InventoryTab() {
           }
           setTransactionHistory(imported);
           saveTransactionHistory(imported);
+          await replaceRemoteWithList(imported);
           const timestamp = remoteModified || Date.now();
           setTransactionHistoryUpdatedAt(timestamp);
           setAutoSaveState({ status: 'success', timestamp, provider: 'oneDrive' });
@@ -504,7 +598,8 @@ export default function InventoryTab() {
       ensurePermission,
       mapTransactionsWithStockNames,
       transactionHistoryUpdatedAt,
-      resetCsvAutoSaveHandles
+      resetCsvAutoSaveHandles,
+      replaceRemoteWithList
     ]
   );
 
@@ -693,7 +788,7 @@ export default function InventoryTab() {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = event => {
+    reader.onload = async event => {
       const text = event.target.result;
       const imported = mapTransactionsWithStockNames(transactionsFromCsv(text));
       if (imported.length === 0) {
@@ -708,6 +803,7 @@ export default function InventoryTab() {
       }
       setTransactionHistory(imported);
       saveTransactionHistory(imported);
+      await replaceRemoteWithList(imported);
       e.target.value = '';
       alert(msg.importDone);
     };
@@ -753,6 +849,7 @@ export default function InventoryTab() {
       const enriched = mapTransactionsWithStockNames(list);
       setTransactionHistory(enriched);
       saveTransactionHistory(enriched);
+      await replaceRemoteWithList(enriched);
       alert(msg.importDriveSuccess);
     } catch (err) {
       console.error('Drive manual import failed', err);
@@ -787,6 +884,7 @@ export default function InventoryTab() {
       const enriched = mapTransactionsWithStockNames(list);
       setTransactionHistory(enriched);
       saveTransactionHistory(enriched);
+      await replaceRemoteWithList(enriched);
       alert(msg.importOneDriveSuccess);
     } catch (err) {
       console.error('OneDrive manual import failed', err);
@@ -821,6 +919,7 @@ export default function InventoryTab() {
       const enriched = mapTransactionsWithStockNames(list);
       setTransactionHistory(enriched);
       saveTransactionHistory(enriched);
+      await replaceRemoteWithList(enriched);
       alert(msg.importICloudSuccess);
     } catch (err) {
       console.error('iCloud manual import failed', err);
@@ -888,6 +987,45 @@ export default function InventoryTab() {
       return prev;
     });
   }, [stockList]);
+
+  useEffect(() => {
+    if (!workspaceId) {
+      setHasUploadedLocalSnapshot(false);
+      return;
+    }
+    if (!remoteInitialLoadComplete) return;
+
+    const normalizedRemote = mapTransactionsWithStockNames(remoteTransactions);
+    if (
+      normalizedRemote.length === 0 &&
+      transactionHistory.length > 0 &&
+      !hasUploadedLocalSnapshot
+    ) {
+      const prepared = ensureTransactionListHasIds(transactionHistory);
+      setHasUploadedLocalSnapshot(true);
+      replaceRemoteTransactions(prepared);
+      return;
+    }
+
+    if (!areTransactionsEqual(normalizedRemote, transactionHistory)) {
+      setTransactionHistory(normalizedRemote);
+    }
+    setHasUploadedLocalSnapshot(true);
+  }, [
+    workspaceId,
+    remoteInitialLoadComplete,
+    remoteTransactions,
+    transactionHistory,
+    mapTransactionsWithStockNames,
+    hasUploadedLocalSnapshot,
+    replaceRemoteTransactions
+  ]);
+
+  useEffect(() => {
+    if (!workspaceId) {
+      setHasUploadedLocalSnapshot(false);
+    }
+  }, [workspaceId]);
 
   useEffectOnce(() => {
     let cancelled = false;
@@ -1810,7 +1948,7 @@ export default function InventoryTab() {
     setGoalForm(prev => ({ ...prev, name: value }));
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const date = form?.date;
     const entries = Array.isArray(form?.entries) ? form.entries : [];
     if (!date) {
@@ -1846,24 +1984,32 @@ export default function InventoryTab() {
       return;
     }
 
-    const updatedHistory = [
-      ...transactionHistory,
-      ...normalizedEntries.map(entry => ({
-        stock_id: entry.stock_id,
-        stock_name: entry.stock_name,
-        date,
-        quantity: entry.quantity,
-        price: entry.price,
-        type: 'buy'
-      }))
-    ];
+    const newEntries = normalizedEntries.map(entry => ({
+      id: generateTransactionId(),
+      stock_id: entry.stock_id,
+      stock_name: entry.stock_name,
+      date,
+      quantity: entry.quantity,
+      price: entry.price,
+      type: 'buy'
+    }));
+
+    const updatedHistory = [...transactionHistory, ...newEntries];
     setTransactionHistory(updatedHistory);
     setForm(createInitialFormState());
     setShowModal(false);
     runAutoSave(updatedHistory);
+
+    if (workspaceId && newEntries.length > 0) {
+      try {
+        await addRemoteTransactions(newEntries);
+      } catch (error) {
+        console.error('Failed to sync added transactions', error);
+      }
+    }
   };
 
-  const handleEditSave = idx => {
+  const handleEditSave = async idx => {
     const original = transactionHistory[idx];
     if (!editForm.quantity || !editForm.date || (original.type === 'buy' && !editForm.price)) {
       alert(msg.invalidNumbers);
@@ -1881,29 +2027,60 @@ export default function InventoryTab() {
     setTransactionHistory(updated);
     setEditingIdx(null);
     runAutoSave(updated);
-  };
 
-  const handleDelete = idx => {
-    if (window.confirm(msg.confirmDeleteRecord)) {
-      const updated = transactionHistory.filter((_, i) => i !== idx);
-      setTransactionHistory(updated);
-      runAutoSave(updated);
+    if (workspaceId && updated[idx]?.id) {
+      try {
+        await updateRemoteTransaction(updated[idx].id, updated[idx]);
+      } catch (error) {
+        console.error('Failed to sync updated transaction', error);
+      }
     }
   };
 
-  const handleSell = (stock_id, qty) => {
+  const handleDelete = async idx => {
+    if (!window.confirm(msg.confirmDeleteRecord)) {
+      return;
+    }
+    const target = transactionHistory[idx];
+    const updated = transactionHistory.filter((_, i) => i !== idx);
+    setTransactionHistory(updated);
+    runAutoSave(updated);
+
+    if (workspaceId && target?.id) {
+      try {
+        await deleteRemoteTransactions([target.id]);
+      } catch (error) {
+        console.error('Failed to sync deleted transaction', error);
+      }
+    }
+  };
+
+  const handleSell = async (stock_id, qty) => {
     const stock = inventoryList.find(s => s.stock_id === stock_id);
     if (!stock || qty > stock.total_quantity) {
       alert(msg.sellExceeds);
       return;
     }
-    const updatedHistory = [
-      ...transactionHistory,
-      { stock_id, stock_name: stock.stock_name, date: getToday(), quantity: +qty, type: 'sell' }
-    ];
+    const newEntry = {
+      id: generateTransactionId(),
+      stock_id,
+      stock_name: stock.stock_name,
+      date: getToday(),
+      quantity: +qty,
+      type: 'sell'
+    };
+    const updatedHistory = [...transactionHistory, newEntry];
     setTransactionHistory(updatedHistory);
     setSellModal({ show: false, stock: null });
     runAutoSave(updatedHistory);
+
+    if (workspaceId) {
+      try {
+        await addRemoteTransactions([newEntry]);
+      } catch (error) {
+        console.error('Failed to sync sell transaction', error);
+      }
+    }
   };
 
   return (
@@ -1955,6 +2132,42 @@ export default function InventoryTab() {
           style={{ display: 'none' }}
           onChange={handleImport}
         />
+        <div className={styles.syncControls}>
+          {user ? (
+            <>
+              <div className={styles.syncUserRow}>
+                <span className={styles.syncUserInfo}>
+                  {msg.syncUserPrefix}
+                  <span className={styles.syncUserName}>{syncAccountLabel || msg.syncSignedIn}</span>
+                </span>
+                <button type="button" className={styles.syncSignOutButton} onClick={handleSignOut}>
+                  {msg.syncSignOut}
+                </button>
+              </div>
+              <div
+                className={`${styles.syncStatusMessage} ${styles[`syncStatus-${syncStatus}`]}`}
+                aria-live="polite"
+              >
+                {syncStatusMessage}
+              </div>
+            </>
+          ) : (
+            <button
+              type="button"
+              className={`${styles.button} ${styles.syncSignInButton}`}
+              onClick={handleSignIn}
+              disabled={authInitializing}
+            >
+              {authInitializing ? msg.syncSigningIn : msg.syncSignIn}
+            </button>
+          )}
+          {(authError || syncError) && (
+            <div className={styles.syncError} role="status">
+              {msg.syncError}
+              {(authError || syncError)?.message ? ` (${(authError || syncError).message})` : ''}
+            </div>
+          )}
+        </div>
       </div>
 
       <AddTransactionModal
