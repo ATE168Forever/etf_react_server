@@ -5,6 +5,7 @@ import './index.css'
 import App from './App.jsx'
 import StockDetail from './StockDetail.jsx'
 import CookieConsent from './components/CookieConsent.jsx'
+import { FirebaseAuthProvider } from './firebase/AuthProvider.jsx'
 
 const path = window.location.pathname;
 const match = path.match(/^\/stock\/(\w+)/);
@@ -14,8 +15,10 @@ const queryClient = new QueryClient();
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <CookieConsent />
-      {stockId ? <StockDetail stockId={stockId} /> : <App />}
+      <FirebaseAuthProvider>
+        <CookieConsent />
+        {stockId ? <StockDetail stockId={stockId} /> : <App />}
+      </FirebaseAuthProvider>
     </QueryClientProvider>
   </StrictMode>,
 )

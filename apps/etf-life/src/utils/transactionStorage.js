@@ -1,4 +1,5 @@
 import Cookies from 'js-cookie';
+import { ensureTransactionListHasIds } from './transactionUtils';
 
 const STORAGE_KEY = 'my_transaction_history';
 const STORAGE_UPDATED_AT_KEY = 'my_transaction_history_updated_at';
@@ -34,22 +35,23 @@ export function migrateTransactionHistory() {
         if (current == null) {
           writeUpdatedAt(Date.now());
         }
+        return ensureTransactionListHasIds(list);
       }
-      return list;
     }
-    } catch {
-      // ignore localStorage errors
-    }
+  } catch {
+    // ignore localStorage errors
+  }
 
   // fallback to cookie
   try {
     const cookieVal = Cookies.get(STORAGE_KEY);
     if (cookieVal) {
       const list = JSON.parse(cookieVal);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      const normalized = ensureTransactionListHasIds(list);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
       writeUpdatedAt(Date.now());
       Cookies.remove(STORAGE_KEY);
-      return list;
+      return normalized;
     }
   } catch {
     Cookies.remove(STORAGE_KEY);
@@ -60,14 +62,15 @@ export function migrateTransactionHistory() {
 export function readTransactionHistory() {
   try {
     const val = localStorage.getItem(STORAGE_KEY);
-    return val ? JSON.parse(val) : [];
+    return val ? ensureTransactionListHasIds(JSON.parse(val)) : [];
   } catch {
     return [];
   }
 }
 
 export function saveTransactionHistory(list) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  const normalized = ensureTransactionListHasIds(list);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
   writeUpdatedAt(Date.now());
 }
 

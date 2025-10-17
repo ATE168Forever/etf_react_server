@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isWorkspaceOwner(workspaceId) {
+      return request.auth != null && request.auth.uid == workspaceId;
+    }
+
+    match /workspaces/{workspaceId} {
+      allow read, create, update, delete: if false;
+
+      match /transactions/{transactionId} {
+        allow read: if isWorkspaceOwner(workspaceId);
+        allow create, update: if isWorkspaceOwner(workspaceId) && request.resource.data.updatedAt == request.time;
+        allow delete: if isWorkspaceOwner(workspaceId);
+      }
+    }
+  }
+}

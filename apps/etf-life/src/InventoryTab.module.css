@@ -23,6 +23,92 @@
   flex-wrap: wrap;
 }
 
+.syncControls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 240px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--color-card-bg, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--color-border, rgba(148, 163, 184, 0.15));
+}
+
+.syncUserRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.syncUserInfo {
+  font-size: 0.85rem;
+  color: var(--muted-foreground, #6b7280);
+  display: inline-flex;
+  gap: 4px;
+  align-items: baseline;
+}
+
+.syncUserName {
+  font-weight: 600;
+  color: var(--color-text, #1f2937);
+}
+
+.syncSignOutButton {
+  border: 1px solid var(--color-border, rgba(148, 163, 184, 0.4));
+  background: transparent;
+  color: inherit;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.syncSignOutButton:hover,
+.syncSignOutButton:focus-visible {
+  background: rgba(148, 163, 184, 0.15);
+  outline: none;
+}
+
+.syncSignInButton {
+  white-space: nowrap;
+}
+
+.syncStatusMessage {
+  font-size: 0.8rem;
+  color: var(--muted-foreground, #6b7280);
+}
+
+.syncStatus-idle {
+  color: var(--muted-foreground, #6b7280);
+}
+
+.syncStatus-connecting {
+  color: var(--muted-foreground, #6b7280);
+}
+
+.syncStatus-pending {
+  color: #f59e0b;
+}
+
+.syncStatus-offline {
+  color: #2563eb;
+}
+
+.syncStatus-synced {
+  color: #047857;
+}
+
+.syncStatus-error {
+  color: #b91c1c;
+}
+
+.syncError {
+  font-size: 0.75rem;
+  color: #b91c1c;
+}
+
 
 .dataDropdown button {
   min-width: 72px;

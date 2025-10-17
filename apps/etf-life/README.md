@@ -41,4 +41,10 @@ Rebuild the image whenever dependencies change so the container has the correct 
 
 ## OneDrive, Google Drive, and iCloud Drive Backup
 
-Environment variable documentation for the various backup providers lives inside the source files and comments. Set the values in a `.env` file at the package root so Vite exposes them to the client at build time.
+Environment variable documentation for the various backup providers lives inside the source files and comments.
+
+### Environment files
+
+- Create an `apps/etf-life/.env.development` file locally with your Firebase credentials when debugging or running tests. This file is intentionally ignored by Git so secrets stay out of version control. The Jest setup script also reads from this file, so unit tests inherit the same configuration as the development server.
+- Provide production credentials for Cloudflare deployments via `apps/etf-life/.env.production`.
+- `apps/etf-life/.env.example` exists solely as a template—copy it to `.env.development` or `.env.production` and fill in the values as needed. It is not loaded automatically at runtime.
