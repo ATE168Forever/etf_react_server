@@ -24,6 +24,10 @@ const envSource = (() => {
   return {};
 })();
 
+if (typeof console !== 'undefined' && typeof console.log === 'function') {
+  console.log('VITE_FIREBASE_APP_ID', envSource.VITE_FIREBASE_APP_ID);
+}
+
 const firebaseConfig = {
   apiKey: envSource.VITE_FIREBASE_API_KEY || '',
   authDomain: envSource.VITE_FIREBASE_AUTH_DOMAIN || '',
