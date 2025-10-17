@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import styles from './InvestmentGoalCard.module.css';
 
 export default function InvestmentGoalCard({
@@ -41,13 +41,15 @@ export default function InvestmentGoalCard({
   const hasShareContent = Boolean(shareMessage);
   const [hasNativeShare, setHasNativeShare] = useState(false);
   const [shareStatus, setShareStatus] = useState('idle');
-  const [isShareContentVisible, setIsShareContentVisible] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [shareDraft, setShareDraft] = useState(shareMessage);
   const statusResetRef = useRef(null);
+  const shareMessageFieldId = useId();
+  const shareDialogLabelId = shareConfig?.previewLabel ? `${shareMessageFieldId}-label` : undefined;
 
   useEffect(() => {
     if (!hasShareContent) {
       setHasNativeShare(false);
-      setIsShareContentVisible(false);
       return;
     }
     setHasNativeShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function');
@@ -64,7 +66,7 @@ export default function InvestmentGoalCard({
     if (statusResetRef.current) {
       clearTimeout(statusResetRef.current);
     }
-    setIsShareContentVisible(false);
+    setShareDraft(shareMessage);
   }, [shareMessage]);
 
   const updateShareStatus = (nextStatus) => {
@@ -79,13 +81,13 @@ export default function InvestmentGoalCard({
     }
   };
 
-  const copyShareMessage = async () => {
-    if (!hasShareContent) {
+  const copyShareMessage = async (text) => {
+    if (!hasShareContent || !text) {
       return false;
     }
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareMessage);
+        await navigator.clipboard.writeText(text);
         return true;
       }
     } catch {
@@ -96,7 +98,7 @@ export default function InvestmentGoalCard({
     }
     try {
       const textarea = document.createElement('textarea');
-      textarea.value = shareMessage;
+      textarea.value = text;
       textarea.setAttribute('readonly', '');
       textarea.style.position = 'fixed';
       textarea.style.top = '-1000px';
@@ -112,16 +114,28 @@ export default function InvestmentGoalCard({
     }
   };
 
+  const currentShareText = shareDraft?.trim() || shareMessage;
+
   const handleCopyClick = async () => {
-    const success = await copyShareMessage();
+    const success = await copyShareMessage(currentShareText);
     updateShareStatus(success ? 'copied' : 'error');
-    if (!isShareContentVisible) {
-      setIsShareContentVisible(true);
-    }
   };
 
-  const handleShareClick = async () => {
+  const handleShareButtonClick = () => {
     if (!hasShareContent) {
+      return;
+    }
+    setIsShareDialogOpen(true);
+    updateShareStatus('idle');
+  };
+
+  const closeShareDialog = () => {
+    setIsShareDialogOpen(false);
+    updateShareStatus('idle');
+  };
+
+  const handleModalShareClick = async () => {
+    if (!hasShareContent || !currentShareText) {
       return;
     }
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
@@ -131,12 +145,9 @@ export default function InvestmentGoalCard({
       try {
         await navigator.share({
           title: defaultShareTitle,
-          text: shareMessage
+          text: currentShareText
         });
         updateShareStatus('shared');
-        if (!isShareContentVisible) {
-          setIsShareContentVisible(true);
-        }
         return;
       } catch (error) {
         if (error?.name === 'AbortError') {
@@ -144,11 +155,8 @@ export default function InvestmentGoalCard({
         }
       }
     }
-    const success = await copyShareMessage();
+    const success = await copyShareMessage(currentShareText);
     updateShareStatus(success ? 'copied' : 'error');
-    if (!isShareContentVisible) {
-      setIsShareContentVisible(true);
-    }
   };
 
   const copyButtonLabel = shareStatus === 'copied'
@@ -247,57 +255,15 @@ export default function InvestmentGoalCard({
               ) : null}
             </div>
             <div className={styles.shareButtons}>
-              {hasNativeShare ? (
-                <button
-                  type="button"
-                  className={styles.sharePrimaryButton}
-                  onClick={handleShareClick}
-                  aria-label={shareConfig?.shareAriaLabel || shareConfig?.shareButtonLabel}
-                >
-                  {shareConfig?.shareButtonLabel}
-                </button>
-              ) : null}
               <button
                 type="button"
-                className={styles.shareCopyButton}
-                onClick={handleCopyClick}
+                className={styles.sharePrimaryButton}
+                onClick={handleShareButtonClick}
+                aria-label={shareConfig?.shareAriaLabel || shareConfig?.shareButtonLabel}
               >
-                {copyButtonLabel || shareConfig?.copyButtonLabel}
+                {shareConfig?.shareButtonLabel}
               </button>
             </div>
-            {(hasNativeShare ? shareDestinations : shareDestinationsFallback || shareDestinations) ? (
-              <p className={styles.shareDestinations}>
-                {shareConfig?.destinationsLabel ? (
-                  <strong>{shareConfig.destinationsLabel}</strong>
-                ) : null}
-                {shareConfig?.destinationsLabel ? ' ' : null}
-                {hasNativeShare ? shareDestinations : shareDestinationsFallback || shareDestinations}
-              </p>
-            ) : null}
-            {shareDestinationsNote ? (
-              <p className={styles.shareDestinationsNote}>{shareDestinationsNote}</p>
-            ) : null}
-            {shareStatusMessage ? (
-              <div className={shareFeedbackClassName} role="status" aria-live="polite">
-                {shareStatusMessage}
-              </div>
-            ) : null}
-            {isShareContentVisible ? (
-              <div className={styles.sharePreview}>
-                {shareConfig?.previewLabel ? (
-                  <div className={styles.sharePreviewLabel}>{shareConfig.previewLabel}</div>
-                ) : null}
-                <pre
-                  className={styles.sharePreviewText}
-                  aria-label={shareConfig?.previewLabel || undefined}
-                >
-                  {shareMessage}
-                </pre>
-              </div>
-            ) : null}
-            {!hasNativeShare && shareConfig?.shareUnavailable ? (
-              <p className={styles.shareUnavailable}>{shareConfig.shareUnavailable}</p>
-            ) : null}
           </div>
         ) : null}
         {formToggle ? (
@@ -371,6 +337,101 @@ export default function InvestmentGoalCard({
           </form>
         ) : null}
       </div>
+      {hasShareContent && isShareDialogOpen ? (
+        <div
+          className={styles.shareModalOverlay}
+          role="presentation"
+          onClick={closeShareDialog}
+        >
+          <div
+            className={styles.shareModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={shareDialogLabelId}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className={styles.shareModalHeader}>
+              <div>
+                {shareConfig?.heading ? (
+                  <h6 className={styles.shareModalTitle}>{shareConfig.heading}</h6>
+                ) : null}
+                {shareConfig?.description ? (
+                  <p className={styles.shareModalDescription}>{shareConfig.description}</p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                className={styles.shareModalClose}
+                onClick={closeShareDialog}
+                aria-label={shareConfig?.closeAriaLabel || shareConfig?.closeLabel || 'Close'}
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.shareModalBody}>
+              {shareConfig?.previewLabel ? (
+                <label
+                  id={shareDialogLabelId}
+                  htmlFor={shareMessageFieldId}
+                  className={styles.shareModalLabel}
+                >
+                  {shareConfig.previewLabel}
+                </label>
+              ) : null}
+              <textarea
+                id={shareMessageFieldId}
+                className={styles.shareModalTextarea}
+                value={shareDraft}
+                onChange={(event) => setShareDraft(event.target.value)}
+              />
+              {(hasNativeShare ? shareDestinations : shareDestinationsFallback || shareDestinations) ? (
+                <p className={styles.shareDestinations}>
+                  {shareConfig?.destinationsLabel ? (
+                    <strong>{shareConfig.destinationsLabel}</strong>
+                  ) : null}
+                  {shareConfig?.destinationsLabel ? ' ' : null}
+                  {hasNativeShare ? shareDestinations : shareDestinationsFallback || shareDestinations}
+                </p>
+              ) : null}
+              {shareDestinationsNote ? (
+                <p className={styles.shareDestinationsNote}>{shareDestinationsNote}</p>
+              ) : null}
+              {!hasNativeShare && shareConfig?.shareUnavailable ? (
+                <p className={styles.shareUnavailable}>{shareConfig.shareUnavailable}</p>
+              ) : null}
+            </div>
+            {shareStatusMessage ? (
+              <div className={shareFeedbackClassName} role="status" aria-live="polite">
+                {shareStatusMessage}
+              </div>
+            ) : null}
+            <div className={styles.shareModalActions}>
+              <button
+                type="button"
+                className={styles.sharePrimaryButton}
+                onClick={handleModalShareClick}
+                disabled={!hasNativeShare}
+              >
+                {shareConfig?.shareButtonLabel}
+              </button>
+              <button
+                type="button"
+                className={styles.shareCopyButton}
+                onClick={handleCopyClick}
+              >
+                {copyButtonLabel || shareConfig?.copyButtonLabel}
+              </button>
+              <button
+                type="button"
+                className={styles.shareSecondaryButton}
+                onClick={closeShareDialog}
+              >
+                {shareConfig?.closeLabel || 'Close'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

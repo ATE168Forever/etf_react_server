@@ -164,6 +164,8 @@ export default function HomeTab() {
       copyError: t('share_goal_copy_error'),
       sharedFeedback: t('share_goal_shared_feedback'),
       shareUnavailable: t('share_goal_unavailable'),
+      closeLabel: t('share_goal_close_button'),
+      closeAriaLabel: t('share_goal_close_button_aria'),
       previewLabel: t('share_goal_preview_label'),
       destinationsLabel: t('share_goal_destinations_label'),
       destinations: t('share_goal_destinations'),
