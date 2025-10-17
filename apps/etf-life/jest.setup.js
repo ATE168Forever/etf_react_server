@@ -38,9 +38,24 @@ function parseEnvFile(filePath) {
   return result;
 }
 
-const cwd = process.cwd();
-const developmentEnvPath = resolve(cwd, '.env.development');
-const exampleEnvPath = resolve(cwd, '.env.example');
+const searchRoots = [
+  process.cwd(),
+  resolve(process.cwd(), 'apps/etf-life')
+];
+
+function resolveFirstExisting(filename) {
+  for (const root of searchRoots) {
+    const candidate = resolve(root, filename);
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return resolve(searchRoots[0], filename);
+}
+
+const developmentEnvPath = resolveFirstExisting('.env.development');
+const exampleEnvPath = resolveFirstExisting('.env.example');
 
 const developmentEnv = parseEnvFile(developmentEnvPath);
 const exampleEnv = Object.keys(developmentEnv).length
