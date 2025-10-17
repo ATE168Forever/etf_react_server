@@ -55,14 +55,15 @@ function resolveFirstExisting(filename) {
 }
 
 const developmentEnvPath = resolveFirstExisting('.env.development');
-const exampleEnvPath = resolveFirstExisting('.env.example');
-
 const developmentEnv = parseEnvFile(developmentEnvPath);
-const exampleEnv = Object.keys(developmentEnv).length
-  ? {}
-  : parseEnvFile(exampleEnvPath);
 
-const mergedEnv = { ...exampleEnv, ...developmentEnv };
+if (!Object.keys(developmentEnv).length) {
+  console.warn(
+    '[jest.setup] No .env.development file found. Tests will run with empty env vars.'
+  );
+}
+
+const mergedEnv = { ...developmentEnv };
 
 for (const [key, value] of Object.entries(mergedEnv)) {
   if (typeof process.env[key] === 'undefined') {
