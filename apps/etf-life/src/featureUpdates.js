@@ -143,17 +143,6 @@ const featureUpdateEntries = [
     }
   },
   {
-    date: '2025-09-11',
-    category: {
-      zh: '備份',
-      en: 'Backups'
-    },
-    description: {
-      zh: '透過瀏覽器選檔新增 iCloud Drive 匯入/匯出。',
-      en: 'Added iCloud Drive import/export using the browser file pickers.'
-    }
-  },
-  {
     date: '2025-09-12',
     category: {
       zh: '國際化',

@@ -11,8 +11,6 @@ export default function DataDropdown({
   handleDriveExport,
   handleOneDriveImport,
   handleOneDriveExport,
-  handleICloudImport,
-  handleICloudExport,
   handleFirebaseImport,
   handleFirebaseExport,
   selectedSource,
@@ -88,10 +86,6 @@ export default function DataDropdown({
       import: handleOneDriveImport,
       export: handleOneDriveExport
     },
-    icloudDrive: {
-      import: handleICloudImport,
-      export: handleICloudExport
-    },
     firebase: {
       import: handleFirebaseImport,
       export: handleFirebaseExport
@@ -117,7 +111,6 @@ export default function DataDropdown({
     csv: 'CSV',
     googleDrive: 'Google Drive',
     oneDrive: 'OneDrive',
-    icloudDrive: 'iCloudDrive',
     firebase: 'Firebase'
   };
   const providerLabel = providerLabels?.[autoSaveState?.provider] || '';
@@ -185,7 +178,6 @@ export default function DataDropdown({
           <option value="csv">CSV</option>
           <option value="googleDrive">Google Drive</option>
           <option value="oneDrive">OneDrive</option>
-          <option value="icloudDrive">iCloudDrive</option>
           <option value="firebase">Firebase</option>
         </select>
       </div>
