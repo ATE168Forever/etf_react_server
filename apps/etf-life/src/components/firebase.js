@@ -7,8 +7,6 @@
 // "inventory_backup". Each save stores the CSV content and a
 // modifiedTime for easy comparison.
 
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 
 // Firebase configuration
@@ -23,13 +21,58 @@ const firebaseConfig = {
 };
 
 let firebaseApp = null;
+let firebaseModuleLoader = null;
+let firebaseModulesPromise = null;
+
+/**
+ * Default loader that fetches Firebase modules from the official CDN.
+ * Using dynamic imports removes the need for the firebase package to be
+ * present in node_modules while still providing the real functionality
+ * when running in the browser.
+ */
+async function defaultFirebaseModuleLoader() {
+  const [appModule, firestoreModule] = await Promise.all([
+    import(/* @vite-ignore */ 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js'),
+    import(/* @vite-ignore */ 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js')
+  ]);
+
+  return {
+    initializeApp: appModule.initializeApp,
+    getFirestore: firestoreModule.getFirestore,
+    doc: firestoreModule.doc,
+    setDoc: firestoreModule.setDoc,
+    getDoc: firestoreModule.getDoc
+  };
+}
+
+/**
+ * Allow tests to provide their own Firebase module loader. This keeps the
+ * production bundle lean while offering deterministic behaviour in unit
+ * tests.
+ *
+ * @param {() => Promise<Object>} loader - Async loader returning Firebase helpers
+ */
+export function __setFirebaseModuleLoader(loader) {
+  firebaseModuleLoader = loader;
+  firebaseModulesPromise = null;
+  firebaseApp = null;
+}
+
+async function getFirebaseModules() {
+  if (!firebaseModulesPromise) {
+    const loader = firebaseModuleLoader ?? defaultFirebaseModuleLoader;
+    firebaseModulesPromise = loader();
+  }
+  return firebaseModulesPromise;
+}
 
 /**
  * Initialise the Firebase app if it hasn't already been initialised.
  * Calling this repeatedly is safe as it returns the existing instance.
  */
-function initFirebase() {
+async function initFirebase() {
   if (!firebaseApp) {
+    const { initializeApp } = await getFirebaseModules();
     firebaseApp = initializeApp(firebaseConfig);
   }
   return firebaseApp;
@@ -43,7 +86,8 @@ function initFirebase() {
  */
 export async function exportTransactionsToFirebase(list) {
   // Ensure Firebase is initialised
-  initFirebase();
+  await initFirebase();
+  const { getFirestore, doc, setDoc } = await getFirebaseModules();
   const db = getFirestore();
   const csvContent = transactionsToCsv(list);
   const docRef = doc(db, 'backups', 'inventory_backup');
@@ -64,7 +108,8 @@ export async function exportTransactionsToFirebase(list) {
  */
 export async function importTransactionsFromFirebase(options = {}) {
   const { includeMetadata = false, metadataOnly = false } = options;
-  initFirebase();
+  await initFirebase();
+  const { getFirestore, doc, getDoc } = await getFirebaseModules();
   const db = getFirestore();
   const docRef = doc(db, 'backups', 'inventory_backup');
   const snapshot = await getDoc(docRef);
