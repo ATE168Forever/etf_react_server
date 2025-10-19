@@ -3,27 +3,27 @@ import { transactionsToCsv } from '../src/utils/csvUtils.js';
 
 async function loadFirebaseModule({ snapshot } = {}) {
   jest.resetModules();
-  const firebaseApp = await import('firebase/app');
-  const firestore = await import('firebase/firestore');
-
-  firebaseApp.initializeApp.mockClear();
-  const firestoreInstance = { name: 'firestore' };
-  firestore.getFirestore.mockClear();
-  firestore.getFirestore.mockReturnValue(firestoreInstance);
-  const docRef = { path: 'backups/inventory_backup' };
-  firestore.doc.mockClear();
-  firestore.doc.mockReturnValue(docRef);
-  firestore.setDoc.mockClear();
-  firestore.setDoc.mockResolvedValue();
-  if (snapshot !== undefined) {
-    firestore.getDoc.mockClear();
-    firestore.getDoc.mockResolvedValue(snapshot);
-  } else {
-    firestore.getDoc.mockClear();
-    firestore.getDoc.mockResolvedValue(undefined);
-  }
-
   const module = await import('../src/components/firebase.js');
+
+  const firebaseApp = { initializeApp: jest.fn(() => ({ app: 'mock-app' })) };
+  const firestoreInstance = { name: 'firestore' };
+  const docRef = { path: 'backups/inventory_backup' };
+
+  const firestore = {
+    getFirestore: jest.fn(() => firestoreInstance),
+    doc: jest.fn(() => docRef),
+    setDoc: jest.fn(() => Promise.resolve()),
+    getDoc: jest.fn(() => Promise.resolve(snapshot ?? { exists: () => false }))
+  };
+
+  module.__setFirebaseModuleLoader(async () => ({
+    initializeApp: firebaseApp.initializeApp,
+    getFirestore: firestore.getFirestore,
+    doc: firestore.doc,
+    setDoc: firestore.setDoc,
+    getDoc: firestore.getDoc
+  }));
+
   return { module, firebaseApp, firestore, firestoreInstance, docRef };
 }
 
