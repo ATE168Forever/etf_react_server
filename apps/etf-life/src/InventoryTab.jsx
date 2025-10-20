@@ -12,7 +12,6 @@ import {
 } from './utils/transactionStorage';
 import { exportTransactionsToDrive, importTransactionsFromDrive } from './googleDrive';
 import { exportTransactionsToOneDrive, importTransactionsFromOneDrive } from './oneDrive';
-import { exportTransactionsToFirebase, importTransactionsFromFirebase } from './components/firebase';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 import AddTransactionModal from './components/AddTransactionModal';
 import SellModal from './components/SellModal';
@@ -135,14 +134,9 @@ export default function InventoryTab() {
       exportDriveConfirm: '確定要匯出到 Google Drive？',
       exportDriveSuccess: '已匯出到 Google Drive',
       exportDriveFail: '匯出到 Google Drive 失敗',
-      exportFirebaseConfirm: '確定要匯出到 Firebase？',
-      exportFirebaseSuccess: '已匯出到 Firebase',
-      exportFirebaseFail: '匯出到 Firebase 失敗',
       noBackupFound: '未找到備份檔案',
       importDriveSuccess: '已從 Google Drive 匯入資料',
       importDriveFail: '匯入 Google Drive 失敗',
-      importFirebaseSuccess: '已從 Firebase 匯入資料',
-      importFirebaseFail: '匯入 Firebase 失敗',
       exportOneDriveConfirm: '確定要匯出到 OneDrive？',
       exportOneDriveSuccess: '已匯出到 OneDrive',
       exportOneDriveFail: '匯出到 OneDrive 失敗',
@@ -236,14 +230,9 @@ export default function InventoryTab() {
       exportDriveConfirm: 'Export to Google Drive?',
       exportDriveSuccess: 'Exported to Google Drive',
       exportDriveFail: 'Export to Google Drive failed',
-      exportFirebaseConfirm: 'Export to Firebase?',
-      exportFirebaseSuccess: 'Exported to Firebase',
-      exportFirebaseFail: 'Export to Firebase failed',
       noBackupFound: 'Backup file not found',
       importDriveSuccess: 'Imported data from Google Drive',
       importDriveFail: 'Import from Google Drive failed',
-      importFirebaseSuccess: 'Imported data from Firebase',
-      importFirebaseFail: 'Import from Firebase failed',
       exportOneDriveConfirm: 'Export to OneDrive?',
       exportOneDriveSuccess: 'Exported to OneDrive',
       exportOneDriveFail: 'Export to OneDrive failed',
@@ -755,40 +744,6 @@ export default function InventoryTab() {
     } catch (err) {
       console.error('Drive manual import failed', err);
       alert(msg.importDriveFail);
-    }
-  };
-
-  const handleFirebaseExport = async () => {
-    if (!window.confirm(msg.exportFirebaseConfirm)) return;
-    try {
-      await exportTransactionsToFirebase(transactionHistory);
-      Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
-      alert(msg.exportFirebaseSuccess);
-    } catch (err) {
-      console.error('Firebase manual export failed', err);
-      alert(msg.exportFirebaseFail);
-    }
-  };
-
-  const handleFirebaseImport = async () => {
-    try {
-      const list = await importTransactionsFromFirebase();
-      if (!list || list.length === 0) {
-        alert(msg.noBackupFound);
-        return;
-      }
-      if (transactionHistory.length > 0) {
-        if (!window.confirm(msg.importOverwrite)) {
-          return;
-        }
-      }
-      const enriched = mapTransactionsWithStockNames(list);
-      setTransactionHistory(enriched);
-      saveTransactionHistory(enriched);
-      alert(msg.importFirebaseSuccess);
-    } catch (err) {
-      console.error('Firebase manual import failed', err);
-      alert(msg.importFirebaseFail);
     }
   };
 
@@ -1934,8 +1889,6 @@ export default function InventoryTab() {
               handleExportClick={handleExportClick}
               handleDriveImport={handleDriveImport}
               handleDriveExport={handleDriveExport}
-              handleFirebaseImport={handleFirebaseImport}
-              handleFirebaseExport={handleFirebaseExport}
               handleOneDriveImport={handleOneDriveImport}
               handleOneDriveExport={handleOneDriveExport}
               selectedSource={selectedDataSource}
