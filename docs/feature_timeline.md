@@ -18,7 +18,6 @@ manually from the repository history so the notes stay focused on meaningful pro
 | 2025-09-09 | Calendar | Launched the "My Dividend" calendar view and supporting table. |
 | 2025-09-10 | Analytics | Displayed price history and total returns in the stock detail page. |
 | 2025-09-11 | Backups | Integrated OneDrive as a first-party backup destination. |
-| 2025-09-11 | Backups | Added iCloud Drive import/export using the browser file pickers. |
 | 2025-09-12 | Internationalization | Delivered full English translations across the application. |
 | 2025-09-18 | Goals | Added investment goal tracking spanning home and inventory tabs. |
 | 2025-09-20 | Goals | Introduced share accumulation target planning. |

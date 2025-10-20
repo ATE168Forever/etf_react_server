@@ -11,8 +11,6 @@ export default function DataDropdown({
   handleDriveExport,
   handleOneDriveImport,
   handleOneDriveExport,
-  handleICloudImport,
-  handleICloudExport,
   selectedSource,
   onSelectChange,
   autoSaveEnabled,
@@ -59,7 +57,19 @@ export default function DataDropdown({
     }
   };
 
-  const { importText, exportText, selectLabel, autoSaveLabel, autoSaveOn, autoSaveOff, autoSaveSaving, autoSaveSuccess, autoSaveError, autoSaveDisabled, autoSaveLocationLabel } = text[lang];
+  const {
+    importText,
+    exportText,
+    selectLabel,
+    autoSaveLabel,
+    autoSaveOn,
+    autoSaveOff,
+    autoSaveSaving,
+    autoSaveSuccess,
+    autoSaveError,
+    autoSaveDisabled,
+    autoSaveLocationLabel
+  } = text[lang];
 
   const providerActions = {
     csv: {
@@ -73,10 +83,6 @@ export default function DataDropdown({
     oneDrive: {
       import: handleOneDriveImport,
       export: handleOneDriveExport
-    },
-    icloudDrive: {
-      import: handleICloudImport,
-      export: handleICloudExport
     }
   };
 
@@ -98,8 +104,7 @@ export default function DataDropdown({
   const providerLabels = {
     csv: 'CSV',
     googleDrive: 'Google Drive',
-    oneDrive: 'OneDrive',
-    icloudDrive: 'iCloudDrive'
+    oneDrive: 'OneDrive'
   };
   const providerLabel = providerLabels?.[autoSaveState?.provider] || '';
   const locationTypeLabels = {
@@ -152,7 +157,7 @@ export default function DataDropdown({
   const finalStatusMessage = messageParts.join(' · ');
 
   return (
-    <div className={`action-dropdown silver-button-container ${styles.dataDropdown}`} ref={ref}>
+    <div className={'action-dropdown silver-button-container ' + styles.dataDropdown} ref={ref}>
       <div className={styles.dataSelectRow}>
         <label className={styles.dataSelectLabel} htmlFor="data-source-select">
           {selectLabel}
@@ -166,14 +171,13 @@ export default function DataDropdown({
           <option value="csv">CSV</option>
           <option value="googleDrive">Google Drive</option>
           <option value="oneDrive">OneDrive</option>
-          <option value="icloudDrive">iCloudDrive</option>
         </select>
       </div>
       <div className={styles.autoSaveRow}>
         <span className={styles.autoSaveLabel}>{autoSaveLabel}</span>
         <button
           type="button"
-          className={`${styles.autoSaveButton} ${autoSaveEnabled ? styles.autoSaveButtonActive : ''}`}
+          className={styles.autoSaveButton + (autoSaveEnabled ? ' ' + styles.autoSaveButtonActive : '')}
           onClick={() => {
             if (typeof onToggleAutoSave === 'function') {
               onToggleAutoSave();
@@ -185,15 +189,16 @@ export default function DataDropdown({
         </button>
       </div>
       <div
-        className={`${styles.autoSaveStatus} ${
-          status === 'error'
-            ? styles.autoSaveStatusError
+        className={
+          styles.autoSaveStatus +
+          (status === 'error'
+            ? ' ' + styles.autoSaveStatusError
             : status === 'success'
-              ? styles.autoSaveStatusSuccess
+              ? ' ' + styles.autoSaveStatusSuccess
               : status === 'saving'
-                ? styles.autoSaveStatusSaving
-                : ''
-        }`}
+                ? ' ' + styles.autoSaveStatusSaving
+                : '')
+        }
       >
         {finalStatusMessage}
       </div>
@@ -204,4 +209,3 @@ export default function DataDropdown({
     </div>
   );
 }
-

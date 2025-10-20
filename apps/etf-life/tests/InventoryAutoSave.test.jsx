@@ -12,7 +12,6 @@ import {
   exportTransactionsToOneDrive,
   importTransactionsFromOneDrive
 } from '../src/oneDrive';
-import { exportTransactionsToICloud } from '../src/icloud';
 
 jest.mock('../src/api');
 jest.mock('../src/config', () => ({
@@ -29,10 +28,6 @@ jest.mock('../src/googleDrive', () => ({
 jest.mock('../src/oneDrive', () => ({
   exportTransactionsToOneDrive: jest.fn(() => Promise.resolve()),
   importTransactionsFromOneDrive: jest.fn(() => Promise.resolve(null))
-}));
-jest.mock('../src/icloud', () => ({
-  exportTransactionsToICloud: jest.fn(() => Promise.resolve()),
-  importTransactionsFromICloud: jest.fn(() => Promise.resolve([]))
 }));
 jest.mock('../src/stockApi', () => ({
   fetchStockList: jest.fn(() => Promise.resolve({ list: [], meta: null }))
@@ -218,23 +213,4 @@ describe('InventoryTab auto-save providers', () => {
     });
   });
 
-  test('iCloud Drive auto-save writes current history through integration', async () => {
-    const history = [
-      { stock_id: '0050', stock_name: '元大台灣50', date: '2024-04-01', quantity: 6, price: 30, type: 'buy' }
-    ];
-    localStorage.setItem('my_transaction_history', JSON.stringify(history));
-
-    await openDataMenu();
-    const select = screen.getByLabelText('存取方式');
-    fireEvent.change(select, { target: { value: 'icloudDrive' } });
-
-    const toggle = await screen.findByRole('button', { name: '已關閉' });
-    fireEvent.click(toggle);
-
-    await waitFor(() => expect(exportTransactionsToICloud).toHaveBeenCalled());
-    expect(exportTransactionsToICloud.mock.calls[0][0]).toEqual(history);
-    await waitFor(() => {
-      expect(screen.getByText(/自動儲存完成 \(iCloudDrive\)/)).toBeInTheDocument();
-    });
-  });
 });

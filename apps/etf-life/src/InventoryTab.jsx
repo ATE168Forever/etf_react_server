@@ -12,7 +12,6 @@ import {
 } from './utils/transactionStorage';
 import { exportTransactionsToDrive, importTransactionsFromDrive } from './googleDrive';
 import { exportTransactionsToOneDrive, importTransactionsFromOneDrive } from './oneDrive';
-import { exportTransactionsToICloud, importTransactionsFromICloud } from './icloud';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 import AddTransactionModal from './components/AddTransactionModal';
 import SellModal from './components/SellModal';
@@ -143,11 +142,6 @@ export default function InventoryTab() {
       exportOneDriveFail: '匯出到 OneDrive 失敗',
       importOneDriveSuccess: '已從 OneDrive 匯入資料',
       importOneDriveFail: '匯入 OneDrive 失敗',
-      exportICloudConfirm: '確定要匯出到 iCloud Drive？',
-      exportICloudSuccess: '已匯出到 iCloud Drive',
-      exportICloudFail: '匯出到 iCloud Drive 失敗',
-      importICloudSuccess: '已從 iCloud Drive 匯入資料',
-      importICloudFail: '匯入 iCloud Drive 失敗',
       backupPrompt: '距離上次備份已超過30天，是否匯出 CSV 備份？',
       inputRequired: '請輸入完整資料',
       invalidNumbers: '請輸入有效數字、價格和日期',
@@ -244,11 +238,6 @@ export default function InventoryTab() {
       exportOneDriveFail: 'Export to OneDrive failed',
       importOneDriveSuccess: 'Imported data from OneDrive',
       importOneDriveFail: 'Import from OneDrive failed',
-      exportICloudConfirm: 'Export to iCloud Drive?',
-      exportICloudSuccess: 'Exported to iCloud Drive',
-      exportICloudFail: 'Export to iCloud Drive failed',
-      importICloudSuccess: 'Imported data from iCloud Drive',
-      importICloudFail: 'Import from iCloud Drive failed',
       backupPrompt: 'It has been over 30 days since last backup. Export CSV backup?',
       inputRequired: 'Please enter all fields',
       invalidNumbers: 'Please enter valid numbers, price and date',
@@ -611,8 +600,6 @@ export default function InventoryTab() {
           await exportTransactionsToDrive(data);
         } else if (provider === 'oneDrive') {
           await exportTransactionsToOneDrive(data);
-        } else if (provider === 'icloudDrive') {
-          await exportTransactionsToICloud(data);
         } else {
           throw new Error(`Unsupported auto-save provider: ${provider}`);
         }
@@ -791,40 +778,6 @@ export default function InventoryTab() {
     } catch (err) {
       console.error('OneDrive manual import failed', err);
       alert(msg.importOneDriveFail);
-    }
-  };
-
-  const handleICloudExport = async () => {
-    if (!window.confirm(msg.exportICloudConfirm)) return;
-    try {
-      await exportTransactionsToICloud(transactionHistory);
-      Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
-      alert(msg.exportICloudSuccess);
-    } catch (err) {
-      console.error('iCloud manual export failed', err);
-      alert(msg.exportICloudFail);
-    }
-  };
-
-  const handleICloudImport = async () => {
-    try {
-      const list = await importTransactionsFromICloud();
-      if (!list || list.length === 0) {
-        alert(msg.noBackupFound);
-        return;
-      }
-      if (transactionHistory.length > 0) {
-        if (!window.confirm(msg.importOverwrite)) {
-          return;
-        }
-      }
-      const enriched = mapTransactionsWithStockNames(list);
-      setTransactionHistory(enriched);
-      saveTransactionHistory(enriched);
-      alert(msg.importICloudSuccess);
-    } catch (err) {
-      console.error('iCloud manual import failed', err);
-      alert(msg.importICloudFail);
     }
   };
 
@@ -1938,8 +1891,6 @@ export default function InventoryTab() {
               handleDriveExport={handleDriveExport}
               handleOneDriveImport={handleOneDriveImport}
               handleOneDriveExport={handleOneDriveExport}
-              handleICloudImport={handleICloudImport}
-              handleICloudExport={handleICloudExport}
               selectedSource={selectedDataSource}
               onSelectChange={handleDataSourceChange}
               autoSaveEnabled={autoSaveEnabled}

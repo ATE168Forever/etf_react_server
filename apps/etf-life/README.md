@@ -17,7 +17,7 @@ Jest powers the ETF Life unit tests. Run the entire suite locally with:
 pnpm --filter etf-life test
 ```
 
-To focus on the auto-save coverage that verifies CSV, Google Drive, OneDrive, and iCloud Drive behaviour, target the specific suite:
+To focus on the auto-save coverage that verifies CSV, Google Drive, and OneDrive behaviour, target the specific suite:
 
 ```bash
 pnpm --filter etf-life test -- InventoryAutoSave.test.jsx
@@ -39,6 +39,6 @@ docker run -p 3000:80 etf-view
 
 Rebuild the image whenever dependencies change so the container has the correct `node_modules`.
 
-## OneDrive, Google Drive, and iCloud Drive Backup
+## OneDrive and Google Drive Backup
 
 Environment variable documentation for the various backup providers lives inside the source files and comments. Set the values in a `.env` file at the package root so Vite exposes them to the client at build time.
