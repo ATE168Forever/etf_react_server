@@ -21,8 +21,14 @@ const firebaseConfig = {
 };
 
 let firebaseApp = null;
+let firebaseFirestore = null;
 let firebaseModuleLoader = null;
 let firebaseModulesPromise = null;
+
+const FIRESTORE_SETTINGS = {
+  experimentalAutoDetectLongPolling: true,
+  useFetchStreams: false
+};
 
 /**
  * Default loader that fetches Firebase modules from the official CDN.
@@ -56,6 +62,7 @@ export function __setFirebaseModuleLoader(loader) {
   firebaseModuleLoader = loader;
   firebaseModulesPromise = null;
   firebaseApp = null;
+  firebaseFirestore = null;
 }
 
 async function getFirebaseModules() {
@@ -74,8 +81,18 @@ async function initFirebase() {
   if (!firebaseApp) {
     const { initializeApp } = await getFirebaseModules();
     firebaseApp = initializeApp(firebaseConfig);
+    firebaseFirestore = null;
   }
   return firebaseApp;
+}
+
+async function getFirestoreInstance() {
+  await initFirebase();
+  if (!firebaseFirestore) {
+    const { getFirestore } = await getFirebaseModules();
+    firebaseFirestore = getFirestore(firebaseApp, FIRESTORE_SETTINGS);
+  }
+  return firebaseFirestore;
 }
 
 /**
@@ -87,8 +104,8 @@ async function initFirebase() {
 export async function exportTransactionsToFirebase(list) {
   // Ensure Firebase is initialised
   await initFirebase();
-  const { getFirestore, doc, setDoc } = await getFirebaseModules();
-  const db = getFirestore();
+  const { doc, setDoc } = await getFirebaseModules();
+  const db = await getFirestoreInstance();
   const csvContent = transactionsToCsv(list);
   const docRef = doc(db, 'backups', 'inventory_backup');
   await setDoc(docRef, {
@@ -109,8 +126,8 @@ export async function exportTransactionsToFirebase(list) {
 export async function importTransactionsFromFirebase(options = {}) {
   const { includeMetadata = false, metadataOnly = false } = options;
   await initFirebase();
-  const { getFirestore, doc, getDoc } = await getFirebaseModules();
-  const db = getFirestore();
+  const { doc, getDoc } = await getFirebaseModules();
+  const db = await getFirestoreInstance();
   const docRef = doc(db, 'backups', 'inventory_backup');
   const snapshot = await getDoc(docRef);
   if (!snapshot.exists()) {

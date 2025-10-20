@@ -45,6 +45,13 @@ test('exportTransactionsToFirebase saves CSV content with timestamp', async () =
 
   expect(firebaseApp.initializeApp).toHaveBeenCalledTimes(1);
   expect(firestore.getFirestore).toHaveBeenCalledTimes(1);
+  expect(firestore.getFirestore).toHaveBeenCalledWith(
+    expect.objectContaining({ app: 'mock-app' }),
+    expect.objectContaining({
+      experimentalAutoDetectLongPolling: true,
+      useFetchStreams: false
+    })
+  );
   expect(firestore.doc).toHaveBeenCalledWith(firestoreInstance, 'backups', 'inventory_backup');
   expect(firestore.setDoc).toHaveBeenCalledWith(docRef, { content: expectedCsv, modifiedTime: 1729 });
 
