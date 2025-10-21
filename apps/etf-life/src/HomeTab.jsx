@@ -288,11 +288,6 @@ export default function HomeTab() {
         rows={goalRows}
         emptyState={goalEmptyState}
         share={goalShareConfig}
-        secondaryRowsToggle={{
-          collapseByDefault: true,
-          collapsedLabel: t('goal_show_more_targets'),
-          expandedLabel: t('goal_hide_additional_targets')
-        }}
       />
     </div>
   );
