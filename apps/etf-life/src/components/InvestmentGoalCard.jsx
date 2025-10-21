@@ -8,7 +8,8 @@ export default function InvestmentGoalCard({
   savedMessage,
   form,
   emptyState,
-  share
+  share,
+  secondaryRowsToggle
 }) {
   const { isVisible: formIsVisible = true, toggle: formToggle, id: formId, ...formProps } = form || {};
   const typeOptions = Array.isArray(formProps.typeOptions) ? formProps.typeOptions : [];
@@ -25,7 +26,27 @@ export default function InvestmentGoalCard({
   const shouldShowTargetInput = !formProps.targetHidden && Boolean(formProps.targetLabel);
   const shouldRenderForm = Boolean(form) && formIsVisible !== false;
   const metricsList = Array.isArray(metrics) ? metrics : [];
-  const goalRows = Array.isArray(rows) ? rows : [];
+  const allGoalRows = Array.isArray(rows) ? rows : [];
+
+  const collapseConfig = secondaryRowsToggle && typeof secondaryRowsToggle === 'object'
+    ? secondaryRowsToggle
+    : null;
+  const collapseByDefault = Boolean(collapseConfig?.collapseByDefault);
+  const shouldCollapseSecondaryRows = Boolean(collapseConfig) && allGoalRows.length > 1;
+  const primaryGoalKey = shouldCollapseSecondaryRows
+    ? `${allGoalRows[0]?.id || 'primary'}-${allGoalRows[0]?.label || ''}`
+    : 'no-primary-goal';
+  const [showAllGoals, setShowAllGoals] = useState(() => !shouldCollapseSecondaryRows || !collapseByDefault);
+  useEffect(() => {
+    if (!shouldCollapseSecondaryRows) {
+      setShowAllGoals(true);
+      return;
+    }
+    setShowAllGoals(!collapseByDefault);
+  }, [shouldCollapseSecondaryRows, collapseByDefault, primaryGoalKey]);
+  const visibleGoalRows = shouldCollapseSecondaryRows && !showAllGoals
+    ? allGoalRows.slice(0, 1)
+    : allGoalRows;
 
   const shareConfig = share && typeof share === 'object' ? share : null;
   const shareMessage = typeof shareConfig?.message === 'string' ? shareConfig.message.trim() : '';
@@ -44,6 +65,7 @@ export default function InvestmentGoalCard({
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [shareDraft, setShareDraft] = useState(shareMessage);
   const statusResetRef = useRef(null);
+  const goalListId = useId();
   const shareMessageFieldId = useId();
   const shareDialogLabelId = shareConfig?.previewLabel ? `${shareMessageFieldId}-label` : undefined;
 
@@ -216,33 +238,48 @@ export default function InvestmentGoalCard({
             })}
           </div>
         ) : null}
-        {goalRows.map(row => (
-          <div key={row.id} className={styles.goalRow}>
-            <div className={styles.goalRowHeader}>
-              <div>
-                <div className={styles.goalLabel}>{row.label}</div>
-                <div className={styles.goalAmounts}>
-                  <span>{row.current}</span>
-                  <span>{row.target}</span>
+        <div id={goalListId} className={styles.goalRows}>
+          {visibleGoalRows.map(row => (
+            <div key={row.id} className={styles.goalRow}>
+              <div className={styles.goalRowHeader}>
+                <div>
+                  <div className={styles.goalLabel}>{row.label}</div>
+                  <div className={styles.goalAmounts}>
+                    <span>{row.current}</span>
+                    <span>{row.target}</span>
+                  </div>
                 </div>
+                <div className={styles.goalPercent}>{row.percentLabel}</div>
               </div>
-              <div className={styles.goalPercent}>{row.percentLabel}</div>
-            </div>
-            <div
-              className={styles.progressBar}
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(Math.min(1, Math.max(0, row.percent || 0)) * 100)}
-            >
               <div
-                className={styles.progressFill}
-                style={{ width: `${Math.min(100, Math.max(0, row.percent || 0) * 100)}%` }}
-              />
+                className={styles.progressBar}
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(Math.min(1, Math.max(0, row.percent || 0)) * 100)}
+              >
+                <div
+                  className={styles.progressFill}
+                  style={{ width: `${Math.min(100, Math.max(0, row.percent || 0) * 100)}%` }}
+                />
+              </div>
+              {row.encouragement ? <div className={styles.encouragement}>{row.encouragement}</div> : null}
             </div>
-            {row.encouragement ? <div className={styles.encouragement}>{row.encouragement}</div> : null}
-          </div>
-        ))}
+          ))}
+        </div>
+        {shouldCollapseSecondaryRows ? (
+          <button
+            type="button"
+            className={styles.goalToggleButton}
+            onClick={() => setShowAllGoals(prev => !prev)}
+            aria-expanded={showAllGoals}
+            aria-controls={goalListId}
+          >
+            {showAllGoals
+              ? collapseConfig?.expandedLabel || 'Hide goals'
+              : collapseConfig?.collapsedLabel || 'Show goals'}
+          </button>
+        ) : null}
         {emptyState ? <div className={styles.emptyState}>{emptyState}</div> : null}
         {hasShareContent ? (
           <div className={styles.shareSection}>
