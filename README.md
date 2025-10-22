@@ -2,7 +2,7 @@
 
 This repository now hosts multiple front-end applications that share the same pnpm workspace. Each project lives under `apps/`:
 
-- `apps/etf-life` – the original ETF Life experience.
+- `apps/dividend-life` – the original ETF Life experience.
 - `apps/budget-life` – the new Budget Life prototype.
 
 Install dependencies once at the workspace root (this pulls packages for every app):
@@ -16,7 +16,7 @@ pnpm install --frozen-lockfile
 Use the workspace scripts to start the desired development server:
 
 ```bash
-pnpm dev:etf-life     # ETF Life
+pnpm dev:dividend-life  # ETF Life
 pnpm dev:budget-life  # Budget Life
 ```
 
@@ -39,11 +39,11 @@ Individual packages still expose their own scripts (`pnpm --filter <app> <comman
 Jest powers the ETF Life unit tests. The suite and targeted commands continue to work from inside the package directory:
 
 ```bash
-pnpm --filter etf-life test
-pnpm --filter etf-life test -- --runTestsByPath tests/googleDrive.test.js
+pnpm --filter dividend-life test
+pnpm --filter dividend-life test -- --runTestsByPath tests/googleDrive.test.js
 ```
 
-Refer to the documentation in `apps/etf-life/README.md` (if present) for additional ETF-specific guidance.
+Refer to the documentation in `apps/dividend-life/README.md` (if present) for additional ETF-specific guidance.
 
 ## Budget Life
 
