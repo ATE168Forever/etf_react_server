@@ -149,7 +149,7 @@ export default function InventoryTab() {
       invalidNumbers: '請輸入有效數字、價格和日期',
       confirmDeleteRecord: '確定要刪除此筆紀錄？',
       sellExceeds: '賣出數量不得超過庫存',
-      notice: '這是一個免費網站，我們不會把你的資料存到後台或伺服器，所有的紀錄（像是你的設定或操作紀錄）都只會保存在你的瀏覽器裡，開啟自動儲存功能後會自動幫你儲存。簡單說：你的資料只在你這台電腦，不會上傳，也不會被我們看到，請安心使用！',
+      notice: '這是一個免費網站，我們不會把你的資料存到任何後台或伺服器。為確保使用者隱私，所有的紀錄（包含你的設定與操作歷程）都只會保存在你的瀏覽器本機。開啟自動儲存功能後，系統會在你的裝置上自動備份。簡單說：資料只在這台電腦，不會上傳，也不會被我們看到，請安心使用！',
       addRecord: '新增購買',
       dataAccess: '存取資料',
       currentInventory: '目前庫存',
@@ -245,7 +245,8 @@ export default function InventoryTab() {
       invalidNumbers: 'Please enter valid numbers, price and date',
       confirmDeleteRecord: 'Delete this record?',
       sellExceeds: 'Sell quantity cannot exceed inventory',
-      notice: 'This is a free website; we do not store your data on servers. All records stay in your browser. In short, your data remains on your computer and is not uploaded or seen by us.',
+      notice:
+        'This is a free website, and to safeguard your privacy we never store your data on any backend or server. Every record—including your settings and activity history—lives only in your browser. Turn on auto-save to create device-side backups automatically. In short: your data stays on this computer, never uploads, and we never see it.',
       addRecord: 'Add Purchase',
       dataAccess: 'Data Access',
       currentInventory: 'Inventory',
