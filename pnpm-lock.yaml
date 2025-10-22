@@ -42,7 +42,7 @@ importers:
         specifier: ^7.0.4
         version: 7.1.3(@types/node@24.3.0)
 
-  apps/etf-life:
+  apps/dividend-life:
     specifiers:
       '@babel/core': ^7.24.0
       '@babel/preset-env': ^7.24.0
