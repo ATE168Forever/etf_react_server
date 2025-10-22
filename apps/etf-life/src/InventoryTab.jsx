@@ -27,6 +27,8 @@ import {
   buildDividendGoalViewModel
 } from './utils/dividendGoalUtils';
 import selectStyles from './selectStyles';
+import TooltipText from './components/TooltipText';
+
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
 const SHARES_PER_LOT = 1000;
@@ -2013,7 +2015,9 @@ export default function InventoryTab() {
                         <tr key={idx}>
                           <td className="stock-col">
                             <a href={`${HOST_URL}/stock/${item.stock_id}`} target="_blank" rel="noreferrer">
-                              {item.stock_id} {item.stock_name}
+                              <TooltipText tooltip={item.stock_name}>
+                                {item.stock_id}
+                              </TooltipText>
                             </a>
                           </td>
                           <td>{item.avg_price.toFixed(2)}</td>

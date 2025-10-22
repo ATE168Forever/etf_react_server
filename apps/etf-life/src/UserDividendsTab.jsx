@@ -15,7 +15,6 @@ const CURRENCY_SYMBOLS = {
     TWD: 'NT$',
     USD: 'US$'
 };
-const formatStockLabel = (id, name) => (name ? `${id} (${name})` : id);
 const CURRENCY_NAME_ZH = {
     TWD: '台股配息',
     USD: '美股股息'
@@ -943,7 +942,9 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                     <tr key={stock.stock_id + stock.stock_name}>
                                         <td className="stock-col">
                                             <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
-                                                {formatStockLabel(stock.stock_id, stock.stock_name)}
+                                                <TooltipText tooltip={stock.stock_name}>
+                                                    {stock.stock_id}
+                                                </TooltipText>
                                             </a>
                                         </td>
                                         <td>{stockTotal > 0 ? (() => {

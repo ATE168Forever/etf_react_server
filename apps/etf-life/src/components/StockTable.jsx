@@ -7,7 +7,6 @@ import { useLanguage } from '../i18n';
 import usePreserveScroll from '../hooks/usePreserveScroll';
 
 const NUM_COL_WIDTH = 80;
-const formatStockLabel = (id, name) => (name ? `${id} (${name})` : id);
 
 export default function StockTable({
   stocks,
@@ -227,7 +226,9 @@ export default function StockTable({
       <tr>
         <td className="stock-col">
           <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
-            {formatStockLabel(stock.stock_id, stock.stock_name)}
+            <TooltipText tooltip={stock.stock_name}>
+                {stock.stock_id}
+            </TooltipText>
           </a>
         </td>
         <td style={{ width: NUM_COL_WIDTH }}>{price ?? ''}</td>
@@ -343,7 +344,9 @@ export default function StockTable({
                 <tr key={stock.stock_id + stock.stock_name}>
                   <td className="stock-col">
                     <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
-                      {formatStockLabel(stock.stock_id, stock.stock_name)}
+                      <TooltipText tooltip={stock.stock_name}>
+                          {stock.stock_id}
+                      </TooltipText>
                     </a>
                   </td>
                   <td>{price ?? ''}</td>
