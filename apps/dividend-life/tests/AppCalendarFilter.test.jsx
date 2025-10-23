@@ -12,6 +12,7 @@ jest.mock('../src/api', () => ({
 jest.mock('../src/config', () => ({ API_HOST: '' }));
 
 import App from '../src/App';
+import { RouterProvider } from '../src/router.jsx';
 
 beforeAll(() => {
   globalThis.fetch = jest.fn(() => Promise.resolve({}));
@@ -21,7 +22,15 @@ test('calendar defaults to showing both ex and payment events', async () => {
   localStorage.clear();
   localStorage.setItem('lang', 'zh');
   await act(async () => {
-    render(<App />);
+    render(
+      <RouterProvider>
+        <App />
+      </RouterProvider>
+    );
+  });
+  const dividendExperience = screen.getByRole('link', { name: 'Dividend Life' });
+  await act(async () => {
+    fireEvent.click(dividendExperience);
   });
   const dividendTab = screen.getByRole('button', { name: 'ETF 配息查詢' });
   await act(async () => {

@@ -26,6 +26,7 @@ jest.mock('../src/dividendApi', () => ({
 jest.mock('../src/config', () => ({ API_HOST: '' }));
 
 import App from '../src/App';
+import { RouterProvider } from '../src/router.jsx';
 
 beforeEach(() => {
   jest.useFakeTimers();
@@ -74,7 +75,16 @@ test('falls back to the latest available year when current year has no data', as
   });
 
   await act(async () => {
-    render(<App />);
+    render(
+      <RouterProvider>
+        <App />
+      </RouterProvider>
+    );
+  });
+
+  const dividendExperience = screen.getByRole('link', { name: 'Dividend Life' });
+  await act(async () => {
+    fireEvent.click(dividendExperience);
   });
 
   const dividendTab = await screen.findByRole('button', { name: 'ETF 配息查詢' });
