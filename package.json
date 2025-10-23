@@ -7,6 +7,7 @@
     "apps/*"
   ],
   "scripts": {
+    "dev": "pnpm -r --parallel --filter dividend-life --filter balance-life --filter health-life --filter wealth-life run dev",
     "dev:dividend-life": "pnpm --filter dividend-life dev",
     "dev:budget-life": "pnpm --filter budget-life dev",
     "build": "pnpm -r build",
