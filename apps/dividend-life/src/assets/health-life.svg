@@ -1,0 +1,21 @@
+<svg width="320" height="80" viewBox="0 0 320 80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gold" x1="0" x2="1">
+      <stop offset="0%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#F5E6A3"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="80" fill="#0B0B0D"/>
+  <!-- 葉子 + 心跳 -->
+  <path d="M28 50 C15 40, 22 22, 40 25 C52 28, 55 42, 42 50 C38 52, 32 52, 28 50 Z"
+        fill="none" stroke="url(#gold)" stroke-width="2"/>
+  <path d="M18 40 L28 40 L33 47 L38 33 L42 40 L52 40" stroke="url(#gold)" stroke-width="2" fill="none"
+        stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- 文字 -->
+  <text x="80" y="46" fill="url(#gold)" font-family="Poppins, Montserrat, system-ui" font-size="24" font-weight="600">
+    Health Life
+  </text>
+  <text x="80" y="64" fill="#B7A972" font-family="Poppins, Montserrat, system-ui" font-size="12" opacity="0.9">
+    Invest in your body first
+  </text>
+</svg>
