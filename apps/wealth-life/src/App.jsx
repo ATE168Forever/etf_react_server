@@ -7,8 +7,10 @@ export default function App() {
       <a href="/" className={styles.backLink}>
         ← 回首頁
       </a>
-      <section className={styles.content}>
-        <img src={logo} alt="Wealth Life" className={styles.logo} />
+      <header className={`${styles.panel} ${styles.hero}`}>
+        <img src={logo} alt="Wealth Life logo" className={styles.logo} />
+      </header>
+      <section className={`${styles.panel} ${styles.content}`}>
         <h1 className={styles.title}>Wealth Life</h1>
         <p className={styles.description}>
           整合資產、負債與現金流的全方位財富儀表板。

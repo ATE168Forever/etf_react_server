@@ -1,8 +1,7 @@
 /* eslint-env jest */
 import { render, screen, act, waitFor, fireEvent } from '@testing-library/react';
 
-jest.mock('../src/assets/conceptB-ETF-Life-dark.svg', () => 'data:image/svg+xml;base64,PHN2Zy8+');
-jest.mock('../src/assets/conceptB-ETF-Life-light.svg', () => 'data:image/svg+xml;base64,PHN2Zy8+');
+jest.mock('../src/assets/dividend-life.svg', () => 'data:image/svg+xml;base64,PHN2Zy8+');
 
 const mockFetchWithCache = jest.fn();
 const mockFetchStockList = jest.fn();
