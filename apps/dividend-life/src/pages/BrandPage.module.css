@@ -8,24 +8,6 @@
   align-items: center;
 }
 
-.backLink {
-  align-self: flex-start;
-  color: rgba(197, 209, 255, 0.72);
-  text-decoration: none;
-  font-size: 0.95rem;
-  margin-bottom: 24px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: color 0.2s ease;
-}
-
-.backLink:hover,
-.backLink:focus-visible {
-  color: #aabfff;
-  outline: none;
-}
-
 .content {
   width: min(960px, 100%);
   background: rgba(12, 14, 20, 0.92);

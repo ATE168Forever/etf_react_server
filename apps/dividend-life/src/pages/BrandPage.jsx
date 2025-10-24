@@ -15,9 +15,6 @@ export default function BrandPage({
   return (
     <main className={styles.container}>
       <ExperienceNavigation current={experienceKey} />
-      <Link to="/" className={styles.backLink}>
-        ← 回首頁
-      </Link>
       <section className={styles.content}>
         {logoSrc ? <img src={logoSrc} alt={`${title} logo`} className={styles.logo} /> : null}
         <h1 className={styles.title}>{title}</h1>
