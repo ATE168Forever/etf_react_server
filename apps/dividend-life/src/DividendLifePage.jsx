@@ -14,8 +14,8 @@ import CurrencyViewToggle from './components/CurrencyViewToggle';
 
 import './App.css';
 import styles from './App.module.css';
-import dividendLogoDark from './assets/conceptB-ETF-Life-dark.svg';
-import dividendLogoLight from './assets/conceptB-ETF-Life-light.svg';
+import dividendLogoDark from './assets/conceptB-Dividend-Life-dark.svg';
+import dividendLogoLight from './assets/conceptB-Dividend-Life-light.svg';
 import NLHelper from './NLHelper';
 import { API_HOST } from './config';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
