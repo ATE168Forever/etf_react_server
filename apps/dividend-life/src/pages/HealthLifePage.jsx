@@ -5,6 +5,7 @@ import styles from './BrandPage.module.css';
 export default function HealthLifePage() {
   return (
     <BrandPage
+      experienceKey="health-life"
       title="Health Life"
       description="聚焦習慣養成與恢復力追蹤，讓投資人身心同步升級。"
       logoSrc={healthLifeLogo}

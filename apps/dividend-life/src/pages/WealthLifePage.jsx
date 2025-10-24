@@ -5,6 +5,7 @@ import styles from './BrandPage.module.css';
 export default function WealthLifePage() {
   return (
     <BrandPage
+      experienceKey="wealth-life"
       title="Wealth Life"
       description="整合資產、負債與現金流的全方位財富儀表板。"
       logoSrc={wealthLifeLogo}

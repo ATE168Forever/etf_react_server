@@ -3,6 +3,7 @@ import dividendLifeLogo from '../assets/dividend-life.svg';
 import balanceLifeLogo from '../assets/balance-life.svg';
 import healthLifeLogo from '../assets/health-life.svg';
 import wealthLifeLogo from '../assets/wealth-life.svg';
+import Footer from '../components/Footer';
 import styles from './HomePage.module.css';
 
 const experiences = [
@@ -57,6 +58,7 @@ export default function HomePage() {
           </Link>
         ))}
       </section>
+      <Footer showThemeToggle={false} />
     </main>
   );
 }
