@@ -7,8 +7,10 @@ export default function App() {
       <a href="/" className={styles.backLink}>
         ← 回首頁
       </a>
-      <section className={styles.content}>
-        <img src={logo} alt="Balance Life" className={styles.logo} />
+      <header className={`${styles.panel} ${styles.hero}`}>
+        <img src={logo} alt="Balance Life logo" className={styles.logo} />
+      </header>
+      <section className={`${styles.panel} ${styles.content}`}>
         <h1 className={styles.title}>Balance Life</h1>
         <p className={styles.description}>
           用數據驅動的預算工具打造可持續的生活管理系統。

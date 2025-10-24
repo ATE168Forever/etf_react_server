@@ -7,8 +7,10 @@ export default function App() {
       <a href="/" className={styles.backLink}>
         ← 回首頁
       </a>
-      <section className={styles.content}>
-        <img src={logo} alt="Health Life" className={styles.logo} />
+      <header className={`${styles.panel} ${styles.hero}`}>
+        <img src={logo} alt="Health Life logo" className={styles.logo} />
+      </header>
+      <section className={`${styles.panel} ${styles.content}`}>
         <h1 className={styles.title}>Health Life</h1>
         <p className={styles.description}>
           聚焦習慣養成與恢復力追蹤，讓投資人身心同步升級。
