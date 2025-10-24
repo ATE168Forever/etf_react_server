@@ -8,6 +8,7 @@ import DisplayDropdown from './components/DisplayDropdown';
 import DividendCalendar from './components/DividendCalendar';
 import StockTable from './components/StockTable';
 import Footer from './components/Footer';
+import ExperienceNavigation from './components/ExperienceNavigation';
 import AdvancedFilterDropdown from './components/AdvancedFilterDropdown';
 import CurrencyViewToggle from './components/CurrencyViewToggle';
 
@@ -818,84 +819,85 @@ function DividendLifePage() {
 
   return (
     <LanguageContext.Provider value={{ lang, setLang, t }}>
-    <div className="container">
-    <header className="mb-1 text-center">
-      <img
-        src={theme === 'dark' ? dividendLogoDark : dividendLogoLight}
-        alt={lang === 'en' ? 'ETF Life' : '股息人生'}
-        className="site-logo"
-      />
-    </header>
-      {upcomingAlerts.length > 0 && (
-        <div className="dividend-alert">
-          {upcomingAlerts.map(a => (
-            <div key={`${a.stock_id}-${a.type}`}>
-              {lang === 'en'
-                ? `${a.stock_id} ${a.stock_name} will ${a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'} tomorrow. ${a.dividend} per share, estimated ${Math.round(a.total).toLocaleString()}`
-                : `${a.stock_id} ${a.stock_name} 明天即將${a.type === 'ex' ? '除息' : '配息'} 每股 ${a.dividend} 元，預估領取 ${Math.round(a.total).toLocaleString()} 元`}
-            </div>
-          ))}
-        </div>
-      )}
-      <ul className="nav nav-tabs mb-1 justify-content-center">
-        <li className="nav-item">
-          <button
-            className={`nav-link${tab === 'home' ? ' active' : ''}`}
-            onClick={() => setTab('home')}
-          >
-            {t('home')}
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link${tab === 'mydividend' ? ' active' : ''}`}
-            onClick={() => setTab('mydividend')}
-          >
-            {t('mydividend')}
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link${tab === 'dividend' ? ' active' : ''}`}
-            onClick={() => setTab('dividend')}
-          >
-            {t('dividend_search')}
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link${tab === 'inventory' ? ' active' : ''}`}
-            onClick={() => setTab('inventory')}
-          >
-            {t('inventory')}
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link${tab === 'about' ? ' active' : ''}`}
-            onClick={() => setTab('about')}
-          >
-            {t('about')}
-          </button>
-        </li>
-      </ul>
-      {tab === 'home' && <HomeTab />}
-      {tab === 'dividend' && (
-        <div className="App">
-          <h3>{lang === 'en' ? 'Monthly Dividend Summary' : '每月配息總表'}</h3>
-          <div className="dividend-controls">
-            <div className="control-pair">
-              <label>{lang === 'en' ? 'Year:' : '年份：'}</label>
-              <select
-                value={selectedYear}
-                onChange={e => setSelectedYear(Number(e.target.value))}
-              >
-                {years.map(year => (
-                  <option value={year} key={year}>{year}</option>
-                ))}
-              </select>
-            </div>
-            <div className="control-pair">
+      <div className="container">
+        <header className="mb-1 text-center">
+          <img
+            src={theme === 'dark' ? dividendLogoDark : dividendLogoLight}
+            alt={lang === 'en' ? 'ETF Life' : '股息人生'}
+            className="site-logo"
+          />
+        </header>
+        <ExperienceNavigation current="dividend-life" />
+        {upcomingAlerts.length > 0 && (
+          <div className="dividend-alert">
+            {upcomingAlerts.map(a => (
+              <div key={`${a.stock_id}-${a.type}`}>
+                {lang === 'en'
+                  ? `${a.stock_id} ${a.stock_name} will ${a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'} tomorrow. ${a.dividend} per share, estimated ${Math.round(a.total).toLocaleString()}`
+                  : `${a.stock_id} ${a.stock_name} 明天即將${a.type === 'ex' ? '除息' : '配息'} 每股 ${a.dividend} 元，預估領取 ${Math.round(a.total).toLocaleString()} 元`}
+              </div>
+            ))}
+          </div>
+        )}
+        <ul className="nav nav-tabs mb-1 justify-content-center">
+          <li className="nav-item">
+            <button
+              className={`nav-link${tab === 'home' ? ' active' : ''}`}
+              onClick={() => setTab('home')}
+            >
+              {t('home')}
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              className={`nav-link${tab === 'mydividend' ? ' active' : ''}`}
+              onClick={() => setTab('mydividend')}
+            >
+              {t('mydividend')}
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              className={`nav-link${tab === 'dividend' ? ' active' : ''}`}
+              onClick={() => setTab('dividend')}
+            >
+              {t('dividend_search')}
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              className={`nav-link${tab === 'inventory' ? ' active' : ''}`}
+              onClick={() => setTab('inventory')}
+            >
+              {t('inventory')}
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              className={`nav-link${tab === 'about' ? ' active' : ''}`}
+              onClick={() => setTab('about')}
+            >
+              {t('about')}
+            </button>
+          </li>
+        </ul>
+        {tab === 'home' && <HomeTab />}
+        {tab === 'dividend' && (
+          <div className="App">
+            <h3>{lang === 'en' ? 'Monthly Dividend Summary' : '每月配息總表'}</h3>
+            <div className="dividend-controls">
+              <div className="control-pair">
+                <label>{lang === 'en' ? 'Year:' : '年份：'}</label>
+                <select
+                  value={selectedYear}
+                  onChange={e => setSelectedYear(Number(e.target.value))}
+                >
+                  {years.map(year => (
+                    <option value={year} key={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="control-pair">
               <label>{lang === 'en' ? 'Watch Group:' : '觀察組合：'}</label>
               <select value={selectedGroup} onChange={handleGroupChange}>
                 <option value="">{lang === 'en' ? 'Custom' : '自選'}</option>
@@ -1114,8 +1116,8 @@ function DividendLifePage() {
           </div>
         </div>
       )}
-      <Footer theme={theme} setTheme={setTheme} />
-    </div>
+        <Footer theme={theme} setTheme={setTheme} />
+      </div>
     </LanguageContext.Provider>
   );
 }

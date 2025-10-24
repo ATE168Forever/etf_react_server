@@ -1,9 +1,20 @@
 import { Link } from '../router.jsx';
+import ExperienceNavigation from '../components/ExperienceNavigation';
+import Footer from '../components/Footer';
 import styles from './BrandPage.module.css';
 
-export default function BrandPage({ title, description, logoSrc, primaryAction, secondaryAction, children }) {
+export default function BrandPage({
+  experienceKey,
+  title,
+  description,
+  logoSrc,
+  primaryAction,
+  secondaryAction,
+  children,
+}) {
   return (
     <main className={styles.container}>
+      <ExperienceNavigation current={experienceKey} />
       <Link to="/" className={styles.backLink}>
         ← 回首頁
       </Link>
@@ -27,6 +38,7 @@ export default function BrandPage({ title, description, logoSrc, primaryAction, 
           </div>
         )}
       </section>
+      <Footer showThemeToggle={false} />
     </main>
   );
 }

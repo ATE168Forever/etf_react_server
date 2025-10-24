@@ -5,6 +5,7 @@ import styles from './BrandPage.module.css';
 export default function BalanceLifePage() {
   return (
     <BrandPage
+      experienceKey="balance-life"
       title="Balance Life"
       description="用數據驅動的預算工具打造可持續的生活管理系統。"
       logoSrc={balanceLifeLogo}
