@@ -7,7 +7,7 @@ import HomeTab from './HomeTab';
 import DisplayDropdown from './components/DisplayDropdown';
 import DividendCalendar from './components/DividendCalendar';
 import StockTable from './components/StockTable';
-import Footer from './components/Footer';
+import Footer from '@shared/components/Footer/Footer.jsx';
 import ExperienceNavigation from '@shared/components/ExperienceNavigation/ExperienceNavigation.jsx';
 import AdvancedFilterDropdown from './components/AdvancedFilterDropdown';
 import CurrencyViewToggle from './components/CurrencyViewToggle';
@@ -1121,7 +1121,14 @@ function DividendLifePage() {
         )}
         </section>
         <div className={brandStyles.footer}>
-          <Footer theme={theme} setTheme={setTheme} />
+          <Footer
+            theme={theme}
+            setTheme={setTheme}
+            lang={lang}
+            setLang={setLang}
+            t={t}
+            translations={translations}
+          />
         </div>
       </main>
     </LanguageContext.Provider>

@@ -3,7 +3,7 @@ import dividendLifeLogo from '@dividend-life/assets/dividend-life.svg';
 import balanceLifeLogo from '@balance-life/assets/balance-life.svg';
 import healthLifeLogo from '@health-life/assets/health-life.svg';
 import wealthLifeLogo from '@wealth-life/assets/wealth-life.svg';
-import Footer from '@dividend-life/components/Footer.jsx';
+import Footer from '@shared/components/Footer/Footer.jsx';
 import styles from './HomePage.module.css';
 
 const experiences = [
@@ -58,7 +58,12 @@ export default function HomePage() {
           </Link>
         ))}
       </section>
-      <Footer showThemeToggle={false} />
+      <Footer
+        showThemeToggle={false}
+        showLanguageToggle={false}
+        lang="zh"
+        brandName="ConceptB Life"
+      />
     </main>
   );
 }
