@@ -1,9 +1,9 @@
 import { Link } from '@shared/router';
-import dividendLifeLogo from '../assets/dividend-life.svg';
-import balanceLifeLogo from '../assets/balance-life.svg';
-import healthLifeLogo from '../assets/health-life.svg';
-import wealthLifeLogo from '../assets/wealth-life.svg';
-import Footer from '../components/Footer';
+import dividendLifeLogo from '@dividend-life/assets/dividend-life.svg';
+import balanceLifeLogo from '@balance-life/assets/balance-life.svg';
+import healthLifeLogo from '@health-life/assets/health-life.svg';
+import wealthLifeLogo from '@wealth-life/assets/wealth-life.svg';
+import Footer from '@dividend-life/components/Footer.jsx';
 import styles from './HomePage.module.css';
 
 const experiences = [
