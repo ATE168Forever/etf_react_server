@@ -1,4 +1,4 @@
-import { Link } from '../router.jsx';
+import { Link } from '@shared/router';
 import styles from './ExperienceNavigation.module.css';
 
 const experiences = [

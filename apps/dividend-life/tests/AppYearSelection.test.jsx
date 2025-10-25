@@ -25,7 +25,7 @@ jest.mock('../src/dividendApi', () => ({
 jest.mock('../src/config', () => ({ API_HOST: '' }));
 
 import App from '../src/App';
-import { RouterProvider } from '../src/router.jsx';
+import { RouterProvider } from '@shared/router';
 
 beforeEach(() => {
   jest.useFakeTimers();

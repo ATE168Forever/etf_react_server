@@ -141,6 +141,13 @@
   outline: none;
 }
 
+.footerNote {
+  margin: 0;
+  text-align: center;
+  color: rgba(214, 224, 255, 0.72);
+  font-size: 0.9rem;
+}
+
 @media (max-width: 640px) {
   .container {
     padding: 32px 16px 56px;

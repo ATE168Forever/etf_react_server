@@ -1,6 +1,5 @@
-import { Link } from '../router.jsx';
-import ExperienceNavigation from '../components/ExperienceNavigation';
-import Footer from '../components/Footer';
+import { Link } from '@shared/router';
+import ExperienceNavigation from '@shared/components/ExperienceNavigation/ExperienceNavigation.jsx';
 import styles from './BrandPage.module.css';
 
 export default function BrandPage({
@@ -10,6 +9,7 @@ export default function BrandPage({
   logoSrc,
   primaryAction,
   secondaryAction,
+  footerSlot = null,
   children,
 }) {
   return (
@@ -41,9 +41,7 @@ export default function BrandPage({
           </div>
         )}
       </section>
-      <div className={styles.footer}>
-        <Footer showThemeToggle={false} />
-      </div>
+      <div className={styles.footer}>{footerSlot}</div>
     </main>
   );
 }

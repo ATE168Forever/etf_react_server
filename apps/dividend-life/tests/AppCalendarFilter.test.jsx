@@ -11,7 +11,7 @@ jest.mock('../src/api', () => ({
 jest.mock('../src/config', () => ({ API_HOST: '' }));
 
 import App from '../src/App';
-import { RouterProvider } from '../src/router.jsx';
+import { RouterProvider } from '@shared/router';
 
 beforeAll(() => {
   globalThis.fetch = jest.fn(() => Promise.resolve({}));

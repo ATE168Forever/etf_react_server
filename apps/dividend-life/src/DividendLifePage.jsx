@@ -8,13 +8,13 @@ import DisplayDropdown from './components/DisplayDropdown';
 import DividendCalendar from './components/DividendCalendar';
 import StockTable from './components/StockTable';
 import Footer from './components/Footer';
-import ExperienceNavigation from './components/ExperienceNavigation';
+import ExperienceNavigation from '@shared/components/ExperienceNavigation/ExperienceNavigation.jsx';
 import AdvancedFilterDropdown from './components/AdvancedFilterDropdown';
 import CurrencyViewToggle from './components/CurrencyViewToggle';
 
 import './App.css';
 import appStyles from './App.module.css';
-import brandStyles from './pages/BrandPage.module.css';
+import brandStyles from '@shared/components/BrandPage/BrandPage.module.css';
 import dividendLifeLogo from './assets/dividend-life.svg';
 import NLHelper from './NLHelper';
 import { API_HOST } from './config';
