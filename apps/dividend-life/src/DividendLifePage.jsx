@@ -13,7 +13,8 @@ import AdvancedFilterDropdown from './components/AdvancedFilterDropdown';
 import CurrencyViewToggle from './components/CurrencyViewToggle';
 
 import './App.css';
-import styles from './App.module.css';
+import appStyles from './App.module.css';
+import brandStyles from './pages/BrandPage.module.css';
 import dividendLifeLogo from './assets/dividend-life.svg';
 import NLHelper from './NLHelper';
 import { API_HOST } from './config';
@@ -818,305 +819,311 @@ function DividendLifePage() {
 
   return (
     <LanguageContext.Provider value={{ lang, setLang, t }}>
-      <div className="container">
-        <header className="mb-1 text-center">
+      <main className={brandStyles.container}>
+        <div className={brandStyles.navigation}>
+          <ExperienceNavigation current="dividend-life" />
+        </div>
+        <div className={`${brandStyles.panel} ${brandStyles.logoSection}`}>
           <img
             src={dividendLifeLogo}
             alt={lang === 'en' ? 'Dividend Life' : '股息人生'}
-            className="site-logo"
+            className={brandStyles.logo}
           />
-        </header>
-        <ExperienceNavigation current="dividend-life" />
-        {upcomingAlerts.length > 0 && (
-          <div className="dividend-alert">
-            {upcomingAlerts.map(a => (
-              <div key={`${a.stock_id}-${a.type}`}>
-                {lang === 'en'
-                  ? `${a.stock_id} ${a.stock_name} will ${a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'} tomorrow. ${a.dividend} per share, estimated ${Math.round(a.total).toLocaleString()}`
-                  : `${a.stock_id} ${a.stock_name} 明天即將${a.type === 'ex' ? '除息' : '配息'} 每股 ${a.dividend} 元，預估領取 ${Math.round(a.total).toLocaleString()} 元`}
-              </div>
-            ))}
-          </div>
-        )}
-        <ul className="nav nav-tabs mb-1 justify-content-center">
-          <li className="nav-item">
-            <button
-              className={`nav-link${tab === 'home' ? ' active' : ''}`}
-              onClick={() => setTab('home')}
-            >
-              {t('home')}
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link${tab === 'mydividend' ? ' active' : ''}`}
-              onClick={() => setTab('mydividend')}
-            >
-              {t('mydividend')}
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link${tab === 'dividend' ? ' active' : ''}`}
-              onClick={() => setTab('dividend')}
-            >
-              {t('dividend_search')}
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link${tab === 'inventory' ? ' active' : ''}`}
-              onClick={() => setTab('inventory')}
-            >
-              {t('inventory')}
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link${tab === 'about' ? ' active' : ''}`}
-              onClick={() => setTab('about')}
-            >
-              {t('about')}
-            </button>
-          </li>
-        </ul>
-        {tab === 'home' && <HomeTab />}
-        {tab === 'dividend' && (
-          <div className="App">
-            <h3>{lang === 'en' ? 'Monthly Dividend Summary' : '每月配息總表'}</h3>
-            <div className="dividend-controls">
-              <div className="control-pair">
-                <label>{lang === 'en' ? 'Year:' : '年份：'}</label>
-                <select
-                  value={selectedYear}
-                  onChange={e => setSelectedYear(Number(e.target.value))}
-                >
-                  {years.map(year => (
-                    <option value={year} key={year}>{year}</option>
+        </div>
+        <section className={`${brandStyles.panel} ${brandStyles.content} ${brandStyles.contentWide}`}>
+          {upcomingAlerts.length > 0 && (
+            <div className="dividend-alert">
+              {upcomingAlerts.map(a => (
+                <div key={`${a.stock_id}-${a.type}`}>
+                  {lang === 'en'
+                    ? `${a.stock_id} ${a.stock_name} will ${a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'} tomorrow. ${a.dividend} per share, estimated ${Math.round(a.total).toLocaleString()}`
+                    : `${a.stock_id} ${a.stock_name} 明天即將${a.type === 'ex' ? '除息' : '配息'} 每股 ${a.dividend} 元，預估領取 ${Math.round(a.total).toLocaleString()} 元`}
+                </div>
+              ))}
+            </div>
+          )}
+          <ul className="nav nav-tabs mb-1 justify-content-center">
+            <li className="nav-item">
+              <button
+                className={`nav-link${tab === 'home' ? ' active' : ''}`}
+                onClick={() => setTab('home')}
+              >
+                {t('home')}
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link${tab === 'mydividend' ? ' active' : ''}`}
+                onClick={() => setTab('mydividend')}
+              >
+                {t('mydividend')}
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link${tab === 'dividend' ? ' active' : ''}`}
+                onClick={() => setTab('dividend')}
+              >
+                {t('dividend_search')}
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link${tab === 'inventory' ? ' active' : ''}`}
+                onClick={() => setTab('inventory')}
+              >
+                {t('inventory')}
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link${tab === 'about' ? ' active' : ''}`}
+                onClick={() => setTab('about')}
+              >
+                {t('about')}
+              </button>
+            </li>
+          </ul>
+          {tab === 'home' && <HomeTab />}
+          {tab === 'dividend' && (
+            <div className="App">
+              <h3>{lang === 'en' ? 'Monthly Dividend Summary' : '每月配息總表'}</h3>
+              <div className="dividend-controls">
+                <div className="control-pair">
+                  <label>{lang === 'en' ? 'Year:' : '年份：'}</label>
+                  <select
+                    value={selectedYear}
+                    onChange={e => setSelectedYear(Number(e.target.value))}
+                  >
+                    {years.map(year => (
+                      <option value={year} key={year}>{year}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="control-pair">
+                <label>{lang === 'en' ? 'Watch Group:' : '觀察組合：'}</label>
+                <select value={selectedGroup} onChange={handleGroupChange}>
+                  <option value="">{lang === 'en' ? 'Custom' : '自選'}</option>
+                  {watchGroups.map(g => (
+                    <option key={g.name} value={g.name}>{renderGroupOptionLabel(g)}</option>
                   ))}
                 </select>
-              </div>
-              <div className="control-pair">
-              <label>{lang === 'en' ? 'Watch Group:' : '觀察組合：'}</label>
-              <select value={selectedGroup} onChange={handleGroupChange}>
-                <option value="">{lang === 'en' ? 'Custom' : '自選'}</option>
-                {watchGroups.map(g => (
-                  <option key={g.name} value={g.name}>{renderGroupOptionLabel(g)}</option>
-                ))}
-              </select>
-              <button
-                onClick={() => setShowGroupModal(true)}
-                className="group-create-button"
-              >
-                {lang === 'en' ? 'Create' : '建立'}
-              </button>
-            </div>
-          </div>
-          <CurrencyViewToggle
-            viewMode={viewMode}
-            onChange={handleViewModeChange}
-            hasTwd={hasTwd}
-            hasUsd={hasUsd}
-            lang={lang}
-            description={viewDescriptionContent}
-            labelPrefix={viewLabelPrefix}
-            style={{ marginTop: 10 }}
-          />
-          <button
-            onClick={() => setShowCalendar(v => !v)}
-            style={{ marginTop: 10 }}
-          >
-            {showCalendar
-              ? (lang === 'en' ? 'Hide Calendar' : '隱藏月曆')
-              : (lang === 'en' ? 'Show Calendar' : '顯示月曆')}
-          </button>
-
-          {loading ? (
-            <p>Loading...</p>
-          ) : error ? (
-            <p>Error: {error.message}</p>
-          ) : (
-            <>
-              {showCalendar && (
-                <>
-                  <div style={{ margin: '10px 0' }}>
-                    <button
-                      onClick={() => setCalendarFilter('ex')}
-                      className={calendarFilter === 'ex' ? 'btn-selected' : 'btn-unselected'}
-                    >
-                      {lang === 'en' ? 'Ex-dividend Date' : '除息日'}
-                    </button>
-                    <button
-                      onClick={() => setCalendarFilter('pay')}
-                      className={calendarFilter === 'pay' ? 'btn-selected' : 'btn-unselected'}
-                      style={{ marginLeft: 6, marginTop: 6 }}
-                    >
-                      {lang === 'en' ? 'Payment Date' : '發放日'}
-                    </button>
-                    <button
-                      onClick={() => setCalendarFilter('both')}
-                      className={calendarFilter === 'both' ? 'btn-selected' : 'btn-unselected'}
-                      style={{ marginLeft: 6, marginTop: 6 }}
-                    >
-                      {lang === 'en' ? 'Ex/Paid Date' : '除息/發放日'}
-                    </button>
-                  </div>
-                  <DividendCalendar year={selectedYear} events={filteredCalendarEvents} showTotals={false} />
-                </>
-              )}
-
-              <div className="more-item" style={{ marginTop: 10 }}>
-                <button onClick={() => setShowDisplays(v => !v)} style={{ marginRight: 10 }}>
-                  {lang === 'en' ? 'Other Options' : '其他顯示'}
+                <button
+                  onClick={() => setShowGroupModal(true)}
+                  className="group-create-button"
+                >
+                  {lang === 'en' ? 'Create' : '建立'}
                 </button>
-                {showDisplays && (
-                  <DisplayDropdown
-                    toggleDividendYield={() => setShowDividendYield(v => !v)}
-                    showDividendYield={showDividendYield}
-                    toggleAxis={() => setShowInfoAxis(v => !v)}
-                    showInfoAxis={showInfoAxis}
-                    onClose={() => setShowDisplays(false)}
-                  />
-                )}
-              {/* </div> */}
-
-              {/* <div className={styles.tableHeader}> */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
-                  <button onClick={handleResetFilters}>
-                    {lang === 'en' ? 'Reset All Filters' : '重置所有篩選'}
-                  </button>
-                  <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <button onClick={() => setShowAdvancedFilters(v => !v)}>
-                      {lang === 'en' ? 'Advanced Filters' : '進階篩選'}
-                    </button>
-                    {showAdvancedFilters && (
-                      <AdvancedFilterDropdown
-                        filters={extraFilters}
-                        setFilters={setExtraFilters}
-                        onClose={() => setShowAdvancedFilters(false)}
-                        availableCurrencies={availableCurrencies}
-                      />
-                    )}
-                  </div>
-                  <span style={{ fontSize: 13, color: '#adb5bd' }}>
-                    {lang === 'en' ? 'Tip: Use advanced filters to refine the table.' : '提示：使用進階篩選調整顯示內容。'}
-                  </span>
-                </div>
               </div>
-
-              {dividendCacheInfo && (
-                <div className={styles.cacheInfo}>
-                  {lang === 'en' ? 'Cache' : '快取'}: {dividendCacheInfo.cacheStatus}
-                  {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
-                </div>
-              )}
-
-              {showInfoAxis && (
-                <div style={{ margin: '10px 0' }}>
-                  <label>
-                    {lang === 'en' ? 'Estimated Monthly Income:' : '預計月報酬：'}
-                    <input
-                      type="number"
-                      value={monthlyIncomeGoal}
-                      onChange={e => setMonthlyIncomeGoal(Number(e.target.value) || 0)}
-                      style={{ width: 80, marginLeft: 4 }}
-                    />
-                  </label>
-                </div>
-              )}
-
-              <StockTable
-                stocks={displayStocks}
-                dividendTable={dividendTable}
-                totalPerStock={totalPerStock}
-                yieldSum={yieldSum}
-                yieldCount={yieldCount}
-                latestPrice={latestPrice}
-                latestYield={latestYield}
-                estAnnualYield={estAnnualYield}
-                maxAnnualYield={maxAnnualYield}
-                maxYieldPerMonth={maxYieldPerMonth}
-                stockOptions={stockOptions}
-                selectedStockIds={selectedStockIds}
-                setSelectedStockIds={setSelectedStockIds}
-                monthHasValue={monthHasValue}
-                setMonthHasValue={setMonthHasValue}
-                showDividendYield={showDividendYield}
-                currentMonth={currentMonth}
-                monthlyIncomeGoal={monthlyIncomeGoal}
-                showAllStocks={showAllStocks}
-                setShowAllStocks={setShowAllStocks}
-                showInfoAxis={showInfoAxis}
-                getIncomeGoalInfo={getIncomeGoalInfo}
-                freqMap={freqMap}
-                activeCurrencies={activeCurrencies}
-              />
-            </>
-          )}
-        </div>
-      )}
-      {tab === 'inventory' && <InventoryTab />}
-      {tab === 'mydividend' && (
-        <UserDividendsTab
-          allDividendData={data}
-          selectedYear={selectedYear}
-        />
-      )}
-      {tab === 'about' && <AboutTab />}
-      <NLHelper />
-      {showGroupModal && (
-        <div className="modal-overlay">
-          <div className="custom-modal">
-            <h3>{lang === 'en' ? 'Watch Groups' : '觀察組合'}</h3>
-            <div style={{ marginBottom: 10 }}>
-              <button onClick={handleAddGroup}>{lang === 'en' ? 'Add Group' : '新增組合'}</button>
             </div>
-            {editingGroupIndex !== null && (
-              <div style={{ marginBottom: 10 }}>
-                <div>
-                  <input
-                    type="text"
-                    placeholder={lang === 'en' ? 'Group Name' : '組合名稱'}
-                    value={groupNameInput}
-                    onChange={e => setGroupNameInput(e.target.value)}
-                  />
+            <CurrencyViewToggle
+              viewMode={viewMode}
+              onChange={handleViewModeChange}
+              hasTwd={hasTwd}
+              hasUsd={hasUsd}
+              lang={lang}
+              description={viewDescriptionContent}
+              labelPrefix={viewLabelPrefix}
+              style={{ marginTop: 10 }}
+            />
+            <button
+              onClick={() => setShowCalendar(v => !v)}
+              style={{ marginTop: 10 }}
+            >
+              {showCalendar
+                ? (lang === 'en' ? 'Hide Calendar' : '隱藏月曆')
+                : (lang === 'en' ? 'Show Calendar' : '顯示月曆')}
+            </button>
+  
+            {loading ? (
+              <p>Loading...</p>
+            ) : error ? (
+              <p>Error: {error.message}</p>
+            ) : (
+              <>
+                {showCalendar && (
+                  <>
+                    <div style={{ margin: '10px 0' }}>
+                      <button
+                        onClick={() => setCalendarFilter('ex')}
+                        className={calendarFilter === 'ex' ? 'btn-selected' : 'btn-unselected'}
+                      >
+                        {lang === 'en' ? 'Ex-dividend Date' : '除息日'}
+                      </button>
+                      <button
+                        onClick={() => setCalendarFilter('pay')}
+                        className={calendarFilter === 'pay' ? 'btn-selected' : 'btn-unselected'}
+                        style={{ marginLeft: 6, marginTop: 6 }}
+                      >
+                        {lang === 'en' ? 'Payment Date' : '發放日'}
+                      </button>
+                      <button
+                        onClick={() => setCalendarFilter('both')}
+                        className={calendarFilter === 'both' ? 'btn-selected' : 'btn-unselected'}
+                        style={{ marginLeft: 6, marginTop: 6 }}
+                      >
+                        {lang === 'en' ? 'Ex/Paid Date' : '除息/發放日'}
+                      </button>
+                    </div>
+                    <DividendCalendar year={selectedYear} events={filteredCalendarEvents} showTotals={false} />
+                  </>
+                )}
+  
+                <div className="more-item" style={{ marginTop: 10 }}>
+                  <button onClick={() => setShowDisplays(v => !v)} style={{ marginRight: 10 }}>
+                    {lang === 'en' ? 'Other Options' : '其他顯示'}
+                  </button>
+                  {showDisplays && (
+                    <DisplayDropdown
+                      toggleDividendYield={() => setShowDividendYield(v => !v)}
+                      showDividendYield={showDividendYield}
+                      toggleAxis={() => setShowInfoAxis(v => !v)}
+                      showInfoAxis={showInfoAxis}
+                      onClose={() => setShowDisplays(false)}
+                    />
+                  )}
+                {/* </div> */}
+  
+                {/* <div className={appStyles.tableHeader}> */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+                    <button onClick={handleResetFilters}>
+                      {lang === 'en' ? 'Reset All Filters' : '重置所有篩選'}
+                    </button>
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      <button onClick={() => setShowAdvancedFilters(v => !v)}>
+                        {lang === 'en' ? 'Advanced Filters' : '進階篩選'}
+                      </button>
+                      {showAdvancedFilters && (
+                        <AdvancedFilterDropdown
+                          filters={extraFilters}
+                          setFilters={setExtraFilters}
+                          onClose={() => setShowAdvancedFilters(false)}
+                          availableCurrencies={availableCurrencies}
+                        />
+                      )}
+                    </div>
+                    <span style={{ fontSize: 13, color: '#adb5bd' }}>
+                      {lang === 'en' ? 'Tip: Use advanced filters to refine the table.' : '提示：使用進階篩選調整顯示內容。'}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <input
-                    type="text"
-                    placeholder={lang === 'en' ? 'ETF IDs, comma separated' : 'ETF ID，以逗號分隔'}
-                    value={groupIdsInput}
-                    onChange={e => setGroupIdsInput(e.target.value)}
-                    style={{
-                      marginTop: 4,
-                      marginBottom: 4
-                    }}
-                  />
-                </div>
-                <button onClick={handleSaveGroup} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Save' : '儲存'}</button>
-                <button onClick={handleCancelEditGroup} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Cancel' : '取消'}</button>
-              </div>
+  
+                {dividendCacheInfo && (
+                  <div className={appStyles.cacheInfo}>
+                    {lang === 'en' ? 'Cache' : '快取'}: {dividendCacheInfo.cacheStatus}
+                    {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
+                  </div>
+                )}
+  
+                {showInfoAxis && (
+                  <div style={{ margin: '10px 0' }}>
+                    <label>
+                      {lang === 'en' ? 'Estimated Monthly Income:' : '預計月報酬：'}
+                      <input
+                        type="number"
+                        value={monthlyIncomeGoal}
+                        onChange={e => setMonthlyIncomeGoal(Number(e.target.value) || 0)}
+                        style={{ width: 80, marginLeft: 4 }}
+                      />
+                    </label>
+                  </div>
+                )}
+  
+                <StockTable
+                  stocks={displayStocks}
+                  dividendTable={dividendTable}
+                  totalPerStock={totalPerStock}
+                  yieldSum={yieldSum}
+                  yieldCount={yieldCount}
+                  latestPrice={latestPrice}
+                  latestYield={latestYield}
+                  estAnnualYield={estAnnualYield}
+                  maxAnnualYield={maxAnnualYield}
+                  maxYieldPerMonth={maxYieldPerMonth}
+                  stockOptions={stockOptions}
+                  selectedStockIds={selectedStockIds}
+                  setSelectedStockIds={setSelectedStockIds}
+                  monthHasValue={monthHasValue}
+                  setMonthHasValue={setMonthHasValue}
+                  showDividendYield={showDividendYield}
+                  currentMonth={currentMonth}
+                  monthlyIncomeGoal={monthlyIncomeGoal}
+                  showAllStocks={showAllStocks}
+                  setShowAllStocks={setShowAllStocks}
+                  showInfoAxis={showInfoAxis}
+                  getIncomeGoalInfo={getIncomeGoalInfo}
+                  freqMap={freqMap}
+                  activeCurrencies={activeCurrencies}
+                />
+              </>
             )}
-            {watchGroups.map((g, idx) => (
-              <div key={idx} style={{ marginBottom: 8 }}>
-                <div>
-                  <strong style={isGroupModified(g) ? { color: 'red' } : {}}>{renderGroupName(g.name)}</strong>: {renderGroupIds(g)}
-                </div>
-                <div style={{ marginTop: 4 }}>
-                  <button onClick={() => handleEditGroup(idx)}>{lang === 'en' ? 'Edit' : '修改'}</button>
-                  <button onClick={() => handleDeleteGroup(idx)} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Delete' : '刪除'}</button>
-                </div>
+          </div>
+        )}
+        {tab === 'inventory' && <InventoryTab />}
+        {tab === 'mydividend' && (
+          <UserDividendsTab
+            allDividendData={data}
+            selectedYear={selectedYear}
+          />
+        )}
+        {tab === 'about' && <AboutTab />}
+        <NLHelper />
+        {showGroupModal && (
+          <div className="modal-overlay">
+            <div className="custom-modal">
+              <h3>{lang === 'en' ? 'Watch Groups' : '觀察組合'}</h3>
+              <div style={{ marginBottom: 10 }}>
+                <button onClick={handleAddGroup}>{lang === 'en' ? 'Add Group' : '新增組合'}</button>
               </div>
-            ))}
-            {watchGroups.length === 0 && <p style={{ fontSize: 14 }}>{lang === 'en' ? 'No groups yet' : '尚無組合'}</p>}
-            <div style={{ textAlign: 'right', marginTop: 12 }}>
-              <button onClick={() => setShowGroupModal(false)}>{lang === 'en' ? 'Close' : '關閉'}</button>
+              {editingGroupIndex !== null && (
+                <div style={{ marginBottom: 10 }}>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder={lang === 'en' ? 'Group Name' : '組合名稱'}
+                      value={groupNameInput}
+                      onChange={e => setGroupNameInput(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder={lang === 'en' ? 'ETF IDs, comma separated' : 'ETF ID，以逗號分隔'}
+                      value={groupIdsInput}
+                      onChange={e => setGroupIdsInput(e.target.value)}
+                      style={{
+                        marginTop: 4,
+                        marginBottom: 4
+                      }}
+                    />
+                  </div>
+                  <button onClick={handleSaveGroup} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Save' : '儲存'}</button>
+                  <button onClick={handleCancelEditGroup} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Cancel' : '取消'}</button>
+                </div>
+              )}
+              {watchGroups.map((g, idx) => (
+                <div key={idx} style={{ marginBottom: 8 }}>
+                  <div>
+                    <strong style={isGroupModified(g) ? { color: 'red' } : {}}>{renderGroupName(g.name)}</strong>: {renderGroupIds(g)}
+                  </div>
+                  <div style={{ marginTop: 4 }}>
+                    <button onClick={() => handleEditGroup(idx)}>{lang === 'en' ? 'Edit' : '修改'}</button>
+                    <button onClick={() => handleDeleteGroup(idx)} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Delete' : '刪除'}</button>
+                  </div>
+                </div>
+              ))}
+              {watchGroups.length === 0 && <p style={{ fontSize: 14 }}>{lang === 'en' ? 'No groups yet' : '尚無組合'}</p>}
+              <div style={{ textAlign: 'right', marginTop: 12 }}>
+                <button onClick={() => setShowGroupModal(false)}>{lang === 'en' ? 'Close' : '關閉'}</button>
+              </div>
             </div>
           </div>
+        )}
+        </section>
+        <div className={brandStyles.footer}>
+          <Footer theme={theme} setTheme={setTheme} />
         </div>
-      )}
-        <Footer theme={theme} setTheme={setTheme} />
-      </div>
+      </main>
     </LanguageContext.Provider>
   );
 }

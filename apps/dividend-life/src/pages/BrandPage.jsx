@@ -14,9 +14,15 @@ export default function BrandPage({
 }) {
   return (
     <main className={styles.container}>
-      <ExperienceNavigation current={experienceKey} />
-      <section className={styles.content}>
-        {logoSrc ? <img src={logoSrc} alt={`${title} logo`} className={styles.logo} /> : null}
+      <div className={styles.navigation}>
+        <ExperienceNavigation current={experienceKey} />
+      </div>
+      {logoSrc ? (
+        <div className={`${styles.panel} ${styles.logoSection}`}>
+          <img src={logoSrc} alt={`${title} logo`} className={styles.logo} />
+        </div>
+      ) : null}
+      <section className={`${styles.panel} ${styles.content}`}>
         <h1 className={styles.title}>{title}</h1>
         <p className={styles.description}>{description}</p>
         {children}
@@ -35,7 +41,9 @@ export default function BrandPage({
           </div>
         )}
       </section>
-      <Footer showThemeToggle={false} />
+      <div className={styles.footer}>
+        <Footer showThemeToggle={false} />
+      </div>
     </main>
   );
 }
