@@ -10,6 +10,7 @@ export default {
     '^@shared/(.*)\\.(css|scss)$': '<rootDir>/test-style-mock.js',
     '^@shared/(.*)\\.(svg|png|jpe?g|gif)$': '<rootDir>/test-file-mock.js',
     '^@shared/(.*)$': '<rootDir>/../shared/$1',
+    '^@dividend-life/(.*)$': '<rootDir>/src/$1',
     '^@balance-life/(.*)$': '<rootDir>/../balance-life/src/$1',
     '^@health-life/(.*)$': '<rootDir>/../health-life/src/$1',
     '^@wealth-life/(.*)$': '<rootDir>/../wealth-life/src/$1',

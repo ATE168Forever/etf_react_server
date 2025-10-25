@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import HomePage from './pages/HomePage.jsx';
+import HomePage from '@shared/pages/HomePage.jsx';
 import DividendLifePage from './DividendLifePage.jsx';
 import BalanceLifePage from '@balance-life/pages/BalanceLifePage.jsx';
 import HealthLifePage from '@health-life/pages/HealthLifePage.jsx';

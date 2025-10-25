@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@shared': path.resolve(__dirname, '../shared'),
+      '@dividend-life': path.resolve(__dirname, './src'),
       '@balance-life': path.resolve(__dirname, '../balance-life/src'),
       '@health-life': path.resolve(__dirname, '../health-life/src'),
       '@wealth-life': path.resolve(__dirname, '../wealth-life/src'),
