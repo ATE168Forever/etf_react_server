@@ -1,4 +1,5 @@
 import BrandPage from '@shared/components/BrandPage/BrandPage.jsx';
+import Footer from '@shared/components/Footer/Footer.jsx';
 import styles from '@shared/components/BrandPage/BrandPage.module.css';
 import wealthLifeLogo from '../assets/wealth-life.svg';
 
@@ -9,7 +10,14 @@ export default function WealthLifePage() {
       title="Wealth Life"
       description="整合資產、負債與現金流的全方位財富儀表板。"
       logoSrc={wealthLifeLogo}
-      footerSlot={<p className={styles.footerNote}>© {new Date().getFullYear()} ConceptB Life</p>}
+      footerSlot={
+        <Footer
+          showThemeToggle={false}
+          showLanguageToggle={false}
+          lang="zh"
+          brandName="ConceptB Life"
+        />
+      }
     >
       <div className={styles.featureList}>
         <p>Wealth Life 正在打造跨市場的資產視圖與警示功能：</p>

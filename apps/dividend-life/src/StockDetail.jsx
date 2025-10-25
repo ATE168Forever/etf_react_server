@@ -2,8 +2,8 @@ import { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { API_HOST } from './config';
 import './App.css';
-import Footer from './components/Footer';
-import { useLanguage } from './i18n';
+import Footer from '@shared/components/Footer/Footer.jsx';
+import { useLanguage, translations } from './i18n';
 import { fetchStockList } from './stockApi';
 import { fetchDividendsByYears } from './dividendApi';
 
@@ -18,7 +18,7 @@ const formatNumber = (v, digits = 2) => (isNil(v) ? '-' : Number(v).toFixed(digi
 const formatDateStr = (s) => s || '-';
 
 export default function StockDetail({ stockId }) {
-  const { lang } = useLanguage();
+  const { lang, setLang, t } = useLanguage();
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
   useEffect(() => {
@@ -329,7 +329,14 @@ export default function StockDetail({ stockId }) {
         )}
       </div>
 
-      <Footer theme={theme} setTheme={setTheme} />
+      <Footer
+        theme={theme}
+        setTheme={setTheme}
+        lang={lang}
+        setLang={setLang}
+        t={t}
+        translations={translations}
+      />
     </>
   );
 }
