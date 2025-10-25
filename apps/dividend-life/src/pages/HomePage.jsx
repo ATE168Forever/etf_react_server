@@ -1,4 +1,4 @@
-import { Link } from '../router.jsx';
+import { Link } from '@shared/router';
 import dividendLifeLogo from '../assets/dividend-life.svg';
 import balanceLifeLogo from '../assets/balance-life.svg';
 import healthLifeLogo from '../assets/health-life.svg';

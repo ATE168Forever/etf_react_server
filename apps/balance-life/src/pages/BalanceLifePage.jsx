@@ -1,6 +1,6 @@
-import BrandPage from './BrandPage.jsx';
+import BrandPage from '@shared/components/BrandPage/BrandPage.jsx';
+import styles from '@shared/components/BrandPage/BrandPage.module.css';
 import balanceLifeLogo from '../assets/balance-life.svg';
-import styles from './BrandPage.module.css';
 
 export default function BalanceLifePage() {
   return (
@@ -9,6 +9,7 @@ export default function BalanceLifePage() {
       title="Balance Life"
       description="用數據驅動的預算工具打造可持續的生活管理系統。"
       logoSrc={balanceLifeLogo}
+      footerSlot={<p className={styles.footerNote}>© {new Date().getFullYear()} ConceptB Life</p>}
     >
       <div className={styles.featureList}>
         <p>Balance Life 將協助你協調現金流與人生節奏，目前產品正在封測準備中：</p>

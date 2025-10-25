@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App.jsx'
 import CookieConsent from './components/CookieConsent.jsx'
-import { RouterProvider } from './router.jsx'
+import { RouterProvider } from '@shared/router'
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById('root')).render(

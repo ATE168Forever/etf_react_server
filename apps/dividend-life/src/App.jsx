@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import HomePage from './pages/HomePage.jsx';
 import DividendLifePage from './DividendLifePage.jsx';
-import BalanceLifePage from './pages/BalanceLifePage.jsx';
-import HealthLifePage from './pages/HealthLifePage.jsx';
-import WealthLifePage from './pages/WealthLifePage.jsx';
+import BalanceLifePage from '@balance-life/pages/BalanceLifePage.jsx';
+import HealthLifePage from '@health-life/pages/HealthLifePage.jsx';
+import WealthLifePage from '@wealth-life/pages/WealthLifePage.jsx';
 import StockDetail from './StockDetail.jsx';
-import { useRouter } from './router.jsx';
+import { useRouter } from '@shared/router';
 
 const KNOWN_PATHS = new Set(['/', '/dividend-life', '/balance-life', '/health-life', '/wealth-life']);
 
