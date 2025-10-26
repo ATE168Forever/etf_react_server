@@ -1,5 +1,5 @@
 /* eslint-env jest */
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import StockDetail from '../src/StockDetail';
 
@@ -61,7 +61,13 @@ test('renders returns data', async () => {
       <StockDetail stockId="0056" />
     </QueryClientProvider>
   );
+  expect(globalThis.fetch).not.toHaveBeenCalled();
+
+  const loadButton = await screen.findByRole('button', { name: '載入績效資料' });
+  fireEvent.click(loadButton);
+
   await waitFor(() => expect(screen.getAllByText('0.51%').length).toBeGreaterThan(0));
   expect(screen.getByText('5.06%')).toBeInTheDocument();
   expect(screen.getByText('-5.97%')).toBeInTheDocument();
+  expect(globalThis.fetch).toHaveBeenCalledTimes(1);
 });
