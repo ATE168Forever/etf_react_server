@@ -1,5 +1,5 @@
 import BrandPage from '@shared/components/BrandPage/BrandPage.jsx';
-import Footer from '@shared/components/Footer/Footer.jsx';
+import BrandFooter from '@shared/components/BrandPage/BrandFooter.jsx';
 import styles from '@shared/components/BrandPage/BrandPage.module.css';
 import healthLifeLogo from '../assets/health-life.svg';
 
@@ -10,14 +10,7 @@ export default function HealthLifePage() {
       title="Health Life"
       description="聚焦習慣養成與恢復力追蹤，讓投資人身心同步升級。"
       logoSrc={healthLifeLogo}
-      footerSlot={
-        <Footer
-          showThemeToggle={false}
-          showLanguageToggle={false}
-          lang="zh"
-          brandName="ConceptB Life"
-        />
-      }
+      footerSlot={<BrandFooter />}
     >
       <div className={styles.featureList}>
         <p>Health Life 主打個人化的健康儀表板，目前正在整合資料管線：</p>
