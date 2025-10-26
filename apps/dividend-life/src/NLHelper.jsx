@@ -30,7 +30,23 @@ function NLHelper() {
 
   return (
     <>
-      <div className={`nl-helper ${open ? 'open' : ''}`} aria-hidden={!open}>
+      <div className={`nl-helper ${open ? 'open' : ''}`} 
+        aria-hidden={!open}
+        style={{
+          position: 'fixed',
+          right: open ? '20px' : '-320px', // 收合時滑出畫面外
+          bottom: '80px',
+          width: '300px',
+          height: '360px',
+          background: '#fff',
+          border: '1px solid #ddd',
+          borderRadius: '10px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          padding: '10px',
+          transition: 'right 0.3s ease',
+          zIndex: 1000,
+        }}
+        >
         <textarea
           value={query}
           onChange={e => setQuery(e.target.value)}
@@ -46,7 +62,30 @@ function NLHelper() {
         className="nl-helper-toggle"
         onClick={toggleOpen}
         aria-expanded={open}
-        aria-label={open ? (lang === 'en' ? 'Close assistant' : '關閉助理') : (lang === 'en' ? 'Open assistant' : '開啟助理')}
+        aria-label={
+          open
+            ? lang === 'en'
+              ? 'Close assistant'
+              : '關閉助理'
+            : lang === 'en'
+              ? 'Open assistant'
+              : '開啟助理'
+        }
+        style={{
+          position: 'fixed',
+          right: '20px',
+          bottom: '20px',
+          width: '50px',
+          height: '50px',
+          borderRadius: '50%',
+          border: 'none',
+          backgroundColor: open ? '#f87171' : '#007bff',
+          color: '#fff',
+          fontSize: '22px',
+          cursor: 'pointer',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          zIndex: 9999,
+        }}
       >
         {open ? '×' : '🤖'}
       </button>

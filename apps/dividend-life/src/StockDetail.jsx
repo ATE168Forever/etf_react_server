@@ -299,127 +299,165 @@ export default function StockDetail({ stockId }) {
           </li>
         </ul>
 
-        {dividends.length > 0 && (
-          <>
-            {shouldShowDividendNews && (
-              <>
-                <div style={{ marginTop: 12 }}>
-                  <button
-                    onClick={() => {
-                      if (!dividendHelperEnabled) {
-                        setDividendHelperEnabled(true);
-                      } else {
-                        dividendNewsQuery.refetch();
-                      }
-                    }}
-                    disabled={dividendNewsQuery.isFetching}
-                    style={{ marginBottom: 12 }}
-                  >
-                    {dividendNewsQuery.isFetching
-                      ? lang === 'en'
-                        ? 'Loading announcement...'
-                        : '公告資料載入中...'
-                      : dividendHelperEnabled
-                        ? lang === 'en'
-                          ? 'Refresh announcement'
-                          : '重新整理公告'
-                        : lang === 'en'
-                          ? 'Load announcement'
-                          : '載入公告資料'}
-                  </button>
-                </div>
+        {dividends.length > 0 && (() => {
+          const STR = {
+            en: {
+              twseLinkText: 'Latest Announcements from the Taiwan Stock Exchange (TWSE)',
+              loading: 'Loading announcement...',
+              refresh: 'Refresh announcement',
+              load: 'Load announcement',
+              loadFailed: 'Failed to load announcement:',
+              latest: 'Latest Income Distribution Announcement',
+              announceDate: 'Announcement date:',
+              link: 'Link:',
+              breakdown: 'Income distribution breakdown:',
+              noData: 'No announcement data available.',
+              date: 'Date',
+              dividend: 'Dividend',
+              yield: 'Yield'
+            },
+            zh: {
+              twseLinkText: '台灣證交所最新訊息',
+              loading: '公告資料載入中...',
+              refresh: '重新整理公告',
+              load: '載入公告資料',
+              loadFailed: '無法載入公告資料：',
+              latest: '最新分配收益資訊',
+              announceDate: '公告日期：',
+              link: '連結：',
+              breakdown: '最新一期收益來源占比：',
+              noData: '目前沒有公告資料。',
+              date: '日期',
+              dividend: '配息金額',
+              yield: '殖利率'
+            }
+          }[lang === 'en' ? 'en' : 'zh'];
 
-                {dividendHelperEnabled && dividendNewsQuery.isError && (
-                  <div style={{ marginTop: 8, color: '#f87171' }}>
-                    {lang === 'en'
-                      ? `Failed to load announcement: ${dividendNewsQuery.error?.message ?? ''}`
-                      : `無法載入公告資料：${dividendNewsQuery.error?.message ?? ''}`}
-                  </div>
-                )}
+          const hasDividends = dividends.length > 0;
+          const showNewsEntry = shouldShowDividendNews && hasDividends;
+          const isFetching = dividendNewsQuery.isFetching;
+          const isError = dividendNewsQuery.isError;
+          const errorMsg = dividendNewsQuery.error?.message ?? '';
+          const canRenderNews = dividendHelperEnabled && !isFetching && !isError;
+          const hasNewsText = (newsTextEntries?.length ?? 0) > 0;
 
-                {dividendHelperEnabled &&
-                  !dividendNewsQuery.isFetching &&
-                  !dividendNewsQuery.isError &&
-                  dividendNews.stock_id && (
-                  <div className="news" style={{ marginTop: 12 }}>
-                    <div style={{ fontWeight: 600 }}>
-                      {lang === 'en' ? 'Latest Income Distribution Announcement' : '最新分配收益資訊'}
+          const handleClick = () => {
+            if (!dividendHelperEnabled) {
+              setDividendHelperEnabled(true);
+            } else {
+              dividendNewsQuery.refetch();
+            }
+          };
+
+          return (
+            <>
+              {showNewsEntry && (
+                <>
+                  <div style={{ marginTop: 12 }}>
+                    <div>
+                      <a
+                        href="https://www.twse.com.tw/zh/products/securities/etf/news.html"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {STR.twseLinkText}
+                      </a>
                     </div>
-                    <p style={{ paddingLeft: 20, margin: '6px 0' }}>
-                      {lang === 'en' ? 'Announcement date:' : '公告日期：'} {formatDateStr(newsDate)}
-                    </p>
-                    <p style={{ paddingLeft: 20, margin: '6px 0' }}>
-                      {lang === 'en' ? 'Link:' : '連結：'}
-                      {newsUrl ? (
-                        <a href={newsUrl} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all' }}>
-                          {newsUrl}
-                        </a>
-                      ) : (
-                        '-'
-                      )}
-                    </p>
-                  </div>
-                )}
 
-                {dividendHelperEnabled &&
-                  !dividendNewsQuery.isFetching &&
-                  !dividendNewsQuery.isError &&
-                  newsTextEntries.length > 0 && (
-                  <div className="news-text" style={{ paddingLeft: 20 }}>
-                    <div style={{ fontWeight: 600, marginTop: 6 }}>
-                      {lang === 'en' ? 'Income distribution breakdown:' : '收益來源占比：'}
+                    <button
+                      onClick={handleClick}
+                      disabled={isFetching}
+                      style={{ marginBottom: 12 }}
+                    >
+                      {isFetching
+                        ? STR.loading
+                        : (dividendHelperEnabled ? STR.refresh : STR.load)}
+                    </button>
+                  </div>
+
+                  {dividendHelperEnabled && isError && (
+                    <div style={{ marginTop: 8, color: '#f87171' }}>
+                      {`${STR.loadFailed} ${errorMsg}`}
                     </div>
-                    <ul style={{ marginTop: 4 }}>
-                      {newsTextEntries.map(([key, value]) => {
-                        const label = distributionLabelMap[key];
-                        const displayLabel = label ? (lang === 'en' ? label.en : label.zh) : key;
-                        const v = typeof value === 'number' ? `${value}%` : value ?? '-';
-                        return (
-                          <li key={key} style={{ lineHeight: 1.6 }}>
-                            <strong>{displayLabel}：</strong> {v}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
+                  )}
 
-                {dividendHelperEnabled &&
-                  !dividendNewsQuery.isFetching &&
-                  !dividendNewsQuery.isError &&
-                  !dividendNews.stock_id && (
-                  <div style={{ marginTop: 8 }}>
-                    {lang === 'en' ? 'No announcement data available.' : '目前沒有公告資料。'}
-                  </div>
-                )}
-              </>
-            )}
+                  {canRenderNews && hasNewsText && (
+                    <div className="news" style={{ marginTop: 12 }}>
+                      <div style={{ fontWeight: 600 }}>{STR.latest}</div>
+                      <p style={{ paddingLeft: 20, margin: '6px 0' }}>
+                        {STR.announceDate} {formatDateStr(newsDate)}
+                      </p>
+                      <p style={{ paddingLeft: 20, margin: '6px 0' }}>
+                        {STR.link}{' '}
+                        {newsUrl ? (
+                          <a
+                            href={newsUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ wordBreak: 'break-all' }}
+                          >
+                            {newsUrl}
+                          </a>
+                        ) : (
+                          '-'
+                        )}
+                      </p>
+                    </div>
+                  )}
 
-            <div className="table-responsive">
-              <table className="dividend-record">
-                <thead>
-                  <tr>
-                    <th>{lang === 'en' ? 'Date' : '日期'}</th>
-                    <th>{lang === 'en' ? 'Dividend' : '配息金額'}</th>
-                    <th>{lang === 'en' ? 'Yield' : '殖利率'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dividends.map((item) => {
-                    const displayDate = item.dividend_date || item.payment_date || '-';
-                    return (
-                      <tr key={`${displayDate}-${item.dividend}-${item.dividend_yield}`}>
-                        <td>{displayDate}</td>
-                        <td>{isNil(item.dividend) ? '-' : item.dividend}</td>
-                        <td>{isNil(item.dividend_yield) ? '-' : item.dividend_yield}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+                  {canRenderNews && hasNewsText && (
+                    <div className="news-text" style={{ paddingLeft: 20 }}>
+                      <div style={{ fontWeight: 600, marginTop: 6 }}>{STR.breakdown}</div>
+                      <ul style={{ marginTop: 4 }}>
+                        {newsTextEntries.map(([key, value]) => {
+                          const label = distributionLabelMap[key];
+                          const displayLabel = label ? (lang === 'en' ? label.en : label.zh) : key;
+                          const v = typeof value === 'number' ? `${value}%` : (value ?? '-');
+                          return (
+                            <li key={key} style={{ lineHeight: 1.6 }}>
+                              <strong>{displayLabel}：</strong> {v}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+
+                  {canRenderNews && !hasNewsText && (
+                    <div style={{ marginTop: 8 }}>
+                      {STR.noData}
+                    </div>
+                  )}
+                </>
+              )}
+
+              <div className="table-responsive">
+                <table className="dividend-record">
+                  <thead>
+                    <tr>
+                      <th>{STR.date}</th>
+                      <th>{STR.dividend}</th>
+                      <th>{STR.yield}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dividends.map((item) => {
+                      const displayDate = item.dividend_date || item.payment_date || '-';
+                      return (
+                        <tr key={`${displayDate}-${item.dividend}-${item.dividend_yield}`}>
+                          <td>{displayDate}</td>
+                          <td>{isNil(item.dividend) ? '-' : item.dividend}</td>
+                          <td>{isNil(item.dividend_yield) ? '-' : item.dividend_yield}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          );
+        })()}
+
       </div>
 
       <Footer
