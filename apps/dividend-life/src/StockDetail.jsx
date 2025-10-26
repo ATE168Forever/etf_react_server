@@ -20,6 +20,8 @@ const formatDateStr = (s) => s || '-';
 export default function StockDetail({ stockId }) {
   const { lang, setLang, t } = useLanguage();
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const [returnsEnabled, setReturnsEnabled] = useState(false);
+  const [dividendHelperEnabled, setDividendHelperEnabled] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -53,17 +55,18 @@ export default function StockDetail({ stockId }) {
     staleTime: 2 * 60 * 60 * 1000,
   });
 
-  const { data: returns = {}, isLoading: returnsLoading } = useQuery({
+  const returnsQuery = useQuery({
     queryKey: ['returns', stockId],
     queryFn: async () => {
       const res = await fetch(`${API_HOST}/get_returns?stock_id=${stockId}`);
       return await res.json();
     },
-    enabled: !!stockId,
+    enabled: !!stockId && returnsEnabled,
     staleTime: 2 * 60 * 60 * 1000,
   });
+  const returns = returnsQuery.data ?? {};
 
-  const { data: dividendNews = {}, isLoading: dividendNewsLoading } = useQuery({
+  const dividendNewsQuery = useQuery({
     queryKey: ['dividend_helper', stockId],
     queryFn: async () => {
       if (!stockId) return {};
@@ -73,9 +76,10 @@ export default function StockDetail({ stockId }) {
       }
       return await res.json();
     },
-    enabled: !!stockId,
+    enabled: !!stockId && dividendHelperEnabled,
     staleTime: 30 * 60 * 1000,
   });
+  const dividendNews = dividendNewsQuery.data ?? {};
 
   const newsUrl = dividendNews?.news_url || '';
   const newsDate = dividendNews?.news_date || '';
@@ -103,7 +107,7 @@ export default function StockDetail({ stockId }) {
     return arr;
   }, [dividendList, stockId]);
 
-  if (stockLoading || dividendLoading || returnsLoading || dividendNewsLoading) {
+  if (stockLoading || dividendLoading) {
     return <div>{lang === 'en' ? 'Loading...' : '載入中...'}</div>;
   }
 
@@ -153,8 +157,41 @@ export default function StockDetail({ stockId }) {
         </p>
         <p>{lang === 'en' ? 'Listing date:' : '上市日期：'} {stock.listing_date || '-'}</p>
 
-        {returns.stock_id && (
-          <div className="table-responsive">
+        <div style={{ marginTop: 12 }}>
+          <button
+            onClick={() => {
+              if (!returnsEnabled) {
+                setReturnsEnabled(true);
+              } else {
+                returnsQuery.refetch();
+              }
+            }}
+            disabled={returnsQuery.isFetching}
+          >
+            {returnsQuery.isFetching
+              ? lang === 'en'
+                ? 'Loading performance data...'
+                : '績效資料載入中...'
+              : returnsEnabled
+                ? lang === 'en'
+                  ? 'Refresh performance data'
+                  : '重新整理績效資料'
+                : lang === 'en'
+                  ? 'Load performance data'
+                  : '載入績效資料'}
+          </button>
+        </div>
+
+        {returnsEnabled && returnsQuery.isError && (
+          <div style={{ marginTop: 8, color: '#f87171' }}>
+            {lang === 'en'
+              ? `Failed to load performance data: ${returnsQuery.error?.message ?? ''}`
+              : `無法載入績效資料：${returnsQuery.error?.message ?? ''}`}
+          </div>
+        )}
+
+        {returnsEnabled && returns.stock_id && !returnsQuery.isFetching && !returnsQuery.isError && (
+          <div className="table-responsive" style={{ marginTop: 12 }}>
             <table className="dividend-record">
               <thead>
                 <tr>
@@ -193,6 +230,11 @@ export default function StockDetail({ stockId }) {
                 </tr>
               </tbody>
             </table>
+          </div>
+        )}
+        {returnsEnabled && !returnsQuery.isFetching && !returns.stock_id && !returnsQuery.isError && (
+          <div style={{ marginTop: 8 }}>
+            {lang === 'en' ? 'No performance data available.' : '目前沒有可顯示的績效資料。'}
           </div>
         )}
 
@@ -261,26 +303,68 @@ export default function StockDetail({ stockId }) {
           <>
             {shouldShowDividendNews && (
               <>
-                <div className="news" style={{ marginTop: 12 }}>
-                  <div style={{ fontWeight: 600 }}>
-                    {lang === 'en' ? 'Latest Income Distribution Announcement' : '最新分配收益資訊'}
-                  </div>
-                  <p style={{ paddingLeft: 20, margin: '6px 0' }}>
-                    {lang === 'en' ? 'Announcement date:' : '公告日期：'} {formatDateStr(newsDate)}
-                  </p>
-                  <p style={{ paddingLeft: 20, margin: '6px 0' }}>
-                    {lang === 'en' ? 'Link:' : '連結：'}
-                    {newsUrl ? (
-                      <a href={newsUrl} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all' }}>
-                        {newsUrl}
-                      </a>
-                    ) : (
-                      '-'
-                    )}
-                  </p>
+                <div style={{ marginTop: 12 }}>
+                  <button
+                    onClick={() => {
+                      if (!dividendHelperEnabled) {
+                        setDividendHelperEnabled(true);
+                      } else {
+                        dividendNewsQuery.refetch();
+                      }
+                    }}
+                    disabled={dividendNewsQuery.isFetching}
+                    style={{ marginBottom: 12 }}
+                  >
+                    {dividendNewsQuery.isFetching
+                      ? lang === 'en'
+                        ? 'Loading announcement...'
+                        : '公告資料載入中...'
+                      : dividendHelperEnabled
+                        ? lang === 'en'
+                          ? 'Refresh announcement'
+                          : '重新整理公告'
+                        : lang === 'en'
+                          ? 'Load announcement'
+                          : '載入公告資料'}
+                  </button>
                 </div>
 
-                {newsTextEntries.length > 0 && (
+                {dividendHelperEnabled && dividendNewsQuery.isError && (
+                  <div style={{ marginTop: 8, color: '#f87171' }}>
+                    {lang === 'en'
+                      ? `Failed to load announcement: ${dividendNewsQuery.error?.message ?? ''}`
+                      : `無法載入公告資料：${dividendNewsQuery.error?.message ?? ''}`}
+                  </div>
+                )}
+
+                {dividendHelperEnabled &&
+                  !dividendNewsQuery.isFetching &&
+                  !dividendNewsQuery.isError &&
+                  dividendNews.stock_id && (
+                  <div className="news" style={{ marginTop: 12 }}>
+                    <div style={{ fontWeight: 600 }}>
+                      {lang === 'en' ? 'Latest Income Distribution Announcement' : '最新分配收益資訊'}
+                    </div>
+                    <p style={{ paddingLeft: 20, margin: '6px 0' }}>
+                      {lang === 'en' ? 'Announcement date:' : '公告日期：'} {formatDateStr(newsDate)}
+                    </p>
+                    <p style={{ paddingLeft: 20, margin: '6px 0' }}>
+                      {lang === 'en' ? 'Link:' : '連結：'}
+                      {newsUrl ? (
+                        <a href={newsUrl} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all' }}>
+                          {newsUrl}
+                        </a>
+                      ) : (
+                        '-'
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                {dividendHelperEnabled &&
+                  !dividendNewsQuery.isFetching &&
+                  !dividendNewsQuery.isError &&
+                  newsTextEntries.length > 0 && (
                   <div className="news-text" style={{ paddingLeft: 20 }}>
                     <div style={{ fontWeight: 600, marginTop: 6 }}>
                       {lang === 'en' ? 'Income distribution breakdown:' : '收益來源占比：'}
@@ -297,6 +381,15 @@ export default function StockDetail({ stockId }) {
                         );
                       })}
                     </ul>
+                  </div>
+                )}
+
+                {dividendHelperEnabled &&
+                  !dividendNewsQuery.isFetching &&
+                  !dividendNewsQuery.isError &&
+                  !dividendNews.stock_id && (
+                  <div style={{ marginTop: 8 }}>
+                    {lang === 'en' ? 'No announcement data available.' : '目前沒有公告資料。'}
                   </div>
                 )}
               </>
@@ -317,8 +410,8 @@ export default function StockDetail({ stockId }) {
                     return (
                       <tr key={`${displayDate}-${item.dividend}-${item.dividend_yield}`}>
                         <td>{displayDate}</td>
-                      <td>{isNil(item.dividend) ? '-' : item.dividend}</td>
-                      <td>{isNil(item.dividend_yield) ? '-' : item.dividend_yield}</td>
+                        <td>{isNil(item.dividend) ? '-' : item.dividend}</td>
+                        <td>{isNil(item.dividend_yield) ? '-' : item.dividend_yield}</td>
                       </tr>
                     );
                   })}
