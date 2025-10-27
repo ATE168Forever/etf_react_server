@@ -10,6 +10,12 @@
   gap: 48px;
 }
 
+:global([data-theme='light']) .container {
+  background: radial-gradient(circle at top, rgba(82, 124, 255, 0.12), transparent 55%),
+    linear-gradient(180deg, #f5f7ff 0%, #eef3ff 45%, #ffffff 100%);
+  color: #111320;
+}
+
 .hero {
   text-align: center;
   max-width: 640px;
@@ -25,6 +31,10 @@
   font-size: clamp(1.125rem, 3vw, 1.5rem);
   color: rgba(255, 255, 255, 0.72);
   margin-bottom: 0;
+}
+
+:global([data-theme='light']) .heroSubtitle {
+  color: rgba(27, 39, 78, 0.72);
 }
 
 .grid {
@@ -49,12 +59,24 @@
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
 }
 
+:global([data-theme='light']) .card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(103, 136, 255, 0.28);
+  box-shadow: 0 16px 32px rgba(82, 124, 255, 0.15);
+}
+
 .card:hover,
 .card:focus-visible {
   transform: translateY(-6px);
   border-color: rgba(140, 173, 255, 0.45);
   box-shadow: 0 25px 50px rgba(29, 98, 255, 0.3);
   outline: none;
+}
+
+:global([data-theme='light']) .card:hover,
+:global([data-theme='light']) .card:focus-visible {
+  border-color: rgba(82, 124, 255, 0.55);
+  box-shadow: 0 28px 55px rgba(82, 124, 255, 0.25);
 }
 
 .logo {
@@ -74,6 +96,10 @@
   text-align: center;
   color: rgba(232, 236, 255, 0.78);
   line-height: 1.5;
+}
+
+:global([data-theme='light']) .cardDescription {
+  color: rgba(34, 45, 78, 0.78);
 }
 
 @media (max-width: 640px) {
