@@ -1,19 +1,28 @@
+import { useThemeLanguage } from '@shared/hooks/useThemeLanguage.jsx';
 import { Link } from '@shared/router';
 import styles from './ExperienceNavigation.module.css';
 
 const experiences = [
-  { key: 'home', label: '首頁', to: '/' },
-  // { key: 'dividend-life', label: 'Dividend Life', to: '/dividend-life' },
-  // { key: 'balance-life', label: 'Balance Life', to: '/balance-life' },
-  // { key: 'health-life', label: 'Health Life', to: '/health-life' },
-  // { key: 'wealth-life', label: 'Wealth Life', to: '/wealth-life' },
+  { key: 'home', to: '/', labels: { zh: '首頁', en: 'Home' } },
+  // { key: 'dividend-life', to: '/dividend-life', labels: { zh: 'Dividend Life', en: 'Dividend Life' } },
+  // { key: 'balance-life', to: '/balance-life', labels: { zh: 'Balance Life', en: 'Balance Life' } },
+  // { key: 'health-life', to: '/health-life', labels: { zh: 'Health Life', en: 'Health Life' } },
+  // { key: 'wealth-life', to: '/wealth-life', labels: { zh: 'Wealth Life', en: 'Wealth Life' } },
 ];
 
 export default function ExperienceNavigation({ current }) {
+  const { lang } = useThemeLanguage();
+
   return (
     <nav className={styles.nav} aria-label="ConceptB Life navigation">
       {experiences.map((experience) => {
         const isActive = current === experience.key;
+        const label =
+          experience.labels?.[lang] ??
+          experience.labels?.zh ??
+          experience.labels?.en ??
+          experience.key;
+
         return (
           <Link
             key={experience.key}
@@ -21,7 +30,7 @@ export default function ExperienceNavigation({ current }) {
             className={isActive ? `${styles.link} ${styles.active}` : styles.link}
             aria-current={isActive ? 'page' : undefined}
           >
-            {experience.label}
+            {label}
           </Link>
         );
       })}
