@@ -1,10 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import './index.css'
-import App from './App.jsx'
-import CookieConsent from './components/CookieConsent.jsx'
+import '@dividend-life/index.css'
+import CookieConsent from '@dividend-life/components/CookieConsent.jsx'
 import { RouterProvider } from '@shared/router'
+import App from './App.jsx'
 
 const queryClient = new QueryClient()
 
