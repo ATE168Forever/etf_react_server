@@ -50,11 +50,6 @@ const CURRENT_YEAR = new Date().getFullYear();
 const PREVIOUS_YEAR = CURRENT_YEAR - 1;
 const ALLOWED_YEARS = [CURRENT_YEAR, PREVIOUS_YEAR];
 
-const hasPayload = (value) =>
-  value !== undefined &&
-  value !== null &&
-  (typeof value === 'number' || (typeof value === 'string' && value.trim() !== ''));
-
 const DEFAULT_WATCH_GROUPS = [
   {
     name: '現金流導向（月月配息）',
@@ -678,15 +673,6 @@ function DividendLifePage() {
       });
     }
   });
-
-  const handleSort = (column) => {
-    setSortConfig(prev => {
-      if (prev.column === column) {
-        return { column, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
-      }
-      return { column, direction: 'asc' };
-    });
-  };
 
   const displayStocks = extraFilters.diamond
     ? filteredStocks.filter(stock => {

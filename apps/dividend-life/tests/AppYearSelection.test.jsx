@@ -81,11 +81,6 @@ test('falls back to the latest available year when current year has no data', as
     );
   });
 
-  const dividendExperience = screen.getByRole('link', { name: 'Dividend Life' });
-  await act(async () => {
-    fireEvent.click(dividendExperience);
-  });
-
   const dividendTab = await screen.findByRole('button', { name: 'ETF 配息查詢' });
 
   await act(async () => {

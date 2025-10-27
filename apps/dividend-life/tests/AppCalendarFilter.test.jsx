@@ -27,10 +27,6 @@ test('calendar defaults to showing both ex and payment events', async () => {
       </RouterProvider>
     );
   });
-  const dividendExperience = screen.getByRole('link', { name: 'Dividend Life' });
-  await act(async () => {
-    fireEvent.click(dividendExperience);
-  });
   const dividendTab = screen.getByRole('button', { name: 'ETF 配息查詢' });
   await act(async () => {
     fireEvent.click(dividendTab);
