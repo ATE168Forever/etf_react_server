@@ -29,11 +29,6 @@ test('App remembers calendar visibility', async () => {
     ));
   });
 
-  const dividendExperience = screen.getByRole('link', { name: 'Dividend Life' });
-  await act(async () => {
-    fireEvent.click(dividendExperience);
-  });
-
   const dividendTab = await screen.findByRole('button', { name: 'ETF 配息查詢' });
   await act(async () => {
     fireEvent.click(dividendTab);
@@ -55,13 +50,6 @@ test('App remembers calendar visibility', async () => {
       </RouterProvider>
     );
   });
-
-  const dividendExperience2 = screen.queryByRole('link', { name: 'Dividend Life' });
-  if (dividendExperience2) {
-    await act(async () => {
-      fireEvent.click(dividendExperience2);
-    });
-  }
 
   const dividendTab2 = await screen.findByRole('button', { name: 'ETF 配息查詢' });
   await act(async () => {
