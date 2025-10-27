@@ -1,13 +1,11 @@
 .container {
   min-height: 100vh;
   padding: 12px 24px 18px;
-  /* padding: 48px 24px 72px; */
-  background: linear-gradient(180deg, #04050a 0%, #06070f 35%, #020204 100%);
-  color: #f5f7ff;
+  background: var(--brand-page-background, linear-gradient(180deg, #04050a 0%, #06070f 35%, #020204 100%));
+  color: var(--color-text, #f5f7ff);
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* gap: clamp(16px, 4vw, 24px); */
   gap: clamp(4px, 4vw, 6px);
 }
 
@@ -18,17 +16,17 @@
 
 .panel {
   width: min(960px, 100%);
-  background: rgba(12, 14, 20, 0.92);
+  background: var(--brand-panel-background, rgba(12, 14, 20, 0.92));
   border-radius: 24px;
-  border: 1px solid rgba(121, 147, 255, 0.18);
-  box-shadow: 0 25px 60px rgba(5, 8, 30, 0.45);
+  border: 1px solid var(--brand-panel-border, rgba(121, 147, 255, 0.18));
+  box-shadow: var(--brand-panel-shadow, 0 25px 60px rgba(5, 8, 30, 0.45));
+  color: inherit;
 }
 
 .logoSection {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* padding: clamp(24px, 5vw, 48px); */
   padding: clamp(6px, 5vw, 8px);
 }
 
@@ -54,7 +52,7 @@
 .logo {
   width: clamp(200px, 40vw, 320px);
   height: auto;
-  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4));
+  filter: var(--brand-logo-drop-shadow, drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4)));
 }
 
 .title {
@@ -64,7 +62,7 @@
 }
 
 .description {
-  color: rgba(224, 229, 255, 0.8);
+  color: var(--brand-description-color, rgba(224, 229, 255, 0.8));
   font-size: clamp(1rem, 2.5vw, 1.25rem);
   line-height: 1.6;
   margin: 0;
@@ -73,7 +71,7 @@
 .featureList {
   width: min(640px, 100%);
   text-align: left;
-  color: rgba(214, 224, 255, 0.86);
+  color: var(--brand-feature-text-color, rgba(214, 224, 255, 0.86));
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -129,9 +127,9 @@
   justify-content: center;
   padding: 14px 24px;
   border-radius: 999px;
-  border: 1px solid rgba(153, 172, 255, 0.45);
-  background: rgba(10, 12, 22, 0.85);
-  color: rgba(224, 229, 255, 0.85);
+  border: 1px solid var(--brand-secondary-button-border, rgba(153, 172, 255, 0.45));
+  background: var(--brand-secondary-button-background, rgba(10, 12, 22, 0.85));
+  color: var(--brand-secondary-button-color, rgba(224, 229, 255, 0.85));
   font-weight: 500;
   text-decoration: none;
   transition: border-color 0.2s ease, color 0.2s ease;
@@ -139,15 +137,15 @@
 
 .secondaryButton:hover,
 .secondaryButton:focus-visible {
-  border-color: rgba(172, 192, 255, 0.7);
-  color: #dce5ff;
+  border-color: var(--brand-secondary-button-hover-border, rgba(172, 192, 255, 0.7));
+  color: var(--brand-secondary-button-hover-color, #dce5ff);
   outline: none;
 }
 
 .footerNote {
   margin: 0;
   text-align: center;
-  color: rgba(214, 224, 255, 0.72);
+  color: var(--brand-footer-note-color, rgba(214, 224, 255, 0.72));
   font-size: 0.9rem;
 }
 

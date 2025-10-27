@@ -1,10 +1,55 @@
 :root {
-  color-scheme: dark;
+  color-scheme: light dark;
   font-family: 'Inter', 'Noto Sans TC', 'Noto Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  background-color: #04050a;
-  color: #f5f7ff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --color-text: #0f172a;
+  --color-card-bg: rgba(255, 255, 255, 0.9);
+  --color-border: rgba(148, 163, 184, 0.35);
+  --brand-body-bg: #f8fafc;
+  --brand-page-background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 40%, #ffffff 100%);
+  --brand-panel-background: rgba(255, 255, 255, 0.9);
+  --brand-panel-border: rgba(148, 163, 184, 0.35);
+  --brand-panel-shadow: 0 25px 60px rgba(148, 163, 184, 0.3);
+  --brand-description-color: rgba(51, 65, 85, 0.85);
+  --brand-feature-text-color: rgba(30, 41, 59, 0.82);
+  --brand-secondary-button-background: rgba(226, 232, 240, 0.85);
+  --brand-secondary-button-color: rgba(30, 41, 59, 0.85);
+  --brand-secondary-button-border: rgba(148, 163, 184, 0.6);
+  --brand-secondary-button-hover-border: rgba(99, 102, 241, 0.65);
+  --brand-secondary-button-hover-color: #3730a3;
+  --brand-logo-drop-shadow: drop-shadow(0 12px 24px rgba(148, 163, 184, 0.35));
+  --brand-footer-note-color: rgba(100, 116, 139, 0.9);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-text: #f5f7ff;
+  --color-card-bg: rgba(12, 14, 20, 0.92);
+  --color-border: rgba(121, 147, 255, 0.18);
+  --brand-body-bg: #04050a;
+  --brand-page-background: linear-gradient(180deg, #04050a 0%, #06070f 35%, #020204 100%);
+  --brand-panel-background: rgba(12, 14, 20, 0.92);
+  --brand-panel-border: rgba(121, 147, 255, 0.18);
+  --brand-panel-shadow: 0 25px 60px rgba(5, 8, 30, 0.45);
+  --brand-description-color: rgba(224, 229, 255, 0.8);
+  --brand-feature-text-color: rgba(214, 224, 255, 0.86);
+  --brand-secondary-button-background: rgba(10, 12, 22, 0.85);
+  --brand-secondary-button-color: rgba(224, 229, 255, 0.85);
+  --brand-secondary-button-border: rgba(153, 172, 255, 0.45);
+  --brand-secondary-button-hover-border: rgba(172, 192, 255, 0.7);
+  --brand-secondary-button-hover-color: #dce5ff;
+  --brand-logo-drop-shadow: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4));
+  --brand-footer-note-color: rgba(214, 224, 255, 0.72);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
 }
 
 *,
@@ -16,6 +61,8 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background-color: var(--brand-body-bg);
+  color: var(--color-text);
 }
 
 a {

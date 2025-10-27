@@ -1,9 +1,23 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      try {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+          document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+        const savedLang = localStorage.getItem('lang');
+        if (savedLang) {
+          document.documentElement.setAttribute('lang', savedLang === 'zh' ? 'zh-Hant' : savedLang);
+        }
+      } catch (error) {
+        console.warn('Unable to restore theme or language preference', error);
+      }
+    </script>
     <title>Balance Life</title>
   </head>
   <body>
