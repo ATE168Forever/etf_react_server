@@ -3,10 +3,10 @@ import styles from './ExperienceNavigation.module.css';
 
 const experiences = [
   { key: 'home', label: '首頁', to: '/' },
-  { key: 'dividend-life', label: 'Dividend Life', to: '/dividend-life' },
-  { key: 'balance-life', label: 'Balance Life', to: '/balance-life' },
-  { key: 'health-life', label: 'Health Life', to: '/health-life' },
-  { key: 'wealth-life', label: 'Wealth Life', to: '/wealth-life' },
+  // { key: 'dividend-life', label: 'Dividend Life', to: '/dividend-life' },
+  // { key: 'balance-life', label: 'Balance Life', to: '/balance-life' },
+  // { key: 'health-life', label: 'Health Life', to: '/health-life' },
+  // { key: 'wealth-life', label: 'Wealth Life', to: '/wealth-life' },
 ];
 
 export default function ExperienceNavigation({ current }) {

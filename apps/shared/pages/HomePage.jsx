@@ -14,27 +14,27 @@ const experiences = [
     logo: dividendLifeLogo,
     to: '/dividend-life',
   },
-  {
-    key: 'balance-life',
-    title: 'Balance Life',
-    description: '規劃預算、掌握支出節奏，讓資產配置與生活步調更平衡。',
-    logo: balanceLifeLogo,
-    to: '/balance-life',
-  },
-  {
-    key: 'health-life',
-    title: 'Health Life',
-    description: '運動紀錄與健康儀表板，陪你養成長期自律的身心習慣。',
-    logo: healthLifeLogo,
-    to: '/health-life',
-  },
-  {
-    key: 'wealth-life',
-    title: 'Wealth Life',
-    description: '整合淨值、資產與負債走勢，掌握財富增長的每一步。',
-    logo: wealthLifeLogo,
-    to: '/wealth-life',
-  },
+  // {
+  //   key: 'balance-life',
+  //   title: 'Balance Life',
+  //   description: '規劃預算、掌握支出節奏，讓資產配置與生活步調更平衡。',
+  //   logo: balanceLifeLogo,
+  //   to: '/balance-life',
+  // },
+  // {
+  //   key: 'health-life',
+  //   title: 'Health Life',
+  //   description: '運動紀錄與健康儀表板，陪你養成長期自律的身心習慣。',
+  //   logo: healthLifeLogo,
+  //   to: '/health-life',
+  // },
+  // {
+  //   key: 'wealth-life',
+  //   title: 'Wealth Life',
+  //   description: '整合淨值、資產與負債走勢，掌握財富增長的每一步。',
+  //   logo: wealthLifeLogo,
+  //   to: '/wealth-life',
+  // },
 ];
 
 export default function HomePage() {
