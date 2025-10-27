@@ -7,10 +7,12 @@
     "apps/*"
   ],
   "scripts": {
-    "dev:etf-life": "pnpm --filter etf-life dev",
+    "predev": "pnpm install --frozen-lockfile",
+    "dev": "pnpm -r --parallel --filter dividend-life --filter balance-life --filter health-life --filter wealth-life run dev",
+    "dev:dividend-life": "pnpm --filter dividend-life dev",
     "dev:budget-life": "pnpm --filter budget-life dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
-    "test": "pnpm --filter etf-life test"
+    "test": "pnpm --filter dividend-life test"
   }
 }
