@@ -48,12 +48,24 @@ export function useRouter() {
   return useContext(RouterContext);
 }
 
-export function Link({ to, children, onClick, target, rel, ...rest }) {
+export function Link({
+  to,
+  children,
+  onClick,
+  target,
+  rel,
+  reloadDocument = false,
+  ...rest
+}) {
   const { navigate } = useRouter();
 
   const handleClick = (event) => {
     if (onClick) {
       onClick(event);
+    }
+
+    if (reloadDocument) {
+      return;
     }
 
     if (

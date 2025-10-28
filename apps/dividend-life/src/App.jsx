@@ -16,6 +16,20 @@ export default function App() {
   const normalized = normalizePath(path)
   const isStockDetail = normalized.startsWith('/stock/')
 
+  const homeHref = (() => {
+    if (typeof window === 'undefined') return 'https://conceptb.life/'
+    if (typeof window.CONCEPTB_HOME_URL === 'string' && window.CONCEPTB_HOME_URL.trim()) {
+      return window.CONCEPTB_HOME_URL
+    }
+    const hostname = window.location?.hostname || ''
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return '/'
+    }
+    return 'https://conceptb.life/'
+  })()
+
+  const homeNavigation = homeHref.startsWith('http') ? 'reload' : 'router'
+
   useEffect(() => {
     if (!isStockDetail && normalized !== '/') {
       replace('/')
@@ -31,5 +45,5 @@ export default function App() {
     return <StockDetail stockId={stockId} />
   }
 
-  return <DividendLifePage />
+  return <DividendLifePage homeHref={homeHref} homeNavigation={homeNavigation} />
 }
