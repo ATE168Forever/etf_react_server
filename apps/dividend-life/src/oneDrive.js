@@ -1,21 +1,15 @@
+import {
+  ONEDRIVE_AUTHORITY,
+  ONEDRIVE_CLIENT_ID,
+  ONEDRIVE_GRAPH_BASE,
+  ONEDRIVE_SCOPES,
+} from '@shared/env';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 
-const CLIENT_ID =
-  typeof window !== 'undefined' && window.ONEDRIVE_CLIENT_ID && window.ONEDRIVE_CLIENT_ID !== 'undefined'
-    ? window.ONEDRIVE_CLIENT_ID
-    : '';
-const SCOPES =
-  typeof window !== 'undefined' && window.ONEDRIVE_SCOPES && window.ONEDRIVE_SCOPES !== 'undefined'
-    ? window.ONEDRIVE_SCOPES.split(' ').filter(Boolean)
-    : ['Files.ReadWrite'];
-const AUTHORITY =
-  typeof window !== 'undefined' && window.ONEDRIVE_AUTHORITY && window.ONEDRIVE_AUTHORITY !== 'undefined'
-    ? window.ONEDRIVE_AUTHORITY
-    : 'https://login.microsoftonline.com/common';
-const GRAPH_BASE =
-  typeof window !== 'undefined' && window.ONEDRIVE_GRAPH_BASE && window.ONEDRIVE_GRAPH_BASE !== 'undefined'
-    ? window.ONEDRIVE_GRAPH_BASE.replace(/\/$/, '')
-    : 'https://graph.microsoft.com';
+const CLIENT_ID = ONEDRIVE_CLIENT_ID || '';
+const SCOPES = ONEDRIVE_SCOPES ? ONEDRIVE_SCOPES.split(' ').filter(Boolean) : ['Files.ReadWrite'];
+const AUTHORITY = ONEDRIVE_AUTHORITY || 'https://login.microsoftonline.com/common';
+const GRAPH_BASE = (ONEDRIVE_GRAPH_BASE || 'https://graph.microsoft.com').replace(/\/$/, '');
 let msalInstance = null;
 let accessToken = null;
 let msalLoaded = false;

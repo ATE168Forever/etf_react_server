@@ -1,7 +1,8 @@
+import { GOOGLE_API_KEY, GOOGLE_CLIENT_ID } from '@shared/env';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 
-const CLIENT_ID = typeof window !== 'undefined' && window.GOOGLE_CLIENT_ID ? window.GOOGLE_CLIENT_ID : '';
-const API_KEY = typeof window !== 'undefined' && window.GOOGLE_API_KEY ? window.GOOGLE_API_KEY : '';
+const CLIENT_ID = GOOGLE_CLIENT_ID || '';
+const API_KEY = GOOGLE_API_KEY || '';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
 const GAPI_SCRIPT_ID = 'gapi';
