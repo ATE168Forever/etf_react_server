@@ -15,7 +15,8 @@ import CurrencyViewToggle from './components/CurrencyViewToggle';
 import './App.css';
 import appStyles from './App.module.css';
 import brandStyles from '@shared/components/BrandPage/BrandPage.module.css';
-import dividendLifeLogo from './assets/dividend-life.svg';
+import dividendLifeLogoDark from './assets/dividend-life.svg';
+import dividendLifeLogoLight from './assets/dividend-life-light.svg';
 import NLHelper from './NLHelper';
 import { API_HOST } from './config';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
@@ -136,6 +137,7 @@ function DividendLifePage() {
 
   // Theme
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const logoSrc = theme === 'light' ? dividendLifeLogoLight : dividendLifeLogoDark;
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -811,7 +813,7 @@ function DividendLifePage() {
         </div>
         <div className={`${brandStyles.panel} ${brandStyles.logoSection}`}>
           <img
-            src={dividendLifeLogo}
+            src={logoSrc}
             alt={lang === 'en' ? 'Dividend Life' : '股息人生'}
             className={brandStyles.logo}
           />
