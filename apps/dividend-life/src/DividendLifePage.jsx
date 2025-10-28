@@ -91,7 +91,7 @@ const getInitialLanguage = () => {
   return browserLanguages?.some(isChineseLanguage) ? 'zh' : 'en';
 };
 
-function DividendLifePage() {
+function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   // Tab state
   const [tab, setTab] = useState('home');
 
@@ -809,7 +809,11 @@ function DividendLifePage() {
     <LanguageContext.Provider value={{ lang, setLang, t }}>
       <main className={brandStyles.container}>
         <div className={brandStyles.navigation}>
-          <ExperienceNavigation current="dividend-life" />
+          <ExperienceNavigation
+            current="dividend-life"
+            homeHref={homeHref}
+            homeNavigation={homeNavigation}
+          />
         </div>
         <div className={`${brandStyles.panel} ${brandStyles.logoSection}`}>
           <img
