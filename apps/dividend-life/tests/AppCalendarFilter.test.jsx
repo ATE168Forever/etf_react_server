@@ -2,6 +2,7 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 // Mock asset imports used by App
 jest.mock('../src/assets/dividend-life.svg', () => 'data:image/svg+xml;base64,PHN2Zy8+');
+jest.mock('../src/assets/dividend-life-light.svg', () => 'data:image/svg+xml;base64,PHN2Zy8+');
 
 jest.mock('../src/api', () => ({
   fetchWithCache: jest.fn(() => Promise.resolve({ data: [], cacheStatus: 'fresh', timestamp: '' })),

@@ -1,8 +1,6 @@
 import { Link } from '@shared/router';
-import dividendLifeLogo from '@dividend-life/assets/dividend-life.svg';
-import balanceLifeLogo from '@balance-life/assets/balance-life.svg';
-import healthLifeLogo from '@health-life/assets/health-life.svg';
-import wealthLifeLogo from '@wealth-life/assets/wealth-life.svg';
+import dividendLifeLogoDark from '@dividend-life/assets/dividend-life.svg';
+import dividendLifeLogoLight from '@dividend-life/assets/dividend-life-light.svg';
 import Footer from '@shared/components/Footer/Footer.jsx';
 import { useThemeLanguage } from '@shared/hooks/useThemeLanguage.jsx';
 import styles from './HomePage.module.css';
@@ -18,28 +16,40 @@ const experiences = [
       zh: '追蹤全球ETF配息日曆、收益目標與自選清單，打造月月現金流。',
       en: 'Track global ETF dividend calendars, income targets, and watchlists to build monthly cash flow.',
     },
-    logo: dividendLifeLogo,
+    logos: {
+      dark: dividendLifeLogoDark,
+      light: dividendLifeLogoLight,
+    },
     to: '/dividend-life',
   },
   // {
   //   key: 'balance-life',
   //   title: 'Balance Life',
   //   description: '規劃預算、掌握支出節奏，讓資產配置與生活步調更平衡。',
-  //   logo: balanceLifeLogo,
+  //   logos: {
+  //     dark: balanceLifeLogoDark,
+  //     light: balanceLifeLogoLight,
+  //   },
   //   to: '/balance-life',
   // },
   // {
   //   key: 'health-life',
   //   title: 'Health Life',
   //   description: '運動紀錄與健康儀表板，陪你養成長期自律的身心習慣。',
-  //   logo: healthLifeLogo,
+  //   logos: {
+  //     dark: healthLifeLogoDark,
+  //     light: healthLifeLogoLight,
+  //   },
   //   to: '/health-life',
   // },
   // {
   //   key: 'wealth-life',
   //   title: 'Wealth Life',
   //   description: '整合淨值、資產與負債走勢，掌握財富增長的每一步。',
-  //   logo: wealthLifeLogo,
+  //   logos: {
+  //     dark: wealthLifeLogoDark,
+  //     light: wealthLifeLogoLight,
+  //   },
   //   to: '/wealth-life',
   // },
 ];
@@ -78,7 +88,11 @@ export default function HomePage() {
               className={styles.card}
               aria-label={experienceTitle}
             >
-              <img src={experience.logo} alt={`${experienceTitle} logo`} className={styles.logo} />
+              <img
+                src={experience.logos?.[theme] ?? experience.logos?.dark ?? experience.logos?.light}
+                alt={`${experienceTitle} logo`}
+                className={styles.logo}
+              />
               <h2 className={styles.cardTitle}>{experienceTitle}</h2>
               <p className={styles.cardDescription}>{experienceDescription}</p>
             </Link>

@@ -2,7 +2,8 @@ import BrandPage from '@shared/components/BrandPage/BrandPage.jsx';
 import BrandFooter from '@shared/components/BrandPage/BrandFooter.jsx';
 import { ThemeLanguageProvider, useThemeLanguage } from '@shared/hooks/useThemeLanguage.jsx';
 import styles from '@shared/components/BrandPage/BrandPage.module.css';
-import balanceLifeLogo from '../assets/balance-life.svg';
+import balanceLifeLogoDark from '../assets/balance-life.svg';
+import balanceLifeLogoLight from '../assets/balance-life-light.svg';
 
 const translations = {
   zh: {
@@ -26,15 +27,16 @@ const translations = {
 };
 
 function BalanceLifeContent() {
-  const { lang } = useThemeLanguage();
+  const { lang, theme } = useThemeLanguage();
   const locale = translations[lang] ?? translations.zh;
+  const logoSrc = theme === 'light' ? balanceLifeLogoLight : balanceLifeLogoDark;
 
   return (
     <BrandPage
       experienceKey="balance-life"
       title={locale.title}
       description={locale.description}
-      logoSrc={balanceLifeLogo}
+      logoSrc={logoSrc}
       footerSlot={<BrandFooter />}
     >
       <div className={styles.featureList}>
