@@ -2,8 +2,11 @@ import path from 'node:path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const workspaceRoot = path.resolve(__dirname, '..', '..')
+
 // https://vite.dev/config/
 export default defineConfig({
+  envDir: workspaceRoot,
   plugins: [react()],
   resolve: {
     alias: {
