@@ -100,46 +100,102 @@ function buildFetchContext(years, countries) {
 export async function fetchDividendsByYears(years, countries) {
   const { years: normalizedYears, countries: normalizedCountries } = buildFetchContext(years, countries);
 
-  const url = buildDividendUrl({
-    years: normalizedYears.length ? normalizedYears : undefined,
-    countries: normalizedCountries.length ? normalizedCountries : undefined
+  const requestCountries = normalizedCountries.length ? normalizedCountries : undefined;
+  const yearsToFetch = normalizedYears.length ? normalizedYears : [undefined];
+
+  const requests = yearsToFetch.map(async targetYear => {
+    const url = buildDividendUrl({
+      years: targetYear !== undefined ? targetYear : undefined,
+      countries: requestCountries
+    });
+
+    const response = await fetchWithCache(url);
+    const payload = response?.data ?? response ?? [];
+    const data = normalizeDividendResponse(payload);
+
+    const numericYear = targetYear === undefined ? null : Number(targetYear);
+    const yearValue = Number.isFinite(numericYear) ? numericYear : null;
+    const metaEntry = {
+      year: yearValue,
+      years: yearValue !== null ? [yearValue] : null,
+      country: normalizedCountries.length === 1 ? normalizedCountries[0].toUpperCase() : null,
+      countries: normalizedCountries.length
+        ? normalizedCountries.map(code => code.toUpperCase())
+        : null,
+      cacheStatus: response?.cacheStatus || null,
+      timestamp: response?.timestamp || null
+    };
+
+    return { data, metaEntry };
   });
 
-  const response = await fetchWithCache(url);
-  const payload = response?.data ?? response ?? [];
-  const data = normalizeDividendResponse(payload);
+  const results = await Promise.all(requests);
 
-  const metaEntry = {
-    year: normalizedYears.length === 1 ? normalizedYears[0] : null,
-    years: normalizedYears.length ? [...normalizedYears] : null,
-    country: normalizedCountries.length === 1 ? normalizedCountries[0].toUpperCase() : null,
-    countries: normalizedCountries.length
-      ? normalizedCountries.map(code => code.toUpperCase())
-      : null,
-    cacheStatus: response?.cacheStatus || null,
-    timestamp: response?.timestamp || null
-  };
+  const combinedData = results.flatMap(result => result.data);
+  const perRequestMeta = results.map(result => result.metaEntry);
+
+  let meta;
+  if (normalizedYears.length > 1) {
+    const cacheStatuses = perRequestMeta
+      .map(entry => entry.cacheStatus)
+      .filter(status => typeof status === 'string' && status.length > 0);
+    const uniqueStatuses = new Set(cacheStatuses);
+    const aggregatedStatus = uniqueStatuses.size === 0
+      ? null
+      : uniqueStatuses.size === 1
+        ? cacheStatuses[0]
+        : 'mixed';
+
+    const latestTimestamp = perRequestMeta.reduce((latest, entry) => {
+      if (!entry.timestamp) return latest;
+      if (!latest) return entry.timestamp;
+      return entry.timestamp > latest ? entry.timestamp : latest;
+    }, null);
+
+    const aggregatedMeta = {
+      year: null,
+      years: [...normalizedYears],
+      country: normalizedCountries.length === 1 ? normalizedCountries[0].toUpperCase() : null,
+      countries: normalizedCountries.length
+        ? normalizedCountries.map(code => code.toUpperCase())
+        : null,
+      cacheStatus: aggregatedStatus,
+      timestamp: latestTimestamp
+    };
+
+    meta = [aggregatedMeta, ...perRequestMeta];
+  } else {
+    meta = perRequestMeta;
+  }
 
   return {
-    data,
-    meta: [metaEntry]
+    data: combinedData,
+    meta
   };
 }
 
 export function clearDividendsCache(years, countries) {
   const { years: normalizedYears, countries: normalizedCountries } = buildFetchContext(years, countries);
 
-  const url = buildDividendUrl({
-    years: normalizedYears.length ? normalizedYears : undefined,
-    countries: normalizedCountries.length ? normalizedCountries : undefined
-  });
+  const requestCountries = normalizedCountries.length ? normalizedCountries : undefined;
+  const yearsToClear = normalizedYears.length ? normalizedYears : [undefined];
 
-  clearCache(url);
+  yearsToClear.forEach(targetYear => {
+    const url = buildDividendUrl({
+      years: targetYear !== undefined ? targetYear : undefined,
+      countries: requestCountries
+    });
+
+    clearCache(url);
+  });
 }
 
 export function buildDividendRequestUrl(year, country, options = {}) {
+  const normalizedYears = normalizeYearList(options?.years ?? year);
+  const primaryYear = normalizedYears.length ? normalizedYears[0] : undefined;
+
   const mergedOptions = {
-    years: options?.years ?? year,
+    years: primaryYear,
     countries: options?.countries ?? country,
     stockId: options?.stockId,
     fields: options?.fields
