@@ -1,3 +1,5 @@
+import { parseJSONResponse } from './utils/safeFetchJSON';
+
 export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
   // maxAge controls how long cached data is considered "fresh" before we label it stale.
   const cacheKey = `cache:data:${url}`;
@@ -73,7 +75,7 @@ export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
   }
 
   if (response.status === 200) {
-    const data = await response.json();
+    const data = await parseJSONResponse(response, url);
     const etag = getHeader(response, 'ETag');
     const lastModified = getHeader(response, 'Last-Modified');
     const timestamp = new Date().toISOString();
@@ -107,7 +109,7 @@ export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
       const revalidatedResponse = await fetch(cacheBustUrl, { cache: 'no-store' });
 
       if (revalidatedResponse.status === 200) {
-        const data = await revalidatedResponse.json();
+        const data = await parseJSONResponse(revalidatedResponse, cacheBustUrl);
         const etag = getHeader(revalidatedResponse, 'ETag');
         const lastModified = getHeader(revalidatedResponse, 'Last-Modified');
         const timestamp = new Date().toISOString();

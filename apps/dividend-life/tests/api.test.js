@@ -1,6 +1,24 @@
 /* eslint-env jest */
 import { fetchWithCache } from '../src/api';
 
+function createMockResponse({ status = 200, body = {}, headers = {} } = {}) {
+  const resolvedBody = body === undefined ? {} : body;
+  const textValue = typeof resolvedBody === 'string' ? resolvedBody : JSON.stringify(resolvedBody);
+  const normalizedHeaders = Object.fromEntries(
+    Object.entries(headers).map(([key, value]) => [key.toLowerCase(), value])
+  );
+
+  return {
+    status,
+    ok: status >= 200 && status < 300,
+    statusText: status === 304 ? 'Not Modified' : 'OK',
+    headers: {
+      get: key => normalizedHeaders[key.toLowerCase()] ?? null
+    },
+    text: jest.fn().mockResolvedValue(textValue)
+  };
+}
+
 describe('fetchWithCache', () => {
   const URL = 'https://example.com/data';
   const cacheKey = `cache:data:${URL}`;
@@ -44,11 +62,15 @@ describe('fetchWithCache', () => {
     localStorage.setItem(metaKey, JSON.stringify({ timestamp: oldTimestamp, etag: 'old' }));
 
     const newData = { value: 2 };
-    globalThis.fetch = jest.fn().mockResolvedValue({
-      status: 200,
-      json: async () => newData,
-      headers: { get: () => null }
-    });
+    globalThis.fetch = jest
+      .fn()
+      .mockResolvedValue(
+        createMockResponse({
+          status: 200,
+          body: newData,
+          headers: { 'content-type': 'application/json' }
+        })
+      );
 
     const result = await fetchWithCache(URL);
 
@@ -73,15 +95,19 @@ describe('fetchWithCache', () => {
 
     globalThis.fetch = jest
       .fn()
-      .mockResolvedValueOnce({
-        status: 304,
-        headers: { get: () => null }
-      })
-      .mockResolvedValueOnce({
-        status: 200,
-        json: async () => newPayload,
-        headers: { get: () => null }
-      });
+      .mockResolvedValueOnce(
+        createMockResponse({
+          status: 304,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+      .mockResolvedValueOnce(
+        createMockResponse({
+          status: 200,
+          body: newPayload,
+          headers: { 'content-type': 'application/json' }
+        })
+      );
 
     const result = await fetchWithCache(URL);
 
