@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import DividendLifePage from './DividendLifePage.jsx'
 import StockDetail from './StockDetail.jsx'
+import ApiHostRoute from './ApiHostRoute.jsx'
 import { useRouter } from '@shared/router'
 
 const normalizePath = (path) => {
@@ -35,6 +36,10 @@ export default function App() {
       replace('/')
     }
   }, [isStockDetail, normalized, replace])
+
+  if (normalized === '/api-host') {
+    return <ApiHostRoute />
+  }
 
   if (isStockDetail) {
     const [, , stockId] = normalized.split('/')
