@@ -1,2 +1,4 @@
-export const API_HOST = import.meta.env.VITE_API_HOST
-export const HOST_URL = import.meta.env.VITE_HOST_URL
+import { getEnvVar } from '@shared/env'
+
+export const API_HOST = getEnvVar('VITE_API_HOST')
+export const HOST_URL = getEnvVar('VITE_HOST_URL')
