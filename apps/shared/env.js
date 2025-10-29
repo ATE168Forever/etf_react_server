@@ -146,18 +146,54 @@ function loadEnvFromFiles(importEnv, processEnvValues) {
   const mode = determineMode(importEnv, processEnvValues)
   const filenames = getEnvFilenames(mode)
   const parsed = {}
+  const seenFiles = new Set()
 
-  for (const filename of filenames) {
-    const filePath = path.resolve(envDir, filename)
-    if (!fs.existsSync(filePath)) {
-      continue
+  const searchDirectories = []
+  if (envDirValue) {
+    searchDirectories.push(envDir)
+  } else if (cwd) {
+    const chain = []
+    let current = cwd
+    const seenDirs = new Set()
+
+    while (current && !seenDirs.has(current)) {
+      chain.push(current)
+      seenDirs.add(current)
+
+      const stopHere =
+        fs.existsSync(path.join(current, 'pnpm-workspace.yaml')) ||
+        fs.existsSync(path.join(current, '.git'))
+      const parent = path.dirname(current)
+
+      if (stopHere || !parent || parent === current) {
+        break
+      }
+
+      current = parent
     }
 
-    try {
-      const content = fs.readFileSync(filePath, 'utf8')
-      Object.assign(parsed, parseEnvContent(content))
-    } catch (error) {
-      // Ignore unreadable files and continue.
+    searchDirectories.push(...chain.reverse())
+  }
+
+  if (searchDirectories.length === 0) {
+    searchDirectories.push(envDir)
+  }
+
+  for (const directory of searchDirectories) {
+    for (const filename of filenames) {
+      const filePath = path.resolve(directory, filename)
+      if (seenFiles.has(filePath) || !fs.existsSync(filePath)) {
+        continue
+      }
+
+      seenFiles.add(filePath)
+
+      try {
+        const content = fs.readFileSync(filePath, 'utf8')
+        Object.assign(parsed, parseEnvContent(content))
+      } catch (error) {
+        // Ignore unreadable files and continue.
+      }
     }
   }
 
