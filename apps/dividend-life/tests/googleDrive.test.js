@@ -1,5 +1,10 @@
 import { jest } from '@jest/globals';
 
+jest.mock('@shared/config', () => ({
+  GOOGLE_API_KEY: '',
+  GOOGLE_CLIENT_ID: ''
+}));
+
 function mockGoogleApis({
   tokenResponse = { access_token: 'token' },
   listResult = { result: { files: [{ id: 'file1' }] } },
