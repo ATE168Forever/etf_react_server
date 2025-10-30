@@ -18,7 +18,7 @@ import brandStyles from '@shared/components/BrandPage/BrandPage.module.css';
 import dividendLifeLogoDark from './assets/dividend-life.svg';
 import dividendLifeLogoLight from './assets/dividend-life-light.svg';
 import NLHelper from './NLHelper';
-import { API_HOST } from './config';
+import { API_HOST } from '../../shared/config';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
 import { fetchDividendsByYears, clearDividendsCache } from './dividendApi';
 import { fetchStockList } from './stockApi';

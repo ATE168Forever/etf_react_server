@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Cookies from 'js-cookie';
 import CreatableSelect from 'react-select/creatable';
-import { HOST_URL } from './config';
+import { HOST_URL } from '../../shared/config';
 import { fetchDividendsByYears } from './dividendApi';
 import { fetchStockList } from './stockApi';
 import useEffectOnce from './hooks/useEffectOnce';

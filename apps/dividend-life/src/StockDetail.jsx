@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { API_HOST } from './config';
+import { API_HOST } from '../../shared/config';
 import './App.css';
 import Footer from '@shared/components/Footer/Footer.jsx';
 import { useLanguage, translations } from './i18n';

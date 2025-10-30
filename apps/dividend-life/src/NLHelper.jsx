@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { API_HOST } from './config';
+import { API_HOST } from '../../shared/config';
 import { fetchWithCache } from './api';
 import { useLanguage } from './i18n';
 

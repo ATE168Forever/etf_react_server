@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { API_HOST } from './config';
+import { API_HOST } from '../../shared/config';
 import { fetchWithCache } from './api';
 import { fetchDividendsByYears } from './dividendApi';
 import { useLanguage } from './i18n';

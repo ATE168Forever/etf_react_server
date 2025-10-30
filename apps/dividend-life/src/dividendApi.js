@@ -1,4 +1,4 @@
-import { API_HOST } from './config';
+import { API_HOST } from '../../shared/config';
 import { fetchWithCache, clearCache } from './api';
 import { normalizeDividendResponse, DIVIDEND_YEARS } from './utils/dividendGoalUtils';
 
