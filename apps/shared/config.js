@@ -94,10 +94,7 @@ function loadNodeEnvVarsSync() {
     }
 
     const cwdCandidates = [
-      'env/.env.development',
-      '../env/.env.development',
       '../../env/.env.development',
-      '../../../env/.env.development'
     ].map(relative => resolve(process.cwd(), relative))
     candidates.push(...cwdCandidates)
 
@@ -148,6 +145,13 @@ export function getEnvVar(key) {
 export const API_HOST = getEnvVar('VITE_API_HOST')
 export const HOST_URL = getEnvVar('VITE_HOST_URL')
 
+console.log('[shared/config] isNodeRuntime =', isNodeRuntime)
+
 if (isNodeRuntime) {
   console.debug('[shared/config] Loaded env variables from file with keys:', Object.keys(nodeEnvVars))
+  console.debug('[shared/config] Full env content:', nodeEnvVars)
+} else {
+  console.log('[shared/config] Browser env:', import.meta.env)
+  console.log('[shared/config] Browser VITE_API_HOST =', API_HOST)
+  console.log('[shared/config] Browser VITE_HOST_URL =', HOST_URL)
 }
