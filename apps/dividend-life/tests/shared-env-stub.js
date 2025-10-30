@@ -1,6 +1,0 @@
-export const GOOGLE_API_KEY = ''
-export const GOOGLE_CLIENT_ID = ''
-export const ONEDRIVE_CLIENT_ID = ''
-export const ONEDRIVE_SCOPES = ''
-export const ONEDRIVE_AUTHORITY = ''
-export const ONEDRIVE_GRAPH_BASE = ''
