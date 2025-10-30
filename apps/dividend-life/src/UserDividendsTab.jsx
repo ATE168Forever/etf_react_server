@@ -943,10 +943,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                         <td className="stock-col">
                                             <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
                                                 <TooltipText tooltip={stock.stock_name}>
-                                                    <span>
-                                                        {stock.stock_id}
-                                                        {stock.stock_name ? ` (${stock.stock_name})` : ''}
-                                                    </span>
+                                                    {stock.stock_id}
                                                 </TooltipText>
                                             </a>
                                         </td>
