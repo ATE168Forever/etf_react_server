@@ -14,7 +14,7 @@ import {
 } from '../src/oneDrive';
 
 jest.mock('../src/api');
-jest.mock('../src/config', () => ({
+jest.mock('@shared/config', () => ({
   API_HOST: 'http://localhost',
   HOST_URL: 'http://localhost'
 }));

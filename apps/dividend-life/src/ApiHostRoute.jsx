@@ -1,4 +1,4 @@
-import { API_HOST } from '../../shared/config.js'
+import { API_HOST } from '@shared/config'
 import styles from './ApiHostRoute.module.css'
 
 export default function ApiHostRoute() {

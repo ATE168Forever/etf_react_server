@@ -1,4 +1,4 @@
-import { API_HOST } from '../../shared/config';
+import { API_HOST } from '@shared/config';
 import { fetchWithCache } from './api';
 
 export function normalizeStockListResponse(payload) {

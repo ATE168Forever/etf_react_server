@@ -7,7 +7,7 @@ jest.mock('../src/api', () => ({
   clearCache: jest.fn()
 }));
 
-jest.mock('../src/config', () => ({
+jest.mock('@shared/config', () => ({
   API_HOST: 'https://api.example.com'
 }));
 

@@ -7,6 +7,7 @@ export default {
     '^.+\\.(js|jsx)$': 'babel-jest'
   },
   moduleNameMapper: {
+    '^@shared/env$': '<rootDir>/tests/shared-env-stub.js',
     '^@shared/(.*)\\.(css|scss)$': '<rootDir>/test-style-mock.js',
     '^@shared/(.*)\\.(svg|png|jpe?g|gif)$': '<rootDir>/test-file-mock.js',
     '^@shared/(.*)$': '<rootDir>/../shared/$1',

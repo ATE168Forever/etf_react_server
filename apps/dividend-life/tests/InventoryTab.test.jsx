@@ -9,7 +9,7 @@ jest.mock('../src/api');
 jest.mock('../src/stockApi', () => ({
   fetchStockList: jest.fn(() => Promise.resolve({ list: [], meta: null }))
 }));
-jest.mock('../src/config', () => ({
+jest.mock('@shared/config', () => ({
   API_HOST: 'http://localhost'
 }));
 

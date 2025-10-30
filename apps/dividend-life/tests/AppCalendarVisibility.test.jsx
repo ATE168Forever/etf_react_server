@@ -9,7 +9,7 @@ jest.mock('../src/api', () => ({
   clearCache: jest.fn(),
 }));
 
-jest.mock('../src/config', () => ({ API_HOST: '' }));
+jest.mock('@shared/config', () => ({ API_HOST: '' }));
 
 import App from '../src/App';
 import { RouterProvider } from '@shared/router';
