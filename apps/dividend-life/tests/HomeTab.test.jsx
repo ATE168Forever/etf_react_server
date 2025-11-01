@@ -5,7 +5,7 @@ import { fetchWithCache } from '../src/api';
 import { LanguageContext, translations } from '../src/i18n';
 
 jest.mock('../src/api');
-jest.mock('@shared/config', () => ({
+jest.mock('../config', () => ({
   API_HOST: 'http://localhost'
 }));
 

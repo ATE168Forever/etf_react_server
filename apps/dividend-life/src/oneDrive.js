@@ -3,7 +3,7 @@ import {
   ONEDRIVE_CLIENT_ID,
   ONEDRIVE_GRAPH_BASE,
   ONEDRIVE_SCOPES,
-} from '@shared/config';
+} from '../config';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 
 const CLIENT_ID = ONEDRIVE_CLIENT_ID || '';

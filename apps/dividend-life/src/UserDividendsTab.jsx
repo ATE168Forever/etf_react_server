@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import DividendCalendar from './components/DividendCalendar';
 import { readTransactionHistory } from './utils/transactionStorage';
-import { HOST_URL } from '@shared/config';
+import { HOST_URL } from '../config';
 import { useLanguage } from './i18n';
 import usePreserveScroll from './hooks/usePreserveScroll';
 import TooltipText from './components/TooltipText';

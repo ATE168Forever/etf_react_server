@@ -23,7 +23,7 @@ jest.mock('../src/dividendApi', () => ({
   clearDividendsCache: jest.fn()
 }));
 
-jest.mock('@shared/config', () => ({ API_HOST: '' }));
+jest.mock('../config', () => ({ API_HOST: '' }));
 
 import App from '../src/App';
 import { RouterProvider } from '@shared/router';

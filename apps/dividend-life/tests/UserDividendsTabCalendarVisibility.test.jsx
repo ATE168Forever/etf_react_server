@@ -4,7 +4,7 @@ import UserDividendsTab from '../src/UserDividendsTab';
 import { readTransactionHistory } from '../src/utils/transactionStorage';
 
 jest.mock('../src/utils/transactionStorage');
-jest.mock('@shared/config', () => ({ API_HOST: '' }));
+jest.mock('../config', () => ({ API_HOST: '' }));
 
 test('UserDividendsTab remembers calendar visibility', async () => {
   localStorage.clear();

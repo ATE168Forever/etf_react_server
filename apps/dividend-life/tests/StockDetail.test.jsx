@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import StockDetail from '../src/StockDetail';
 
-jest.mock('@shared/config', () => ({
+jest.mock('../config', () => ({
   API_HOST: 'http://localhost'
 }));
 

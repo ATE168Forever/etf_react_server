@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 // Removed react-window virtualization to avoid invalid table markup
 import FilterDropdown from './FilterDropdown';
 import TooltipText from './TooltipText';
-import { HOST_URL } from '@shared/config';
+import { HOST_URL } from '../config';
 import { useLanguage } from '../i18n';
 import usePreserveScroll from '../hooks/usePreserveScroll';
 

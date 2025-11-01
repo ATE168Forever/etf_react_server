@@ -1,4 +1,4 @@
-import { GOOGLE_API_KEY, GOOGLE_CLIENT_ID } from '@shared/config';
+import { GOOGLE_API_KEY, GOOGLE_CLIENT_ID } from '../config';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 
 const CLIENT_ID = GOOGLE_CLIENT_ID || '';

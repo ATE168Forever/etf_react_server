@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 
-jest.mock('@shared/config', () => ({
+jest.mock('../config', () => ({
   GOOGLE_API_KEY: '',
   GOOGLE_CLIENT_ID: ''
 }));
