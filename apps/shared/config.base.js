@@ -16,6 +16,17 @@ export const ONEDRIVE_SCOPES = readEnv('VITE_ONEDRIVE_SCOPES') ?? ''
 export const ONEDRIVE_AUTHORITY = readEnv('VITE_ONEDRIVE_AUTHORITY') ?? ''
 export const ONEDRIVE_GRAPH_BASE = readEnv('VITE_ONEDRIVE_GRAPH_BASE') ?? ''
 
+export const baseConfig = {
+  API_HOST,
+  HOST_URL,
+  GOOGLE_API_KEY,
+  GOOGLE_CLIENT_ID,
+  ONEDRIVE_CLIENT_ID,
+  ONEDRIVE_SCOPES,
+  ONEDRIVE_AUTHORITY,
+  ONEDRIVE_GRAPH_BASE,
+}
+
 if (typeof window !== 'undefined') {
   console.log('[shared/config] Browser env:', env)
   console.log('[shared/config] Browser VITE_API_HOST =', API_HOST)
@@ -23,3 +34,5 @@ if (typeof window !== 'undefined') {
 } else {
   console.debug('[shared/config] Runtime env keys:', Object.keys(env))
 }
+
+export default baseConfig
