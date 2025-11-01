@@ -1,5 +1,7 @@
 import { baseConfig } from '../../shared/config.base.js'
 
+export * from '../../shared/config.base.js'
+
 export default {
   ...baseConfig,
   appName: 'ConceptB Life',

@@ -1,5 +1,5 @@
 import styles from './TransactionHistoryTable.module.css';
-import { HOST_URL } from '../config';
+import { HOST_URL } from '../../config';
 import { useLanguage } from '../i18n';
 
 export default function TransactionHistoryTable({ transactionHistory, stockList, editingIdx, editForm, setEditForm, setEditingIdx, handleEditSave, handleDelete }) {
