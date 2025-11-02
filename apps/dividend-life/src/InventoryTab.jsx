@@ -381,6 +381,18 @@ export default function InventoryTab() {
       const stockName = entry.stock_name || stockInfo?.stock_name || '';
       const countryRaw = stockInfo?.country || entry?.country || '';
       const country = typeof countryRaw === 'string' ? countryRaw.toUpperCase() : '';
+      const quantityValue = Number(entry?.quantity);
+      const quantity = Number.isFinite(quantityValue) && quantityValue > 0 ? String(quantityValue) : '';
+      const latestPriceRaw = latestPrices?.[stockId];
+      const latestPriceValue =
+        typeof latestPriceRaw === 'number' ? latestPriceRaw : Number(latestPriceRaw);
+      const hasLatestPrice = Number.isFinite(latestPriceValue) && latestPriceValue > 0;
+      const entryPriceValue = Number(entry?.price);
+      const price = hasLatestPrice
+        ? String(latestPriceValue)
+        : Number.isFinite(entryPriceValue) && entryPriceValue > 0
+          ? String(entryPriceValue)
+          : '';
 
       result.push({
         stock_id: stockId,
@@ -388,13 +400,13 @@ export default function InventoryTab() {
         country,
         enabled: true,
         date: getToday(),
-        quantity: '',
-        price: ''
+        quantity,
+        price
       });
     }
 
     return result;
-  }, [stockList, transactionHistory]);
+  }, [stockList, transactionHistory, latestPrices]);
 
   const handleOpenQuickModal = () => {
     setQuickForm(buildQuickFormEntries());

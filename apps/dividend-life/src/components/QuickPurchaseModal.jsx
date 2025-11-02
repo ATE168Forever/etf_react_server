@@ -82,7 +82,7 @@ export default function QuickPurchaseModal({ show, onClose, rows, setRows, onSub
                           type="number"
                           min="0"
                           step="1"
-                          value={row.quantity}
+                          value={row.quantity ?? ''}
                           onChange={handleFieldChange(index, 'quantity')}
                           disabled={disabled}
                           placeholder={messages.quickAddPlaceholderQuantity}
@@ -95,7 +95,7 @@ export default function QuickPurchaseModal({ show, onClose, rows, setRows, onSub
                             type="number"
                             min="0"
                             step="0.01"
-                            value={row.price}
+                            value={row.price ?? ''}
                             onChange={handleFieldChange(index, 'price')}
                             disabled={disabled}
                             placeholder={messages.quickAddPlaceholderPrice}
