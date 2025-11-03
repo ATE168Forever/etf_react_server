@@ -14,6 +14,7 @@ import { exportTransactionsToDrive, importTransactionsFromDrive } from './google
 import { exportTransactionsToOneDrive, importTransactionsFromOneDrive } from './oneDrive';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 import AddTransactionModal from './components/AddTransactionModal';
+import QuickPurchaseModal from './components/QuickPurchaseModal';
 import SellModal from './components/SellModal';
 import TransactionHistoryTable from './components/TransactionHistoryTable';
 import DataDropdown from './components/DataDropdown';
@@ -59,6 +60,8 @@ export default function InventoryTab() {
   const [editingIdx, setEditingIdx] = useState(null);
   const [editForm, setEditForm] = useState({ date: '', quantity: '', price: '' });
   const [sellModal, setSellModal] = useState({ show: false, stock: null });
+  const [showQuickModal, setShowQuickModal] = useState(false);
+  const [quickForm, setQuickForm] = useState([]);
   const fileInputRef = useRef(null);
   const autoSaveRequestRef = useRef(0);
   const autoSaveDirectoryHandleRef = useRef(null);
@@ -151,6 +154,20 @@ export default function InventoryTab() {
       sellExceeds: '賣出數量不得超過庫存',
       notice: '這是一個免費網站，我們不會把你的資料存到任何後台或伺服器。為確保使用者隱私，所有的紀錄（包含你的設定與操作歷程）都只會保存在你的瀏覽器本機。開啟自動儲存功能後，系統會在你的裝置上自動備份。簡單說：資料只在這台電腦，不會上傳，也不會被我們看到，請安心使用！',
       addRecord: '新增購買',
+      quickAdd: '快速購買',
+      quickAddEmpty: '目前沒有最近購買的 ETF',
+      quickAddTitle: '快速新增購買紀錄',
+      quickAddNoPurchase: '不購買',
+      quickAddResume: '恢復',
+      quickAddDate: '購買日期',
+      quickAddQuantity: '購買數量',
+      quickAddPrice: '購買價格',
+      quickAddSave: '儲存',
+      quickAddClose: '關閉',
+      quickAddCurrencyTwd: 'NT$',
+      quickAddCurrencyUsd: 'US$',
+      quickAddPlaceholderQuantity: '請輸入數量',
+      quickAddPlaceholderPrice: '請輸入價格',
       dataAccess: '存取資料',
       currentInventory: '目前庫存',
       showHistory: '顯示：交易歷史',
@@ -248,6 +265,20 @@ export default function InventoryTab() {
       notice:
         'This is a free website, and to safeguard your privacy we never store your data on any backend or server. Every record—including your settings and activity history—lives only in your browser. Turn on auto-save to create device-side backups automatically. In short: your data stays on this computer, never uploads, and we never see it.',
       addRecord: 'Add Purchase',
+      quickAdd: 'Quick Purchase',
+      quickAddEmpty: 'No recent ETF purchases yet',
+      quickAddTitle: 'Quick Add Purchases',
+      quickAddNoPurchase: 'Skip',
+      quickAddResume: 'Restore',
+      quickAddDate: 'Purchase Date',
+      quickAddQuantity: 'Quantity',
+      quickAddPrice: 'Price',
+      quickAddSave: 'Save',
+      quickAddClose: 'Close',
+      quickAddCurrencyTwd: 'NT$',
+      quickAddCurrencyUsd: 'US$',
+      quickAddPlaceholderQuantity: 'Enter quantity',
+      quickAddPlaceholderPrice: 'Enter price',
       dataAccess: 'Data Access',
       currentInventory: 'Inventory',
       showHistory: 'Show: Transaction',
@@ -324,6 +355,111 @@ export default function InventoryTab() {
     }
   };
   const msg = text[lang];
+
+  const buildQuickFormEntries = useCallback(() => {
+    const seen = new Set();
+    const result = [];
+    const today = new Date();
+    const threeMonthsAgo = new Date(today);
+    threeMonthsAgo.setMonth(today.getMonth() - 3);
+
+    for (let index = transactionHistory.length - 1; index >= 0; index -= 1) {
+      const entry = transactionHistory[index];
+      if (!entry || entry.type !== 'buy') continue;
+
+      const rawDate = typeof entry.date === 'string' ? entry.date : '';
+      if (!rawDate) continue;
+      const parsedDate = new Date(rawDate);
+      if (Number.isNaN(parsedDate.getTime())) continue;
+      if (parsedDate < threeMonthsAgo) continue;
+
+      const stockId = typeof entry.stock_id === 'string' ? entry.stock_id.trim() : '';
+      if (!stockId || seen.has(stockId)) continue;
+
+      seen.add(stockId);
+      const stockInfo = stockList.find(item => item.stock_id === stockId);
+      const stockName = entry.stock_name || stockInfo?.stock_name || '';
+      const countryRaw = stockInfo?.country || entry?.country || '';
+      const country = typeof countryRaw === 'string' ? countryRaw.toUpperCase() : '';
+      const quantityValue = Number(entry?.quantity);
+      const quantity = Number.isFinite(quantityValue) && quantityValue > 0 ? String(quantityValue) : '';
+      const latestPriceRaw = latestPrices?.[stockId];
+      const latestPriceValue =
+        typeof latestPriceRaw === 'number' ? latestPriceRaw : Number(latestPriceRaw);
+      const hasLatestPrice = Number.isFinite(latestPriceValue) && latestPriceValue > 0;
+      const entryPriceValue = Number(entry?.price);
+      const price = hasLatestPrice
+        ? String(latestPriceValue)
+        : Number.isFinite(entryPriceValue) && entryPriceValue > 0
+          ? String(entryPriceValue)
+          : '';
+
+      result.push({
+        stock_id: stockId,
+        stock_name: stockName,
+        country,
+        enabled: true,
+        date: getToday(),
+        quantity,
+        price
+      });
+    }
+
+    return result;
+  }, [stockList, transactionHistory, latestPrices]);
+
+  const handleOpenQuickModal = () => {
+    setQuickForm(buildQuickFormEntries());
+    setShowQuickModal(true);
+  };
+
+  const handleQuickModalClose = () => {
+    setShowQuickModal(false);
+  };
+
+  const handleQuickSubmit = () => {
+    const validEntries = (Array.isArray(quickForm) ? quickForm : []).filter(entry => entry?.enabled);
+    if (validEntries.length === 0) {
+      alert(msg.inputRequired);
+      return;
+    }
+
+    const normalizedEntries = validEntries
+      .map(entry => ({
+        stock_id: entry?.stock_id || '',
+        stock_name: entry?.stock_name || '',
+        date: entry?.date || '',
+        quantity: Number(entry?.quantity),
+        price: Number(entry?.price)
+      }))
+      .filter(entry => (
+        entry.stock_id &&
+        entry.date &&
+        Number.isFinite(entry.quantity) && entry.quantity > 0 &&
+        Number.isFinite(entry.price) && entry.price > 0
+      ));
+
+    if (normalizedEntries.length === 0 || normalizedEntries.length !== validEntries.length) {
+      alert(msg.inputRequired);
+      return;
+    }
+
+    const updatedHistory = [
+      ...transactionHistory,
+      ...normalizedEntries.map(entry => ({
+        stock_id: entry.stock_id,
+        stock_name: entry.stock_name,
+        date: entry.date,
+        quantity: entry.quantity,
+        price: entry.price,
+        type: 'buy'
+      }))
+    ];
+    setTransactionHistory(updatedHistory);
+    setShowQuickModal(false);
+    setQuickForm([]);
+    runAutoSave(updatedHistory);
+  };
 
   const mapTransactionsWithStockNames = useCallback(
     list =>
@@ -1878,6 +2014,12 @@ export default function InventoryTab() {
         >
           {msg.addRecord}
         </button>
+        <button
+          className={styles.button}
+          onClick={handleOpenQuickModal}
+        >
+          {msg.quickAdd}
+        </button>
         <div className="more-item">
           <button
             className={styles.button}
@@ -1918,6 +2060,14 @@ export default function InventoryTab() {
         form={form}
         setForm={setForm}
         onSubmit={handleAdd}
+      />
+      <QuickPurchaseModal
+        show={showQuickModal}
+        onClose={handleQuickModalClose}
+        rows={quickForm}
+        setRows={setQuickForm}
+        onSubmit={handleQuickSubmit}
+        messages={msg}
       />
       <SellModal
         show={sellModal.show}
