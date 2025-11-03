@@ -1,6 +1,12 @@
 import { Link } from '@shared/router';
 import dividendLifeLogoDark from '@dividend-life/assets/dividend-life.svg';
 import dividendLifeLogoLight from '@dividend-life/assets/dividend-life-light.svg';
+import balanceLifeLogoDark from '@balance-life/assets/balance-life.svg';
+import balanceLifeLogoLight from '@balance-life/assets/balance-life-light.svg';
+import healthLifeLogoDark from '@health-life/assets/health-life.svg';
+import healthLifeLogoLight from '@health-life/assets/health-life-light.svg';
+import wealthLifeLogoDark from '@wealth-life/assets/wealth-life.svg';
+import wealthLifeLogoLight from '@wealth-life/assets/wealth-life-light.svg';
 import Footer from '@shared/components/Footer/Footer.jsx';
 import { useThemeLanguage } from '@shared/hooks/useThemeLanguage.jsx';
 import styles from './HomePage.module.css';
@@ -22,36 +28,54 @@ const experiences = [
     },
     to: '/dividend-life',
   },
-  // {
-  //   key: 'balance-life',
-  //   title: 'Balance Life',
-  //   description: '規劃預算、掌握支出節奏，讓資產配置與生活步調更平衡。',
-  //   logos: {
-  //     dark: balanceLifeLogoDark,
-  //     light: balanceLifeLogoLight,
-  //   },
-  //   to: '/balance-life',
-  // },
-  // {
-  //   key: 'health-life',
-  //   title: 'Health Life',
-  //   description: '運動紀錄與健康儀表板，陪你養成長期自律的身心習慣。',
-  //   logos: {
-  //     dark: healthLifeLogoDark,
-  //     light: healthLifeLogoLight,
-  //   },
-  //   to: '/health-life',
-  // },
-  // {
-  //   key: 'wealth-life',
-  //   title: 'Wealth Life',
-  //   description: '整合淨值、資產與負債走勢，掌握財富增長的每一步。',
-  //   logos: {
-  //     dark: wealthLifeLogoDark,
-  //     light: wealthLifeLogoLight,
-  //   },
-  //   to: '/wealth-life',
-  // },
+  {
+    key: 'balance-life',
+    title: {
+      zh: 'Balance Life',
+      en: 'Balance Life',
+    },
+    description: { 
+      zh: '規劃預算、掌握支出節奏，讓資產配置與生活步調更平衡。',
+      en: 'Plan budgets and manage spending rhythms to balance asset allocation with life pace.' 
+    },
+    logos: {
+      dark: balanceLifeLogoDark,
+      light: balanceLifeLogoLight,
+    },
+    to: '/balance-life',
+  },
+  {
+    key: 'health-life',
+    title: {
+      zh: 'Health Life',
+      en: 'Health Life',
+    },
+    description: { 
+      zh: '運動紀錄與健康儀表板，陪你養成長期自律的身心習慣。',
+      en: 'Exercise tracking and health dashboards to help you cultivate long-term disciplined body and mind habits.' 
+    },
+    logos: {
+      dark: healthLifeLogoDark,
+      light: healthLifeLogoLight,
+    },
+    to: '/health-life',
+  },
+  {
+    key: 'wealth-life',
+    title: {
+      zh: 'Wealth Life',
+      en: 'Wealth Life',
+    },
+    description: { 
+      zh: '整合淨值、資產與負債走勢，掌握財富增長的每一步。',
+      en: 'Integrate net worth, assets, and liabilities trends to keep track of every step of your wealth growth.'
+    },
+    logos: {
+      dark: wealthLifeLogoDark,
+      light: wealthLifeLogoLight,
+    },
+    to: '/wealth-life',
+  },
 ];
 
 const homeTranslations = {

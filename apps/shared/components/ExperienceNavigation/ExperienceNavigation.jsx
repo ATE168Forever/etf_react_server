@@ -4,10 +4,10 @@ import styles from './ExperienceNavigation.module.css';
 
 const baseExperiences = [
   { key: 'home', labels: { zh: '首頁', en: 'Home' } },
-  // { key: 'dividend-life', to: '/dividend-life', labels: { zh: 'Dividend Life', en: 'Dividend Life' } },
-  // { key: 'balance-life', to: '/balance-life', labels: { zh: 'Balance Life', en: 'Balance Life' } },
-  // { key: 'health-life', to: '/health-life', labels: { zh: 'Health Life', en: 'Health Life' } },
-  // { key: 'wealth-life', to: '/wealth-life', labels: { zh: 'Wealth Life', en: 'Wealth Life' } },
+  { key: 'dividend-life', to: '/dividend-life', labels: { zh: 'Dividend Life', en: 'Dividend Life' } },
+  { key: 'balance-life', to: '/balance-life', labels: { zh: 'Balance Life', en: 'Balance Life' } },
+  { key: 'health-life', to: '/health-life', labels: { zh: 'Health Life', en: 'Health Life' } },
+  { key: 'wealth-life', to: '/wealth-life', labels: { zh: 'Wealth Life', en: 'Wealth Life' } },
 ];
 
 export default function ExperienceNavigation({
