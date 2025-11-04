@@ -2,7 +2,7 @@
   position: fixed;
   left: 0;
   top: 0;
-  width: 100vw;
+  width: 140vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.25);
   z-index: 1100;
@@ -10,7 +10,7 @@
 
 .modal {
   position: absolute;
-  left: 50%;
+  left: 35%;
   top: 50%;
   transform: translate(-50%, -50%);
   background: var(--color-card-bg);
