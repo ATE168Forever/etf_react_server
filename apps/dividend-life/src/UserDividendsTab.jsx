@@ -137,6 +137,17 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         return lots.toFixed(3).replace(/\.?0+$/, '');
     };
 
+    const formatShortDate = (value) => {
+        if (!value) return '-';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return value;
+        }
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${month}-${day}`;
+    };
+
     // 1. 取得持有股票清單（包含年末持股與當年度已領息後賣出的持股）
     const stockIdSet = new Set(history.map(h => h.stock_id));
     const holdingIds = Array.from(stockIdSet).filter(id => getHolding(id, `${selectedYear}-12-31`) > 0);
@@ -1005,13 +1016,20 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                     ? `${quantityLineEn}\n${dividendPerShareEn}\nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
                                                     : `${quantityLineZh}\n${dividendPerShareZh}\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`;
 
+                                                const paymentDate = cell.payment_date ? formatShortDate(cell.payment_date) : null;
+                                                const dividendDate = cell.dividend_date ? formatShortDate(cell.dividend_date) : null;
+                                                const closePrice = (cell.last_close_price !== undefined && cell.last_close_price !== null && cell.last_close_price !== '')
+                                                    ? cell.last_close_price
+                                                    : null;
                                                 return (
                                                     <td key={`cell-${stock.stock_id}-${idx}-${currency}`} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
                                                         <TooltipText
                                                             tooltip={tooltipContent}
                                                             style={{ borderBottom: '1px dotted #777' }}
                                                         >
-                                                            {total > 0 ? formatPlainAmount(total, { currency }) : ''}
+                                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                                                                <span>{total > 0 ? formatPlainAmount(total, { currency }) : ''}</span>
+                                                            </div>
                                                         </TooltipText>
                                                     </td>
                                                 );

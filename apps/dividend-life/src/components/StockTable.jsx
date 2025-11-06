@@ -43,11 +43,21 @@ export default function StockTable({
   const MONTHS = lang === 'zh'
     ? ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
     : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const freqNameMap = lang === 'zh'
+const freqNameMap = lang === 'zh'
     ? { 1: '年配', 2: '半年配', 4: '季配', 6: '雙月配', 12: '月配', 52: '週配' }
     : { 1: 'Annual', 2: 'Semi-annual', 4: 'Quarterly', 6: 'Bimonthly', 12: 'Monthly', 52: 'Weekly' };
   const currencyLabel = (currency) => (currency === 'USD' ? 'US$' : 'NT$');
   const currencyUnitZh = (currency) => (currency === 'USD' ? '美元' : '元');
+  const formatShortDate = useCallback((value) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${month}-${day}`;
+  }, []);
 
   usePreserveScroll(tableContainerRef, 'stockTableScrollLeft', [showInfoAxis]);
 
@@ -288,6 +298,11 @@ export default function StockTable({
             );
             const extraInfo = getIncomeGoalInfo(isDividendValid ? rawDividend : 0, price, monthlyIncomeGoal, freq || 12);
             const tooltip = `${tooltipLines.join('\n')}${extraInfo}`;
+            const paymentDate = cell.payment_date ? formatShortDate(cell.payment_date) : null;
+            const dividendDate = cell.dividend_date ? formatShortDate(cell.dividend_date) : null;
+            const closePrice = (cell.last_close_price !== undefined && cell.last_close_price !== null && cell.last_close_price !== '')
+              ? cell.last_close_price
+              : null;
             return (
               <td
                 key={`${stock.stock_id}-${idx}-${currency}`}
@@ -295,10 +310,14 @@ export default function StockTable({
                 style={{ width: NUM_COL_WIDTH }}
               >
                 <TooltipText tooltip={tooltip}>
-                  {displayVal}
-                  {perYield === (maxYieldPerMonth[currency]?.[idx] || 0) && perYield > 0 && (
-                    <span className="diamond-icon" role="img" aria-label="diamond">💎</span>
-                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <span>
+                      {displayVal}
+                      {perYield === (maxYieldPerMonth[currency]?.[idx] || 0) && perYield > 0 && (
+                        <span className="diamond-icon" role="img" aria-label="diamond">💎</span>
+                      )}
+                    </span>
+                  </div>
                 </TooltipText>
               </td>
             );

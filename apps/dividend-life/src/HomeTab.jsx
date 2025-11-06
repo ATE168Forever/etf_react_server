@@ -24,6 +24,7 @@ export default function HomeTab() {
   });
   const [transactionHistory, setTransactionHistory] = useState([]);
   const [dividendData, setDividendData] = useState([]);
+  const [inventoryLoaded, setInventoryLoaded] = useState(false);
   const [showFeatureUpdates, setShowFeatureUpdates] = useState(false);
   const { t, lang } = useLanguage();
   const featureUpdates = useMemo(() => getFeatureUpdates(lang), [lang]);
@@ -55,11 +56,24 @@ export default function HomeTab() {
     const { inventoryList } = summarizeInventory(history);
     const goals = loadInvestmentGoals();
     setGoalSummary({ goals, inventoryList });
+    setInventoryLoaded(true);
   }, []);
 
   useEffect(() => {
+    if (!inventoryLoaded) return;
     let cancelled = false;
-    fetchDividendsByYears()
+    const inventory = Array.isArray(goalSummary.inventoryList) ? goalSummary.inventoryList : [];
+    const purchasedIds = Array.from(new Set(
+      inventory
+        .map(item => {
+          const raw = item?.stock_id;
+          return typeof raw === 'string' ? raw.trim() : raw ? String(raw).trim() : '';
+        })
+        .filter(Boolean)
+    ));
+    const stockIdsOption = purchasedIds.length ? purchasedIds : 'all';
+
+    fetchDividendsByYears(undefined, undefined, { stockIds: stockIdsOption })
       .then(({ data }) => {
         if (!cancelled) {
           setDividendData(data);
@@ -70,10 +84,11 @@ export default function HomeTab() {
           setDividendData([]);
         }
       });
+
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [goalSummary.inventoryList, inventoryLoaded]);
 
   const dividendSummary = useMemo(
     () => calculateDividendSummary({
@@ -292,4 +307,3 @@ export default function HomeTab() {
     </div>
   );
 }
-

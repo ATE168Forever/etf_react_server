@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { LanguageContext, translations } from './i18n';
 import InventoryTab from './InventoryTab';
 import UserDividendsTab from './UserDividendsTab';
@@ -23,6 +23,8 @@ import { getTomorrowDividendAlerts } from './utils/dividendUtils';
 import { fetchDividendsByYears, clearDividendsCache } from './dividendApi';
 import { fetchStockList } from './stockApi';
 import useEffectOnce from './hooks/useEffectOnce';
+import { readTransactionHistory } from './utils/transactionStorage';
+import { summarizeInventory } from './utils/inventoryUtils';
 
 const DEFAULT_MONTHLY_GOAL = 10000;
 const DEFAULT_CURRENCY = 'TWD';
@@ -97,11 +99,16 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
 
   // All your existing states for dividend page...
   const [data, setData] = useState([]);
+  const [transactionHistory, setTransactionHistory] = useState([]);
+  const [transactionHistoryLoaded, setTransactionHistoryLoaded] = useState(false);
+  const [dividendScope, setDividendScope] = useState('purchased');
   const [years, setYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [upcomingAlerts, setUpcomingAlerts] = useState([]);
+  const fetchSkipRef = useRef(new Map());
+  const selectedYearRef = useRef(selectedYear);
 
   // Toggle calendar visibility
   const [showCalendar, setShowCalendar] = useState(() => {
@@ -111,6 +118,10 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   useEffect(() => {
     localStorage.setItem('appShowCalendar', showCalendar);
   }, [showCalendar]);
+
+  useEffect(() => {
+    selectedYearRef.current = selectedYear;
+  }, [selectedYear]);
 
   // Filter which event types to show on calendar
   // Default to displaying both ex-dividend and payment dates
@@ -152,6 +163,11 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   }, [lang]);
   const t = useMemo(() => (key) => translations[lang][key] || key, [lang]);
 
+  useEffect(() => {
+    setTransactionHistory(readTransactionHistory());
+    setTransactionHistoryLoaded(true);
+  }, []);
+
   const [editingGroupIndex, setEditingGroupIndex] = useState(null);
   const [groupNameInput, setGroupNameInput] = useState('');
   const [groupIdsInput, setGroupIdsInput] = useState('');
@@ -186,10 +202,45 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       setShowAdvancedFilters(false);
   };
 
+  const purchasedStockIds = useMemo(() => {
+    const { inventoryList } = summarizeInventory(transactionHistory);
+    const ids = inventoryList
+      .map(item => {
+        const raw = item?.stock_id;
+        return typeof raw === 'string' ? raw.trim() : raw ? String(raw).trim() : '';
+      })
+      .filter(Boolean);
+    const unique = Array.from(new Set(ids));
+    unique.sort((a, b) => a.localeCompare(b));
+    return unique;
+  }, [transactionHistory]);
+
+  useEffect(() => {
+    if (!transactionHistoryLoaded) return;
+    if (dividendScope !== 'purchased') return;
+    if (purchasedStockIds.length > 0) return;
+    if (transactionHistory.length === 0) return;
+    setDividendScope('all');
+  }, [dividendScope, purchasedStockIds.length, transactionHistoryLoaded, transactionHistory.length]);
+
   useEffect(() => {
     const callUpdate = () => {
+      const history = readTransactionHistory();
+      const { inventoryList } = summarizeInventory(history);
+      const purchasedIds = inventoryList
+        .map(item => {
+          const raw = item?.stock_id;
+          return typeof raw === 'string' ? raw.trim() : raw ? String(raw).trim() : '';
+        })
+        .filter(Boolean);
+      const uniquePurchased = Array.from(new Set(purchasedIds)).sort((a, b) => a.localeCompare(b));
+
       fetch(`${API_HOST}/update_dividend`).finally(() => {
         clearDividendsCache();
+         clearDividendsCache(undefined, undefined, { stockIds: 'all' });
+         if (uniquePurchased.length) {
+           clearDividendsCache(undefined, undefined, { stockIds: uniquePurchased });
+         }
         window.location.reload();
       });
     };
@@ -212,17 +263,56 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
 
   const [dividendCacheInfo, setDividendCacheInfo] = useState(null);
 
-  useEffectOnce(() => {
+  useEffect(() => {
+    if (!transactionHistoryLoaded) {
+      return;
+    }
+
+    if (dividendScope === 'purchased' && purchasedStockIds.length === 0) {
+      setData([]);
+      setDividendCacheInfo(null);
+      setLoading(false);
+      return;
+    }
+
+    const stockIdsParam = dividendScope === 'all' ? 'all' : purchasedStockIds;
+    const idsKey = dividendScope === 'all'
+      ? 'all'
+      : (purchasedStockIds.length ? purchasedStockIds.join(',') : 'none');
+    const signature = `${dividendScope}|${idsKey}|${selectedYear}`;
+    const skipMap = fetchSkipRef.current;
+
+    if (skipMap.get(signature)) {
+      skipMap.set(signature, false);
+      return;
+    }
+
+    skipMap.set(signature, true);
     let cancelled = false;
 
-    const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+
+    const load = async () => {
       try {
-        const { data: dividendData, meta } = await fetchDividendsByYears(ALLOWED_YEARS);
+        const { data: dividendData, meta } = await fetchDividendsByYears([selectedYear], undefined, {
+          stockIds: stockIdsParam,
+          forceRefresh: dividendScope === 'purchased'
+        });
         if (cancelled) return;
 
-        const filteredArr = dividendData.filter(item => ALLOWED_YEARS.includes(new Date(item.dividend_date).getFullYear()));
+        const selectedYearNumber = Number(selectedYearRef.current);
+        const filteredArr = Array.isArray(dividendData)
+          ? dividendData.filter(item => {
+              const rawDate = item?.dividend_date || item?.payment_date;
+              if (!rawDate) return false;
+              const yearValue = new Date(rawDate).getFullYear();
+              return Number.isFinite(yearValue) && yearValue === selectedYearNumber;
+            })
+          : [];
         setData(filteredArr);
-        if (meta.length) {
+
+        if (Array.isArray(meta) && meta.length) {
           const primaryMeta = meta.find(entry => entry.year === CURRENT_YEAR && entry.country === 'TW')
             || meta.find(entry => entry.year === CURRENT_YEAR)
             || meta.find(entry => entry.country === 'TW')
@@ -237,14 +327,25 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           setDividendCacheInfo(null);
         }
 
-        const availableYearSet = new Set(filteredArr.map(item => new Date(item.dividend_date).getFullYear()));
+        const availableYearSet = new Set(
+          filteredArr
+            .map(item => {
+              const date = item?.dividend_date || item?.payment_date;
+              return date ? new Date(date).getFullYear() : null;
+            })
+            .filter(year => Number.isFinite(year))
+        );
+        if (Number.isFinite(selectedYearNumber)) {
+          availableYearSet.add(selectedYearNumber);
+        }
         const yearList = Array.from(new Set([...ALLOWED_YEARS, ...availableYearSet])).sort((a, b) => b - a);
         setYears(yearList);
 
-        if (availableYearSet.size > 0 && !availableYearSet.has(selectedYear)) {
+        const currentSelectedYear = selectedYearRef.current;
+        if (availableYearSet.size > 0 && !availableYearSet.has(currentSelectedYear)) {
           const sortedAvailableYears = Array.from(availableYearSet).sort((a, b) => b - a);
           setSelectedYear(sortedAvailableYears[0]);
-        } else if (!yearList.includes(selectedYear)) {
+        } else if (!yearList.includes(currentSelectedYear)) {
           setSelectedYear(yearList[0]);
         }
       } catch (error) {
@@ -255,15 +356,17 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         if (!cancelled) {
           setLoading(false);
         }
+        skipMap.set(signature, false);
       }
     };
 
-    fetchData();
+    load();
 
     return () => {
       cancelled = true;
+      skipMap.set(signature, false);
     };
-  });
+  }, [dividendScope, purchasedStockIds, selectedYear, transactionHistoryLoaded]);
 
   useEffect(() => {
     setUpcomingAlerts(getTomorrowDividendAlerts(data));
@@ -404,7 +507,13 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   } = useMemo(() => {
     const arr = Array.isArray(data) ? data : [];
     const filtered = arr
-      .filter(item => new Date(item.dividend_date).getFullYear() === Number(selectedYear))
+      .filter(item => {
+        const reference = item.dividend_date || item.payment_date;
+        if (!reference) return false;
+        const refDate = new Date(reference);
+        if (Number.isNaN(refDate.getTime())) return false;
+        return refDate.getFullYear() === Number(selectedYear);
+      })
       .map(item => ({
         ...item,
         currency: normalizeCurrency(item.currency)
@@ -432,7 +541,12 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
 
     const dividendTable = {};
     filtered.forEach(item => {
-      const month = new Date(item.dividend_date).getMonth();
+      const referenceDateRaw = item.dividend_date || item.payment_date;
+      const referenceDate = referenceDateRaw ? new Date(referenceDateRaw) : null;
+      if (!referenceDate || Number.isNaN(referenceDate.getTime())) {
+        return;
+      }
+      const month = referenceDate.getMonth();
       const currency = item.currency || DEFAULT_CURRENCY;
       if (!dividendTable[item.stock_id]) dividendTable[item.stock_id] = {};
       if (!dividendTable[item.stock_id][month]) dividendTable[item.stock_id][month] = {};
@@ -476,6 +590,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       if (item.last_close_price !== undefined) {
         cell.last_close_price = item.last_close_price;
       }
+      cell.reference_date = referenceDateRaw;
       if (item.dividend_date) {
         cell.dividend_date = item.dividend_date;
       }
@@ -582,6 +697,9 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   }, [activeCurrencies, lang]);
 
   const viewLabelPrefix = lang === 'en' ? 'Showing:' : '顯示：';
+  const purchasedScopeLabel = lang === 'en' ? 'Purchased ETFs' : '已購買 ETF';
+  const allScopeLabel = lang === 'en' ? 'All ETFs' : '全部 ETF';
+  const canSelectPurchased = purchasedStockIds.length > 0;
 
   const filteredStocks = stocks.filter(stock => {
     if (selectedStockIds.length && !selectedStockIds.includes(stock.stock_id)) return false;
@@ -723,12 +841,15 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         }
         const lastClose = Number(cell.last_close_price);
         const safeLastClose = Number.isFinite(lastClose) ? lastClose : cell.last_close_price ?? null;
-        const cellDate = cell.dividend_date || cell.payment_date || null;
-        if (!latestPrice[stock.stock_id].date || (cellDate && new Date(cellDate) > new Date(latestPrice[stock.stock_id].date))) {
-          latestPrice[stock.stock_id] = { price: safeLastClose, date: cellDate };
+        const cellDateRaw = cell.reference_date || cell.dividend_date || cell.payment_date || null;
+        const cellDate = cellDateRaw ? new Date(cellDateRaw) : null;
+        const existingDate = latestPrice[stock.stock_id].date ? new Date(latestPrice[stock.stock_id].date) : null;
+        if (!existingDate || (cellDate && cellDate > existingDate)) {
+          latestPrice[stock.stock_id] = { price: safeLastClose, date: cellDateRaw };
         }
-        if (!latestYield[stock.stock_id].date || (cellDate && new Date(cellDate) > new Date(latestYield[stock.stock_id].date))) {
-          latestYield[stock.stock_id] = { yield: yVal, date: cellDate };
+        const existingYieldDate = latestYield[stock.stock_id].date ? new Date(latestYield[stock.stock_id].date) : null;
+        if (!existingYieldDate || (cellDate && cellDate > existingYieldDate)) {
+          latestYield[stock.stock_id] = { yield: yVal, date: cellDateRaw };
         }
       });
     }
@@ -908,16 +1029,34 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                 </button>
               </div>
             </div>
-            <CurrencyViewToggle
-              viewMode={viewMode}
-              onChange={handleViewModeChange}
-              hasTwd={hasTwd}
-              hasUsd={hasUsd}
-              lang={lang}
-              description={viewDescriptionContent}
-              labelPrefix={viewLabelPrefix}
-              style={{ marginTop: 10 }}
-            />
+            <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+              <CurrencyViewToggle
+                viewMode={viewMode}
+                onChange={handleViewModeChange}
+                hasTwd={hasTwd}
+                hasUsd={hasUsd}
+                lang={lang}
+                description={viewDescriptionContent}
+                labelPrefix={viewLabelPrefix}
+                style={{ marginTop: 0 }}
+              />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <button
+                  onClick={() => setDividendScope('purchased')}
+                  className={dividendScope === 'purchased' ? 'btn-selected' : 'btn-unselected'}
+                  disabled={!canSelectPurchased}
+                  style={canSelectPurchased ? undefined : { opacity: 0.6, cursor: 'not-allowed' }}
+                >
+                  {purchasedScopeLabel}
+                </button>
+                <button
+                  onClick={() => setDividendScope('all')}
+                  className={dividendScope === 'all' ? 'btn-selected' : 'btn-unselected'}
+                >
+                  {allScopeLabel}
+                </button>
+              </div>
+            </div>
             <button
               onClick={() => setShowCalendar(v => !v)}
               style={{ marginTop: 10 }}
