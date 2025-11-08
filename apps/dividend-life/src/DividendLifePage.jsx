@@ -202,6 +202,11 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       setShowAdvancedFilters(false);
   };
 
+  const handleDividendScopeChange = (scope) => {
+    setDividendScope(scope);
+    setShowAllStocks(false);
+  };
+
   const purchasedStockIds = useMemo(() => {
     const { inventoryList } = summarizeInventory(transactionHistory);
     const ids = inventoryList
@@ -1042,7 +1047,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
               />
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 <button
-                  onClick={() => setDividendScope('purchased')}
+                  onClick={() => handleDividendScopeChange('purchased')}
                   className={dividendScope === 'purchased' ? 'btn-selected' : 'btn-unselected'}
                   disabled={!canSelectPurchased}
                   style={canSelectPurchased ? undefined : { opacity: 0.6, cursor: 'not-allowed' }}
@@ -1050,7 +1055,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                   {purchasedScopeLabel}
                 </button>
                 <button
-                  onClick={() => setDividendScope('all')}
+                  onClick={() => handleDividendScopeChange('all')}
                   className={dividendScope === 'all' ? 'btn-selected' : 'btn-unselected'}
                 >
                   {allScopeLabel}
