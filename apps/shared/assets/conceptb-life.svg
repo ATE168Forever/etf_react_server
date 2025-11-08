@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+  <title>ConceptB Life Home</title>
+  <path
+    d="M48 128 C48 88 100 88 128 128 C156 168 208 168 208 128 C208 88 156 88 128 128 C100 168 48 168 48 128 Z"
+    fill="none"
+    stroke="#12B886"
+    stroke-width="20"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path d="M188 118 L212 128 L194 142 Z" fill="#12B886" />
+</svg>

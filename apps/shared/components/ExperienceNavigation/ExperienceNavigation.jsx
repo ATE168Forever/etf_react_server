@@ -1,13 +1,46 @@
 import { useThemeLanguage } from '@shared/hooks/useThemeLanguage.jsx';
 import { Link } from '@shared/router';
+import conceptbLifeLogo from '@shared/assets/conceptb-life.svg';
+import dividendLifeLogoDark from '@dividend-life/assets/dividend-life.svg';
+import dividendLifeLogoLight from '@dividend-life/assets/dividend-life-light.svg';
+import balanceLifeLogoDark from '@balance-life/assets/balance-life.svg';
+import balanceLifeLogoLight from '@balance-life/assets/balance-life-light.svg';
+import healthLifeLogoDark from '@health-life/assets/health-life.svg';
+import healthLifeLogoLight from '@health-life/assets/health-life-light.svg';
+import wealthLifeLogoDark from '@wealth-life/assets/wealth-life.svg';
+import wealthLifeLogoLight from '@wealth-life/assets/wealth-life-light.svg';
 import styles from './ExperienceNavigation.module.css';
 
 const baseExperiences = [
-  { key: 'home', labels: { zh: '首頁', en: 'Home' } },
-  { key: 'dividend-life', to: '/dividend-life', labels: { zh: 'Dividend Life', en: 'Dividend Life' } },
-  { key: 'balance-life', to: '/balance-life', labels: { zh: 'Balance Life', en: 'Balance Life' } },
-  { key: 'health-life', to: '/health-life', labels: { zh: 'Health Life', en: 'Health Life' } },
-  { key: 'wealth-life', to: '/wealth-life', labels: { zh: 'Wealth Life', en: 'Wealth Life' } },
+  {
+    key: 'home',
+    labels: { zh: '首頁', en: 'Home' },
+    logos: { dark: conceptbLifeLogo, light: conceptbLifeLogo },
+  },
+  {
+    key: 'dividend-life',
+    to: '/dividend-life',
+    labels: { zh: 'Dividend Life', en: 'Dividend Life' },
+    logos: { dark: dividendLifeLogoDark, light: dividendLifeLogoLight },
+  },
+  {
+    key: 'balance-life',
+    to: '/balance-life',
+    labels: { zh: 'Balance Life', en: 'Balance Life' },
+    logos: { dark: balanceLifeLogoDark, light: balanceLifeLogoLight },
+  },
+  {
+    key: 'health-life',
+    to: '/health-life',
+    labels: { zh: 'Health Life', en: 'Health Life' },
+    logos: { dark: healthLifeLogoDark, light: healthLifeLogoLight },
+  },
+  {
+    key: 'wealth-life',
+    to: '/wealth-life',
+    labels: { zh: 'Wealth Life', en: 'Wealth Life' },
+    logos: { dark: wealthLifeLogoDark, light: wealthLifeLogoLight },
+  },
 ];
 
 export default function ExperienceNavigation({
@@ -15,7 +48,7 @@ export default function ExperienceNavigation({
   homeHref = '/',
   homeNavigation = 'router',
 }) {
-  const { lang } = useThemeLanguage();
+  const { theme, lang } = useThemeLanguage();
   const experiences = baseExperiences.map((experience) =>
     experience.key === 'home'
       ? { ...experience, to: homeHref }
@@ -32,6 +65,10 @@ export default function ExperienceNavigation({
           experience.labels?.zh ??
           experience.labels?.en ??
           experience.key;
+        const logo =
+          experience.logos?.[theme] ??
+          experience.logos?.dark ??
+          experience.logos?.light;
 
         return (
           <Link
@@ -41,7 +78,10 @@ export default function ExperienceNavigation({
             aria-current={isActive ? 'page' : undefined}
             reloadDocument={experience.key === 'home' ? shouldReloadHome : false}
           >
-            {label}
+            <span className={styles.logoWrapper} aria-hidden="true">
+              <img src={logo} alt="" className={styles.logo} />
+            </span>
+            <span className={styles.label}>{label}</span>
           </Link>
         );
       })}
