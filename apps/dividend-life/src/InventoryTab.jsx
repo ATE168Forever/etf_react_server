@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Cookies from 'js-cookie';
 import CreatableSelect from 'react-select/creatable';
-import { HOST_URL } from '../config';
+import { API_HOST, HOST_URL } from '../config';
 import { fetchDividendsByYears } from './dividendApi';
 import { fetchStockList } from './stockApi';
 import useEffectOnce from './hooks/useEffectOnce';
@@ -29,6 +29,7 @@ import {
 } from './utils/dividendGoalUtils';
 import selectStyles from './selectStyles';
 import TooltipText from './components/TooltipText';
+import { fetchWithCache } from './api';
 
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
@@ -988,37 +989,62 @@ export default function InventoryTab() {
     // fresh we may reuse the localStorage entry without issuing another
     // network call. Surface the cache metadata so it's clear why the API
     // wasn't contacted again after a cached /get_stock_list response.
+    const applyDividendFeed = (list, meta) => {
+      if (cancelled) return;
+      const entries = Array.isArray(list) ? list : [];
+      setDividendData(entries);
+      const primaryMeta = meta
+        ? {
+            cacheStatus: meta.cacheStatus ?? null,
+            timestamp: meta.timestamp ?? null
+          }
+        : null;
+      setDividendCacheInfo(primaryMeta);
+      const priceMap = {};
+      entries.forEach(item => {
+        const price = parseFloat(item?.last_close_price);
+        if (!item?.stock_id || Number.isNaN(price)) return;
+        const dateValue = item?.dividend_date ? new Date(item.dividend_date) : null;
+        const previous = priceMap[item.stock_id];
+        if (!previous || (dateValue && (!previous.date || dateValue > previous.date))) {
+          priceMap[item.stock_id] = { price, date: dateValue };
+        }
+      });
+      const prices = {};
+      Object.keys(priceMap).forEach(id => {
+        prices[id] = priceMap[id].price;
+      });
+      setLatestPrices(prices);
+    };
+
     fetchDividendsByYears()
       .then(({ data, meta }) => {
         if (cancelled) return;
-        const list = data;
-        setDividendData(list);
         const primaryMeta = Array.isArray(meta) && meta.length ? meta[0] : null;
-        setDividendCacheInfo(primaryMeta
-          ? {
-              cacheStatus: primaryMeta.cacheStatus ?? null,
-              timestamp: primaryMeta.timestamp ?? null
-            }
-          : null);
-        const priceMap = {};
-        list.forEach(item => {
-          const price = parseFloat(item.last_close_price);
-          if (!item.stock_id || Number.isNaN(price)) return;
-          if (!priceMap[item.stock_id] || new Date(item.dividend_date) > new Date(priceMap[item.stock_id].date)) {
-            priceMap[item.stock_id] = { price, date: item.dividend_date };
-          }
-        });
-        const prices = {};
-        Object.keys(priceMap).forEach(id => {
-          prices[id] = priceMap[id].price;
-        });
-        setLatestPrices(prices);
+        applyDividendFeed(data, primaryMeta);
       })
-      .catch(() => {
-        if (!cancelled) {
-          setDividendData([]);
-          setDividendCacheInfo(null);
-          setLatestPrices({});
+      .catch(async () => {
+        if (cancelled) return;
+        if (!API_HOST) {
+          applyDividendFeed([], null);
+          return;
+        }
+        try {
+          const response = await fetchWithCache(`${API_HOST}/get_dividend`);
+          const payload = response?.data;
+          const list = Array.isArray(payload?.data)
+            ? payload.data
+            : Array.isArray(payload?.items)
+              ? payload.items
+              : Array.isArray(payload)
+                ? payload
+                : [];
+          applyDividendFeed(list, {
+            cacheStatus: response?.cacheStatus ?? null,
+            timestamp: response?.timestamp ?? null
+          });
+        } catch {
+          applyDividendFeed([], null);
         }
       });
 
