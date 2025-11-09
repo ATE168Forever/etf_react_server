@@ -1,0 +1,18 @@
+<svg width="320" height="80" viewBox="0 0 320 80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sunriseGold" x1="0" x2="1">
+      <stop offset="0%" stop-color="#B17F19"/>
+      <stop offset="100%" stop-color="#F0C75E"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="80" fill="#FBF7EE"/>
+  <path d="M20 52 L20 42 M30 52 L30 38 M40 52 L40 34 M50 52 L50 28" stroke="url(#sunriseGold)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M20 28 L35 22 L58 30" stroke="url(#sunriseGold)" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M58 30 L55 27 L64 26 L62 35 Z" fill="url(#sunriseGold)"/>
+  <text x="80" y="46" fill="#6B4E16" font-family="Poppins, Montserrat, system-ui" font-size="24" font-weight="600">
+    Wealth Life
+  </text>
+  <text x="80" y="64" fill="#8C6A1F" font-family="Poppins, Montserrat, system-ui" font-size="12" opacity="0.85">
+    Grow, protect, and enjoy
+  </text>
+</svg>

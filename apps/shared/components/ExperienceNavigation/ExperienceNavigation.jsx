@@ -1,14 +1,14 @@
 import { useThemeLanguage } from '@shared/hooks/useThemeLanguage.jsx';
 import { Link } from '@shared/router';
 import conceptbLifeLogo from '@shared/assets/conceptb-life.svg';
-import dividendLifeLogoDark from '@dividend-life/assets/dividend-life.svg';
-import dividendLifeLogoLight from '@dividend-life/assets/dividend-life-light.svg';
-import balanceLifeLogoDark from '@balance-life/assets/balance-life.svg';
-import balanceLifeLogoLight from '@balance-life/assets/balance-life-light.svg';
-import healthLifeLogoDark from '@health-life/assets/health-life.svg';
-import healthLifeLogoLight from '@health-life/assets/health-life-light.svg';
-import wealthLifeLogoDark from '@wealth-life/assets/wealth-life.svg';
-import wealthLifeLogoLight from '@wealth-life/assets/wealth-life-light.svg';
+import dividendLifeLogoDark from '@shared/assets/dividend-life.svg';
+import dividendLifeLogoLight from '@shared/assets/dividend-life-light.svg';
+import balanceLifeLogoDark from '@shared/assets/balance-life.svg';
+import balanceLifeLogoLight from '@shared/assets/balance-life-light.svg';
+import healthLifeLogoDark from '@shared/assets/health-life.svg';
+import healthLifeLogoLight from '@shared/assets/health-life-light.svg';
+import wealthLifeLogoDark from '@shared/assets/wealth-life.svg';
+import wealthLifeLogoLight from '@shared/assets/wealth-life-light.svg';
 import styles from './ExperienceNavigation.module.css';
 
 const baseExperiences = [
