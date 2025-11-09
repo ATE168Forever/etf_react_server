@@ -19,6 +19,7 @@ import dividendLifeLogoDark from './assets/dividend-life.svg';
 import dividendLifeLogoLight from './assets/dividend-life-light.svg';
 import NLHelper from './NLHelper';
 import { API_HOST } from '../config';
+import { fetchWithCache } from './api';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
 import { fetchDividendsByYears, clearDividendsCache } from './dividendApi';
 import { fetchStockList } from './stockApi';
@@ -273,17 +274,12 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       return;
     }
 
-    if (dividendScope === 'purchased' && purchasedStockIds.length === 0) {
-      setData([]);
-      setDividendCacheInfo(null);
-      setLoading(false);
-      return;
-    }
-
-    const stockIdsParam = dividendScope === 'all' ? 'all' : purchasedStockIds;
-    const idsKey = dividendScope === 'all'
-      ? 'all'
-      : (purchasedStockIds.length ? purchasedStockIds.join(',') : 'none');
+    const hasPurchasedIds = purchasedStockIds.length > 0;
+    const usePurchasedScope = dividendScope === 'purchased' && hasPurchasedIds;
+    const stockIdsParam = usePurchasedScope ? purchasedStockIds : 'all';
+    const idsKey = usePurchasedScope
+      ? purchasedStockIds.join(',')
+      : 'all';
     const signature = `${dividendScope}|${idsKey}|${selectedYear}`;
     const skipMap = fetchSkipRef.current;
 
@@ -298,65 +294,94 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     setLoading(true);
     setError(null);
 
+    const applyDividendResponse = (dividendData, meta) => {
+      if (cancelled) return;
+      const normalizedDividends = Array.isArray(dividendData) ? dividendData : [];
+      const selectedYearNumber = Number(selectedYearRef.current);
+      const filteredArr = normalizedDividends.filter(item => {
+        const rawDate = item?.dividend_date || item?.payment_date;
+        if (!rawDate) return false;
+        const yearValue = new Date(rawDate).getFullYear();
+        return Number.isFinite(yearValue) && yearValue === selectedYearNumber;
+      });
+      setData(filteredArr);
+
+      if (Array.isArray(meta) && meta.length) {
+        const primaryMeta = meta.find(entry => entry.year === CURRENT_YEAR && entry.country === 'TW')
+          || meta.find(entry => entry.year === CURRENT_YEAR)
+          || meta.find(entry => entry.country === 'TW')
+          || meta[0];
+        setDividendCacheInfo(primaryMeta
+          ? {
+              cacheStatus: primaryMeta.cacheStatus || 'unknown',
+              timestamp: primaryMeta.timestamp
+            }
+          : null);
+      } else if (meta && typeof meta === 'object') {
+        setDividendCacheInfo({
+          cacheStatus: meta.cacheStatus || null,
+          timestamp: meta.timestamp || null
+        });
+      } else {
+        setDividendCacheInfo(null);
+      }
+
+      const availableYearSet = new Set(
+        normalizedDividends
+          .map(item => {
+            const date = item?.dividend_date || item?.payment_date;
+            if (!date) return null;
+            const year = new Date(date).getFullYear();
+            return Number.isFinite(year) ? year : null;
+          })
+          .filter(year => Number.isFinite(year))
+      );
+      const yearList = Array.from(new Set([...ALLOWED_YEARS, ...availableYearSet])).sort((a, b) => b - a);
+      setYears(yearList);
+
+      const numericSelectedYear = Number(selectedYearRef.current);
+      if (availableYearSet.size > 0 && !availableYearSet.has(numericSelectedYear)) {
+        const sortedAvailableYears = Array.from(availableYearSet).sort((a, b) => b - a);
+        setSelectedYear(sortedAvailableYears[0]);
+      } else if (!yearList.includes(numericSelectedYear)) {
+        setSelectedYear(yearList[0]);
+      }
+    };
+
     const load = async () => {
       try {
         const { data: dividendData, meta } = await fetchDividendsByYears([selectedYear], undefined, {
           stockIds: stockIdsParam,
           forceRefresh: dividendScope === 'purchased'
         });
-        if (cancelled) return;
-
-        const selectedYearNumber = Number(selectedYearRef.current);
-        const filteredArr = Array.isArray(dividendData)
-          ? dividendData.filter(item => {
-              const rawDate = item?.dividend_date || item?.payment_date;
-              if (!rawDate) return false;
-              const yearValue = new Date(rawDate).getFullYear();
-              return Number.isFinite(yearValue) && yearValue === selectedYearNumber;
-            })
-          : [];
-        setData(filteredArr);
-
-        if (Array.isArray(meta) && meta.length) {
-          const primaryMeta = meta.find(entry => entry.year === CURRENT_YEAR && entry.country === 'TW')
-            || meta.find(entry => entry.year === CURRENT_YEAR)
-            || meta.find(entry => entry.country === 'TW')
-            || meta[0];
-          setDividendCacheInfo(primaryMeta
-            ? {
-                cacheStatus: primaryMeta.cacheStatus || 'unknown',
-                timestamp: primaryMeta.timestamp
-              }
-            : null);
-        } else {
-          setDividendCacheInfo(null);
-        }
-
-        const availableYearSet = new Set(
-          filteredArr
-            .map(item => {
-              const date = item?.dividend_date || item?.payment_date;
-              return date ? new Date(date).getFullYear() : null;
-            })
-            .filter(year => Number.isFinite(year))
-        );
-        if (Number.isFinite(selectedYearNumber)) {
-          availableYearSet.add(selectedYearNumber);
-        }
-        const yearList = Array.from(new Set([...ALLOWED_YEARS, ...availableYearSet])).sort((a, b) => b - a);
-        setYears(yearList);
-
-        const currentSelectedYear = selectedYearRef.current;
-        if (availableYearSet.size > 0 && !availableYearSet.has(currentSelectedYear)) {
-          const sortedAvailableYears = Array.from(availableYearSet).sort((a, b) => b - a);
-          setSelectedYear(sortedAvailableYears[0]);
-        } else if (!yearList.includes(currentSelectedYear)) {
-          setSelectedYear(yearList[0]);
-        }
+        applyDividendResponse(dividendData, meta);
       } catch (error) {
-        if (!cancelled) {
-          setError(error);
+        if (cancelled) return;
+        if (API_HOST) {
+          try {
+            const response = await fetchWithCache(`${API_HOST}/get_dividend`);
+            const payload = response?.data;
+            const list = Array.isArray(payload?.data)
+              ? payload.data
+              : Array.isArray(payload?.items)
+                ? payload.items
+                : Array.isArray(payload)
+                  ? payload
+                  : [];
+            applyDividendResponse(list, {
+              cacheStatus: response?.cacheStatus ?? null,
+              timestamp: response?.timestamp ?? null
+            });
+            setError(null);
+            return;
+          } catch (fallbackError) {
+            applyDividendResponse([], null);
+            setError(fallbackError);
+            return;
+          }
         }
+        applyDividendResponse([], null);
+        setError(null);
       } finally {
         if (!cancelled) {
           setLoading(false);

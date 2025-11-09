@@ -949,12 +949,18 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                     return `${currencyHeaderLabel(currency)}：最新收盤價 ${latest}\n加總殖利率 ${info.sumYield.toFixed(1)}%\n預估年化殖利率 ${estAnnual.toFixed(1)}%`;
                                 }).filter(Boolean);
 
+                                const hasName = Boolean(stock.stock_name);
+                                const displayText = hasName
+                                    ? `${stock.stock_id} (${stock.stock_name})`
+                                    : stock.stock_id;
+                                const tooltipText = stock.stock_name || stock.stock_id;
+
                                 return (
                                     <tr key={stock.stock_id + stock.stock_name}>
                                         <td className="stock-col">
                                             <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
-                                                <TooltipText tooltip={stock.stock_name}>
-                                                    {stock.stock_id}
+                                                <TooltipText tooltip={tooltipText}>
+                                                    {displayText}
                                                 </TooltipText>
                                             </a>
                                         </td>
