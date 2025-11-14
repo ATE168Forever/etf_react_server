@@ -2195,7 +2195,6 @@ export default function InventoryTab() {
                               <TooltipText tooltip={item.stock_name}>
                                 <span>
                                   {item.stock_id}
-                                  {item.stock_name ? ` ${item.stock_name}` : ''}
                                 </span>
                               </TooltipText>
                             </a>

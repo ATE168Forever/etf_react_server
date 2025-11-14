@@ -1,6 +1,7 @@
 import styles from './TransactionHistoryTable.module.css';
 import { HOST_URL } from '../../config';
 import { useLanguage } from '../i18n';
+import TooltipText from './TooltipText';
 
 export default function TransactionHistoryTable({ transactionHistory, stockList, editingIdx, editForm, setEditForm, setEditingIdx, handleEditSave, handleDelete }) {
   const { lang } = useLanguage();
@@ -29,7 +30,11 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
                 <tr key={idx}>
                   <td className="stock-col">
                     <a href={`${HOST_URL}/stock/${item.stock_id}`} target="_blank" rel="noreferrer">
-                      {item.stock_id} {name}
+                      <TooltipText tooltip={name}>
+                        <span>
+                          {item.stock_id}
+                        </span>
+                      </TooltipText>
                     </a>
                   </td>
                   <td>

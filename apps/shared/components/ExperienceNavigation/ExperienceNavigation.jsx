@@ -1,6 +1,6 @@
 import { useThemeLanguage } from '@shared/hooks/useThemeLanguage.jsx';
 import { Link } from '@shared/router';
-import conceptbLifeLogo from '@shared/assets/conceptb-life.svg';
+import conceptbLifeLogo from '@shared/assets/concept-b-life.svg';
 import dividendLifeLogoDark from '@shared/assets/dividend-life.svg';
 import dividendLifeLogoLight from '@shared/assets/dividend-life-light.svg';
 import balanceLifeLogoDark from '@shared/assets/balance-life.svg';
@@ -77,11 +77,10 @@ export default function ExperienceNavigation({
             className={isActive ? `${styles.link} ${styles.active}` : styles.link}
             aria-current={isActive ? 'page' : undefined}
             reloadDocument={experience.key === 'home' ? shouldReloadHome : false}
+            aria-label={label}
+            title={label}
           >
-            <span className={styles.logoWrapper} aria-hidden="true">
-              <img src={logo} alt="" className={styles.logo} />
-            </span>
-            <span className={styles.label}>{label}</span>
+            <img src={logo} alt="" aria-hidden="true" className={styles.logo} />
           </Link>
         );
       })}

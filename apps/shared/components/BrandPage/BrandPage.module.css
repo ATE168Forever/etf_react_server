@@ -14,6 +14,25 @@
   width: min(960px, 100%);
 }
 
+.navigationTextMark {
+  width: min(420px, 100%);
+  margin: 18px auto 0;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 24px rgba(8, 15, 40, 0.55));
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+:global([data-theme='light']) .navigationTextMark {
+  filter: drop-shadow(0 10px 20px rgba(120, 152, 255, 0.35));
+}
+
+.navigationTextMark:hover,
+.navigationTextMark:focus-visible {
+  transform: translateY(-2px);
+  filter: drop-shadow(0 12px 28px rgba(72, 118, 255, 0.55));
+}
+
 .panel {
   width: min(960px, 100%);
   background: var(--brand-panel-background, rgba(12, 14, 20, 0.92));
@@ -21,13 +40,6 @@
   border: 1px solid var(--brand-panel-border, rgba(121, 147, 255, 0.18));
   box-shadow: var(--brand-panel-shadow, 0 25px 60px rgba(5, 8, 30, 0.45));
   color: inherit;
-}
-
-.logoSection {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: clamp(6px, 5vw, 8px);
 }
 
 .content {
@@ -47,12 +59,6 @@
 
 .contentWide > * {
   width: 100%;
-}
-
-.logo {
-  width: clamp(200px, 40vw, 320px);
-  height: auto;
-  filter: var(--brand-logo-drop-shadow, drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4)));
 }
 
 .title {
@@ -165,5 +171,10 @@
   .navigation,
   .footer {
     width: 100%;
+  }
+
+  .navigationTextMark {
+    width: min(320px, 90%);
+    margin-top: 12px;
   }
 }

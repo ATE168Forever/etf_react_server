@@ -1,0 +1,34 @@
+<!--?xml version="1.0" encoding="UTF-8"?-->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="#0B0B0D"></rect>
+
+  <!-- Warm Gold Gradient -->
+  <linearGradient id="warmgold" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#E7D49A"></stop>
+    <stop offset="55%" stop-color="#D4B565"></stop>
+    <stop offset="100%" stop-color="#AA8740"></stop>
+  </linearGradient>
+
+  <!-- Circular Outline (represents sustainability loop + slow living rhythm) -->
+  <circle cx="512" cy="512" r="330" fill="none" stroke="url(#warmgold)" stroke-width="26" stroke-linecap="round" stroke-dasharray="5 4" opacity="0.88"></circle>
+
+  <!-- The B core (each bowl is a loop — sustainable cycle) -->
+  <path d="
+      M 410 300
+      L 410 724
+
+      M 410 330
+      Q 560 330 560 430
+      Q 560 530 410 530
+
+      M 410 500
+      Q 580 500 580 612
+      Q 580 724 410 724
+    " fill="none" stroke="url(#warmgold)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"></path>
+
+  <!-- Small growth bar (ETF slow accumulation, subtle upward trend) -->
+  <line x1="540" y1="580" x2="540" y2="540" stroke="url(#warmgold)" stroke-width="14" stroke-linecap="round"></line>
+
+</svg>

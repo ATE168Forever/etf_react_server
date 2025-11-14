@@ -2,11 +2,7 @@
 <html lang="zh-Hant" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="/src/assets/dividend-life.svg"
-    />
+    <link id="app-favicon" rel="icon" type="image/svg+xml" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="canonical" href="https://etflife.org/dividend-life" />
     <link
@@ -17,6 +13,14 @@
       const savedTheme = localStorage.getItem('theme');
       if (savedTheme) {
         document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    </script>
+    <script type="module">
+      import faviconUrl from '@shared/assets/dividend-life.svg?url';
+
+      const faviconEl = document.querySelector('#app-favicon');
+      if (faviconEl) {
+        faviconEl.href = faviconUrl;
       }
     </script>
     <title>Dividend Life</title>

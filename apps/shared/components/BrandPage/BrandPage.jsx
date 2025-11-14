@@ -6,7 +6,7 @@ export default function BrandPage({
   experienceKey,
   title,
   description,
-  logoSrc,
+  navigationText,
   primaryAction,
   secondaryAction,
   footerSlot = null,
@@ -16,12 +16,16 @@ export default function BrandPage({
     <main className={styles.container}>
       <div className={styles.navigation}>
         <ExperienceNavigation current={experienceKey} />
+        {navigationText ? (
+          <img
+            src={navigationText}
+            alt=""
+            aria-hidden="true"
+            className={styles.navigationTextMark}
+            loading="lazy"
+          />
+        ) : null}
       </div>
-      {logoSrc ? (
-        <div className={`${styles.panel} ${styles.logoSection}`}>
-          <img src={logoSrc} alt={`${title} logo`} className={styles.logo} />
-        </div>
-      ) : null}
       <section className={`${styles.panel} ${styles.content}`}>
         <h1 className={styles.title}>{title}</h1>
         <p className={styles.description}>{description}</p>

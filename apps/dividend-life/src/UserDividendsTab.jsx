@@ -951,7 +951,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
 
                                 const hasName = Boolean(stock.stock_name);
                                 const displayText = hasName
-                                    ? `${stock.stock_id} (${stock.stock_name})`
+                                    ? `${stock.stock_id}`
                                     : stock.stock_id;
                                 const tooltipText = stock.stock_name || stock.stock_id;
 

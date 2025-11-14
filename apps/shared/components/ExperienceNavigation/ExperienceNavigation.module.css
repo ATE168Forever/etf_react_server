@@ -2,154 +2,104 @@
   width: min(960px, 100%);
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 20px;
   justify-content: center;
-  align-items: stretch;
+  align-items: center;
   margin-bottom: 24px;
 }
 
 .link {
   position: relative;
-  padding: 18px 20px 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(128, 156, 255, 0.25);
-  background: radial-gradient(circle at top, rgba(63, 109, 255, 0.28), rgba(12, 14, 20, 0.85));
-  color: rgba(232, 236, 255, 0.9);
-  font-size: 0.95rem;
+  width: 75px;
+  aspect-ratio: 1 / 1;
+  border-radius: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
   text-decoration: none;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  min-width: 120px;
-  box-shadow: 0 12px 28px rgba(8, 15, 40, 0.45);
-}
-
-.logoWrapper {
-  width: 72px;
-  height: 72px;
-  border-radius: 20px;
-  background: linear-gradient(145deg, rgba(20, 26, 48, 0.95), rgba(12, 14, 24, 0.8));
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(128, 156, 255, 0.35);
-  box-shadow: inset 0 4px 8px rgba(18, 24, 48, 0.6), 0 12px 22px rgba(10, 18, 42, 0.45);
-  overflow: hidden;
-}
-
-.logo {
-  width: 56px;
-  height: 56px;
-  object-fit: contain;
-}
-
-.label {
-  font-size: 0.85rem;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: rgba(212, 220, 255, 0.78);
-  text-align: center;
-}
-
-.link:hover,
-.link:focus-visible {
-  transform: translateY(-4px);
-  border-color: rgba(140, 173, 255, 0.5);
-  box-shadow: 0 18px 32px rgba(29, 60, 140, 0.55);
+  display: block;
+  transition: transform 0.2s ease;
   outline: none;
-  background: radial-gradient(circle at top, rgba(82, 124, 255, 0.35), rgba(16, 20, 40, 0.92));
 }
 
-.link:hover .logoWrapper,
-.link:focus-visible .logoWrapper {
-  border-color: rgba(166, 190, 255, 0.6);
-  box-shadow: inset 0 6px 10px rgba(26, 34, 62, 0.75), 0 18px 26px rgba(29, 60, 140, 0.5);
-}
-
-.active {
-  border-color: rgba(166, 190, 255, 0.75);
-  background: linear-gradient(145deg, rgba(82, 124, 255, 0.85), rgba(44, 92, 255, 0.9));
-  color: #f8faff;
-  box-shadow: 0 22px 40px rgba(40, 72, 170, 0.6);
+.link::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  opacity: 0;
+  transition: opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   pointer-events: none;
 }
 
-.active .logoWrapper {
-  background: linear-gradient(145deg, rgba(18, 28, 72, 0.95), rgba(10, 14, 34, 0.9));
-  border-color: rgba(212, 226, 255, 0.85);
-  box-shadow: inset 0 6px 12px rgba(28, 38, 88, 0.8), 0 20px 32px rgba(34, 72, 170, 0.55);
+.logo {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  object-fit: contain;
+  box-shadow: 0 12px 28px rgba(8, 15, 40, 0.55);
+  filter: saturate(1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
-.active .label {
-  color: #ffffff;
+.link:hover .logo,
+.link:focus-visible .logo {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 18px 36px rgba(52, 98, 214, 0.55);
+  filter: saturate(1.05);
 }
 
-:global([data-theme='light']) .link {
-  border-color: rgba(103, 136, 255, 0.25);
-  background: radial-gradient(circle at top, rgba(120, 152, 255, 0.18), rgba(255, 255, 255, 0.95));
-  color: rgba(27, 39, 78, 0.85);
-  box-shadow: 0 10px 24px rgba(126, 152, 255, 0.25);
+.link:hover::after,
+.link:focus-visible::after {
+  opacity: 1;
+  border-color: rgba(140, 173, 255, 0.4);
+  box-shadow: 0 10px 28px rgba(52, 98, 214, 0.45);
 }
 
-:global([data-theme='light']) .logoWrapper {
-  background: linear-gradient(145deg, rgba(238, 243, 255, 0.98), rgba(220, 230, 255, 0.85));
-  border-color: rgba(120, 152, 255, 0.35);
-  box-shadow: inset 0 4px 8px rgba(182, 198, 255, 0.45), 0 10px 20px rgba(120, 152, 255, 0.25);
+.active .logo {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 44px rgba(72, 118, 255, 0.65);
+  filter: saturate(1.08);
 }
 
-:global([data-theme='light']) .label {
-  color: rgba(27, 39, 78, 0.7);
+.active::after {
+  opacity: 1;
+  border-color: rgba(162, 196, 255, 0.95);
+  box-shadow: 0 12px 32px rgba(72, 118, 255, 0.6);
 }
 
-:global([data-theme='light']) .link:hover,
-:global([data-theme='light']) .link:focus-visible {
-  background: radial-gradient(circle at top, rgba(140, 168, 255, 0.24), rgba(246, 249, 255, 0.98));
-  border-color: rgba(120, 152, 255, 0.55);
-  box-shadow: 0 18px 30px rgba(120, 152, 255, 0.35);
+:global([data-theme='light']) .logo {
+  box-shadow: 0 12px 26px rgba(126, 152, 255, 0.35);
 }
 
-:global([data-theme='light']) .link:hover .logoWrapper,
-:global([data-theme='light']) .link:focus-visible .logoWrapper {
-  border-color: rgba(140, 168, 255, 0.6);
-  box-shadow: inset 0 6px 12px rgba(200, 214, 255, 0.6), 0 18px 26px rgba(120, 152, 255, 0.28);
+:global([data-theme='light']) .link:hover .logo,
+:global([data-theme='light']) .link:focus-visible .logo {
+  box-shadow: 0 18px 34px rgba(120, 152, 255, 0.45);
 }
 
-:global([data-theme='light']) .active {
-  background: linear-gradient(145deg, rgba(126, 152, 255, 0.9), rgba(92, 128, 255, 0.95));
-  border-color: rgba(160, 186, 255, 0.9);
-  color: #0f1324;
-  box-shadow: 0 20px 36px rgba(120, 152, 255, 0.45);
+:global([data-theme='light']) .active .logo {
+  box-shadow: 0 22px 38px rgba(120, 152, 255, 0.5);
 }
 
-:global([data-theme='light']) .active .logoWrapper {
-  background: linear-gradient(145deg, rgba(230, 236, 255, 0.98), rgba(210, 222, 255, 0.9));
-  border-color: rgba(198, 212, 255, 0.95);
+:global([data-theme='light']) .link::after {
+  border-color: rgba(103, 136, 255, 0.15);
 }
 
-:global([data-theme='light']) .active .label {
-  color: rgba(10, 18, 42, 0.9);
+:global([data-theme='light']) .active::after {
+  border-color: rgba(120, 152, 255, 0.75);
+  box-shadow: 0 14px 32px rgba(120, 152, 255, 0.4);
 }
 
 @media (max-width: 640px) {
   .nav {
     justify-content: flex-start;
-    gap: 12px;
+    gap: 14px;
   }
 
   .link {
-    padding: 16px;
-    min-width: 104px;
-  }
-
-  .logoWrapper {
-    width: 64px;
-    height: 64px;
-    border-radius: 18px;
-  }
-
-  .logo {
-    width: 48px;
-    height: 48px;
+    width: 96px;
+    border-radius: 24px;
   }
 }

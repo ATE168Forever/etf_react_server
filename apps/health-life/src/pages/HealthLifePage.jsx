@@ -2,8 +2,8 @@ import BrandPage from '@shared/components/BrandPage/BrandPage.jsx';
 import BrandFooter from '@shared/components/BrandPage/BrandFooter.jsx';
 import { ThemeLanguageProvider, useThemeLanguage } from '@shared/hooks/useThemeLanguage.jsx';
 import styles from '@shared/components/BrandPage/BrandPage.module.css';
-import healthLifeLogoDark from '../assets/health-life.svg';
-import healthLifeLogoLight from '../assets/health-life-light.svg';
+import healthLifeTextDark from '@shared/assets/health-life-text.svg';
+import healthLifeTextLight from '@shared/assets/health-life-text-light.svg';
 
 const translations = {
   zh: {
@@ -29,14 +29,14 @@ const translations = {
 function HealthLifeContent() {
   const { lang, theme } = useThemeLanguage();
   const locale = translations[lang] ?? translations.zh;
-  const logoSrc = theme === 'light' ? healthLifeLogoLight : healthLifeLogoDark;
+  const navigationText = theme === 'light' ? healthLifeTextLight : healthLifeTextDark;
 
   return (
     <BrandPage
       experienceKey="health-life"
       title={locale.title}
       description={locale.description}
-      logoSrc={logoSrc}
+      navigationText={navigationText}
       footerSlot={<BrandFooter />}
     >
       <div className={styles.featureList}>

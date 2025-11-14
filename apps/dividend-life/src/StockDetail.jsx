@@ -435,16 +435,18 @@ export default function StockDetail({ stockId }) {
                 <table className="dividend-record">
                   <thead>
                     <tr>
+                      <th>#</th>
                       <th>{STR.date}</th>
                       <th>{STR.dividend}</th>
                       <th>{STR.yield}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {dividends.map((item) => {
+                    {dividends.map((item, index) => {
                       const displayDate = item.dividend_date || item.payment_date || '-';
                       return (
                         <tr key={`${displayDate}-${item.dividend}-${item.dividend_yield}`}>
+                          <td>{index + 1}</td>
                           <td>{displayDate}</td>
                           <td>{isNil(item.dividend) ? '-' : item.dividend}</td>
                           <td>{isNil(item.dividend_yield) ? '-' : item.dividend_yield}</td>

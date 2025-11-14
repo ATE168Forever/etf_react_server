@@ -1,8 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
-  <title>ETF Life – Concept B Icon</title>
-  <!-- Infinity curve -->
-  <path d="M48 128 C48 88 100 88 128 128 C156 168 208 168 208 128 C208 88 156 88 128 128 C100 168 48 168 48 128 Z"
-        fill="none" stroke="#12B886" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Arrow head at right loop -->
-  <path d="M188 118 L212 128 L194 142 Z" fill="#12B886"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="60" viewBox="0 0 260 60">
+  <defs>
+    <linearGradient id="conceptb-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#06141F"/>
+      <stop offset="60%" stop-color="#0A2233"/>
+      <stop offset="100%" stop-color="#07121B"/>
+    </linearGradient>
+    <linearGradient id="conceptb-brand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0ED28C"/>
+      <stop offset="100%" stop-color="#0AA6C3"/>
+    </linearGradient>
+    <linearGradient id="conceptb-frame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="rgba(22,255,196,0.35)"/>
+      <stop offset="100%" stop-color="rgba(10,166,195,0.50)"/>
+    </linearGradient>
+  </defs>
+  <rect width="260" height="60" rx="14" fill="url(#conceptb-bg)"/>
+  <rect width="260" height="60" rx="14" fill="none" stroke="url(#conceptb-frame)" stroke-width="0.8"/>
+  <g transform="translate(34,30)">
+    <circle cx="0" cy="0" r="13" fill="none" stroke="url(#conceptb-brand)" stroke-width="2.2"/>
+    <path d="M-6.5,0 L-1,6 L9,-6" fill="none" stroke="url(#conceptb-brand)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="58" y="30" font-family="Poppins, Montserrat, system-ui" font-size="26" font-weight="700" fill="url(#conceptb-brand)" dominant-baseline="middle">
+    ConceptB Life
+  </text>
 </svg>

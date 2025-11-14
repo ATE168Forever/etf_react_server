@@ -9,14 +9,16 @@ import DividendCalendar from './components/DividendCalendar';
 import StockTable from './components/StockTable';
 import Footer from '@shared/components/Footer/Footer.jsx';
 import ExperienceNavigation from '@shared/components/ExperienceNavigation/ExperienceNavigation.jsx';
+import dividendLifeTextDark from '@shared/assets/dividend-life-text.svg';
+import dividendLifeTextLight from '@shared/assets/dividend-life-text-light.svg';
 import AdvancedFilterDropdown from './components/AdvancedFilterDropdown';
 import CurrencyViewToggle from './components/CurrencyViewToggle';
 
 import './App.css';
 import appStyles from './App.module.css';
 import brandStyles from '@shared/components/BrandPage/BrandPage.module.css';
-import dividendLifeLogoDark from './assets/dividend-life.svg';
-import dividendLifeLogoLight from './assets/dividend-life-light.svg';
+import dividendLifeLogoDark from '@shared/assets/dividend-life.svg';
+import dividendLifeLogoLight from '@shared/assets/dividend-life-light.svg';
 import NLHelper from './NLHelper';
 import { API_HOST } from '../config';
 import { fetchWithCache } from './api';
@@ -29,6 +31,16 @@ import { summarizeInventory } from './utils/inventoryUtils';
 
 const DEFAULT_MONTHLY_GOAL = 10000;
 const DEFAULT_CURRENCY = 'TWD';
+const REQUIRED_DIVIDEND_FIELDS = [
+  'stock_id',
+  'stock_name',
+  'dividend',
+  'dividend_yield',
+  'currency',
+  'dividend_date',
+  'payment_date',
+  'last_close_price',
+];
 const CURRENCY_NAME_ZH = {
   TWD: '台股配息',
   USD: '美股股息'
@@ -149,7 +161,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
 
   // Theme
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
-  const logoSrc = theme === 'light' ? dividendLifeLogoLight : dividendLifeLogoDark;
+  const navigationText = theme === 'light' ? dividendLifeTextLight : dividendLifeTextDark;
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -352,7 +364,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       try {
         const { data: dividendData, meta } = await fetchDividendsByYears([selectedYear], undefined, {
           stockIds: stockIdsParam,
-          forceRefresh: dividendScope === 'purchased'
+          forceRefresh: dividendScope === 'purchased',
+          fields: REQUIRED_DIVIDEND_FIELDS,
         });
         applyDividendResponse(dividendData, meta);
       } catch (error) {
@@ -566,7 +579,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
 
     const stockOptions = stocks.map(s => ({
       value: s.stock_id,
-      label: `${s.stock_id} ${s.stock_name}`
+      label: `${s.stock_id}`
     }));
 
     const dividendTable = {};
@@ -965,12 +978,12 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
             homeHref={homeHref}
             homeNavigation={homeNavigation}
           />
-        </div>
-        <div className={`${brandStyles.panel} ${brandStyles.logoSection}`}>
           <img
-            src={logoSrc}
-            alt={lang === 'en' ? 'Dividend Life' : '股息人生'}
-            className={brandStyles.logo}
+            src={navigationText}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            className={brandStyles.navigationTextMark}
           />
         </div>
         <section className={`${brandStyles.panel} ${brandStyles.content} ${brandStyles.contentWide}`}>

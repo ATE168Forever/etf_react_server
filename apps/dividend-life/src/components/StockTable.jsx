@@ -599,10 +599,16 @@ const StockRow = memo(function StockRow({
       const tooltipText = lang === 'zh'
         ? `目前已累積殖利率: ${yieldAccumulated.toFixed(1)}%`
         : `Accumulated yield so far: ${yieldAccumulated.toFixed(1)}%`;
+      const currencyAnnualMax = maxAnnualYield[currency] || 0;
+      const shouldShowCrown =
+        annual > 0 &&
+        (currencyAnnualMax > 0
+          ? Math.abs(annual - currencyAnnualMax) < 1e-6
+          : true);
       const annualContent = annual > 0 ? (
         <TooltipText tooltip={tooltipText}>
           {annual.toFixed(1)}%
-          {annual === (maxAnnualYield[currency] || 0) && annual > 0 && (
+          {shouldShowCrown && (
             <span className="crown-icon" role="img" aria-label="crown">👑</span>
           )}
         </TooltipText>
@@ -691,6 +697,12 @@ const StockRow = memo(function StockRow({
             freq || 12
           );
           const tooltip = `${tooltipLines.join('\n')}${extraInfo}`;
+          const monthMax = maxYieldPerMonth[currency]?.[idx] || 0;
+          const shouldShowDiamond =
+            perYield > 0 &&
+            (monthMax > 0
+              ? Math.abs(perYield - monthMax) < 1e-6
+              : true);
           return (
             <td
               key={`${stock.stock_id}-${idx}-${currency}`}
@@ -701,7 +713,7 @@ const StockRow = memo(function StockRow({
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                   <span>
                     {displayVal}
-                    {perYield === (maxYieldPerMonth[currency]?.[idx] || 0) && perYield > 0 && (
+                    {shouldShowDiamond && (
                       <span className="diamond-icon" role="img" aria-label="diamond">💎</span>
                     )}
                   </span>

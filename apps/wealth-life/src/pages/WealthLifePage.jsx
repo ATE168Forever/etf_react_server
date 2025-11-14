@@ -2,8 +2,8 @@ import BrandPage from '@shared/components/BrandPage/BrandPage.jsx';
 import BrandFooter from '@shared/components/BrandPage/BrandFooter.jsx';
 import { ThemeLanguageProvider, useThemeLanguage } from '@shared/hooks/useThemeLanguage.jsx';
 import styles from '@shared/components/BrandPage/BrandPage.module.css';
-import wealthLifeLogoDark from '../assets/wealth-life.svg';
-import wealthLifeLogoLight from '../assets/wealth-life-light.svg';
+import wealthLifeTextDark from '@shared/assets/wealth-life-text.svg';
+import wealthLifeTextLight from '@shared/assets/wealth-life-text-light.svg';
 
 const translations = {
   zh: {
@@ -29,14 +29,14 @@ const translations = {
 function WealthLifeContent() {
   const { lang, theme } = useThemeLanguage();
   const locale = translations[lang] ?? translations.zh;
-  const logoSrc = theme === 'light' ? wealthLifeLogoLight : wealthLifeLogoDark;
+  const navigationText = theme === 'light' ? wealthLifeTextLight : wealthLifeTextDark;
 
   return (
     <BrandPage
       experienceKey="wealth-life"
       title={locale.title}
       description={locale.description}
-      logoSrc={logoSrc}
+      navigationText={navigationText}
       footerSlot={<BrandFooter />}
     >
       <div className={styles.featureList}>
