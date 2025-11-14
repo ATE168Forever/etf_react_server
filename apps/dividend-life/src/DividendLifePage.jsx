@@ -81,6 +81,31 @@ const DEFAULT_WATCH_GROUPS = [
   }
 ];
 
+function parseNumberLike(value) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const normalized = trimmed.replace(/,/g, '');
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function deriveYieldValue(rawYield, dividendValue, priceValue) {
+  const parsedYield = parseNumberLike(rawYield);
+  if (parsedYield !== null) {
+    return parsedYield;
+  }
+  if (dividendValue !== null && priceValue !== null && priceValue !== 0) {
+    return (dividendValue / priceValue) * 100;
+  }
+  return null;
+}
+
 function calcIncomeGoalInfo(dividend, price, goal, freq = 12, lang = 'zh') {
   if (!price || dividend <= 0 || freq <= 0) return '';
   const annualDividend = dividend * freq;
@@ -609,12 +634,13 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         cell.dividend_yield = 0;
       }
 
-      const dividendValue = Number(item.dividend);
-      const yieldValue = Number(item.dividend_yield);
+      const dividendValue = parseNumberLike(item.dividend);
+      const priceValue = parseNumberLike(item.last_close_price);
+      const yieldValue = deriveYieldValue(item.dividend_yield, dividendValue, priceValue);
       const hasRawDividend = item.dividend !== undefined && item.dividend !== null && `${item.dividend}`.trim() !== '';
       const hasRawYield = item.dividend_yield !== undefined && item.dividend_yield !== null && `${item.dividend_yield}`.trim() !== '';
 
-      if (Number.isFinite(dividendValue)) {
+      if (dividendValue !== null) {
         cell.dividend += dividendValue;
         cell.hasValidDividend = true;
         cell.hasPendingDividend = false;
@@ -622,7 +648,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         cell.hasPendingDividend = true;
       }
 
-      if (Number.isFinite(yieldValue)) {
+      if (yieldValue !== null) {
         cell.dividend_yield += yieldValue;
         cell.hasValidYield = true;
         cell.hasPendingYield = false;
@@ -632,6 +658,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
 
       if (item.last_close_price !== undefined) {
         cell.last_close_price = item.last_close_price;
+      } else if (priceValue !== null) {
+        cell.last_close_price = priceValue;
       }
       cell.reference_date = referenceDateRaw;
       if (item.dividend_date) {
@@ -659,8 +687,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           if (span <= 0) span += 12;
         }
         Object.values(monthEntry).forEach(cell => {
-          const totalYield = Number(cell.dividend_yield);
-          const safeTotalYield = Number.isFinite(totalYield) ? totalYield : 0;
+          const totalYield = parseNumberLike(cell.dividend_yield);
+          const safeTotalYield = totalYield !== null ? totalYield : 0;
           cell.monthsSpan = span;
           cell.perYield = safeTotalYield / span;
         });
@@ -778,8 +806,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           if (!monthEntry) continue;
           currenciesToCheck.forEach(currency => {
             const cell = monthEntry?.[currency];
-            const yVal = Number(cell?.dividend_yield);
-            if (Number.isFinite(yVal) && yVal > 0) {
+            const yVal = parseNumberLike(cell?.dividend_yield);
+            if (yVal !== null && yVal > 0) {
               total += yVal;
               count += 1;
             }
@@ -875,15 +903,15 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         if (!cell) return;
         const dividendTotal = Number(cell.dividend);
         const val = Number.isFinite(dividendTotal) ? dividendTotal : 0;
-        const yValRaw = Number(cell.dividend_yield);
-        const yVal = Number.isFinite(yValRaw) ? yValRaw : 0;
+        const yValRaw = parseNumberLike(cell.dividend_yield);
+        const yVal = yValRaw !== null ? yValRaw : 0;
         totalPerStock[stock.stock_id][currency] = (totalPerStock[stock.stock_id][currency] || 0) + val;
         if (yVal > 0) {
           yieldSum[stock.stock_id][currency] = (yieldSum[stock.stock_id][currency] || 0) + yVal;
           yieldCount[stock.stock_id][currency] = (yieldCount[stock.stock_id][currency] || 0) + 1;
         }
-        const lastClose = Number(cell.last_close_price);
-        const safeLastClose = Number.isFinite(lastClose) ? lastClose : cell.last_close_price ?? null;
+        const lastCloseParsed = parseNumberLike(cell.last_close_price);
+        const safeLastClose = lastCloseParsed !== null ? lastCloseParsed : cell.last_close_price ?? null;
         const cellDateRaw = cell.reference_date || cell.dividend_date || cell.payment_date || null;
         const cellDate = cellDateRaw ? new Date(cellDateRaw) : null;
         const existingDate = latestPrice[stock.stock_id].date ? new Date(latestPrice[stock.stock_id].date) : null;
@@ -929,9 +957,14 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       return true;
     })
     .flatMap(item => {
-      const amount = parseFloat(item.dividend);
-      const dividend_yield = parseFloat(item.dividend_yield) || 0;
+      const dividendAmount = parseNumberLike(item.dividend);
+      const priceValue = parseNumberLike(item.last_close_price);
+      const dividend_yield_value = deriveYieldValue(item.dividend_yield, dividendAmount, priceValue);
+      const amount = dividendAmount !== null ? dividendAmount : 0;
+      const dividend_yield = dividend_yield_value !== null ? dividend_yield_value : 0;
       const currency = item.currency || DEFAULT_CURRENCY;
+      const lastClosePrice = item.last_close_price ?? (priceValue !== null ? priceValue : null);
+      const dividendDisplay = dividendAmount !== null ? dividendAmount : item.dividend;
       const arr = [];
       if (item.dividend_date) {
         arr.push({
@@ -941,10 +974,11 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           stock_name: item.stock_name,
           amount,
           dividend_yield,
-          last_close_price: item.last_close_price,
+          last_close_price: lastClosePrice,
           dividend_date: item.dividend_date,
           payment_date: item.payment_date,
           currency,
+          dividend: dividendDisplay,
         });
       }
       if (item.payment_date) {
@@ -955,10 +989,11 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           stock_name: item.stock_name,
           amount,
           dividend_yield,
-          last_close_price: item.last_close_price,
+          last_close_price: lastClosePrice,
           dividend_date: item.dividend_date,
           payment_date: item.payment_date,
           currency,
+          dividend: dividendDisplay,
         });
       }
       return arr;
