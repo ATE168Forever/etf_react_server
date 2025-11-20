@@ -6,7 +6,7 @@ import { HOST_URL } from '../../config';
 import { useLanguage } from '../i18n';
 import usePreserveScroll from '../hooks/usePreserveScroll';
 
-const NUM_COL_WIDTH = 80;
+const NUM_COL_WIDTH = 90;
 const DEFAULT_VISIBLE_COUNT = 20;
 const SHOW_MORE_BATCH = 50;
 const DEFAULT_ROW_ESTIMATE = 64;
@@ -425,7 +425,10 @@ export default function StockTable({
                 </th>
               );
             })}
-            <th rowSpan={activeCurrencies.length > 1 ? 2 : 1}>
+            <th
+              rowSpan={activeCurrencies.length > 1 ? 2 : 1}
+              style={{ minWidth: NUM_COL_WIDTH * 2 }}
+            >
               <span className="sortable" onClick={() => handleSort('total')}>
                 {showDividendYield ? t('total_yield') : t('total_dividend')}
                 <span className="sort-indicator">

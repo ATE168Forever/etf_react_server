@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Cookies from 'js-cookie';
 import CreatableSelect from 'react-select/creatable';
-import { API_HOST, HOST_URL } from '../config';
-import { fetchDividendsByYears } from './dividendApi';
+import { HOST_URL } from '../config';
 import { fetchStockList } from './stockApi';
 import useEffectOnce from './hooks/useEffectOnce';
 import {
@@ -29,12 +28,45 @@ import {
 } from './utils/dividendGoalUtils';
 import selectStyles from './selectStyles';
 import TooltipText from './components/TooltipText';
-import { fetchWithCache } from './api';
 
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
 const SHARES_PER_LOT = 1000;
 const DEFAULT_GOAL_TYPE = 'annual';
+const DIVIDEND_EXCLUSION_STORAGE_KEY = 'inventoryDividendExclusions';
+
+const normalizeStockId = (value) => (typeof value === 'string' ? value.trim().toUpperCase() : '');
+
+const loadDividendExclusions = () => {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(DIVIDEND_EXCLUSION_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.reduce((acc, id) => {
+        const normalized = normalizeStockId(id);
+        if (normalized) {
+          acc[normalized] = true;
+        }
+        return acc;
+      }, {});
+    }
+    if (parsed && typeof parsed === 'object') {
+      return Object.keys(parsed).reduce((acc, key) => {
+        if (!parsed[key]) return acc;
+        const normalized = normalizeStockId(key);
+        if (normalized) {
+          acc[normalized] = true;
+        }
+        return acc;
+      }, {});
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return {};
+};
 
 function getToday() {
   return new Date().toISOString().slice(0, 10);
@@ -52,7 +84,7 @@ const createInitialFormState = () => ({
   entries: [createEmptyPurchaseEntry()]
 });
 
-export default function InventoryTab() {
+export default function InventoryTab({ allDividendData = [], dividendCacheInfo: incomingDividendCacheInfo = null }) {
   const [stockList, setStockList] = useState([]);
   const [transactionHistory, setTransactionHistory] = useState(() => migrateTransactionHistory());
   const [showModal, setShowModal] = useState(false);
@@ -68,7 +100,6 @@ export default function InventoryTab() {
   const autoSaveDirectoryHandleRef = useRef(null);
   const autoSaveFileHandleRef = useRef(null);
   const [cacheInfo, setCacheInfo] = useState(null);
-  const [dividendCacheInfo, setDividendCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [selectedDataSource, setSelectedDataSource] = useState('csv');
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
@@ -77,8 +108,8 @@ export default function InventoryTab() {
     () => getTransactionHistoryUpdatedAt() ?? 0
   );
   const [latestPrices, setLatestPrices] = useState({});
-  const [dividendData, setDividendData] = useState([]);
   const { lang } = useLanguage();
+  const [dividendExclusions, setDividendExclusions] = useState(() => loadDividendExclusions());
   const initialGoals = useMemo(() => loadInvestmentGoals(), []);
   const initialShareTargetList = Array.isArray(initialGoals.shareTargets) ? initialGoals.shareTargets : [];
   const hasInitialShareTargets = initialShareTargetList.some(item => {
@@ -123,6 +154,8 @@ export default function InventoryTab() {
         };
       })
     : [];
+  const dividendData = Array.isArray(allDividendData) ? allDividendData : [];
+  const dividendCacheInfo = incomingDividendCacheInfo || null;
   const [goalForm, setGoalForm] = useState(() => ({
     name: initialGoals.goalName ? String(initialGoals.goalName) : '',
     cashflowGoals: initialCashflowGoalEntries,
@@ -158,13 +191,13 @@ export default function InventoryTab() {
       quickAdd: '快速購買',
       quickAddEmpty: '目前沒有最近購買的 ETF',
       quickAddTitle: '快速新增購買紀錄',
-      quickAddNoPurchase: '不購買',
-      quickAddResume: '恢復',
+      quickAddNoPurchase: '購買',
       quickAddDate: '購買日期',
       quickAddQuantity: '購買數量',
       quickAddPrice: '購買價格',
       quickAddSave: '儲存',
       quickAddClose: '關閉',
+      quickAddSelectionSummary: '已勾選 {count} 檔 ETF',
       quickAddCurrencyTwd: 'NT$',
       quickAddCurrencyUsd: 'US$',
       quickAddPlaceholderQuantity: '請輸入數量',
@@ -235,6 +268,8 @@ export default function InventoryTab() {
       shareGoalInputRequired: '請先輸入股票代碼與目標張數',
       shareGoalTypeOption: '存股張數目標',
       stockCodeName: '股票代碼/名稱',
+      active: '股息統計',
+      dividendStatsExcludedBadge: '不列入股息統計',
       avgPrice: '平均股價',
       totalQuantity: '總數量',
       actions: '操作',
@@ -269,13 +304,13 @@ export default function InventoryTab() {
       quickAdd: 'Quick Purchase',
       quickAddEmpty: 'No recent ETF purchases yet',
       quickAddTitle: 'Quick Add Purchases',
-      quickAddNoPurchase: 'Skip',
-      quickAddResume: 'Restore',
+      quickAddNoPurchase: 'Buy',
       quickAddDate: 'Purchase Date',
       quickAddQuantity: 'Quantity',
       quickAddPrice: 'Price',
       quickAddSave: 'Save',
       quickAddClose: 'Close',
+      quickAddSelectionSummary: 'Selected ETFs: {count}',
       quickAddCurrencyTwd: 'NT$',
       quickAddCurrencyUsd: 'US$',
       quickAddPlaceholderQuantity: 'Enter quantity',
@@ -346,6 +381,8 @@ export default function InventoryTab() {
       shareGoalInputRequired: 'Enter a ticker and target lots first.',
       shareGoalTypeOption: 'Share accumulation target',
       stockCodeName: 'Stock Code/Name',
+      active: 'Dividend stats',
+      dividendStatsExcludedBadge: 'Excluded from dividend stats',
       avgPrice: 'Average Price',
       totalQuantity: 'Total Quantity',
       actions: 'Actions',
@@ -417,6 +454,20 @@ export default function InventoryTab() {
   const handleQuickModalClose = () => {
     setShowQuickModal(false);
   };
+
+  const handleDividendInclusionToggle = useCallback((stockId) => {
+    const normalized = normalizeStockId(stockId);
+    if (!normalized) return;
+    setDividendExclusions(prev => {
+      const next = { ...prev };
+      if (next[normalized]) {
+        delete next[normalized];
+      } else {
+        next[normalized] = true;
+      }
+      return next;
+    });
+  }, []);
 
   const handleQuickSubmit = () => {
     const validEntries = (Array.isArray(quickForm) ? quickForm : []).filter(entry => entry?.enabled);
@@ -982,76 +1033,23 @@ export default function InventoryTab() {
     });
   }, [stockList]);
 
-  useEffectOnce(() => {
-    let cancelled = false;
-
-    // The dividend feed reuses fetchWithCache, so if the previous payload is still
-    // fresh we may reuse the localStorage entry without issuing another
-    // network call. Surface the cache metadata so it's clear why the API
-    // wasn't contacted again after a cached /get_stock_list response.
-    const applyDividendFeed = (list, meta) => {
-      if (cancelled) return;
-      const entries = Array.isArray(list) ? list : [];
-      setDividendData(entries);
-      const primaryMeta = meta
-        ? {
-            cacheStatus: meta.cacheStatus ?? null,
-            timestamp: meta.timestamp ?? null
-          }
-        : null;
-      setDividendCacheInfo(primaryMeta);
-      const priceMap = {};
-      entries.forEach(item => {
-        const price = parseFloat(item?.last_close_price);
-        if (!item?.stock_id || Number.isNaN(price)) return;
-        const dateValue = item?.dividend_date ? new Date(item.dividend_date) : null;
-        const previous = priceMap[item.stock_id];
-        if (!previous || (dateValue && (!previous.date || dateValue > previous.date))) {
-          priceMap[item.stock_id] = { price, date: dateValue };
-        }
-      });
-      const prices = {};
-      Object.keys(priceMap).forEach(id => {
-        prices[id] = priceMap[id].price;
-      });
-      setLatestPrices(prices);
-    };
-
-    fetchDividendsByYears()
-      .then(({ data, meta }) => {
-        if (cancelled) return;
-        const primaryMeta = Array.isArray(meta) && meta.length ? meta[0] : null;
-        applyDividendFeed(data, primaryMeta);
-      })
-      .catch(async () => {
-        if (cancelled) return;
-        if (!API_HOST) {
-          applyDividendFeed([], null);
-          return;
-        }
-        try {
-          const response = await fetchWithCache(`${API_HOST}/get_dividend`);
-          const payload = response?.data;
-          const list = Array.isArray(payload?.data)
-            ? payload.data
-            : Array.isArray(payload?.items)
-              ? payload.items
-              : Array.isArray(payload)
-                ? payload
-                : [];
-          applyDividendFeed(list, {
-            cacheStatus: response?.cacheStatus ?? null,
-            timestamp: response?.timestamp ?? null
-          });
-        } catch {
-          applyDividendFeed([], null);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  });
+  useEffect(() => {
+    const priceMap = {};
+    dividendData.forEach(item => {
+      const price = parseFloat(item?.last_close_price);
+      if (!item?.stock_id || Number.isNaN(price)) return;
+      const dateValue = item?.dividend_date ? new Date(item.dividend_date) : null;
+      const previous = priceMap[item.stock_id];
+      if (!previous || (dateValue && (!previous.date || dateValue > previous.date))) {
+        priceMap[item.stock_id] = { price, date: dateValue };
+      }
+    });
+    const prices = {};
+    Object.keys(priceMap).forEach(id => {
+      prices[id] = priceMap[id].price;
+    });
+    setLatestPrices(prices);
+  }, [dividendData]);
 
   useEffect(() => {
     saveTransactionHistory(transactionHistory);
@@ -1063,6 +1061,18 @@ export default function InventoryTab() {
     const timer = setTimeout(() => setGoalSaved(''), 2500);
     return () => clearTimeout(timer);
   }, [goalSaved]);
+  
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    try {
+      const payload = Object.keys(dividendExclusions).filter(key => dividendExclusions[key]);
+      window.localStorage.setItem(DIVIDEND_EXCLUSION_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // ignore write errors
+    }
+  }, [dividendExclusions]);
 
   const { inventoryList, totalInvestment, totalValue } = summarizeInventory(
     transactionHistory,
@@ -1578,9 +1588,10 @@ export default function InventoryTab() {
     () => calculateDividendSummary({
       inventoryList,
       dividendEvents: dividendData,
-      transactionHistory
+      transactionHistory,
+      excludedStockIds: dividendExclusions
     }),
-    [inventoryList, dividendData, transactionHistory]
+    [inventoryList, dividendData, transactionHistory, dividendExclusions]
   );
 
   const goalMessages = useMemo(() => ({
@@ -2183,13 +2194,19 @@ export default function InventoryTab() {
                     <th>{msg.avgPrice}</th>
                     <th>{msg.totalQuantity}</th>
                     <th>{msg.actions}</th>
+                    <th>{msg.active}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {inventoryList.length === 0
-                    ? <tr><td colSpan={4}>{msg.noInventory}</td></tr>
-                    : inventoryList.map((item, idx) => (
-                        <tr key={idx}>
+                    ? <tr><td colSpan={5}>{msg.noInventory}</td></tr>
+                    : inventoryList.map((item, idx) => {
+                        const normalizedStockId = normalizeStockId(item.stock_id);
+                        const isExcludedFromDividendStats = Boolean(
+                          normalizedStockId && dividendExclusions[normalizedStockId]
+                        );
+                        return (
+                          <tr key={idx}>
                           <td className="stock-col">
                             <a href={`${HOST_URL}/stock/${item.stock_id}`} target="_blank" rel="noreferrer">
                               <TooltipText tooltip={item.stock_name}>
@@ -2209,12 +2226,28 @@ export default function InventoryTab() {
                               const lots = (item.total_quantity / 1000).toFixed(3).replace(/\.0+$/, '');
                               return ` (${lots} ${lang === 'en' ? 'lots' : '張'})`;
                             })()}
+                            {isExcludedFromDividendStats && (
+                              <span className={styles.excludedBadge}>
+                                {msg.dividendStatsExcludedBadge}
+                              </span>
+                            )}
                           </td>
                           <td>
                             <button className={styles.sellButton} onClick={() => setSellModal({ show: true, stock: item })}>{msg.sell}</button>
                           </td>
-                        </tr>
-                      ))}
+                          <td>
+                            <button
+                              className={isExcludedFromDividendStats ? styles.buttonExclude : styles.button}
+                              type="button"
+                              disabled={!normalizedStockId}
+                              onClick={() => handleDividendInclusionToggle(item.stock_id)}
+                            >
+                              {isExcludedFromDividendStats ? 'N' : 'Y'}
+                            </button>
+                          </td>
+                          </tr>
+                        );
+                      })}
                 </tbody>
               </table>
             </div>

@@ -1233,7 +1233,12 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
             )}
           </div>
         )}
-        {tab === 'inventory' && <InventoryTab />}
+        {tab === 'inventory' && (
+          <InventoryTab
+            allDividendData={data}
+            dividendCacheInfo={dividendCacheInfo}
+          />
+        )}
         {tab === 'mydividend' && (
           <UserDividendsTab
             allDividendData={data}

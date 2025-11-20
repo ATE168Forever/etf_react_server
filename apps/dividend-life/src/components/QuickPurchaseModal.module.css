@@ -33,6 +33,12 @@
   margin-bottom: 16px;
 }
 
+.selectionSummary {
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;

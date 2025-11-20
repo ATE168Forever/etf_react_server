@@ -30,12 +30,17 @@ export default function QuickPurchaseModal({ show, onClose, rows, setRows, onSub
 
   const hasRows = list.length > 0;
 
+  const selectedCount = list.filter(row => row?.enabled).length;
+
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
         <h5 className={styles.title}>{messages.quickAddTitle}</h5>
         {hasRows ? (
           <div className={styles.tableWrapper}>
+            <div className={styles.selectionSummary}>
+              {messages.quickAddSelectionSummary?.replace('{count}', selectedCount) ?? `Selected ETFs: ${selectedCount}`}
+            </div>
             <table className={styles.table}>
               <thead>
                 <tr>
@@ -60,7 +65,7 @@ export default function QuickPurchaseModal({ show, onClose, rows, setRows, onSub
                           className={styles.skipButton}
                           onClick={() => handleToggle(index)}
                         >
-                          {disabled ? messages.quickAddResume : messages.quickAddNoPurchase}
+                          {disabled ? 'N' : 'Y'}
                         </button>
                       </td>
                       <td className={styles.stockColumn}>

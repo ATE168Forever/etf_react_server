@@ -16,6 +16,14 @@ const isNil = (v) => v === null || v === undefined || Number.isNaN(v);
 const formatPercent = (v) => (isNil(v) ? '-' : `${v}%`);
 const formatNumber = (v, digits = 2) => (isNil(v) ? '-' : Number(v).toFixed(digits));
 const formatDateStr = (s) => s || '-';
+const normalizeCurrencyCode = (value) => {
+  if (value === null || value === undefined) return '';
+  const code = String(value).trim().toUpperCase();
+  if (!code) return '';
+  if (code === 'NT$' || code === 'NTD') return 'TWD';
+  if (code === 'US$') return 'USD';
+  return code;
+};
 
 export default function StockDetail({ stockId }) {
   const { lang, setLang, t } = useLanguage();
@@ -106,6 +114,59 @@ export default function StockDetail({ stockId }) {
     arr.sort((a, b) => new Date(b.dividend_date) - new Date(a.dividend_date));
     return arr;
   }, [dividendList, stockId]);
+
+  const dividendRows = useMemo(() => {
+    const yearlyTotals = new Map();
+    const enriched = new Array(dividends.length);
+    const reversed = dividends
+      .map((item, originalIndex) => ({ item, originalIndex }))
+      .reverse();
+
+    reversed.forEach(({ item, originalIndex }) => {
+      const displayDate = item.dividend_date || item.payment_date || '-';
+      const yearKey =
+        displayDate && displayDate !== '-'
+          ? new Date(displayDate).getFullYear()
+          : 'unknown';
+
+      if (!yearlyTotals.has(yearKey)) {
+        yearlyTotals.set(yearKey, {
+          dividend: 0,
+          yield: 0,
+          hasDividend: false,
+          hasYield: false,
+        });
+      }
+
+      const totals = yearlyTotals.get(yearKey);
+      const dividendValue = Number(item.dividend);
+      const yieldValue = Number(item.dividend_yield);
+
+      if (Number.isFinite(dividendValue)) {
+        totals.dividend += dividendValue;
+        totals.hasDividend = true;
+      }
+
+      if (Number.isFinite(yieldValue)) {
+        totals.yield += yieldValue;
+        totals.hasYield = true;
+      }
+
+      enriched[originalIndex] = {
+        ...item,
+        displayDate,
+        cumulativeDividend: totals.hasDividend ? totals.dividend : null,
+        cumulativeYield: totals.hasYield ? totals.yield : null,
+      };
+    });
+
+    return enriched;
+  }, [dividends]);
+
+  const dividendCurrencyUnit =
+    normalizeCurrencyCode(
+      stock.dividend_currency || stock.currency || dividends[0]?.currency,
+    ) || 'TWD';
 
   if (stockLoading || dividendLoading) {
     return <div>{lang === 'en' ? 'Loading...' : '載入中...'}</div>;
@@ -314,7 +375,9 @@ export default function StockDetail({ stockId }) {
               noData: 'No announcement data available.',
               date: 'Date',
               dividend: 'Dividend',
-              yield: 'Yield'
+              accumetive_dividend: 'Accumulative Dividend',
+              yield: 'Yield',
+              accumetive_yield: 'Accumulative Yield'
             },
             zh: {
               twseLinkText: '台灣證交所最新訊息',
@@ -329,7 +392,9 @@ export default function StockDetail({ stockId }) {
               noData: '目前沒有公告資料。',
               date: '日期',
               dividend: '配息金額',
-              yield: '殖利率'
+              accumetive_dividend: '累積配息',
+              yield: '殖利率',
+              accumetive_yield: '累積殖利率'
             }
           }[lang === 'en' ? 'en' : 'zh'];
 
@@ -432,27 +497,44 @@ export default function StockDetail({ stockId }) {
               )}
 
               <div className="table-responsive">
-                <table className="dividend-record">
+                <table className="dividend-record table-striped table table-bordered">
                   <thead>
                     <tr>
                       <th>#</th>
                       <th>{STR.date}</th>
-                      <th>{STR.dividend}</th>
-                      <th>{STR.yield}</th>
+                      <th>
+                        {STR.dividend}
+                        <span className="table-unit">({dividendCurrencyUnit})</span>
+                      </th>
+                      <th>
+                        {STR.accumetive_dividend}
+                        <span className="table-unit">({dividendCurrencyUnit})</span>
+                      </th>
+                      <th>
+                        {STR.yield}
+                        <span className="table-unit">(%)</span>
+                      </th>
+                      <th>
+                        {STR.accumetive_yield}
+                        <span className="table-unit">(%)</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {dividends.map((item, index) => {
-                      const displayDate = item.dividend_date || item.payment_date || '-';
-                      return (
-                        <tr key={`${displayDate}-${item.dividend}-${item.dividend_yield}`}>
-                          <td>{index + 1}</td>
-                          <td>{displayDate}</td>
-                          <td>{isNil(item.dividend) ? '-' : item.dividend}</td>
-                          <td>{isNil(item.dividend_yield) ? '-' : item.dividend_yield}</td>
-                        </tr>
-                      );
-                    })}
+                    {dividendRows.map((item, index) => (
+                      <tr
+                        key={`${item.displayDate}-${item.dividend}-${item.dividend_yield}-${index}`}
+                      >
+                        <td>{index + 1}</td>
+                        <td>{item.displayDate}</td>
+                        <td>{isNil(item.dividend) ? '-' : item.dividend}</td>
+                        <td>
+                          {isNil(item.cumulativeDividend) ? '-' : formatNumber(item.cumulativeDividend, 2)}
+                        </td>
+                        <td>{isNil(item.dividend_yield) ? '-' : item.dividend_yield}</td>
+                        <td>{isNil(item.cumulativeYield) ? '-' : formatNumber(item.cumulativeYield, 2)}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

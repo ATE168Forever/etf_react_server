@@ -103,6 +103,12 @@ function getQuantityOnDate(timeline = [], targetDate) {
   return quantity > 0 ? quantity : 0;
 }
 
+function normalizeStockIdValue(value) {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim().toUpperCase();
+  return trimmed || '';
+}
+
 function buildInventoryHoldings(inventoryList = []) {
   const holdings = new Map();
   if (!Array.isArray(inventoryList)) {
@@ -130,18 +136,70 @@ function getEventCurrency(event) {
   return 'TWD';
 }
 
+function buildExclusionSet(source) {
+  if (!source) {
+    return new Set();
+  }
+  if (source instanceof Set) {
+    const normalized = new Set();
+    source.forEach(value => {
+      const normalizedValue = normalizeStockIdValue(value);
+      if (normalizedValue) {
+        normalized.add(normalizedValue);
+      }
+    });
+    return normalized;
+  }
+  if (Array.isArray(source)) {
+    const normalized = new Set();
+    source.forEach(value => {
+      const normalizedValue = normalizeStockIdValue(value);
+      if (normalizedValue) {
+        normalized.add(normalizedValue);
+      }
+    });
+    return normalized;
+  }
+  if (source instanceof Map) {
+    const normalized = new Set();
+    source.forEach((value, key) => {
+      if (!value) return;
+      const normalizedValue = normalizeStockIdValue(key);
+      if (normalizedValue) {
+        normalized.add(normalizedValue);
+      }
+    });
+    return normalized;
+  }
+  if (typeof source === 'object') {
+    const normalized = new Set();
+    Object.keys(source).forEach(key => {
+      if (!source[key]) return;
+      const normalizedValue = normalizeStockIdValue(key);
+      if (normalizedValue) {
+        normalized.add(normalizedValue);
+      }
+    });
+    return normalized;
+  }
+  return new Set();
+}
+
 export function calculateDividendSummary({
   inventoryList = [],
   dividendEvents = [],
   transactionHistory = [],
-  asOfDate = new Date()
+  asOfDate = new Date(),
+  excludedStockIds = null
 } = {}) {
   const now = toValidDate(asOfDate) || new Date();
   const asOfKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
   const historyKey = getObjectCacheKey(Array.isArray(transactionHistory) ? transactionHistory : null, 'no-history');
   const dividendKey = getObjectCacheKey(Array.isArray(dividendEvents) ? dividendEvents : null, 'no-dividends');
   const inventoryKey = getObjectCacheKey(Array.isArray(inventoryList) ? inventoryList : null, 'no-inventory');
-  const cacheKey = `${historyKey}|${dividendKey}|${inventoryKey}|${asOfKey}`;
+  const exclusionSet = buildExclusionSet(excludedStockIds);
+  const exclusionKey = exclusionSet.size ? Array.from(exclusionSet).sort().join(',') : 'no-exclusions';
+  const cacheKey = `${historyKey}|${dividendKey}|${inventoryKey}|${exclusionKey}|${asOfKey}`;
 
   if (summaryCache.has(cacheKey)) {
     return summaryCache.get(cacheKey);
@@ -155,6 +213,10 @@ export function calculateDividendSummary({
   (Array.isArray(dividendEvents) ? dividendEvents : []).forEach(event => {
     const stockId = event?.stock_id;
     if (!stockId) return;
+    const normalizedStockId = normalizeStockIdValue(stockId);
+    if (normalizedStockId && exclusionSet.has(normalizedStockId)) {
+      return;
+    }
     const perShareDividend = Number(event?.dividend);
     if (!Number.isFinite(perShareDividend) || perShareDividend <= 0) return;
     const eventDate = toValidDate(event?.dividend_date) || toValidDate(event?.payment_date);
@@ -220,11 +282,25 @@ export function calculateDividendSummary({
       monthlyMinimum = Math.min(...bucket.monthlyTotals.values());
     }
 
+    const monthlyTotalsSeries = new Array(12).fill(0);
+    bucket.monthlyTotals.forEach((value, month) => {
+      if (Number.isInteger(month) && month >= 0 && month < 12) {
+        monthlyTotalsSeries[month] = value;
+      }
+    });
+    let rolling = 0;
+    const monthlyCumulativeSeries = monthlyTotalsSeries.map((value) => {
+      rolling += value;
+      return rolling;
+    });
+
     perCurrency[currency] = {
       accumulatedTotal: bucket.accumulatedTotal,
       annualTotal,
       monthlyAverage,
-      monthlyMinimum
+      monthlyMinimum,
+      monthlyTotalsSeries,
+      monthlyCumulativeSeries
     };
     currencyOrder.push(currency);
   });

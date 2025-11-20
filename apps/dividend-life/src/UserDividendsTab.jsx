@@ -23,6 +23,202 @@ const CURRENCY_NAME_EN = {
     TWD: 'NT$ dividends',
     USD: 'US$ dividends'
 };
+const DONUT_COLORS = [
+    '#FFD166',
+    '#7C99FF',
+    '#5FD0C1',
+    '#F78E69',
+    '#A78BFA',
+    '#F472B6',
+    '#60A5FA',
+    '#34D399',
+    '#FB7185',
+    '#F97316'
+];
+
+const polarToCartesian = (centerX, centerY, radius, angleInDegrees) => {
+    const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+    return {
+        x: centerX + radius * Math.cos(angleInRadians),
+        y: centerY + radius * Math.sin(angleInRadians)
+    };
+};
+
+const describeArc = (x, y, radius, startAngle, endAngle) => {
+    const start = polarToCartesian(x, y, radius, endAngle);
+    const end = polarToCartesian(x, y, radius, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
+    return ['M', start.x, start.y, 'A', radius, radius, 0, largeArcFlag, 0, end.x, end.y].join(' ');
+};
+
+function DividendDonut({
+    slices,
+    currency,
+    formatValue,
+    t,
+    lang,
+    selectedIndex,
+    onSelect
+}) {
+    if (!Array.isArray(slices) || slices.length === 0) {
+        return <p style={{ marginTop: 12 }}>{t('dividend_donut_empty')}</p>;
+    }
+
+    const total = slices.reduce((sum, slice) => sum + (slice.total || 0), 0);
+    if (!total) {
+        return <p style={{ marginTop: 12 }}>{t('dividend_donut_empty')}</p>;
+    }
+
+    const viewSize = 280;
+    const center = viewSize / 2;
+    const radius = 100;
+    const strokeWidth = 34;
+    let currentAngle = -90;
+
+    const formatter = new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'zh-TW', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    });
+
+    const detailSlice = selectedIndex !== null ? slices[selectedIndex] : null;
+    const detailPercent = detailSlice && total > 0 ? ((detailSlice.total || 0) / total) * 100 : 0;
+    const formatLotsValue = (quantity) => {
+        if (!quantity) return '0';
+        const lots = Number(quantity) / 1000;
+        if (!Number.isFinite(lots) || lots <= 0) {
+            return '0';
+        }
+        return lots.toFixed(3).replace(/\.?0+$/, '');
+    };
+
+    return (
+        <div className="donut-chart-wrapper">
+            <div className="donut-chart-body">
+                <div className="donut-chart">
+                    <svg viewBox={`0 0 ${viewSize} ${viewSize}`}>
+                        <circle
+                            cx={center}
+                            cy={center}
+                            r={radius}
+                            stroke="var(--color-border)"
+                            strokeWidth={strokeWidth}
+                            fill="none"
+                            opacity="0.2"
+                        />
+                        {slices.map((slice, idx) => {
+                            const value = slice.total || 0;
+                            if (value <= 0) {
+                                return null;
+                            }
+                            const percent = value / total;
+                            const startAngle = currentAngle;
+                            const endAngle = currentAngle + percent * 360;
+                            currentAngle = endAngle;
+                            const path = describeArc(center, center, radius, startAngle, endAngle);
+                            const color = DONUT_COLORS[idx % DONUT_COLORS.length];
+                            const isActive = selectedIndex === idx;
+                            return (
+                                <path
+                                    key={slice.id || idx}
+                                    d={path}
+                                    stroke={color}
+                                    strokeWidth={isActive ? strokeWidth + 4 : strokeWidth}
+                                    fill="none"
+                                    strokeLinecap="round"
+                                    className="donut-segment"
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-label={`${slice.label}: ${formatValue(currency, value, { allowZero: true })}`}
+                                    onClick={() => onSelect(idx)}
+                                    onKeyDown={(event) => {
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault();
+                                            onSelect(idx);
+                                        }
+                                    }}
+                                />
+                            );
+                        })}
+                    </svg>
+                    <div className="donut-center">
+                        <div className="donut-center-label">{t('dividend_donut_heading')}</div>
+                        <div className="donut-center-value">
+                            {formatValue(currency, total, { allowZero: true })}
+                        </div>
+                    </div>
+                </div>
+                <ul className="donut-legend">
+                    {slices.map((slice, idx) => {
+                        const value = slice.total || 0;
+                        const percent = total > 0 ? (value / total) * 100 : 0;
+                        const color = DONUT_COLORS[idx % DONUT_COLORS.length];
+                        const isActive = selectedIndex === idx;
+                        return (
+                            <li key={slice.id || idx} className={`donut-legend-item${isActive ? ' active' : ''}`}>
+                                <button
+                                    type="button"
+                                    className="donut-legend-button"
+                                    aria-pressed={isActive}
+                                    onClick={() => onSelect(idx)}
+                                >
+                                    <span className="legend-dot" style={{ background: color }} />
+                                    <div className="legend-text">
+                                        <div className="legend-title-row">
+                                            <div className="legend-label">{slice.title}</div>
+                                            <div className="legend-percent">
+                                                {formatter.format(percent)}%
+                                            </div>
+                                            <div className="legend-value">
+                                                {formatValue(currency, value, { allowZero: true })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        );
+                    })}
+                </ul>
+            </div>
+            {detailSlice && (
+                <div className="donut-detail">
+                    <div className="donut-detail-card">
+                        <div className="detail-main">
+                            <div className="detail-title">{detailSlice.label}</div>
+                            <div className="detail-amount">
+                                {lang === 'en'
+                                    ? 'Dividend:'
+                                    : '股息：'}
+                                {formatValue(currency, detailSlice.total, { allowZero: true })}
+                            </div>
+                            <div className="detail-meta">
+                                {lang === 'en'
+                                    ? `${formatter.format(detailPercent)}% of total · ${detailSlice.title}`
+                                    : `占總額 ${formatter.format(detailPercent)}%`}
+                            </div>
+                        </div>
+                        <div className="detail-main">
+                            <div>
+                                {lang === 'en'
+                                    ? `Lots held: ${formatLotsValue(detailSlice.quantity || 0)}`
+                                    : `持有張數：${formatLotsValue(detailSlice.quantity || 0)}`}
+                            </div>
+                            <div className="detail-amount">
+                                {lang === 'en'
+                                    ? `Investment: ${formatValue(currency, detailSlice.investment, { allowZero: true }) || '-'}`
+                                    : `投資金額：${formatValue(currency, detailSlice.investment, { allowZero: true }) || '-'}`}
+                            </div>
+                            <div className="detail-meta">
+                                {lang === 'en'
+                                    ? `Yield: ${formatter.format(detailSlice.total/detailSlice.investment*100)}%`
+                                    : `殖利率：${formatter.format(detailSlice.total/detailSlice.investment*100)}%`}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 function normalizeCurrency(currency) {
     if (!currency) return DEFAULT_CURRENCY;
@@ -44,7 +240,7 @@ function getTransactionHistory() {
 }
 
 export default function UserDividendsTab({ allDividendData, selectedYear }) {
-    const { lang } = useLanguage();
+    const { lang, t } = useLanguage();
     const MONTHS = lang === 'en'
         ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         : ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
@@ -686,6 +882,86 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const aggregatedAvgPerMonth = aggregatedMonthsForAverage > 0 ? aggregatedGrandTotal / aggregatedMonthsForAverage : 0;
     const totalColumns = 2 + (MONTHS.length * activeCurrencies.length);
 
+    const donutDataByCurrency = useMemo(() => {
+        const map = {};
+        Object.entries(currencyContexts).forEach(([currency, context]) => {
+            if (!context) return;
+            const entries = context.stocks
+                .map(stock => {
+                    const total = context.totalPerStock?.[stock.stock_id] || 0;
+                    const yearEndDate = `${selectedYear}-12-31`;
+                    const quantity = Math.max(getHolding(stock.stock_id, yearEndDate), 0);
+                    const avgCost = getAverageCostBeforeDate(stock.stock_id, yearEndDate);
+                    const investment = avgCost > 0 && quantity > 0 ? avgCost * quantity : 0;
+                    return {
+                        id: stock.stock_id,
+                        title: stock.stock_id,
+                        label: stock.stock_name
+                            ? `${stock.stock_id} ${stock.stock_name}`.trim()
+                            : stock.stock_id,
+                        total,
+                        quantity,
+                        investment
+                    };
+                })
+                .filter(entry => entry.total > 0);
+            if (!entries.length) {
+                return;
+            }
+            entries.sort((a, b) => b.total - a.total);
+            const sliceCount = Math.min(6, entries.length);
+            const topItems = entries.slice(0, sliceCount);
+            const others = entries.slice(sliceCount);
+            const othersTotal = others.reduce((sum, entry) => sum + entry.total, 0);
+            if (othersTotal > 0) {
+                topItems.push({
+                    id: 'others',
+                    label: lang === 'en' ? 'Others' : '其他',
+                    total: othersTotal,
+                    quantity: others.reduce((sum, entry) => sum + (entry.quantity || 0), 0),
+                    investment: others.reduce((sum, entry) => sum + (entry.investment || 0), 0)
+                });
+            }
+            const totalSum = entries.reduce((sum, entry) => sum + entry.total, 0);
+            map[currency] = {
+                total: totalSum,
+                slices: topItems
+            };
+        });
+        return map;
+    }, [currencyContexts, lang, selectedYear, getHolding, getAverageCostBeforeDate]);
+
+    const donutCurrencies = useMemo(
+        () => Object.keys(donutDataByCurrency),
+        [donutDataByCurrency]
+    );
+
+    const [donutCurrency, setDonutCurrency] = useState(null);
+    const [donutSelectedIndex, setDonutSelectedIndex] = useState(null);
+
+    useEffect(() => {
+        if (donutCurrencies.length === 0) {
+            setDonutCurrency(null);
+            setDonutSelectedIndex(null);
+            return;
+        }
+        if (!donutCurrency || !donutCurrencies.includes(donutCurrency)) {
+            setDonutCurrency(donutCurrencies[0]);
+            setDonutSelectedIndex(null);
+        }
+    }, [donutCurrencies, donutCurrency]);
+
+    const activeDonutData = donutCurrency ? donutDataByCurrency[donutCurrency] : null;
+
+    const handleDonutCurrencyChange = useCallback((currency) => {
+        setDonutCurrency(currency);
+        setDonutSelectedIndex(null);
+    }, []);
+
+    const handleDonutSelect = useCallback((index) => {
+        setDonutSelectedIndex(prev => (prev === index ? null : index));
+    }, []);
+
     const handleMonthFilterToggle = (idx) => {
         setMonthFilters(prev => {
             const next = [...prev];
@@ -712,6 +988,46 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                     labelPrefix={viewLabelPrefix}
                 />
             </div>
+            {activeDonutData && (
+                <section className="donut-section">
+                    <div className="chart-header">
+                        <h4 style={{ margin: 0 }}>{t('dividend_donut_heading')}</h4>
+                        {donutCurrencies.length > 1 && (
+                            <div className="dividend-chart-currency-switch">
+                                <span className="currency-switch-label">
+                                    {t('dividend_currency_label')}
+                                </span>
+                                <div className="currency-pill-group" role="group" aria-label={t('dividend_currency_label')}>
+                                    {donutCurrencies.map((currency) => (
+                                        <button
+                                            key={`donut-currency-${currency}`}
+                                            type="button"
+                                            className={
+                                                currency === donutCurrency
+                                                    ? 'currency-pill currency-pill--active'
+                                                    : 'currency-pill currency-pill--inactive'
+                                            }
+                                            aria-pressed={currency === donutCurrency}
+                                            onClick={() => handleDonutCurrencyChange(currency)}
+                                        >
+                                            {currency}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <DividendDonut
+                        slices={activeDonutData.slices}
+                        currency={donutCurrency}
+                        formatValue={formatCurrencyValue}
+                        t={t}
+                        lang={lang}
+                        selectedIndex={donutSelectedIndex}
+                        onSelect={handleDonutSelect}
+                    />
+                </section>
+            )}
             <div style={{ margin: '10px 0' }}>
                 <button
                     onClick={() => setShowCalendar(v => !v)}
@@ -758,7 +1074,13 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
             <table className="table table-bordered table-striped" ref={tableElementRef}>
                 <thead>
                     <tr>
-                        <th className="stock-col" rowSpan={activeCurrencies.length > 1 ? 2 : 1}>
+                        <th className="stock-col" rowSpan={activeCurrencies.length > 1 ? 2 : 1}
+                            style={{
+                                outline: "1px solid var(--color-border)",   // 外框顏色與粗細
+                                outlineOffset: "-1px",            // 可選，讓框貼近內容
+                                padding: "6px"                    // 可選，讓文字不擠
+                            }}    
+                        >
                             <span className="sortable" onClick={() => handleSort('stock_id')}>
                                 {lang === 'en' ? 'Ticker/Name' : '股票代碼/名稱'}
                                 {sortConfig.column === 'stock_id' && (
@@ -819,7 +1141,13 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 <tbody>
                     {filteredStocks.length === 0 ? (
                         <tr>
-                            <td colSpan={totalColumns}>
+                            <td 
+                                style={{
+                                    outline: "1px solid var(--color-border)",   // 外框顏色與粗細
+                                    outlineOffset: "-1px",            // 可選，讓框貼近內容
+                                    padding: "6px"                    // 可選，讓文字不擠
+                                }}
+                            colSpan={totalColumns}>
                                 {hasActiveMonthFilters
                                     ? (lang === 'en' ? 'No dividends match the selected filters' : '目前篩選條件下沒有配息紀錄')
                                     : (lang === 'en' ? 'No holdings, please add transactions first' : '尚無庫存，請先新增交易紀錄')}
@@ -827,8 +1155,14 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                         </tr>
                     ) : (
                         <>
-                            <tr style={{ background: '#d0ebff', fontWeight: 'bold' }}>
-                                <td>{lang === 'en' ? 'Dividend Cost' : '配息成本'}</td>
+                            <tr>
+                                <td
+                                    style={{
+                                    outline: "1px solid var(--color-border)",   // 外框顏色與粗細
+                                    outlineOffset: "-1px",            // 可選，讓框貼近內容
+                                    padding: "6px"                    // 可選，讓文字不擠
+                                }}
+                                >{lang === 'en' ? 'Dividend Cost' : '配息成本'}</td>
                                 <td></td>
                                 {MONTHS.map((m, idx) => (
                                     activeCurrencies.map(currency => {
@@ -869,8 +1203,14 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                     })
                                 ))}
                             </tr>
-                            <tr style={{ background: '#ffe066', fontWeight: 'bold' }}>
-                                <td>{lang === 'en' ? 'Monthly Total' : '月合計'}</td>
+                            <tr>
+                                <td 
+                                    style={{
+                                        outline: "1px solid var(--color-border)",   // 外框顏色與粗細
+                                        outlineOffset: "-1px",            // 可選，讓框貼近內容
+                                        padding: "6px"                    // 可選，讓文字不擠
+                                    }}
+                                >{lang === 'en' ? 'Monthly Total' : '月合計'}</td>
                                 <td>
                                     {(() => {
                                         const currencySummaries = activeCurrencies
@@ -957,7 +1297,13 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
 
                                 return (
                                     <tr key={stock.stock_id + stock.stock_name}>
-                                        <td className="stock-col">
+                                        <td className="stock-col" 
+                                            style={{
+                                                outline: "1px solid var(--color-border)",   // 外框顏色與粗細
+                                                outlineOffset: "-1px",            // 可選，讓框貼近內容
+                                                padding: "6px"                    // 可選，讓文字不擠
+                                            }}
+                                        >
                                             <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
                                                 <TooltipText tooltip={tooltipText}>
                                                     {displayText}
@@ -1022,11 +1368,11 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                     ? `${quantityLineEn}\n${dividendPerShareEn}\nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
                                                     : `${quantityLineZh}\n${dividendPerShareZh}\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`;
 
-                                                const paymentDate = cell.payment_date ? formatShortDate(cell.payment_date) : null;
-                                                const dividendDate = cell.dividend_date ? formatShortDate(cell.dividend_date) : null;
-                                                const closePrice = (cell.last_close_price !== undefined && cell.last_close_price !== null && cell.last_close_price !== '')
-                                                    ? cell.last_close_price
-                                                    : null;
+                                                // const paymentDate = cell.payment_date ? formatShortDate(cell.payment_date) : null;
+                                                // const dividendDate = cell.dividend_date ? formatShortDate(cell.dividend_date) : null;
+                                                // const closePrice = (cell.last_close_price !== undefined && cell.last_close_price !== null && cell.last_close_price !== '')
+                                                    // ? cell.last_close_price
+                                                    // : null;
                                                 return (
                                                     <td key={`cell-${stock.stock_id}-${idx}-${currency}`} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
                                                         <TooltipText

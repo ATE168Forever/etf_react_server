@@ -127,6 +127,21 @@
   cursor: pointer;
 }
 
+.buttonExclude {
+  padding: 6px 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  background: rgba(239, 68, 68, 0.12);
+  color: rgba(185, 28, 28, 0.95);
+  cursor: pointer;
+}
+
+.buttonExclude:hover,
+.buttonExclude:focus-visible {
+  background: rgba(239, 68, 68, 0.2);
+  color: rgba(185, 28, 28, 1);
+}
+
 .tableHeader {
   display: flex;
   align-items: center;
@@ -296,6 +311,19 @@
 .cashflowGoalEmpty {
   font-size: 0.85rem;
   color: var(--muted-foreground, #6b7280);
+}
+
+.excludedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(244, 63, 94, 0.12);
+  color: #b91c1c;
 }
 
 .cashflowGoalActionsRow {
