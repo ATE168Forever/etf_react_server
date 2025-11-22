@@ -257,7 +257,7 @@ export default function InvestmentGoalCard({
             <div className={styles.shareButtons}>
               <button
                 type="button"
-                className={styles.sharePrimaryButton}
+                className="share-primary-button"
                 onClick={handleShareButtonClick}
                 aria-label={shareConfig?.shareAriaLabel || shareConfig?.shareButtonLabel}
               >
@@ -408,7 +408,7 @@ export default function InvestmentGoalCard({
             <div className={styles.shareModalActions}>
               <button
                 type="button"
-                className={styles.sharePrimaryButton}
+                className="share-primary-button"
                 onClick={handleModalShareClick}
                 disabled={!hasNativeShare}
               >

@@ -28,45 +28,16 @@ import {
 } from './utils/dividendGoalUtils';
 import selectStyles from './selectStyles';
 import TooltipText from './components/TooltipText';
+import {
+  loadDividendExclusions,
+  persistDividendExclusions,
+  normalizeStockId
+} from './utils/dividendExclusions';
 
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
 const SHARES_PER_LOT = 1000;
 const DEFAULT_GOAL_TYPE = 'annual';
-const DIVIDEND_EXCLUSION_STORAGE_KEY = 'inventoryDividendExclusions';
-
-const normalizeStockId = (value) => (typeof value === 'string' ? value.trim().toUpperCase() : '');
-
-const loadDividendExclusions = () => {
-  if (typeof window === 'undefined') return {};
-  try {
-    const raw = window.localStorage.getItem(DIVIDEND_EXCLUSION_STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      return parsed.reduce((acc, id) => {
-        const normalized = normalizeStockId(id);
-        if (normalized) {
-          acc[normalized] = true;
-        }
-        return acc;
-      }, {});
-    }
-    if (parsed && typeof parsed === 'object') {
-      return Object.keys(parsed).reduce((acc, key) => {
-        if (!parsed[key]) return acc;
-        const normalized = normalizeStockId(key);
-        if (normalized) {
-          acc[normalized] = true;
-        }
-        return acc;
-      }, {});
-    }
-  } catch {
-    // ignore parse errors
-  }
-  return {};
-};
 
 function getToday() {
   return new Date().toISOString().slice(0, 10);
@@ -1063,15 +1034,8 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
   }, [goalSaved]);
   
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    try {
-      const payload = Object.keys(dividendExclusions).filter(key => dividendExclusions[key]);
-      window.localStorage.setItem(DIVIDEND_EXCLUSION_STORAGE_KEY, JSON.stringify(payload));
-    } catch {
-      // ignore write errors
-    }
+    if (typeof window === 'undefined') return;
+    persistDividendExclusions(dividendExclusions);
   }, [dividendExclusions]);
 
   const { inventoryList, totalInvestment, totalValue } = summarizeInventory(

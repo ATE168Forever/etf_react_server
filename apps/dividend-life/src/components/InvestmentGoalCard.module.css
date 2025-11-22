@@ -260,32 +260,6 @@
   line-height: 1.45;
 }
 
-.sharePrimaryButton {
-  padding: 6px 16px;
-  border-radius: 6px;
-  border: none;
-  background: var(--accent-gold, #facc15);
-  color: #1f2937;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-}
-
-.sharePrimaryButton:hover:not(:disabled),
-.sharePrimaryButton:focus-visible:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(250, 204, 21, 0.35);
-  filter: brightness(0.98);
-}
-
-.sharePrimaryButton:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-  transform: none;
-  box-shadow: none;
-  filter: none;
-}
-
 .shareCopyButton {
   padding: 6px 16px;
   border-radius: 6px;

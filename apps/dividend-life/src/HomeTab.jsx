@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { API_HOST } from '../config';
 import { fetchWithCache } from './api';
 import { fetchDividendsByYears } from './dividendApi';
@@ -11,6 +11,11 @@ import {
   calculateDividendSummary,
   buildDividendGoalViewModel
 } from './utils/dividendGoalUtils';
+import {
+  loadDividendExclusions,
+  DIVIDEND_EXCLUSION_STORAGE_KEY,
+  DIVIDEND_EXCLUSION_EVENT
+} from './utils/dividendExclusions';
 import { getFeatureUpdates } from './featureUpdates';
 
 const VIEWBOX_WIDTH = 720;
@@ -30,6 +35,7 @@ function DividendChart({
   lang,
   selectedIndex,
   onSelect,
+  chartRef
 }) {
   const totalsArray = Array.isArray(data?.totals)
     ? data.totals.slice(0, 12)
@@ -98,6 +104,7 @@ function DividendChart({
         className="dividend-chart"
         role="img"
         aria-label={heading}
+        ref={chartRef}
       >
         <svg viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}>
           <line
@@ -199,11 +206,11 @@ function DividendChart({
         <div className="dividend-chart-legend">
           <div className="legend-item">
             <span className="legend-swatch" />
-            <span>{`${t('dividend_chart_monthly_label')} (${currency})`}</span>
+            <span>{`${t('dividend_chart_monthly_label')}`}</span>
           </div>
           <div className="legend-item">
             <span className="legend-line" />
-            <span>{`${t('dividend_chart_cumulative_label')} (${currency})`}</span>
+            <span>{`${t('dividend_chart_cumulative_label')}`}</span>
           </div>
         </div>
     </div>
@@ -225,7 +232,10 @@ export default function HomeTab() {
   const [showFeatureUpdates, setShowFeatureUpdates] = useState(false);
   const [chartCurrency, setChartCurrency] = useState(null);
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(null);
+  const [dividendExclusions, setDividendExclusions] = useState(() => loadDividendExclusions());
+  const [isSharingChart, setIsSharingChart] = useState(false);
   const { t, lang } = useLanguage();
+  const chartRef = useRef(null);
   const featureUpdates = useMemo(() => getFeatureUpdates(lang), [lang]);
   const monthLabels = useMemo(() => {
     const formatter = new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'zh-TW', { month: 'short' });
@@ -263,6 +273,47 @@ export default function HomeTab() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const refresh = () => {
+      setDividendExclusions(loadDividendExclusions());
+    };
+
+    const handleStorage = (event) => {
+      if (event.key && event.key !== DIVIDEND_EXCLUSION_STORAGE_KEY) {
+        return;
+      }
+      refresh();
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener(DIVIDEND_EXCLUSION_EVENT, refresh);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener(DIVIDEND_EXCLUSION_EVENT, refresh);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const refresh = () => {
+      setDividendExclusions(loadDividendExclusions());
+    };
+    const handleStorage = (event) => {
+      if (event.key && event.key !== DIVIDEND_EXCLUSION_STORAGE_KEY) {
+        return;
+      }
+      refresh();
+    };
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener(DIVIDEND_EXCLUSION_EVENT, refresh);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener(DIVIDEND_EXCLUSION_EVENT, refresh);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!inventoryLoaded) return;
     let cancelled = false;
     const inventory = Array.isArray(goalSummary.inventoryList) ? goalSummary.inventoryList : [];
@@ -297,9 +348,10 @@ export default function HomeTab() {
     () => calculateDividendSummary({
       inventoryList: goalSummary.inventoryList,
       dividendEvents: dividendData,
-      transactionHistory
+      transactionHistory,
+      excludedStockIds: dividendExclusions
     }),
-    [goalSummary.inventoryList, dividendData, transactionHistory]
+    [goalSummary.inventoryList, dividendData, transactionHistory, dividendExclusions]
   );
 
   const goalMessages = useMemo(() => ({
@@ -472,6 +524,105 @@ export default function HomeTab() {
     };
   }, [selectedMonthIndex, dividendChartConfig, monthLabels]);
 
+  const handleShareChart = useCallback(() => {
+    if (!dividendChartConfig || !chartRef.current || isSharingChart) {
+      return;
+    }
+    const svgNode = chartRef.current.querySelector('svg');
+    if (!svgNode) {
+      window.alert(t('share_chart_error'));
+      return;
+    }
+    setIsSharingChart(true);
+    const serializer = new XMLSerializer();
+    let svgString = serializer.serializeToString(svgNode);
+    if (!svgString.includes('xmlns="http://www.w3.org/2000/svg"')) {
+      svgString = svgString.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    const image = new Image();
+
+    const cleanup = () => {
+      URL.revokeObjectURL(svgUrl);
+      setIsSharingChart(false);
+    };
+
+    image.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = VIEWBOX_WIDTH;
+        canvas.height = VIEWBOX_HEIGHT;
+        const ctx = canvas.getContext('2d');
+        const computed = getComputedStyle(chartRef.current);
+        const bgColor = computed?.backgroundColor && computed.backgroundColor !== 'rgba(0, 0, 0, 0)'
+          ? computed.backgroundColor
+          : '#ffffff';
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0);
+        const titleText = t('share_chart_title_template', { year: dividendChartConfig.year })
+          .replace('{year}', dividendChartConfig.year);
+        ctx.font = '600 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        ctx.fillStyle = 'var(--color-text, #1f2937)';
+        ctx.fillStyle = '#1f2937';
+        ctx.fillText(titleText, 16, 28);
+        ctx.font = '12px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        ctx.fillStyle = '#4b5563';
+        const axisY = VIEWBOX_HEIGHT - CHART_PADDING.bottom;
+        ctx.save();
+        ctx.translate(CHART_PADDING.left - 30, axisY - (CHART_PADDING.top / 2));
+        ctx.rotate(-Math.PI / 2);
+        const amountLabel = t('share_chart_amount_axis', { currency: dividendChartConfig.currency })
+          .replace('{currency}', dividendChartConfig.currency);
+        ctx.fillText(amountLabel, 0, 0);
+        ctx.restore();
+        ctx.fillText(t('share_chart_month_axis'), CHART_PADDING.left + 150, VIEWBOX_HEIGHT - 8);
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            window.alert(t('share_chart_error'));
+            cleanup();
+            return;
+          }
+          const fileName = `dividend-chart-${dividendChartConfig.year}.png`;
+          const file = new File([blob], fileName, { type: 'image/png' });
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: `${dividendChartConfig.year} ${t('dividend_chart_heading')}`,
+              });
+              cleanup();
+              return;
+            } catch {
+              // Fall through to download option.
+            }
+          }
+          const downloadUrl = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(() => URL.revokeObjectURL(downloadUrl), 4000);
+          window.alert(t('share_chart_download'));
+          cleanup();
+        }, 'image/png');
+      } catch {
+        window.alert(t('share_chart_error'));
+        cleanup();
+      }
+    };
+
+    image.onerror = () => {
+      window.alert(t('share_chart_error'));
+      cleanup();
+    };
+
+    image.src = svgUrl;
+  }, [chartRef, dividendChartConfig, isSharingChart, t]);
+
   return (
     <div className="container" style={{ maxWidth: 800 }}>
       <section className="mt-4">
@@ -552,6 +703,24 @@ export default function HomeTab() {
           </div>
         )}
       </section>
+
+      <section className="mt-4">
+        <h5>{t('latest')}</h5>
+        <ul>
+          {stats.latest.map((item, idx) => (
+            <li key={idx}>{item}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section
+        className="mt-4"
+        style={{ background: 'var(--color-row-even)', padding: 16, borderRadius: 4 }}
+      >
+        <h5>{t('etf_tips')}</h5>
+        <p style={{ margin: 0 }}>{stats.tip}</p>
+      </section>
+
       <section className="mt-4">
         <h5>{t('site_stats')}</h5>
         <div style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'center', marginTop: 16 }}>
@@ -563,6 +732,7 @@ export default function HomeTab() {
           ))}
         </div>
       </section>
+
       {dividendChartConfig && (
         <section className="mt-4">
           <div className="chart-header">
@@ -596,7 +766,18 @@ export default function HomeTab() {
             lang={lang}
             selectedIndex={selectedMonthIndex}
             onSelect={handleSelectMonth}
+            chartRef={chartRef}
           />
+          <div className="chart-actions-footer">
+            <button
+              type="button"
+              className="chart-share-button"
+              onClick={handleShareChart}
+              disabled={isSharingChart}
+            >
+              {t('share_chart_button')}
+            </button>
+          </div>
           {selectedDetail && (
             <div className="dividend-chart-detail">
               <div>
@@ -633,21 +814,7 @@ export default function HomeTab() {
           )}
         </section>
       )}
-      <section className="mt-4">
-        <h5>{t('latest')}</h5>
-        <ul>
-          {stats.latest.map((item, idx) => (
-            <li key={idx}>{item}</li>
-          ))}
-        </ul>
-      </section>
-      <section
-        className="mt-4"
-        style={{ background: 'var(--color-row-even)', padding: 16, borderRadius: 4 }}
-      >
-        <h5>{t('etf_tips')}</h5>
-        <p style={{ margin: 0 }}>{stats.tip}</p>
-      </section>
+      
       <InvestmentGoalCard
         title={goalTitle}
         metrics={goalMetrics}

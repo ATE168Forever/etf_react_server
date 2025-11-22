@@ -8,6 +8,12 @@ import TooltipText from './components/TooltipText';
 import CurrencyViewToggle from './components/CurrencyViewToggle';
 import { fetchStockList } from './stockApi';
 import useEffectOnce from './hooks/useEffectOnce';
+import {
+    loadDividendExclusions,
+    DIVIDEND_EXCLUSION_STORAGE_KEY,
+    DIVIDEND_EXCLUSION_EVENT,
+    normalizeStockId as normalizeStockIdForExclusion
+} from './utils/dividendExclusions';
 
 const MONTH_COL_WIDTH = 80;
 const DEFAULT_CURRENCY = 'TWD';
@@ -252,6 +258,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     // Default to showing both ex-dividend and payment events
     const [calendarFilter, setCalendarFilter] = useState('both');
     const [stockNameMap, setStockNameMap] = useState({});
+    const [dividendExclusions, setDividendExclusions] = useState(() => loadDividendExclusions());
     const timeZone = 'Asia/Taipei';
     const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
     const [sortConfig, setSortConfig] = useState({ column: 'stock_id', direction: 'asc' });
@@ -315,6 +322,25 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
         };
     });
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return undefined;
+        const refresh = () => {
+            setDividendExclusions(loadDividendExclusions());
+        };
+        const handleStorage = (event) => {
+            if (event.key && event.key !== DIVIDEND_EXCLUSION_STORAGE_KEY) {
+                return;
+            }
+            refresh();
+        };
+        window.addEventListener('storage', handleStorage);
+        window.addEventListener(DIVIDEND_EXCLUSION_EVENT, refresh);
+        return () => {
+            window.removeEventListener('storage', handleStorage);
+            window.removeEventListener(DIVIDEND_EXCLUSION_EVENT, refresh);
+        };
+    }, []);
+
     const getHolding = useCallback((stock_id, date) => {
         return history.reduce((sum, item) => {
             if (item.stock_id === stock_id && new Date(item.date) <= new Date(date)) {
@@ -323,6 +349,11 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
             return sum;
         }, 0);
     }, [history]);
+    const isStockExcluded = useCallback((stockId) => {
+        const normalized = normalizeStockIdForExclusion(stockId);
+        if (!normalized) return false;
+        return Boolean(dividendExclusions[normalized]);
+    }, [dividendExclusions]);
 
     const formatLots = (quantity) => {
         if (!quantity) return '0';
@@ -349,14 +380,17 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
     const holdingIds = Array.from(stockIdSet).filter(id => getHolding(id, `${selectedYear}-12-31`) > 0);
 
     // 2. 只取有配息紀錄的資料（若有除息日則以除息日為主，否則使用發放日）
-    const dividendData = (allDividendData || []).filter(item => {
+    const dividendData = useMemo(() => (allDividendData || []).filter(item => {
+        if (isStockExcluded(item?.stock_id)) {
+            return false;
+        }
         const refDate = item.dividend_date || item.payment_date;
         if (!refDate) return false;
         const yearMatches = new Date(refDate).getFullYear() === Number(selectedYear);
         if (!yearMatches) return false;
         const checkDate = item.dividend_date || refDate;
         return getHolding(item.stock_id, checkDate) > 0;
-    });
+    }), [allDividendData, getHolding, isStockExcluded, selectedYear]);
 
     const normalizedDividendData = useMemo(() => dividendData.map(item => ({
         ...item,

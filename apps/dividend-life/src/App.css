@@ -513,6 +513,37 @@ td {
   color: var(--color-text-muted);
 }
 
+.dividend-chart-legend {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--accent-gold, #d4af37);
+  display: inline-block;
+}
+
+.legend-line {
+  width: 24px;
+  height: 0;
+  border-top: 3px solid var(--color-primary, #7c99ff);
+  display: inline-block;
+}
+
 .dividend-chart-currency-switch {
   display: flex;
   align-items: center;
@@ -574,6 +605,52 @@ td {
 .currency-pill-active-indicator {
   font-size: 0.75rem;
   color: var(--color-text-muted);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.chart-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.chart-actions-footer {
+  display: flex;
+  margin-top: 12px;
+}
+
+.chart-share-button {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  background: var(--accent-gold, #facc15);
+  color: var(--color-text, #1f2937);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.chart-share-button:hover,
+.chart-share-button:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(250, 204, 21, 0.35);
+  filter: brightness(0.98);
+}
+
+.chart-share-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  filter: none;
 }
 
 @media (min-width: 720px) {
@@ -1141,4 +1218,29 @@ button:active {
   bottom: 16px;
   z-index: 1000;
   max-width: min(280px, calc(100vw - 32px));
+}
+.share-primary-button {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  background: var(--accent-gold, #facc15);
+  color: var(--color-text, #1f2937);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.share-primary-button:hover:not(:disabled),
+.share-primary-button:focus-visible:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(250, 204, 21, 0.35);
+  filter: brightness(0.98);
+}
+
+.share-primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+  filter: none;
 }
