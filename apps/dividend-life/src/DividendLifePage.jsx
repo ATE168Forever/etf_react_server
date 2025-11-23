@@ -1139,7 +1139,12 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                         {lang === 'en' ? 'Ex/Paid Date' : '除息/發放日'}
                       </button>
                     </div>
-                    <DividendCalendar year={selectedYear} events={filteredCalendarEvents} showTotals={false} />
+                    <DividendCalendar
+                      year={selectedYear}
+                      events={filteredCalendarEvents}
+                      showTotals={false}
+                      receivableAsPerShare
+                    />
                   </>
                 )}
   

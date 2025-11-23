@@ -44,7 +44,12 @@ const formatEventAmount = (currency, value, { hasQuantity } = {}) => {
   return value.toFixed(precision);
 };
 
-export default function DividendCalendar({ year, events, showTotals = true }) {
+export default function DividendCalendar({
+  year,
+  events,
+  showTotals = true,
+  receivableAsPerShare = false
+}) {
   const timeZone = 'Asia/Taipei';
   const nowStr = new Date().toLocaleDateString('en-CA', { timeZone });
   const [month, setMonth] = useState(Number(nowStr.slice(5, 7)) - 1);
@@ -180,12 +185,26 @@ export default function DividendCalendar({ year, events, showTotals = true }) {
                         const amountText = lang === 'en'
                           ? `${amountFormatted} ${currencySymbol}`
                           : `${amountFormatted} ${currencyUnitZh}`;
-                        const perShareText = lang === 'en'
-                          ? `${currencySymbol}${ev.dividend}`
-                          : `${ev.dividend} ${currencyUnitZh}`;
-                        const tooltip = ev.quantity != null
-                          ? `${t('quantity')}: ${ev.quantity} ${lang === 'en' ? 'shares' : '股'} (${lotText} ${lang === 'en' ? 'lots' : '張'})\n${t('per_share_dividend')}: ${perShareText}\n${t('dividend_receivable')}: ${amountText}\n${t('prev_close')}: ${ev.last_close_price}\n${t('current_yield')}: ${ev.dividend_yield}%\n${t('dividend_date')}: ${ev.dividend_date || '-'}\n${t('payment_date')}: ${ev.payment_date || '-'}`
-                          : `${t('per_share_dividend')}: ${perShareText}\n${t('dividend_receivable')}: ${amountText}\n${t('prev_close')}: ${ev.last_close_price}\n${t('current_yield')}: ${ev.dividend_yield}%\n${t('dividend_date')}: ${ev.dividend_date || '-'}\n${t('payment_date')}: ${ev.payment_date || '-'}`;
+                        const perShareText = receivableAsPerShare
+                          ? amountText
+                          : lang === 'en'
+                            ? `${currencySymbol}${ev.dividend}`
+                            : `${ev.dividend} ${currencyUnitZh}`;
+                        const tooltipParts = [];
+                        if (ev.quantity != null) {
+                          tooltipParts.push(`${t('quantity')}: ${ev.quantity} ${lang === 'en' ? 'shares' : '股'} (${lotText} ${lang === 'en' ? 'lots' : '張'})`);
+                        }
+                        tooltipParts.push(`${t('per_share_dividend')}: ${perShareText}`);
+                        if (!receivableAsPerShare) {
+                          tooltipParts.push(`${t('dividend_receivable')}: ${amountText}`);
+                        }
+                        tooltipParts.push(
+                          `${t('prev_close')}: ${ev.last_close_price}`,
+                          `${t('current_yield')}: ${ev.dividend_yield}%`,
+                          `${t('dividend_date')}: ${ev.dividend_date || '-'}`,
+                          `${t('payment_date')}: ${ev.payment_date || '-'}`
+                        );
+                        const tooltip = tooltipParts.join('\n');
                         return (
                           <div
                             key={j}
