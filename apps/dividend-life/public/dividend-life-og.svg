@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Dividend Life | ETF Life</title>
+  <desc id="desc">股息日曆、除息與發放查詢、庫存與現金流追蹤的 Dividend Life 分享圖</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1021"/>
+      <stop offset="100%" stop-color="#0f1a35"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffe07d"/>
+      <stop offset="100%" stop-color="#d4af37"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)" rx="32"/>
+  <rect x="64" y="120" width="1072" height="360" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="2" rx="28"/>
+  <g transform="translate(120 170)">
+    <rect x="0" y="180" width="56" height="90" rx="10" fill="#1b2543" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+    <rect x="90" y="140" width="56" height="130" rx="10" fill="#1b2543" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+    <rect x="180" y="80" width="56" height="190" rx="10" fill="#1b2543" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+    <rect x="270" y="30" width="56" height="240" rx="10" fill="#1b2543" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+    <path d="M 0 260 L 40 240 L 90 220 L 140 210 L 200 170 L 260 110 L 320 90" fill="none" stroke="url(#accent)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="320" cy="90" r="46" fill="#0b1021" stroke="url(#accent)" stroke-width="8"/>
+    <circle cx="320" cy="90" r="24" fill="url(#accent)" opacity="0.9"/>
+    <path d="M320 64 L320 116 M300 90 L340 90" stroke="#0b1021" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <g fill="#f7fafc">
+    <text x="520" y="240" font-family="Inter, 'Noto Sans TC', system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" letter-spacing="0.02em">Dividend Life</text>
+    <text x="520" y="300" font-family="Inter, 'Noto Sans TC', system-ui, -apple-system, sans-serif" font-size="28" fill="#d4e0ff">ETF 股息日曆・除息/發放查詢・配息追蹤</text>
+    <text x="520" y="352" font-family="Inter, 'Noto Sans TC', system-ui, -apple-system, sans-serif" font-size="22" fill="#9eb3ff">整理台、美股配息，管理庫存、目標與現金流</text>
+  </g>
+</svg>

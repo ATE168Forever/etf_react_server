@@ -24,6 +24,7 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
           ) : (
             transactionHistory.map((item, idx) => {
               const stock = stockList.find(s => s.stock_id === item.stock_id) || {};
+              const isUsStock = (stock.country || '').toUpperCase() === 'US';
               const isEditing = editingIdx === idx;
               const name = stock.stock_name || item.stock_name || '';
               return (
@@ -59,9 +60,13 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
                         className={styles.smallInput}
                       />
                     ) : (
-                      <>
-                        {item.quantity} ({(item.quantity / 1000).toFixed(3).replace(/\.0+$/, '')} {lang === 'en' ? 'lots' : '張'})
-                      </>
+                      isUsStock ? (
+                        item.quantity
+                      ) : (
+                        <>
+                          {item.quantity} ({(item.quantity / 1000).toFixed(3).replace(/\.0+$/, '')} {lang === 'en' ? 'lots' : '張'})
+                        </>
+                      )
                     )}
                   </td>
                   <td>
