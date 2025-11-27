@@ -1,0 +1,29 @@
+{
+  "name": "Wealth Life - 財富累積與目標追蹤",
+  "short_name": "Wealth Life",
+  "description": "Wealth Life（ETF Life）提供財富累積追蹤、投資目標設定與達成進度分析，幫你實現財務自由。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1021",
+  "theme_color": "#0b1021",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity", "utilities"],
+  "lang": "zh-Hant",
+  "dir": "ltr",
+  "prefer_related_applications": false
+}

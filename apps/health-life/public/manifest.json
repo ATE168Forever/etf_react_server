@@ -1,0 +1,29 @@
+{
+  "name": "Health Life - 投資健檢與績效分析",
+  "short_name": "Health Life",
+  "description": "Health Life（ETF Life）提供投資組合健康檢查、績效分析與風險評估，幫你掌握投資狀況。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1021",
+  "theme_color": "#0b1021",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity", "utilities"],
+  "lang": "zh-Hant",
+  "dir": "ltr",
+  "prefer_related_applications": false
+}

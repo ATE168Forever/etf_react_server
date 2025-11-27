@@ -1,0 +1,29 @@
+{
+  "name": "Balance Life - 資產配置與平衡追蹤",
+  "short_name": "Balance Life",
+  "description": "Balance Life（ETF Life）提供資產配置分析、投資組合平衡追蹤與再平衡建議，幫你打造穩健的投資組合。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1021",
+  "theme_color": "#0b1021",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity", "utilities"],
+  "lang": "zh-Hant",
+  "dir": "ltr",
+  "prefer_related_applications": false
+}

@@ -1,6 +1,7 @@
 import { useThemeLanguage } from '@shared/hooks/useThemeLanguage.jsx';
 import { Link } from '@shared/router';
-import conceptbLifeLogo from '@shared/assets/concept-b-life.svg';
+import conceptbLifeLogoDark from '@shared/assets/concept-b-life.svg';
+import conceptbLifeLogoLight from '@shared/assets/concept-b-life-light.svg';
 import dividendLifeLogoDark from '@shared/assets/dividend-life.svg';
 import dividendLifeLogoLight from '@shared/assets/dividend-life-light.svg';
 import balanceLifeLogoDark from '@shared/assets/balance-life.svg';
@@ -15,7 +16,7 @@ const baseExperiences = [
   {
     key: 'home',
     labels: { zh: '首頁', en: 'Home' },
-    logos: { dark: conceptbLifeLogo, light: conceptbLifeLogo },
+    logos: { dark: conceptbLifeLogoDark, light: conceptbLifeLogoLight },
   },
   {
     key: 'dividend-life',
@@ -49,6 +50,7 @@ export default function ExperienceNavigation({
   homeNavigation = 'router',
 }) {
   const { theme, lang } = useThemeLanguage();
+
   const experiences = baseExperiences.map((experience) =>
     experience.key === 'home'
       ? { ...experience, to: homeHref }
@@ -65,6 +67,7 @@ export default function ExperienceNavigation({
           experience.labels?.zh ??
           experience.labels?.en ??
           experience.key;
+        // Force recalculate logo based on current theme
         const logo =
           experience.logos?.[theme] ??
           experience.logos?.dark ??
@@ -72,7 +75,7 @@ export default function ExperienceNavigation({
 
         return (
           <Link
-            key={experience.key}
+            key={`${experience.key}-${theme}`}
             to={experience.to}
             className={isActive ? `${styles.link} ${styles.active}` : styles.link}
             aria-current={isActive ? 'page' : undefined}
@@ -80,7 +83,12 @@ export default function ExperienceNavigation({
             aria-label={label}
             title={label}
           >
-            <img src={logo} alt="" aria-hidden="true" className={styles.logo} />
+            <img
+              src={logo}
+              alt=""
+              aria-hidden="true"
+              className={styles.logo}
+            />
           </Link>
         );
       })}

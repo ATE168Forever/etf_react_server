@@ -1,0 +1,29 @@
+{
+  "name": "Dividend Life - ETF 股息日曆與配息追蹤",
+  "short_name": "Dividend Life",
+  "description": "Dividend Life（ETF Life）提供台股、美股股息日曆、除息/發放查詢、庫存管理與目標追蹤，幫你穩定打造配息現金流。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1021",
+  "theme_color": "#0b1021",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity", "utilities"],
+  "lang": "zh-Hant",
+  "dir": "ltr",
+  "prefer_related_applications": false
+}
