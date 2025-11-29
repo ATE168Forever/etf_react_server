@@ -7,6 +7,10 @@
   --color-hover: #e5e7eb;
   --color-header-bg: #f3f4f6;
   --color-text-muted: #6b7280;
+  --color-input-bg: #fff;
+  --color-error: #d62828;
+  --color-link: #0d6efd;
+  --color-text-on-accent: #1f2937;
   --accent-gold: #d4af37;
   --accent-gold-hover: #ffd700;
   --accent-green: #2f9e44;
@@ -67,6 +71,10 @@
   --color-hover: #374151;
   --color-header-bg: #374151;
   --color-text-muted: #9ca3af;
+  --color-input-bg: #1f2937;
+  --color-error: #ef4444;
+  --color-link: #60a5fa;
+  --color-text-on-accent: #f9fafb;
   --share-preview-bg: rgba(30, 41, 59, 0.9);
   --share-preview-border: rgba(148, 163, 184, 0.45);
   --share-preview-text: #f8fafc;

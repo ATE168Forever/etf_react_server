@@ -1226,7 +1226,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                     hasTooltip ? (
                                                         <TooltipText
                                                             tooltip={tooltip}
-                                                            style={{ borderBottom: '1px dotted #777' }}
+                                                            style={{ borderBottom: '1px dotted var(--color-text-muted, #777)' }}
                                                         >
                                                             {formatPlainAmount(total, { currency })}
                                                         </TooltipText>
@@ -1283,7 +1283,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                         return (
                                             <TooltipText
                                                 tooltip={tooltipLines.join('\n\n')}
-                                                style={{ borderBottom: '1px dotted #777' }}
+                                                style={{ borderBottom: '1px dotted var(--color-text-muted, #777)' }}
                                             >
                                                 {content}
                                             </TooltipText>
@@ -1373,7 +1373,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                 return (
                                                     <TooltipText
                                                         tooltip={totalTooltipLines.join('\n\n')}
-                                                        style={{ borderBottom: '1px dotted #777' }}
+                                                        style={{ borderBottom: '1px dotted var(--color-text-muted, #777)' }}
                                                     >
                                                         {content}
                                                     </TooltipText>
@@ -1411,7 +1411,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                                                     <td key={`cell-${stock.stock_id}-${idx}-${currency}`} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
                                                         <TooltipText
                                                             tooltip={tooltipContent}
-                                                            style={{ borderBottom: '1px dotted #777' }}
+                                                            style={{ borderBottom: '1px dotted var(--color-text-muted, #777)' }}
                                                         >
                                                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                                                                 <span>{total > 0 ? formatPlainAmount(total, { currency }) : ''}</span>
@@ -1429,7 +1429,7 @@ export default function UserDividendsTab({ allDividendData, selectedYear }) {
                 </tbody>
             </table>
             </div>
-            <p style={{ fontSize: 12, marginTop: 8, color: '#666' }}>
+            <p style={{ fontSize: 12, marginTop: 8, color: 'var(--color-text-muted, #666)' }}>
                 {lang === 'en'
                     ? 'Tip: tap or hover numbers to see holdings, per-share dividends, dates, prices and yield details.'
                     : '提示：點擊或滑鼠移到數字可看持股、每股配息及日期、價格與殖利率細節。'}
