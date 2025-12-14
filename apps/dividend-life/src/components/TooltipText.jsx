@@ -68,6 +68,7 @@ export default function TooltipText({
       }
 
       const margin = 16;
+      const footerHeight = 120;
       const triggerRect = triggerRef.current.getBoundingClientRect();
       const tooltipRect = tooltipRef.current.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
@@ -85,7 +86,9 @@ export default function TooltipText({
       }
 
       let top = triggerRect.bottom + 12;
-      if (top + tooltipRect.height > viewportHeight - margin) {
+      const bottomBoundary = viewportHeight - footerHeight - margin;
+
+      if (top + tooltipRect.height > bottomBoundary) {
         top = Math.max(triggerRect.top - tooltipRect.height - 12, margin);
       }
 

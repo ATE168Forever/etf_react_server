@@ -146,7 +146,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
       exportDriveFail: '匯出到 Google Drive 失敗',
       noBackupFound: '未找到備份檔案',
       importDriveSuccess: '已從 Google Drive 匯入資料',
-      importDriveFail: '匯入 Google Drive 失敗',
+      importDriveFail: '匯入 Google Drive 失敗。如果您使用手機，請確保允許彈出視窗。',
       exportOneDriveConfirm: '確定要匯出到 OneDrive？',
       exportOneDriveSuccess: '已匯出到 OneDrive',
       exportOneDriveFail: '匯出到 OneDrive 失敗',
@@ -258,7 +258,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
       exportDriveFail: 'Export to Google Drive failed',
       noBackupFound: 'Backup file not found',
       importDriveSuccess: 'Imported data from Google Drive',
-      importDriveFail: 'Import from Google Drive failed',
+      importDriveFail: 'Import from Google Drive failed. If you\'re on mobile, please allow popups.',
       exportOneDriveConfirm: 'Export to OneDrive?',
       exportOneDriveSuccess: 'Exported to OneDrive',
       exportOneDriveFail: 'Export to OneDrive failed',
@@ -905,7 +905,10 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
       alert(msg.importDriveSuccess);
     } catch (err) {
       console.error('Drive manual import failed', err);
-      alert(msg.importDriveFail);
+      const errorMessage = err?.message || msg.importDriveFail;
+      alert(errorMessage.includes('timed out') || errorMessage.includes('popup')
+        ? errorMessage
+        : msg.importDriveFail);
     }
   };
 

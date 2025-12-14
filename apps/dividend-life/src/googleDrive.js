@@ -54,6 +54,7 @@ function initialiseTokenClient() {
   if (!gis) {
     throw new Error('Google Identity Services client could not be initialised');
   }
+
   tokenClient = gis({
     client_id: CLIENT_ID,
     scope: SCOPES,
@@ -83,7 +84,19 @@ async function ensureAccessToken() {
     return accessToken;
   }
   return new Promise((resolve, reject) => {
+    let resolved = false;
+    const timeoutId = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        reject(new Error('Google authentication timed out. Please try again and allow popups if prompted.'));
+      }
+    }, 60000);
+
     tokenClient.callback = (response) => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timeoutId);
+
       const result = storeTokenResponse(response);
       if (result.error) {
         reject(result.error);
@@ -94,7 +107,11 @@ async function ensureAccessToken() {
     try {
       tokenClient.requestAccessToken({ prompt: accessToken ? '' : 'consent' });
     } catch (error) {
-      reject(error);
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeoutId);
+        reject(error);
+      }
     }
   });
 }
