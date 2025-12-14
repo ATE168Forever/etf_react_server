@@ -68,7 +68,7 @@ export default function TooltipText({
       }
 
       const margin = 16;
-      const footerHeight = 120;
+      const footerHeight = 160;
       const triggerRect = triggerRef.current.getBoundingClientRect();
       const tooltipRect = tooltipRef.current.getBoundingClientRect();
       const viewportWidth = window.innerWidth;

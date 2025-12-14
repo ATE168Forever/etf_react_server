@@ -83,12 +83,26 @@ async function ensureAccessToken() {
   if (accessToken) {
     return accessToken;
   }
+
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isZh = navigator.language && navigator.language.toLowerCase().startsWith('zh');
+
   return new Promise((resolve, reject) => {
     let resolved = false;
     const timeoutId = setTimeout(() => {
       if (!resolved) {
         resolved = true;
-        reject(new Error('Google authentication timed out. Please try again and allow popups if prompted.'));
+        let errorMsg;
+        if (isMobile) {
+          errorMsg = isZh
+            ? 'Google 驗證逾時。手機瀏覽器可能封鎖彈出視窗。請：\n1. 在瀏覽器設定中允許此網站的彈出視窗\n2. 重試\n3. 或使用電腦瀏覽器以便存取'
+            : 'Google authentication timed out. Mobile browsers may block popups. Please:\n1. Enable popups for this site in your browser settings\n2. Try again\n3. Or use desktop browser for easier access';
+        } else {
+          errorMsg = isZh
+            ? 'Google 驗證逾時。請重試並允許彈出視窗。'
+            : 'Google authentication timed out. Please try again and allow popups if prompted.';
+        }
+        reject(new Error(errorMsg));
       }
     }, 60000);
 
@@ -105,12 +119,26 @@ async function ensureAccessToken() {
       resolve(result.token);
     };
     try {
+      if (isMobile) {
+        const warningMsg = isZh
+          ? '即將開啟 Google 登入視窗。如果沒有出現，請在瀏覽器設定中允許此網站的彈出視窗。'
+          : 'Opening Google sign-in window. If it doesn\'t appear, please enable popups for this site in your browser settings.';
+        console.log(warningMsg);
+      }
       tokenClient.requestAccessToken({ prompt: accessToken ? '' : 'consent' });
     } catch (error) {
       if (!resolved) {
         resolved = true;
         clearTimeout(timeoutId);
-        reject(error);
+        let errorMsg;
+        if (isMobile) {
+          errorMsg = isZh
+            ? `Google 驗證失敗。手機瀏覽器可能封鎖彈出視窗。錯誤：${error.message || error}`
+            : `Google authentication failed. Mobile browsers may block popups. Error: ${error.message || error}`;
+        } else {
+          errorMsg = error.message || error;
+        }
+        reject(new Error(errorMsg));
       }
     }
   });

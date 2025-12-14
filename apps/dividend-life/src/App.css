@@ -1231,7 +1231,7 @@ button:active {
   left: 50%;
   transform: translateX(-50%);
   bottom: 16px;
-  z-index: 9999;
+  z-index: 10000;
   max-width: min(280px, calc(100vw - 32px));
   pointer-events: auto;
 }

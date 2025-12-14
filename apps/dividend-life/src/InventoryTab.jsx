@@ -876,18 +876,40 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
   };
 
   const handleDriveExport = async () => {
-    if (!window.confirm(msg.exportDriveConfirm)) return;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      const mobileWarning = lang === 'zh'
+        ? '注意：手機瀏覽器可能會封鎖 Google 登入視窗。\n\n如果登入視窗沒有出現，請：\n1. 在瀏覽器設定中允許此網站的彈出視窗\n2. 重新整理頁面後再試\n3. 或使用電腦瀏覽器\n\n是否繼續？'
+        : 'Note: Mobile browsers may block the Google sign-in popup.\n\nIf the sign-in window doesn\'t appear, please:\n1. Enable popups for this site in browser settings\n2. Refresh and try again\n3. Or use a desktop browser\n\nContinue?';
+      if (!window.confirm(mobileWarning)) {
+        return;
+      }
+    } else {
+      if (!window.confirm(msg.exportDriveConfirm)) return;
+    }
     try {
       await exportTransactionsToDrive(transactionHistory);
       Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
       alert(msg.exportDriveSuccess);
     } catch (err) {
       console.error('Drive manual export failed', err);
-      alert(msg.exportDriveFail);
+      const errorMessage = err?.message || msg.exportDriveFail;
+      alert(errorMessage.includes('timed out') || errorMessage.includes('popup') || errorMessage.includes('封鎖') || errorMessage.includes('驗證')
+        ? errorMessage
+        : msg.exportDriveFail);
     }
   };
 
   const handleDriveImport = async () => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      const mobileWarning = lang === 'zh'
+        ? '注意：手機瀏覽器可能會封鎖 Google 登入視窗。\n\n如果登入視窗沒有出現，請：\n1. 在瀏覽器設定中允許此網站的彈出視窗\n2. 重新整理頁面後再試\n3. 或使用電腦瀏覽器\n\n是否繼續？'
+        : 'Note: Mobile browsers may block the Google sign-in popup.\n\nIf the sign-in window doesn\'t appear, please:\n1. Enable popups for this site in browser settings\n2. Refresh and try again\n3. Or use a desktop browser\n\nContinue?';
+      if (!window.confirm(mobileWarning)) {
+        return;
+      }
+    }
     try {
       const list = await importTransactionsFromDrive();
       if (!list || list.length === 0) {
@@ -906,7 +928,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     } catch (err) {
       console.error('Drive manual import failed', err);
       const errorMessage = err?.message || msg.importDriveFail;
-      alert(errorMessage.includes('timed out') || errorMessage.includes('popup')
+      alert(errorMessage.includes('timed out') || errorMessage.includes('popup') || errorMessage.includes('封鎖') || errorMessage.includes('驗證')
         ? errorMessage
         : msg.importDriveFail);
     }
