@@ -62,7 +62,7 @@ function normalizeStockIds(input) {
   return Array.from(new Set(values));
 }
 
-function buildDividendUrl(yearOrOptions, maybeCountry) {
+function buildDividendUrl() {
   return `${API_HOST}/get_dividend`;
 }
 
@@ -168,29 +168,46 @@ function buildCacheKeyBase(url, payload) {
   }
 }
 
-const DEFAULT_POST_CACHE_MAX_AGE = 2 * 60 * 60 * 1000;
+const DEFAULT_CACHE_MAX_AGE = 2 * 60 * 60 * 1000;
 
-async function executeDividendPost(url, payload) {
-  const headers = { Accept: 'application/json' };
-  let body;
+async function executeDividendRequest(url, payload) {
+  // Explicitly prevent conditional request headers to avoid 304 responses
+  const headers = {
+    Accept: 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    Pragma: 'no-cache'
+  };
+
+  let requestUrl = url;
   if (payload) {
-    headers['Content-Type'] = 'application/json';
-    body = JSON.stringify(payload);
+    const params = new URLSearchParams();
+    Object.entries(payload).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach(v => params.append(key, v));
+      } else if (value !== undefined && value !== null) {
+        params.append(key, value);
+      }
+    });
+    const queryString = params.toString();
+    if (queryString) {
+      requestUrl = `${url}?${queryString}`;
+    }
   }
 
-  const response = await fetch(url, {
-    method: 'POST',
+  const response = await fetch(requestUrl, {
+    method: 'GET',
     headers,
-    body
+    cache: 'no-store'  // Completely bypass browser cache
   });
 
-  return parseJSONResponse(response, url);
+  const result = await parseJSONResponse(response, requestUrl);
+  return result;
 }
 
-async function postWithCache(url, payload, maxAge = DEFAULT_POST_CACHE_MAX_AGE, options = {}) {
+async function fetchWithCache(url, payload, maxAge = DEFAULT_CACHE_MAX_AGE, options = {}) {
   const { useCache = true } = options;
   if (!useCache) {
-    const data = await executeDividendPost(url, payload);
+    const data = await executeDividendRequest(url, payload);
     const timestamp = new Date().toISOString();
     return {
       data,
@@ -236,7 +253,9 @@ async function postWithCache(url, payload, maxAge = DEFAULT_POST_CACHE_MAX_AGE, 
   }
 
   const hasFreshCache = hasCachedData && age < maxAge;
-  if (hasFreshCache) {
+  // Don't use cache if it has empty items - likely stale/incorrect data
+  const hasValidCachedItems = cachedData?.items?.length > 0;
+  if (hasFreshCache && hasValidCachedItems) {
     return {
       data: cachedData,
       cacheStatus: 'cached',
@@ -245,13 +264,17 @@ async function postWithCache(url, payload, maxAge = DEFAULT_POST_CACHE_MAX_AGE, 
   }
 
   try {
-    const data = await executeDividendPost(url, payload);
+    const data = await executeDividendRequest(url, payload);
     const timestamp = new Date().toISOString();
-    try {
-      localStorage.setItem(cacheKey, JSON.stringify(data));
-      localStorage.setItem(metaKey, JSON.stringify({ timestamp }));
-    } catch {
-      // ignore storage write errors
+    // Only cache if we have actual data items to avoid caching empty responses
+    const hasItems = data?.items?.length > 0;
+    if (hasItems) {
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(data));
+        localStorage.setItem(metaKey, JSON.stringify({ timestamp }));
+      } catch {
+        // ignore storage write errors
+      }
     }
     return {
       data,
@@ -259,7 +282,8 @@ async function postWithCache(url, payload, maxAge = DEFAULT_POST_CACHE_MAX_AGE, 
       timestamp
     };
   } catch (error) {
-    if (hasCachedData) {
+    // Only fall back to cache if it has valid items
+    if (hasCachedData && cachedData?.items?.length > 0) {
       return {
         data: cachedData,
         cacheStatus: age < maxAge ? 'cached' : 'stale',
@@ -270,7 +294,7 @@ async function postWithCache(url, payload, maxAge = DEFAULT_POST_CACHE_MAX_AGE, 
   }
 }
 
-function clearPostCache(url, payload) {
+function clearFetchCache(url, payload) {
   const cacheKeyBase = buildCacheKeyBase(url, payload);
   try {
     localStorage.removeItem(`cache:data:${cacheKeyBase}`);
@@ -283,7 +307,8 @@ function clearPostCache(url, payload) {
 async function fetchDividendWithChunks(url, basePayload, stockIds, options = {}) {
   const { useCache = true } = options;
   if (!Array.isArray(stockIds) || stockIds.length === 0 || stockIds.length <= CHUNK_THRESHOLD) {
-    return postWithCache(url, basePayload, DEFAULT_POST_CACHE_MAX_AGE, { useCache });
+    const result = await fetchWithCache(url, basePayload, DEFAULT_CACHE_MAX_AGE, { useCache });
+    return result;
   }
 
   const base = basePayload ? { ...basePayload } : {};
@@ -291,9 +316,9 @@ async function fetchDividendWithChunks(url, basePayload, stockIds, options = {})
   const tasks = chunks.map(chunk => () => {
     const payload = { ...base, stock_ids: chunk };
     if (useCache) {
-      return postWithCache(url, payload, DEFAULT_POST_CACHE_MAX_AGE, { useCache: true });
+      return fetchWithCache(url, payload, DEFAULT_CACHE_MAX_AGE, { useCache: true });
     }
-    return postWithCache(url, payload, DEFAULT_POST_CACHE_MAX_AGE, { useCache: false });
+    return fetchWithCache(url, payload, DEFAULT_CACHE_MAX_AGE, { useCache: false });
   });
   const responses = await runTaskPool(tasks, CONCURRENCY);
 
@@ -445,6 +470,46 @@ export async function fetchDividendsByYears(years, countries, options = {}) {
   };
 }
 
+// Clear all dividend-related localStorage cache entries that have empty items
+export function clearEmptyDividendCaches() {
+  try {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('cache:data:')) {
+        try {
+          const value = localStorage.getItem(key);
+          if (value) {
+            const parsed = JSON.parse(value);
+            // Remove if items is empty or doesn't exist
+            if (!parsed?.items?.length) {
+              keysToRemove.push(key);
+              // Also remove corresponding meta key
+              const metaKey = key.replace('cache:data:', 'cache:meta:');
+              keysToRemove.push(metaKey);
+            }
+          }
+        } catch {
+          // Remove invalid cache entries
+          keysToRemove.push(key);
+        }
+      }
+    }
+    keysToRemove.forEach(key => {
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // ignore
+      }
+    });
+    if (keysToRemove.length > 0) {
+      console.log('[dividendApi] Cleared', keysToRemove.length, 'empty/invalid cache entries');
+    }
+  } catch (e) {
+    console.warn('[dividendApi] Failed to clear empty caches:', e);
+  }
+}
+
 export function clearDividendsCache(years, countries, options = {}) {
   const { years: normalizedYears, countries: normalizedCountries } = buildFetchContext(years, countries);
 
@@ -474,11 +539,11 @@ export function clearDividendsCache(years, countries, options = {}) {
       const base = payload ? { ...payload } : {};
       const chunks = chunkArray(stockIdArray, CHUNK_SIZE);
       chunks.forEach(chunk => {
-        clearPostCache(url, { ...base, stock_ids: chunk });
+        clearFetchCache(url, { ...base, stock_ids: chunk });
       });
-      clearPostCache(url, payload);
+      clearFetchCache(url, payload);
     } else {
-      clearPostCache(url, payload);
+      clearFetchCache(url, payload);
     }
   });
 }

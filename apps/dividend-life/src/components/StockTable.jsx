@@ -33,6 +33,7 @@ export default function StockTable({
   monthHasValue,
   setMonthHasValue,
   showDividendYield,
+  showPerYield,
   currentMonth,
   monthlyIncomeGoal,
   showAllStocks,
@@ -96,6 +97,9 @@ export default function StockTable({
     if (currencyKey) {
       const cell = dividendTable[stockId]?.[idx]?.[currencyKey];
       if (!cell) return 0;
+      if (showPerYield) {
+        return parseFloat(cell.perYield) || 0;
+      }
       if (showDividendYield) {
         return parseFloat(cell.dividend_yield) || 0;
       }
@@ -104,12 +108,15 @@ export default function StockTable({
     return activeCurrencies.reduce((sum, currency) => {
       const cell = dividendTable[stockId]?.[idx]?.[currency];
       if (!cell) return sum;
+      if (showPerYield) {
+        return sum + (parseFloat(cell.perYield) || 0);
+      }
       if (showDividendYield) {
         return sum + (parseFloat(cell.dividend_yield) || 0);
       }
       return sum + (Number(cell.dividend) || 0);
     }, 0);
-  }, [activeCurrencies, dividendTable, showDividendYield]);
+  }, [activeCurrencies, dividendTable, showDividendYield, showPerYield]);
 
   const deferredStocks = useDeferredValue(stocks);
 
@@ -275,9 +282,22 @@ export default function StockTable({
     }
   }, [showIdDropdown]);
 
+  const displayModeLabel = useMemo(() => {
+    if (showPerYield) {
+      return lang === 'zh' ? '月平均殖利率' : 'Monthly Avg Yield';
+    }
+    if (showDividendYield) {
+      return lang === 'zh' ? '殖利率' : 'Yield';
+    }
+    return lang === 'zh' ? '配息' : 'Dividends';
+  }, [showPerYield, showDividendYield, lang]);
+
   if (showInfoAxis) {
     return (
       <>
+        <div className="display-mode-indicator">
+          {lang === 'zh' ? '顯示模式' : 'Display Mode'}: <strong>{lang === 'zh' ? '資訊' : 'Info'}</strong>
+        </div>
         <div className="table-responsive" ref={tableContainerRef}>
           <table className="table table-bordered table-striped">
           <thead>
@@ -343,6 +363,9 @@ export default function StockTable({
 
   return (
     <>
+      <div className="display-mode-indicator">
+        {lang === 'zh' ? '顯示模式' : 'Display Mode'}: <strong>{displayModeLabel}</strong>
+      </div>
       <div className="table-responsive" ref={tableContainerRef} style={tableScrollStyle}>
         <table className="table table-bordered table-striped" style={{ minWidth: 1380 }}>
         <thead>
@@ -494,6 +517,7 @@ export default function StockTable({
                     activeCurrencies={activeCurrencies}
                     currentMonth={currentMonth}
                     showDividendYield={showDividendYield}
+                    showPerYield={showPerYield}
                     lang={lang}
                     t={t}
                     freqNameMap={freqNameMap}
@@ -523,6 +547,7 @@ export default function StockTable({
                 activeCurrencies={activeCurrencies}
                 currentMonth={currentMonth}
                 showDividendYield={showDividendYield}
+                showPerYield={showPerYield}
                 lang={lang}
                 t={t}
                 freqNameMap={freqNameMap}
@@ -562,6 +587,7 @@ const StockRow = memo(function StockRow({
   activeCurrencies,
   currentMonth,
   showDividendYield,
+  showPerYield,
   lang,
   t,
   freqNameMap,
@@ -671,7 +697,12 @@ const StockRow = memo(function StockRow({
             : (hasPendingYield || hasPendingDividend)
               ? pendingText
               : '';
-          const displayVal = showDividendYield ? displayYield : displayDividend;
+          const displayPerYield = perYield > 0 ? `${perYield.toFixed(2)}%` : '';
+          const displayVal = showPerYield
+            ? displayPerYield
+            : showDividendYield
+              ? displayYield
+              : displayDividend;
           const tooltipLines = [];
           if (isDividendValid) {
             tooltipLines.push(
@@ -700,12 +731,12 @@ const StockRow = memo(function StockRow({
             freq || 12
           );
           const tooltip = `${tooltipLines.join('\n')}${extraInfo}`;
-          const monthMax = maxYieldPerMonth[currency]?.[idx] || 0;
+          const monthMaxArray = maxYieldPerMonth?.[currency];
+          const monthMax = Array.isArray(monthMaxArray) ? (monthMaxArray[idx] || 0) : 0;
           const shouldShowDiamond =
             perYield > 0 &&
-            (monthMax > 0
-              ? Math.abs(perYield - monthMax) < 1e-6
-              : true);
+            monthMax > 0 &&
+            Math.abs(perYield - monthMax) < 1e-6;
           return (
             <td
               key={`${stock.stock_id}-${idx}-${currency}`}

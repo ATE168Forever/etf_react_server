@@ -55,7 +55,8 @@ export async function parseJSONResponse(response, url) {
   }
 
   try {
-    return JSON.parse(body);
+    const parsed = JSON.parse(body);
+    return parsed;
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown parse error';
     throw new Error(

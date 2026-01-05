@@ -17,20 +17,23 @@ import CurrencyViewToggle from './components/CurrencyViewToggle';
 import './App.css';
 import appStyles from './App.module.css';
 import brandStyles from '@shared/components/BrandPage/BrandPage.module.css';
-import dividendLifeLogoDark from '@shared/assets/dividend-life.svg';
-import dividendLifeLogoLight from '@shared/assets/dividend-life-light.svg';
 import NLHelper from './NLHelper';
 import { API_HOST } from '../config';
 import { fetchWithCache } from './api';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
-import { fetchDividendsByYears, clearDividendsCache } from './dividendApi';
+import { fetchDividendsByYears, clearDividendsCache, clearEmptyDividendCaches } from './dividendApi';
 import { fetchStockList } from './stockApi';
 import useEffectOnce from './hooks/useEffectOnce';
 import { readTransactionHistory } from './utils/transactionStorage';
-import { summarizeInventory } from './utils/inventoryUtils';
+import { summarizeInventory, getPurchasedStockIds } from './utils/inventoryUtils';
+import {
+  DEFAULT_CURRENCY,
+  CURRENCY_NAME,
+  normalizeCurrency,
+  calcIncomeGoalInfo
+} from './utils/currencyUtils';
 
 const DEFAULT_MONTHLY_GOAL = 10000;
-const DEFAULT_CURRENCY = 'TWD';
 const REQUIRED_DIVIDEND_FIELDS = [
   'stock_id',
   'stock_name',
@@ -41,30 +44,16 @@ const REQUIRED_DIVIDEND_FIELDS = [
   'payment_date',
   'last_close_price',
 ];
-const CURRENCY_NAME_ZH = {
-  TWD: '台股配息',
-  USD: '美股股息'
-};
-const CURRENCY_NAME_EN = {
-  TWD: 'NT$ dividends',
-  USD: 'US$ dividends'
-};
-const CURRENCY_LABEL = {
-  TWD: 'NT$',
-  USD: 'US$'
-};
-
-const normalizeCurrency = (currency) => {
-  if (!currency) return DEFAULT_CURRENCY;
-  const upper = String(currency).toUpperCase();
-  if (upper === 'NTD' || upper === 'NT$') return 'TWD';
-  if (upper === 'US$') return 'USD';
-  return upper;
-};
 
 const CURRENT_YEAR = new Date().getFullYear();
 const PREVIOUS_YEAR = CURRENT_YEAR - 1;
-const ALLOWED_YEARS = [CURRENT_YEAR, PREVIOUS_YEAR];
+const NEXT_YEAR = CURRENT_YEAR + 1;
+const CURRENT_MONTH = new Date().getMonth(); // 0-11
+
+// If it's December (month 11), include next year in available years
+const ALLOWED_YEARS = CURRENT_MONTH === 11
+  ? [NEXT_YEAR, CURRENT_YEAR, PREVIOUS_YEAR]
+  : [CURRENT_YEAR, PREVIOUS_YEAR];
 
 const DEFAULT_WATCH_GROUPS = [
   {
@@ -80,16 +69,6 @@ const DEFAULT_WATCH_GROUPS = [
     ids: ['0056', '00878', '00919']
   }
 ];
-
-function calcIncomeGoalInfo(dividend, price, goal, freq = 12, lang = 'zh') {
-  if (!price || dividend <= 0 || freq <= 0) return '';
-  const annualDividend = dividend * freq;
-  const lotsNeeded = Math.ceil((goal * 12) / (annualDividend * 1000));
-  const cost = Math.round(lotsNeeded * 1000 * price).toLocaleString();
-  return lang === 'en'
-    ? `\nTo reach a monthly return of ${goal.toLocaleString()}, you need ${lotsNeeded} lots\nCost: ${cost}`
-    : `\n月報酬${goal.toLocaleString()}需: ${lotsNeeded}張\n成本: ${cost}元`;
-}
 
 const isChineseLanguage = (lang) => lang && lang.toLowerCase().startsWith('zh');
 
@@ -115,7 +94,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const [transactionHistory, setTransactionHistory] = useState([]);
   const [transactionHistoryLoaded, setTransactionHistoryLoaded] = useState(false);
   const [dividendScope, setDividendScope] = useState('purchased');
-  const [years, setYears] = useState([]);
+  const [years, setYears] = useState(ALLOWED_YEARS);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -140,8 +119,13 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   // Default to displaying both ex-dividend and payment dates
   const [calendarFilter, setCalendarFilter] = useState('both');
 
+  // Calendar month state (0-11)
+  const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
+
   // Toggle between showing dividend or dividend yield
   const [showDividendYield, setShowDividendYield] = useState(false);
+  // Toggle showing monthly average yield (perYield)
+  const [showPerYield, setShowPerYield] = useState(false);
   // Toggle axis between months and info categories
   const [showInfoAxis, setShowInfoAxis] = useState(false);
   // Monthly income goal input
@@ -177,6 +161,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const t = useMemo(() => (key) => translations[lang][key] || key, [lang]);
 
   useEffect(() => {
+    // Clear any empty/stale dividend caches on startup
+    clearEmptyDividendCaches();
     setTransactionHistory(readTransactionHistory());
     setTransactionHistoryLoaded(true);
   }, []);
@@ -221,16 +207,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   };
 
   const purchasedStockIds = useMemo(() => {
-    const { inventoryList } = summarizeInventory(transactionHistory);
-    const ids = inventoryList
-      .map(item => {
-        const raw = item?.stock_id;
-        return typeof raw === 'string' ? raw.trim() : raw ? String(raw).trim() : '';
-      })
-      .filter(Boolean);
-    const unique = Array.from(new Set(ids));
-    unique.sort((a, b) => a.localeCompare(b));
-    return unique;
+    return getPurchasedStockIds(transactionHistory);
   }, [transactionHistory]);
 
   useEffect(() => {
@@ -244,21 +221,14 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   useEffect(() => {
     const callUpdate = () => {
       const history = readTransactionHistory();
-      const { inventoryList } = summarizeInventory(history);
-      const purchasedIds = inventoryList
-        .map(item => {
-          const raw = item?.stock_id;
-          return typeof raw === 'string' ? raw.trim() : raw ? String(raw).trim() : '';
-        })
-        .filter(Boolean);
-      const uniquePurchased = Array.from(new Set(purchasedIds)).sort((a, b) => a.localeCompare(b));
+      const uniquePurchased = getPurchasedStockIds(history);
 
       fetch(`${API_HOST}/update_dividend`).finally(() => {
+        // Clear all dividend caches before reload
         clearDividendsCache();
-         clearDividendsCache(undefined, undefined, { stockIds: 'all' });
-         if (uniquePurchased.length) {
-           clearDividendsCache(undefined, undefined, { stockIds: uniquePurchased });
-         }
+        if (uniquePurchased.length) {
+          clearDividendsCache(undefined, undefined, { stockIds: uniquePurchased });
+        }
         window.location.reload();
       });
     };
@@ -292,7 +262,9 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     const idsKey = usePurchasedScope
       ? purchasedStockIds.join(',')
       : 'all';
-    const signature = `${dividendScope}|${idsKey}|${selectedYear}`;
+    // Fetch all ALLOWED_YEARS at once, not just selectedYear
+    const yearsKey = ALLOWED_YEARS.join(',');
+    const signature = `${dividendScope}|${idsKey}|${yearsKey}`;
     const skipMap = fetchSkipRef.current;
 
     if (skipMap.get(signature)) {
@@ -309,14 +281,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     const applyDividendResponse = (dividendData, meta) => {
       if (cancelled) return;
       const normalizedDividends = Array.isArray(dividendData) ? dividendData : [];
-      const selectedYearNumber = Number(selectedYearRef.current);
-      const filteredArr = normalizedDividends.filter(item => {
-        const rawDate = item?.dividend_date || item?.payment_date;
-        if (!rawDate) return false;
-        const yearValue = new Date(rawDate).getFullYear();
-        return Number.isFinite(yearValue) && yearValue === selectedYearNumber;
-      });
-      setData(filteredArr);
+      // Store all data without year filtering - filteredData useMemo will handle year filtering
+      setData(normalizedDividends);
 
       if (Array.isArray(meta) && meta.length) {
         const primaryMeta = meta.find(entry => entry.year === CURRENT_YEAR && entry.country === 'TW')
@@ -352,23 +318,29 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       setYears(yearList);
 
       const numericSelectedYear = Number(selectedYearRef.current);
-      if (availableYearSet.size > 0 && !availableYearSet.has(numericSelectedYear)) {
-        const sortedAvailableYears = Array.from(availableYearSet).sort((a, b) => b - a);
-        setSelectedYear(sortedAvailableYears[0]);
-      } else if (!yearList.includes(numericSelectedYear)) {
-        setSelectedYear(yearList[0]);
+      // Keep current year as default even if no data exists yet
+      // Only change if current selection is not in the allowed years list
+      if (!yearList.includes(numericSelectedYear)) {
+        // Prefer current year, fallback to first available year
+        const currentYear = new Date().getFullYear();
+        if (yearList.includes(currentYear)) {
+          setSelectedYear(currentYear);
+        } else {
+          setSelectedYear(yearList[0]);
+        }
       }
     };
 
     const load = async () => {
       try {
-        const { data: dividendData, meta } = await fetchDividendsByYears([selectedYear], undefined, {
+        // Fetch all ALLOWED_YEARS to get cross-year dividend data
+        const { data: dividendData, meta } = await fetchDividendsByYears(ALLOWED_YEARS, undefined, {
           stockIds: stockIdsParam,
           forceRefresh: dividendScope === 'purchased',
           fields: REQUIRED_DIVIDEND_FIELDS,
         });
         applyDividendResponse(dividendData, meta);
-      } catch (error) {
+      } catch {
         if (cancelled) return;
         if (API_HOST) {
           try {
@@ -409,7 +381,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       cancelled = true;
       skipMap.set(signature, false);
     };
-  }, [dividendScope, purchasedStockIds, selectedYear, transactionHistoryLoaded]);
+  }, [dividendScope, purchasedStockIds, transactionHistoryLoaded]);
 
   useEffect(() => {
     setUpcomingAlerts(getTomorrowDividendAlerts(data));
@@ -540,35 +512,52 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     }
   };
 
-  const {
-    filteredData,
-    stocks,
-    stockOptions,
-    dividendTable,
-    availableCurrencies,
-    stockCurrencyMap
-  } = useMemo(() => {
+  // Split the large useMemo into smaller, targeted memos for better performance
+  const filteredData = useMemo(() => {
     const arr = Array.isArray(data) ? data : [];
-    const filtered = arr
+    const yearNum = Number(selectedYear);
+    return arr
       .filter(item => {
-        const reference = item.dividend_date || item.payment_date;
-        if (!reference) return false;
-        const refDate = new Date(reference);
-        if (Number.isNaN(refDate.getTime())) return false;
-        return refDate.getFullYear() === Number(selectedYear);
+        // Use dividend_date (ex-dividend date) as the primary filter
+        // This determines which year the dividend "belongs to"
+        const divDate = item.dividend_date ? new Date(item.dividend_date) : null;
+        const payDate = item.payment_date ? new Date(item.payment_date) : null;
+
+        // If dividend_date exists, use it as the definitive year
+        if (divDate && !Number.isNaN(divDate.getTime())) {
+          return divDate.getFullYear() === yearNum;
+        }
+        // Only fall back to payment_date if dividend_date is not available
+        if (payDate && !Number.isNaN(payDate.getTime())) {
+          return payDate.getFullYear() === yearNum;
+        }
+        return false;
       })
       .map(item => ({
         ...item,
         currency: normalizeCurrency(item.currency)
       }));
+  }, [data, selectedYear]);
 
-    const stocks = [];
+  // Build inventory map for calculating actual dividend payouts
+  const inventoryMap = useMemo(() => {
+    const { inventoryList } = summarizeInventory(transactionHistory);
+    const map = {};
+    inventoryList.forEach(item => {
+      map[item.stock_id] = item.total_quantity || 0;
+    });
+    return map;
+  }, [transactionHistory]);
+
+  const { stocks, stockCurrencyMap } = useMemo(() => {
+    const stocksList = [];
     const stockMap = {};
     const stockCurrencySet = {};
-    filtered.forEach(item => {
+    // First add all stocks from filteredData (stocks with dividend data)
+    filteredData.forEach(item => {
       const key = `${item.stock_id}|${item.stock_name}`;
       if (!stockMap[key]) {
-        stocks.push({ stock_id: item.stock_id, stock_name: item.stock_name });
+        stocksList.push({ stock_id: item.stock_id, stock_name: item.stock_name });
         stockMap[key] = true;
       }
       if (!stockCurrencySet[item.stock_id]) {
@@ -576,24 +565,66 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       }
       stockCurrencySet[item.stock_id].add(item.currency || DEFAULT_CURRENCY);
     });
+    // Also include all purchased stocks even if they don't have dividend data for this year
+    if (dividendScope === 'purchased') {
+      const { inventoryList } = summarizeInventory(transactionHistory);
+      inventoryList.forEach(item => {
+        const stockId = item.stock_id;
+        const stockName = item.stock_name || '';
+        const key = `${stockId}|${stockName}`;
+        // Only add if not already in the list
+        if (!stockMap[key] && !Object.keys(stockMap).some(k => k.startsWith(`${stockId}|`))) {
+          stocksList.push({ stock_id: stockId, stock_name: stockName });
+          stockMap[key] = true;
+        }
+      });
+    }
+    const currencyMap = {};
+    Object.keys(stockCurrencySet).forEach(id => {
+      currencyMap[id] = Array.from(stockCurrencySet[id]);
+    });
+    return { stocks: stocksList, stockCurrencyMap: currencyMap };
+  }, [filteredData, dividendScope, transactionHistory]);
 
-    const stockOptions = stocks.map(s => ({
+  const stockOptions = useMemo(() => {
+    return stocks.map(s => ({
       value: s.stock_id,
       label: `${s.stock_id}`
     }));
+  }, [stocks]);
 
-    const dividendTable = {};
-    filtered.forEach(item => {
-      const referenceDateRaw = item.dividend_date || item.payment_date;
-      const referenceDate = referenceDateRaw ? new Date(referenceDateRaw) : null;
-      if (!referenceDate || Number.isNaN(referenceDate.getTime())) {
+  const dividendTable = useMemo(() => {
+    const table = {};
+    const yearNum = Number(selectedYear);
+    filteredData.forEach(item => {
+      // Use dividend_date as primary reference for determining which year the dividend belongs to
+      const divDate = item.dividend_date ? new Date(item.dividend_date) : null;
+      const payDate = item.payment_date ? new Date(item.payment_date) : null;
+
+      // Determine the reference date (prefer dividend_date)
+      let referenceDate = null;
+      let referenceDateRaw = null;
+      if (divDate && !Number.isNaN(divDate.getTime())) {
+        referenceDate = divDate;
+        referenceDateRaw = item.dividend_date;
+      } else if (payDate && !Number.isNaN(payDate.getTime())) {
+        referenceDate = payDate;
+        referenceDateRaw = item.payment_date;
+      }
+
+      if (!referenceDate) {
+        return;
+      }
+      // Skip items where dividend_date year doesn't match selected year
+      // This ensures 2025-12 ex-dividend items don't appear in 2026 table
+      if (referenceDate.getFullYear() !== yearNum) {
         return;
       }
       const month = referenceDate.getMonth();
       const currency = item.currency || DEFAULT_CURRENCY;
-      if (!dividendTable[item.stock_id]) dividendTable[item.stock_id] = {};
-      if (!dividendTable[item.stock_id][month]) dividendTable[item.stock_id][month] = {};
-      const cell = dividendTable[item.stock_id][month][currency] || {
+      if (!table[item.stock_id]) table[item.stock_id] = {};
+      if (!table[item.stock_id][month]) table[item.stock_id][month] = {};
+      const cell = table[item.stock_id][month][currency] || {
         dividend: 0,
         dividend_yield: 0,
         hasPendingDividend: false,
@@ -641,16 +672,17 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         cell.payment_date = item.payment_date;
       }
 
-      dividendTable[item.stock_id][month][currency] = cell;
+      table[item.stock_id][month][currency] = cell;
     });
 
-    Object.keys(dividendTable).forEach(id => {
-      const months = Object.keys(dividendTable[id]).map(Number).sort((a, b) => a - b);
+    // Calculate perYield based on freqMap
+    Object.keys(table).forEach(id => {
+      const months = Object.keys(table[id]).map(Number).sort((a, b) => a - b);
       let prev = null;
       const rawFreq = Number(freqMap[id]);
       const freq = [1, 2, 4, 6, 12, 52].includes(rawFreq) ? rawFreq : 1;
       months.forEach(m => {
-        const monthEntry = dividendTable[id][m];
+        const monthEntry = table[id][m];
         let span;
         if (prev === null) {
           span = freq ? 12 / freq : 1;
@@ -668,12 +700,16 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       });
     });
 
-    const availableCurrenciesSet = new Set(filtered.map(item => item.currency || DEFAULT_CURRENCY));
-    if (availableCurrenciesSet.size === 0) {
-      availableCurrenciesSet.add(DEFAULT_CURRENCY);
+    return table;
+  }, [filteredData, freqMap, selectedYear]);
+
+  const availableCurrencies = useMemo(() => {
+    const currenciesSet = new Set(filteredData.map(item => item.currency || DEFAULT_CURRENCY));
+    if (currenciesSet.size === 0) {
+      currenciesSet.add(DEFAULT_CURRENCY);
     }
     const order = { TWD: 0, USD: 1 };
-    const availableCurrencies = Array.from(availableCurrenciesSet).sort((a, b) => {
+    return Array.from(currenciesSet).sort((a, b) => {
       const aOrder = order[a] ?? 99;
       const bOrder = order[b] ?? 99;
       if (aOrder !== bOrder) {
@@ -681,14 +717,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       }
       return a.localeCompare(b);
     });
-
-    const stockCurrencyMap = {};
-    Object.keys(stockCurrencySet).forEach(id => {
-      stockCurrencyMap[id] = Array.from(stockCurrencySet[id]);
-    });
-
-    return { filteredData: filtered, stocks, stockOptions, dividendTable, availableCurrencies, stockCurrencyMap };
-  }, [data, selectedYear, freqMap]);
+  }, [filteredData]);
 
   const hasTwd = availableCurrencies.includes('TWD');
   const hasUsd = availableCurrencies.includes('USD');
@@ -723,20 +752,15 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   }, [availableCurrencies, viewMode]);
 
   const viewDescriptionContent = useMemo(() => {
+    const langKey = lang === 'en' ? 'en' : 'zh';
     if (activeCurrencies.length === 1) {
       const currency = activeCurrencies[0];
-      return lang === 'en'
-        ? CURRENCY_NAME_EN[currency] || `${currency} dividends`
-        : CURRENCY_NAME_ZH[currency] || `${currency} 股息`;
+      return CURRENCY_NAME[langKey]?.[currency] || `${currency} dividends`;
     }
-    const names = activeCurrencies.map(currency => (
-      lang === 'en'
-        ? (currency === 'USD' ? 'US$ dividends' : 'NT$ dividends')
-        : (currency === 'USD' ? '美股股息' : '台股配息')
-    ));
-    return lang === 'en'
-      ? names.join(' & ')
-      : names.join('、');
+    const names = activeCurrencies.map(currency =>
+      CURRENCY_NAME[langKey]?.[currency] || `${currency} dividends`
+    );
+    return lang === 'en' ? names.join(' & ') : names.join('、');
   }, [activeCurrencies, lang]);
 
   const viewLabelPrefix = lang === 'en' ? 'Showing:' : '顯示：';
@@ -746,6 +770,18 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
 
   const filteredStocks = stocks.filter(stock => {
     if (selectedStockIds.length && !selectedStockIds.includes(stock.stock_id)) return false;
+
+    // Check if this is a purchased stock with no dividend data
+    const isPurchasedStock = dividendScope === 'purchased' && purchasedStockIds.includes(stock.stock_id);
+    const hasDividendData = Boolean(dividendTable[stock.stock_id]);
+
+    // Check if any month filter is active
+    const hasMonthFilter = monthHasValue.some(v => v);
+
+    // Show purchased stocks without dividend data only if no month filter is active
+    if (isPurchasedStock && !hasDividendData) {
+      return !hasMonthFilter;
+    }
 
     if (viewMode !== 'BOTH') {
       const stockCurrencies = stockCurrencyMap[stock.stock_id] || [];
@@ -847,7 +883,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
             const cell = monthEntry?.[currency];
             if (!cell) return false;
             const y = cell.perYield || 0;
-            return y === (maxYieldPerMonth[currency]?.[m] || 0) && y > 0;
+            const monthMax = maxYieldPerMonth[currency]?.[m] || 0;
+            return y > 0 && monthMax > 0 && Math.abs(y - monthMax) < 1e-6;
           });
           if (hasDiamond) return true;
         }
@@ -867,14 +904,18 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     yieldCount[stock.stock_id] = {};
     latestPrice[stock.stock_id] = { price: null, date: null };
     latestYield[stock.stock_id] = { yield: null, date: null };
+    const shares = inventoryMap[stock.stock_id] || 0;
+    // Only process data from dividendTable (which is already year-filtered)
+    const stockTable = dividendTable[stock.stock_id];
+    if (!stockTable) return; // No dividend data for this stock in selected year
     for (let m = 0; m < 12; m++) {
-      const monthEntry = dividendTable[stock.stock_id]?.[m];
+      const monthEntry = stockTable[m];
       if (!monthEntry) continue;
       currenciesForTotals.forEach(currency => {
         const cell = monthEntry?.[currency];
         if (!cell) return;
-        const dividendTotal = Number(cell.dividend);
-        const val = Number.isFinite(dividendTotal) ? dividendTotal : 0;
+        const dividendPerShare = Number(cell.dividend);
+        const val = Number.isFinite(dividendPerShare) ? dividendPerShare * shares : 0;
         const yValRaw = Number(cell.dividend_yield);
         const yVal = Number.isFinite(yValRaw) ? yValRaw : 0;
         totalPerStock[stock.stock_id][currency] = (totalPerStock[stock.stock_id][currency] || 0) + val;
@@ -884,15 +925,15 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         }
         const lastClose = Number(cell.last_close_price);
         const safeLastClose = Number.isFinite(lastClose) ? lastClose : cell.last_close_price ?? null;
-        const cellDateRaw = cell.reference_date || cell.dividend_date || cell.payment_date || null;
-        const cellDate = cellDateRaw ? new Date(cellDateRaw) : null;
+        const priceDateRaw = cell.reference_date || cell.dividend_date || cell.payment_date || null;
+        const priceDate = priceDateRaw ? new Date(priceDateRaw) : null;
         const existingDate = latestPrice[stock.stock_id].date ? new Date(latestPrice[stock.stock_id].date) : null;
-        if (!existingDate || (cellDate && cellDate > existingDate)) {
-          latestPrice[stock.stock_id] = { price: safeLastClose, date: cellDateRaw };
+        if (!existingDate || (priceDate && priceDate > existingDate)) {
+          latestPrice[stock.stock_id] = { price: safeLastClose, date: priceDateRaw };
         }
         const existingYieldDate = latestYield[stock.stock_id].date ? new Date(latestYield[stock.stock_id].date) : null;
-        if (!existingYieldDate || (cellDate && cellDate > existingYieldDate)) {
-          latestYield[stock.stock_id] = { yield: yVal, date: cellDateRaw };
+        if (!existingYieldDate || (priceDate && priceDate > existingYieldDate)) {
+          latestYield[stock.stock_id] = { yield: yVal, date: priceDateRaw };
         }
       });
     }
@@ -1144,6 +1185,10 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                       events={filteredCalendarEvents}
                       showTotals={false}
                       receivableAsPerShare
+                      availableYears={years}
+                      onYearChange={setSelectedYear}
+                      month={calendarMonth}
+                      onMonthChange={setCalendarMonth}
                     />
                   </>
                 )}
@@ -1156,14 +1201,13 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                     <DisplayDropdown
                       toggleDividendYield={() => setShowDividendYield(v => !v)}
                       showDividendYield={showDividendYield}
+                      togglePerYield={() => setShowPerYield(v => !v)}
+                      showPerYield={showPerYield}
                       toggleAxis={() => setShowInfoAxis(v => !v)}
                       showInfoAxis={showInfoAxis}
                       onClose={() => setShowDisplays(false)}
                     />
                   )}
-                {/* </div> */}
-  
-                {/* <div className={appStyles.tableHeader}> */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
                     <button onClick={handleResetFilters}>
                       {lang === 'en' ? 'Reset All Filters' : '重置所有篩選'}
@@ -1225,6 +1269,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                   monthHasValue={monthHasValue}
                   setMonthHasValue={setMonthHasValue}
                   showDividendYield={showDividendYield}
+                  showPerYield={showPerYield}
                   currentMonth={currentMonth}
                   monthlyIncomeGoal={monthlyIncomeGoal}
                   showAllStocks={showAllStocks}
@@ -1247,7 +1292,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         {tab === 'mydividend' && (
           <UserDividendsTab
             allDividendData={data}
-            selectedYear={selectedYear}
+            availableYears={years}
           />
         )}
         {tab === 'about' && <AboutTab />}

@@ -27,32 +27,46 @@ export function transactionsToCsv(list) {
 }
 
 export function transactionsFromCsv(text) {
-  const lines = text.trim().split(/\r?\n/);
+  // Remove BOM if present (handles UTF-8 BOM from different platforms)
+  let cleanText = text;
+  if (cleanText.charCodeAt(0) === 0xFEFF) {
+    cleanText = cleanText.slice(1);
+  }
+  // Also remove the BOM character if it appears as a string
+  cleanText = cleanText.replace(/^\uFEFF/, '');
+
+  // Normalize line endings and trim
+  cleanText = cleanText.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  const lines = cleanText.split('\n');
   if (lines.length <= 1) return [];
-  const header = lines[0].split(',');
+
+  // Parse header and clean it
+  const header = lines[0].split(',').map(h => h.trim());
   const hasName = header.includes('stock_name');
   const rows = lines.slice(1);
+
   return rows.filter(line => line.trim()).map(line => {
-    const parts = line.split(',');
+    const parts = line.split(',').map(p => p.trim());
     if (hasName) {
       const [stock_id, stock_name, date, quantity, price, type] = parts;
       return {
         stock_id: decodeCsvCode(stock_id),
         stock_name: stock_name || '',
-        date,
+        date: date || '',
         quantity: Number(quantity),
         price: price ? Number(price) : '',
-        type
+        type: type || ''
       };
     }
     const [stock_id, date, quantity, price, type] = parts;
     return {
       stock_id: decodeCsvCode(stock_id),
       stock_name: '',
-      date,
+      date: date || '',
       quantity: Number(quantity),
       price: price ? Number(price) : '',
-      type
+      type: type || ''
     };
   });
 }

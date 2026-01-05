@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { API_HOST } from '../config';
 import { fetchWithCache } from './api';
 import { fetchDividendsByYears } from './dividendApi';
 import { useLanguage } from './i18n';
 import { readTransactionHistory } from './utils/transactionStorage';
-import { summarizeInventory } from './utils/inventoryUtils';
+import { summarizeInventory, getPurchasedStockIds } from './utils/inventoryUtils';
 import { loadInvestmentGoals } from './utils/investmentGoalsStorage';
 import InvestmentGoalCard from './components/InvestmentGoalCard';
 import {
@@ -17,6 +17,7 @@ import {
   DIVIDEND_EXCLUSION_EVENT
 } from './utils/dividendExclusions';
 import { getFeatureUpdates } from './featureUpdates';
+import useStorageListener from './hooks/useStorageListener';
 
 const VIEWBOX_WIDTH = 720;
 const VIEWBOX_HEIGHT = 280;
@@ -29,7 +30,6 @@ const TEXT_COLOR = 'var(--color-text-muted, #a3aed0)';
 function DividendChart({
   data,
   labels,
-  currency,
   heading,
   t,
   lang,
@@ -37,6 +37,17 @@ function DividendChart({
   onSelect,
   chartRef
 }) {
+  const locale = lang === 'en' ? 'en-US' : 'zh-TW';
+  const numberFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat(locale, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }),
+    [locale],
+  );
+  const formatValue = (value) => numberFormatter.format(value);
+
   const totalsArray = Array.isArray(data?.totals)
     ? data.totals.slice(0, 12)
     : [];
@@ -86,17 +97,6 @@ function DividendChart({
   const linePath = points
     .map((point, idx) => `${idx === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
     .join(' ');
-
-  const locale = lang === 'en' ? 'en-US' : 'zh-TW';
-  const numberFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat(locale, {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      }),
-    [locale],
-  );
-  const formatValue = (value) => numberFormatter.format(value);
 
   return (
     <div className="dividend-chart-wrapper">
@@ -272,59 +272,16 @@ export default function HomeTab() {
     setInventoryLoaded(true);
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-
-    const refresh = () => {
-      setDividendExclusions(loadDividendExclusions());
-    };
-
-    const handleStorage = (event) => {
-      if (event.key && event.key !== DIVIDEND_EXCLUSION_STORAGE_KEY) {
-        return;
-      }
-      refresh();
-    };
-
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener(DIVIDEND_EXCLUSION_EVENT, refresh);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener(DIVIDEND_EXCLUSION_EVENT, refresh);
-    };
+  const refreshExclusions = useCallback(() => {
+    setDividendExclusions(loadDividendExclusions());
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-    const refresh = () => {
-      setDividendExclusions(loadDividendExclusions());
-    };
-    const handleStorage = (event) => {
-      if (event.key && event.key !== DIVIDEND_EXCLUSION_STORAGE_KEY) {
-        return;
-      }
-      refresh();
-    };
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener(DIVIDEND_EXCLUSION_EVENT, refresh);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener(DIVIDEND_EXCLUSION_EVENT, refresh);
-    };
-  }, []);
+  useStorageListener(DIVIDEND_EXCLUSION_STORAGE_KEY, DIVIDEND_EXCLUSION_EVENT, refreshExclusions);
 
   useEffect(() => {
     if (!inventoryLoaded) return;
     let cancelled = false;
-    const inventory = Array.isArray(goalSummary.inventoryList) ? goalSummary.inventoryList : [];
-    const purchasedIds = Array.from(new Set(
-      inventory
-        .map(item => {
-          const raw = item?.stock_id;
-          return typeof raw === 'string' ? raw.trim() : raw ? String(raw).trim() : '';
-        })
-        .filter(Boolean)
-    ));
+    const purchasedIds = getPurchasedStockIds(transactionHistory);
     const stockIdsOption = purchasedIds.length ? purchasedIds : 'all';
 
     fetchDividendsByYears(undefined, undefined, { stockIds: stockIdsOption })
@@ -342,7 +299,7 @@ export default function HomeTab() {
     return () => {
       cancelled = true;
     };
-  }, [goalSummary.inventoryList, inventoryLoaded]);
+  }, [transactionHistory, inventoryLoaded]);
 
   const dividendSummary = useMemo(
     () => calculateDividendSummary({

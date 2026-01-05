@@ -1,7 +1,12 @@
 export const CURRENT_YEAR = new Date().getFullYear();
 export const PREVIOUS_YEAR = CURRENT_YEAR - 1;
+export const NEXT_YEAR = CURRENT_YEAR + 1;
+export const CURRENT_MONTH = new Date().getMonth(); // 0-11
 
-export const DIVIDEND_YEARS = [CURRENT_YEAR, PREVIOUS_YEAR];
+// If it's December (month 11), include next year in available years
+export const DIVIDEND_YEARS = CURRENT_MONTH === 11
+  ? [NEXT_YEAR, CURRENT_YEAR, PREVIOUS_YEAR]
+  : [CURRENT_YEAR, PREVIOUS_YEAR];
 
 export function normalizeDividendResponse(payload) {
   if (Array.isArray(payload)) return payload;

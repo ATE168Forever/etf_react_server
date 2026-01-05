@@ -20,7 +20,8 @@ import DataDropdown from './components/DataDropdown';
 import styles from './InventoryTab.module.css';
 import { useLanguage } from './i18n';
 import InvestmentGoalCard from './components/InvestmentGoalCard';
-import { summarizeInventory } from './utils/inventoryUtils';
+import { summarizeInventory, getPurchasedStockIds } from './utils/inventoryUtils';
+import { SHARES_PER_LOT } from './utils/currencyUtils';
 import { loadInvestmentGoals, saveInvestmentGoals } from './utils/investmentGoalsStorage';
 import {
   calculateDividendSummary,
@@ -36,7 +37,6 @@ import {
 
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
-const SHARES_PER_LOT = 1000;
 const DEFAULT_GOAL_TYPE = 'annual';
 
 function getToday() {
@@ -125,7 +125,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         };
       })
     : [];
-  const dividendData = Array.isArray(allDividendData) ? allDividendData : [];
+  const dividendData = useMemo(() => Array.isArray(allDividendData) ? allDividendData : [], [allDividendData]);
   const dividendCacheInfo = incomingDividendCacheInfo || null;
   const [goalForm, setGoalForm] = useState(() => ({
     name: initialGoals.goalName ? String(initialGoals.goalName) : '',

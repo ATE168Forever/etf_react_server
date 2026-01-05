@@ -73,6 +73,25 @@ export function summarizeInventory(transactionHistory, stockList = [], latestPri
   };
 }
 
+/**
+ * Extract unique purchased stock IDs from transaction history.
+ * Filters to only include stocks with positive inventory.
+ * @param {Array} transactionHistory - Array of transaction records
+ * @returns {string[]} - Sorted array of unique stock IDs
+ */
+export function getPurchasedStockIds(transactionHistory) {
+  const { inventoryList } = summarizeInventory(transactionHistory);
+  const ids = inventoryList
+    .map(item => {
+      const raw = item?.stock_id;
+      return typeof raw === 'string' ? raw.trim() : raw ? String(raw).trim() : '';
+    })
+    .filter(Boolean);
+  const unique = Array.from(new Set(ids));
+  unique.sort((a, b) => a.localeCompare(b));
+  return unique;
+}
+
 export function calculateMonthlyContribution(transactionHistory, referenceDate = new Date()) {
   const year = referenceDate.getFullYear();
   const month = String(referenceDate.getMonth() + 1).padStart(2, '0');

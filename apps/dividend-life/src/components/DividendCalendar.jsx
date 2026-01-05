@@ -48,13 +48,21 @@ export default function DividendCalendar({
   year,
   events,
   showTotals = true,
-  receivableAsPerShare = false
+  receivableAsPerShare = false,
+  availableYears = [],
+  onYearChange = null,
+  month: controlledMonth = null,
+  onMonthChange = null,
 }) {
   const timeZone = 'Asia/Taipei';
   const nowStr = new Date().toLocaleDateString('en-CA', { timeZone });
-  const [month, setMonth] = useState(Number(nowStr.slice(5, 7)) - 1);
+  const [internalMonth, setInternalMonth] = useState(Number(nowStr.slice(5, 7)) - 1);
   const [expandedDates, setExpandedDates] = useState({});
   const todayStr = nowStr;
+
+  // Use controlled month if provided, otherwise use internal state
+  const month = controlledMonth !== null ? controlledMonth : internalMonth;
+  const setMonth = onMonthChange || setInternalMonth;
 
   const { lang, t } = useLanguage();
   const MONTH_NAMES = lang === 'zh'
@@ -110,8 +118,29 @@ export default function DividendCalendar({
     weeks.push(week);
   }
 
-  const prevMonth = () => setMonth(m => (m === 0 ? 11 : m - 1));
-  const nextMonth = () => setMonth(m => (m === 11 ? 0 : m + 1));
+  const prevMonth = () => {
+    if (month === 0) {
+      const prevYear = year - 1;
+      if (onYearChange && availableYears.includes(prevYear)) {
+        onYearChange(prevYear);
+        setMonth(11);
+      }
+    } else {
+      setMonth(month - 1);
+    }
+  };
+
+  const nextMonth = () => {
+    if (month === 11) {
+      const nextYear = year + 1;
+      if (onYearChange && availableYears.includes(nextYear)) {
+        onYearChange(nextYear);
+        setMonth(0);
+      }
+    } else {
+      setMonth(month + 1);
+    }
+  };
 
 
   return (
