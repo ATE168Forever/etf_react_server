@@ -18,9 +18,9 @@ import {
 import {
     DEFAULT_CURRENCY,
     CURRENCY_SYMBOLS,
-    CURRENCY_NAME,
     normalizeCurrency
 } from './utils/currencyUtils';
+import useCurrencyView from './hooks/useCurrencyView';
 
 const MONTH_COL_WIDTH = 80;
 const DONUT_COLORS = [
@@ -386,36 +386,13 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
         });
     }, [normalizedDividendData]);
 
-    const hasTwd = availableCurrencies.includes('TWD');
-    const hasUsd = availableCurrencies.includes('USD');
-
-    const fallbackView = hasTwd && hasUsd
-        ? 'BOTH'
-        : hasTwd
-            ? 'TWD'
-            : hasUsd
-                ? 'USD'
-                : 'TWD';
-
-    const [viewMode, setViewMode] = useState(fallbackView);
-    const [hasUserSetViewMode, setHasUserSetViewMode] = useState(false);
-
-    useEffect(() => {
-        if (!hasUserSetViewMode) {
-            if (viewMode !== fallbackView) {
-                setViewMode(fallbackView);
-            }
-            return;
-        }
-        if ((viewMode === 'TWD' && !hasTwd) || (viewMode === 'USD' && !hasUsd) || (viewMode === 'BOTH' && !(hasTwd && hasUsd))) {
-            setViewMode(fallbackView);
-        }
-    }, [fallbackView, hasTwd, hasUsd, hasUserSetViewMode, viewMode]);
-
-    const handleViewModeChange = (mode) => {
-        setHasUserSetViewMode(true);
-        setViewMode(mode);
-    };
+    const {
+        viewMode,
+        hasTwd,
+        hasUsd,
+        activeCurrencies,
+        handleViewModeChange,
+    } = useCurrencyView({ availableCurrencies, lang });
 
     const stockCurrencyMap = useMemo(() => {
         const map = {};
@@ -439,16 +416,6 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
         stockMap[id] = stockNameMap[id] || info?.stock_name || '';
     });
     const myStocks = allRelevantStockIds.map(id => ({ stock_id: id, stock_name: stockMap[id] }));
-
-    const activeCurrencies = useMemo(() => {
-        if (viewMode === 'BOTH') {
-            return availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
-        }
-        if (availableCurrencies.includes(viewMode)) {
-            return [viewMode];
-        }
-        return availableCurrencies.length > 0 ? [availableCurrencies[0]] : [DEFAULT_CURRENCY];
-    }, [availableCurrencies, viewMode]);
 
     const activeCurrencyKey = useMemo(() => activeCurrencies.join('|'), [activeCurrencies]);
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { LanguageContext, translations } from './i18n';
 import InventoryTab from './InventoryTab';
 import UserDividendsTab from './UserDividendsTab';
@@ -24,11 +24,13 @@ import { getTomorrowDividendAlerts } from './utils/dividendUtils';
 import { fetchDividendsByYears, clearDividendsCache, clearEmptyDividendCaches } from './dividendApi';
 import { fetchStockList } from './stockApi';
 import useEffectOnce from './hooks/useEffectOnce';
+import useWatchGroups from './hooks/useWatchGroups';
+import useCurrencyView from './hooks/useCurrencyView';
+import useCalendarState from './hooks/useCalendarState';
 import { readTransactionHistory } from './utils/transactionStorage';
 import { summarizeInventory, getPurchasedStockIds } from './utils/inventoryUtils';
 import {
   DEFAULT_CURRENCY,
-  CURRENCY_NAME,
   normalizeCurrency,
   calcIncomeGoalInfo
 } from './utils/currencyUtils';
@@ -54,21 +56,6 @@ const CURRENT_MONTH = new Date().getMonth(); // 0-11
 const ALLOWED_YEARS = CURRENT_MONTH === 11
   ? [NEXT_YEAR, CURRENT_YEAR, PREVIOUS_YEAR]
   : [CURRENT_YEAR, PREVIOUS_YEAR];
-
-const DEFAULT_WATCH_GROUPS = [
-  {
-    name: '現金流導向（月月配息）',
-    ids: ['0056', '00878', '00919', '00731', '00918']
-  },
-  {
-    name: '穩健成長 + 配息',
-    ids: ['0056', '00878', '0050']
-  },
-  {
-    name: '簡化操作（季配息）',
-    ids: ['0056', '00878', '00919']
-  }
-];
 
 const isChineseLanguage = (lang) => lang && lang.toLowerCase().startsWith('zh');
 
@@ -102,25 +89,16 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const fetchSkipRef = useRef(new Map());
   const selectedYearRef = useRef(selectedYear);
 
-  // Toggle calendar visibility
-  const [showCalendar, setShowCalendar] = useState(() => {
-    const stored = localStorage.getItem('appShowCalendar');
-    return stored === null ? true : stored === 'true';
-  });
-  useEffect(() => {
-    localStorage.setItem('appShowCalendar', showCalendar);
-  }, [showCalendar]);
+  // Calendar state
+  const {
+    showCalendar, setShowCalendar,
+    calendarFilter, setCalendarFilter,
+    calendarMonth, setCalendarMonth,
+  } = useCalendarState();
 
   useEffect(() => {
     selectedYearRef.current = selectedYear;
   }, [selectedYear]);
-
-  // Filter which event types to show on calendar
-  // Default to displaying both ex-dividend and payment dates
-  const [calendarFilter, setCalendarFilter] = useState('both');
-
-  // Calendar month state (0-11)
-  const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
 
   // Toggle between showing dividend or dividend yield
   const [showDividendYield, setShowDividendYield] = useState(false);
@@ -135,10 +113,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     const [selectedStockIds, setSelectedStockIds] = useState([]);
     const [extraFilters, setExtraFilters] = useState({ minYield: '', freq: [], upcomingWithin: '', diamond: false, currencies: [] });
 
-  // Watch groups
-  const [watchGroups, setWatchGroups] = useState([]);
-  const [selectedGroup, setSelectedGroup] = useState('');
-  const [showGroupModal, setShowGroupModal] = useState(false);
+  // Display toggles
   const [showDisplays, setShowDisplays] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showAllStocks, setShowAllStocks] = useState(false);
@@ -167,10 +142,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     setTransactionHistoryLoaded(true);
   }, []);
 
-  const [editingGroupIndex, setEditingGroupIndex] = useState(null);
-  const [groupNameInput, setGroupNameInput] = useState('');
-  const [groupIdsInput, setGroupIdsInput] = useState('');
-
   // Month value existence filters
   const [monthHasValue, setMonthHasValue] = useState(Array(12).fill(false));
   const [freqMap, setFreqMap] = useState({});
@@ -178,28 +149,34 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
   const getIncomeGoalInfo = (dividend, price, goal, freq = 12) =>
     calcIncomeGoalInfo(dividend, price, goal, freq, lang);
-  const renderGroupName = (name) => {
-    const map = {
-      '現金流導向（月月配息）': lang === 'en' ? 'Cash Flow Focus (Monthly Dividends)' : '現金流導向（月月配息）',
-      '穩健成長 + 配息': lang === 'en' ? 'Steady Growth + Dividends' : '穩健成長 + 配息',
-      '簡化操作（季配息）': lang === 'en' ? 'Simplified Operation (Quarterly Dividends)' : '簡化操作（季配息）'
-    };
-    return map[name] || name;
-  };
-  const renderGroupOptionLabel = (group) => {
-    if (!group) return '';
-    const name = renderGroupName(group.name);
-    if (!group.ids || group.ids.length === 0) return name;
-    const ids = group.ids.join(', ');
-    return lang === 'en' ? `${name} (${ids})` : `${name}（${ids}）`;
-  };
-  const handleResetFilters = (keepIds = false) => {
+
+  const handleResetFilters = useCallback((keepIds = false) => {
       if (!keepIds) setSelectedStockIds([]);
       setMonthHasValue(Array(12).fill(false));
       setShowAllStocks(false);
       setExtraFilters({ minYield: '', freq: [], upcomingWithin: '', diamond: false, currencies: [] });
       setShowAdvancedFilters(false);
-  };
+  }, []);
+
+  // Watch groups hook
+  const {
+    watchGroups,
+    selectedGroup,
+    showGroupModal, setShowGroupModal,
+    editingGroupIndex,
+    groupNameInput, setGroupNameInput,
+    groupIdsInput, setGroupIdsInput,
+    isGroupModified,
+    renderGroupName,
+    renderGroupOptionLabel,
+    renderGroupIds,
+    handleGroupChange,
+    handleAddGroup,
+    handleEditGroup,
+    handleSaveGroup,
+    handleCancelEditGroup,
+    handleDeleteGroup,
+  } = useWatchGroups({ lang, setSelectedStockIds, handleResetFilters });
 
   const handleDividendScopeChange = (scope) => {
     setDividendScope(scope);
@@ -411,107 +388,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     };
   });
 
-  // Load default watch groups from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem('watchGroups');
-    if (stored) {
-      try {
-        setWatchGroups(JSON.parse(stored));
-      } catch {
-        setWatchGroups([]);
-      }
-    } else {
-      setWatchGroups(DEFAULT_WATCH_GROUPS);
-      localStorage.setItem('watchGroups', JSON.stringify(DEFAULT_WATCH_GROUPS));
-    }
-  }, []);
-
-  const saveGroups = (groups) => {
-    setWatchGroups(groups);
-    localStorage.setItem('watchGroups', JSON.stringify(groups));
-  };
-
-  const isGroupModified = (group) => {
-    const def = DEFAULT_WATCH_GROUPS.find(g => g.name === group.name);
-    if (!def) return true;
-    const sortedDef = [...def.ids].sort();
-    const sortedIds = [...group.ids].sort();
-    if (sortedDef.length !== sortedIds.length) return true;
-    return sortedIds.some((id, idx) => id !== sortedDef[idx]);
-  };
-
-  const renderGroupIds = (group) => {
-    const def = DEFAULT_WATCH_GROUPS.find(g => g.name === group.name);
-    const defSet = def ? new Set(def.ids) : new Set();
-    return group.ids.map((id, i) => (
-      <span key={id} style={!def || !defSet.has(id) ? { color: 'red' } : {}}>
-        {i > 0 && ', '}
-        {id}
-      </span>
-    ));
-  };
-
-  const handleGroupChange = (e) => {
-    const name = e.target.value;
-    handleResetFilters(true);
-    setSelectedGroup(name);
-    const group = watchGroups.find(g => g.name === name);
-    if (group) {
-      setSelectedStockIds(group.ids);
-    } else {
-      setSelectedStockIds([]);
-    }
-  };
-
-  const handleAddGroup = () => {
-    setEditingGroupIndex(-1);
-    setGroupNameInput('');
-    setGroupIdsInput('');
-  };
-
-  const handleEditGroup = (idx) => {
-    const group = watchGroups[idx];
-    setEditingGroupIndex(idx);
-    setGroupNameInput(group.name);
-    setGroupIdsInput(group.ids.join(','));
-  };
-
-  const handleSaveGroup = () => {
-    const idsArr = groupIdsInput.split(/[,\s]+/).filter(Boolean);
-    if (editingGroupIndex === -1) {
-      saveGroups([...watchGroups, { name: groupNameInput, ids: idsArr }]);
-    } else {
-      const group = watchGroups[editingGroupIndex];
-      const newGroups = [...watchGroups];
-      newGroups[editingGroupIndex] = { name: groupNameInput, ids: idsArr };
-      saveGroups(newGroups);
-      if (selectedGroup === group.name) {
-        setSelectedGroup(groupNameInput);
-        setSelectedStockIds(idsArr);
-      }
-    }
-    setEditingGroupIndex(null);
-    setGroupNameInput('');
-    setGroupIdsInput('');
-  };
-
-  const handleCancelEditGroup = () => {
-    setEditingGroupIndex(null);
-    setGroupNameInput('');
-    setGroupIdsInput('');
-  };
-
-  const handleDeleteGroup = (idx) => {
-    if (!window.confirm(lang === 'en' ? 'Delete this group?' : '確定刪除?')) return;
-    const group = watchGroups[idx];
-    const newGroups = watchGroups.filter((_, i) => i !== idx);
-    saveGroups(newGroups);
-    if (selectedGroup === group.name) {
-      setSelectedGroup('');
-      setSelectedStockIds([]);
-    }
-  };
-
   // Split the large useMemo into smaller, targeted memos for better performance
   const filteredData = useMemo(() => {
     const arr = Array.isArray(data) ? data : [];
@@ -719,49 +595,15 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     });
   }, [filteredData]);
 
-  const hasTwd = availableCurrencies.includes('TWD');
-  const hasUsd = availableCurrencies.includes('USD');
-  const fallbackView = hasTwd && hasUsd ? 'BOTH' : hasTwd ? 'TWD' : hasUsd ? 'USD' : 'TWD';
-  const [viewMode, setViewMode] = useState(fallbackView);
-  const [hasUserSetViewMode, setHasUserSetViewMode] = useState(false);
-  useEffect(() => {
-    if (!hasUserSetViewMode) {
-      if (viewMode !== fallbackView) {
-        setViewMode(fallbackView);
-      }
-      return;
-    }
-    if ((viewMode === 'TWD' && !hasTwd) || (viewMode === 'USD' && !hasUsd) || (viewMode === 'BOTH' && !(hasTwd && hasUsd))) {
-      setViewMode(fallbackView);
-    }
-  }, [fallbackView, hasTwd, hasUsd, hasUserSetViewMode, viewMode]);
-
-  const handleViewModeChange = (mode) => {
-    setHasUserSetViewMode(true);
-    setViewMode(mode);
-  };
-
-  const activeCurrencies = useMemo(() => {
-    if (viewMode === 'BOTH') {
-      return availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
-    }
-    if (availableCurrencies.includes(viewMode)) {
-      return [viewMode];
-    }
-    return availableCurrencies.length > 0 ? [availableCurrencies[0]] : [DEFAULT_CURRENCY];
-  }, [availableCurrencies, viewMode]);
-
-  const viewDescriptionContent = useMemo(() => {
-    const langKey = lang === 'en' ? 'en' : 'zh';
-    if (activeCurrencies.length === 1) {
-      const currency = activeCurrencies[0];
-      return CURRENCY_NAME[langKey]?.[currency] || `${currency} dividends`;
-    }
-    const names = activeCurrencies.map(currency =>
-      CURRENCY_NAME[langKey]?.[currency] || `${currency} dividends`
-    );
-    return lang === 'en' ? names.join(' & ') : names.join('、');
-  }, [activeCurrencies, lang]);
+  // Currency view hook
+  const {
+    viewMode,
+    hasTwd,
+    hasUsd,
+    activeCurrencies,
+    viewDescriptionContent,
+    handleViewModeChange,
+  } = useCurrencyView({ availableCurrencies, lang });
 
   const viewLabelPrefix = lang === 'en' ? 'Showing:' : '顯示：';
   const purchasedScopeLabel = lang === 'en' ? 'Purchased ETFs' : '已購買 ETF';
