@@ -4,20 +4,31 @@
 const { spawn } = require('node:child_process')
 const process = require('node:process')
 
-const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
+const isWin = process.platform === 'win32'
+const pnpmCommand = isWin ? 'pnpm.cmd' : 'pnpm'
+
 const runningProcesses = []
 let othersStarted = false
 let shuttingDown = false
 let conceptbReadyBuffer = ''
 const readinessTimeoutMs = 10000
+
 let readinessTimeout = setTimeout(() => {
   startOtherApps('conceptb-life did not report readiness in time. Starting remaining apps...')
 }, readinessTimeoutMs)
 
 function startProcess(name, args) {
-  const child = spawn(pnpmCommand, args, {
+  // ✅ Windows: 用 cmd.exe /c 來跑 pnpm.cmd（最穩，避開 spawn EINVAL）
+  // ✅ non-Windows: 直接 spawn pnpm
+  const command = isWin ? 'cmd.exe' : pnpmCommand
+  const commandArgs = isWin
+    ? ['/d', '/s', '/c', pnpmCommand, ...args]
+    : args
+
+  const child = spawn(command, commandArgs, {
     cwd: process.cwd(),
     env: process.env,
+    windowsHide: false,
     stdio: ['inherit', 'pipe', 'pipe'],
   })
 
@@ -69,9 +80,7 @@ function forwardOutput(name, text, stream) {
 }
 
 function checkConceptbReady() {
-  if (othersStarted) {
-    return
-  }
+  if (othersStarted) return
 
   if (/ready in/i.test(conceptbReadyBuffer) || /Local:\s*https?:\/\//i.test(conceptbReadyBuffer)) {
     conceptbReadyBuffer = ''
@@ -84,9 +93,7 @@ function checkConceptbReady() {
 }
 
 function shutdown(code) {
-  if (shuttingDown) {
-    return
-  }
+  if (shuttingDown) return
   shuttingDown = true
 
   for (const child of runningProcesses) {
@@ -111,9 +118,7 @@ process.on('SIGTERM', () => {
 startProcess('conceptb-life', ['run', 'dev:conceptb-life'])
 
 function startOtherApps(message) {
-  if (othersStarted) {
-    return
-  }
+  if (othersStarted) return
 
   othersStarted = true
   if (readinessTimeout) {
