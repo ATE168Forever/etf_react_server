@@ -17,6 +17,7 @@ import {
 } from './utils/dividendExclusions';
 import {
     DEFAULT_CURRENCY,
+    CURRENCY_NAME,
     CURRENCY_SYMBOLS,
     normalizeCurrency
 } from './utils/currencyUtils';
