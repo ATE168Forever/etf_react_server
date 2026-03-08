@@ -18,12 +18,23 @@ export default defineConfig({
     },
   },
   server: {
+    port: 5174,
+    strictPort: true,
     fs: {
       allow: [path.resolve(__dirname, '..')],
     },
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
       'Cross-Origin-Embedder-Policy': 'unsafe-none',
+    },
+    proxy: {
+      '/get_dividend': 'http://127.0.0.1:8001',
+      '/update_dividend': 'http://127.0.0.1:8001',
+      '/get_stock_list': 'http://127.0.0.1:8001',
+      '/site_stats': 'http://127.0.0.1:8001',
+      '/nl_query': 'http://127.0.0.1:8001',
+      '/get_returns': 'http://127.0.0.1:8001',
+      '/dividend_helper': 'http://127.0.0.1:8001',
     },
   },
   preview: {

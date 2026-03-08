@@ -9,8 +9,7 @@ import {
   saveTransactionHistory,
   getTransactionHistoryUpdatedAt
 } from './utils/transactionStorage';
-import { exportTransactionsToDrive, importTransactionsFromDrive } from './googleDrive';
-import { exportTransactionsToOneDrive, importTransactionsFromOneDrive } from './oneDrive';
+import { exportTransactionsToDrive, importTransactionsFromDrive, isDriveAuthenticated } from './googleDrive';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 import AddTransactionModal from './components/AddTransactionModal';
 import QuickPurchaseModal from './components/QuickPurchaseModal';
@@ -68,14 +67,17 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
   const [showQuickModal, setShowQuickModal] = useState(false);
   const [quickForm, setQuickForm] = useState([]);
   const fileInputRef = useRef(null);
-  const autoSaveRequestRef = useRef(0);
-  const autoSaveDirectoryHandleRef = useRef(null);
-  const autoSaveFileHandleRef = useRef(null);
+  const driveSaveRequestRef = useRef(0);
   const [cacheInfo, setCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
-  const [selectedDataSource, setSelectedDataSource] = useState('csv');
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
-  const [autoSaveState, setAutoSaveState] = useState({ status: 'idle', provider: 'csv' });
+  const [selectedDataSource, setSelectedDataSource] = useState(
+    () => {
+      const saved = localStorage.getItem('inventory_data_source');
+      return saved === 'googleDrive' ? 'googleDrive' : 'csv';
+    }
+  );
+  const [driveConnected, setDriveConnected] = useState(false);
+  const [driveStatus, setDriveStatus] = useState({ status: 'idle' });
   const [transactionHistoryUpdatedAt, setTransactionHistoryUpdatedAt] = useState(
     () => getTransactionHistoryUpdatedAt() ?? 0
   );
@@ -255,7 +257,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     setTransactionHistory(updatedHistory);
     setShowQuickModal(false);
     setQuickForm([]);
-    runAutoSave(updatedHistory);
+    if (selectedDataSource === 'googleDrive' && driveConnected) syncToDrive(updatedHistory);
   };
 
   const mapTransactionsWithStockNames = useCallback(
@@ -270,335 +272,95 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     [stockList]
   );
 
-  const ensurePermission = useCallback(async (handle, mode = 'readwrite') => {
-    if (!handle) return false;
-    if (!handle.queryPermission || !handle.requestPermission) {
-      return true;
-    }
-    const current = await handle.queryPermission({ mode });
-    if (current === 'granted') {
-      return true;
-    }
-    if (current === 'denied') {
-      return false;
-    }
-    const requested = await handle.requestPermission({ mode });
-    return requested === 'granted';
-  }, []);
 
-  const resetCsvAutoSaveHandles = useCallback(() => {
-    autoSaveDirectoryHandleRef.current = null;
-    autoSaveFileHandleRef.current = null;
-  }, []);
-
-  const maybeRestoreFromBackup = useCallback(
-    async provider => {
-      const localUpdatedAt = transactionHistoryUpdatedAt ?? getTransactionHistoryUpdatedAt() ?? 0;
-      try {
-        if (provider === 'csv') {
-          if (typeof window === 'undefined' || typeof window.showDirectoryPicker !== 'function') {
-            return null;
-          }
-
-          let directoryHandle = autoSaveDirectoryHandleRef.current;
-          if (!directoryHandle) {
-            directoryHandle = await window.showDirectoryPicker({ id: 'inventory-auto-save' });
-            autoSaveDirectoryHandleRef.current = directoryHandle;
-            autoSaveFileHandleRef.current = null;
-          }
-
-          if (!(await ensurePermission(directoryHandle, 'readwrite'))) {
-            resetCsvAutoSaveHandles();
-            return null;
-          }
-
-          let fileHandle = autoSaveFileHandleRef.current;
-          if (!fileHandle) {
-            try {
-              fileHandle = await directoryHandle.getFileHandle('inventory_backup.csv');
-            } catch (error) {
-              if (error?.name === 'NotFoundError' || error?.code === 'NotFoundError') {
-                return null;
-              }
-              throw error;
-            }
-            autoSaveFileHandleRef.current = fileHandle;
-          }
-
-          if (!(await ensurePermission(fileHandle, 'read'))) {
-            return null;
-          }
-
-          const file = await fileHandle.getFile();
-          const modifiedTime = Number.isFinite(file?.lastModified) ? file.lastModified : null;
-          if (modifiedTime && modifiedTime <= localUpdatedAt) {
-            return null;
-          }
-
-          const text = await file.text();
-          const imported = mapTransactionsWithStockNames(transactionsFromCsv(text));
-          if (!Array.isArray(imported) || imported.length === 0) {
-            return null;
-          }
-
-          setTransactionHistory(imported);
-          saveTransactionHistory(imported);
-          const timestamp = modifiedTime || Date.now();
-          setTransactionHistoryUpdatedAt(timestamp);
-
-          let relativePath = '';
-          if (typeof directoryHandle.resolve === 'function') {
-            try {
-              const segments = await directoryHandle.resolve(fileHandle);
-              if (Array.isArray(segments) && segments.length > 1) {
-                relativePath = segments.slice(0, -1).join('/');
-              }
-            } catch (resolveError) {
-              console.warn('Failed to resolve file path', resolveError);
-            }
-          }
-
-          const basePath = directoryHandle?.name ? String(directoryHandle.name) : '';
-          const combinedPath = relativePath ? `${basePath}/${relativePath}` : basePath;
-
-          setAutoSaveState({
-            status: 'success',
-            timestamp,
-            provider: 'csv',
-            location: {
-              type: 'fileSystem',
-              path: combinedPath,
-              filename: file?.name || 'inventory_backup.csv'
-            }
-          });
-
-          return imported;
-        }
-
-        if (provider === 'googleDrive') {
-          const result = await importTransactionsFromDrive({ includeMetadata: true });
-          const list = Array.isArray(result) ? result : result?.list;
-          if (!Array.isArray(list) || list.length === 0) {
-            return null;
-          }
-          const remoteModified =
-            !Array.isArray(result) && Number.isFinite(result?.modifiedTime) ? result.modifiedTime : null;
-          if (remoteModified && remoteModified <= localUpdatedAt) {
-            return null;
-          }
-          const imported = mapTransactionsWithStockNames(list);
-          if (imported.length === 0) {
-            return null;
-          }
-          setTransactionHistory(imported);
-          saveTransactionHistory(imported);
-          const timestamp = remoteModified || Date.now();
-          setTransactionHistoryUpdatedAt(timestamp);
-          setAutoSaveState({ status: 'success', timestamp, provider: 'googleDrive' });
-          return imported;
-        }
-
-        if (provider === 'oneDrive') {
-          const result = await importTransactionsFromOneDrive({ includeMetadata: true });
-          const list = Array.isArray(result) ? result : result?.list;
-          if (!Array.isArray(list) || list.length === 0) {
-            return null;
-          }
-          const remoteModified =
-            !Array.isArray(result) && Number.isFinite(result?.modifiedTime) ? result.modifiedTime : null;
-          if (remoteModified && remoteModified <= localUpdatedAt) {
-            return null;
-          }
-          const imported = mapTransactionsWithStockNames(list);
-          if (imported.length === 0) {
-            return null;
-          }
-          setTransactionHistory(imported);
-          saveTransactionHistory(imported);
-          const timestamp = remoteModified || Date.now();
-          setTransactionHistoryUpdatedAt(timestamp);
-          setAutoSaveState({ status: 'success', timestamp, provider: 'oneDrive' });
-          return imported;
-        }
-      } catch (error) {
-        console.error('Auto-save backup sync failed', error);
-      }
-      return null;
-    },
-    [
-      ensurePermission,
-      mapTransactionsWithStockNames,
-      transactionHistoryUpdatedAt,
-      resetCsvAutoSaveHandles
-    ]
-  );
-
-  const runAutoSave = useCallback(
-    async (list, options = {}) => {
-      const { provider: providerOverride, force = false } = options;
-      const provider = providerOverride || selectedDataSource;
-      if (!provider) return;
-      if (!autoSaveEnabled && !force) return;
-
+  const syncToDrive = useCallback(
+    async (list) => {
       const data = Array.isArray(list) ? list : transactionHistory;
       const requestId = Date.now();
-      autoSaveRequestRef.current = requestId;
-      setAutoSaveState({ status: 'saving', provider });
-
+      driveSaveRequestRef.current = requestId;
+      setDriveStatus({ status: 'syncing' });
       try {
-        let locationInfo;
-        if (provider === 'csv') {
-          const csvContent = transactionsToCsv(data);
-          if (typeof window === 'undefined') {
-            throw new Error('CSV auto-save requires a browser environment');
-          }
-
-          if (typeof window.showDirectoryPicker === 'function') {
-            let directoryHandle = autoSaveDirectoryHandleRef.current;
-            if (directoryHandle) {
-              const directoryPermission = await ensurePermission(directoryHandle, 'readwrite');
-              if (!directoryPermission) {
-                resetCsvAutoSaveHandles();
-                directoryHandle = null;
-              }
-            }
-
-            if (!directoryHandle) {
-              directoryHandle = await window.showDirectoryPicker({ id: 'inventory-auto-save' });
-              autoSaveDirectoryHandleRef.current = directoryHandle;
-              autoSaveFileHandleRef.current = null;
-            }
-
-            if (!(await ensurePermission(directoryHandle, 'readwrite'))) {
-              throw new Error('Permission denied for the selected directory');
-            }
-
-            let fileHandle = autoSaveFileHandleRef.current;
-            if (!fileHandle) {
-              fileHandle = await directoryHandle.getFileHandle('inventory_backup.csv', { create: true });
-              autoSaveFileHandleRef.current = fileHandle;
-            }
-
-            if (!(await ensurePermission(fileHandle, 'readwrite'))) {
-              throw new Error('Permission denied for the backup file');
-            }
-
-            const writable = await fileHandle.createWritable();
-            await writable.write(csvContent);
-            await writable.close();
-
-            let relativePath = '';
-            if (typeof directoryHandle.resolve === 'function') {
-              try {
-                const segments = await directoryHandle.resolve(fileHandle);
-                if (Array.isArray(segments) && segments.length > 1) {
-                  relativePath = segments.slice(0, -1).join('/');
-                }
-              } catch (resolveError) {
-                console.warn('Failed to resolve file path', resolveError);
-              }
-            }
-
-            const basePath = directoryHandle?.name ? String(directoryHandle.name) : '';
-            const combinedPath = relativePath ? `${basePath}/${relativePath}` : basePath;
-
-            locationInfo = {
-              type: 'fileSystem',
-              path: combinedPath,
-              filename: fileHandle?.name || 'inventory_backup.csv'
-            };
-          } else if (typeof window.showSaveFilePicker === 'function') {
-            let fileHandle = autoSaveFileHandleRef.current;
-            if (!fileHandle) {
-              fileHandle = await window.showSaveFilePicker({
-                suggestedName: 'inventory_backup.csv',
-                types: [{ description: 'CSV Files', accept: { 'text/csv': ['.csv'] } }]
-              });
-              autoSaveFileHandleRef.current = fileHandle;
-            }
-
-            if (!(await ensurePermission(fileHandle, 'readwrite'))) {
-              throw new Error('Permission denied for the selected file');
-            }
-
-            const writable = await fileHandle.createWritable();
-            await writable.write(csvContent);
-            await writable.close();
-
-            locationInfo = {
-              type: 'fileSystem',
-              filename: fileHandle?.name || 'inventory_backup.csv'
-            };
-          } else {
-            throw new Error('This browser does not support saving files to the local filesystem');
-          }
-        } else if (provider === 'googleDrive') {
-          await exportTransactionsToDrive(data);
-        } else if (provider === 'oneDrive') {
-          await exportTransactionsToOneDrive(data);
-        } else {
-          throw new Error(`Unsupported auto-save provider: ${provider}`);
-        }
-
-        if (autoSaveRequestRef.current === requestId) {
-          setAutoSaveState({
-            status: 'success',
-            timestamp: Date.now(),
-            provider,
-            ...(locationInfo ? { location: locationInfo } : {})
-          });
+        await exportTransactionsToDrive(data);
+        if (driveSaveRequestRef.current === requestId) {
+          setDriveStatus({ status: 'synced', timestamp: Date.now() });
         }
       } catch (error) {
-        console.error('Auto save failed', error);
-        if (provider === 'csv') {
-          resetCsvAutoSaveHandles();
-        }
-        if (autoSaveRequestRef.current === requestId) {
-          setAutoSaveState({ status: 'error', timestamp: Date.now(), provider });
+        console.error('Drive auto-save failed', error);
+        if (driveSaveRequestRef.current === requestId) {
+          setDriveStatus({ status: 'error', timestamp: Date.now() });
         }
       }
     },
-    [
-      autoSaveEnabled,
-      ensurePermission,
-      resetCsvAutoSaveHandles,
-      selectedDataSource,
-      transactionHistory
-    ]
+    [transactionHistory]
+  );
+
+  const fetchFromDriveIfNewer = useCallback(
+    async ({ silent = false } = {}) => {
+      const localUpdatedAt = getTransactionHistoryUpdatedAt() ?? 0;
+      try {
+        const result = await importTransactionsFromDrive({ includeMetadata: true, silent });
+
+        if (result === null) {
+          // silent mode: null means auth failed silently (no popup), treat as not connected
+          if (silent) return false;
+          // non-silent: auth succeeded but no backup file on Drive yet → already connected, ready to save
+          setDriveConnected(true);
+          setDriveStatus({ status: 'synced', timestamp: Date.now() });
+          return true;
+        }
+
+        const list = Array.isArray(result) ? result : result?.list;
+        const remoteModified = !Array.isArray(result) && Number.isFinite(result?.modifiedTime) ? result.modifiedTime : null;
+        setDriveConnected(true);
+        if (Array.isArray(list) && list.length > 0 && (!remoteModified || remoteModified > localUpdatedAt)) {
+          const enriched = mapTransactionsWithStockNames(list);
+          setTransactionHistory(enriched);
+          saveTransactionHistory(enriched);
+          const ts = remoteModified || Date.now();
+          setTransactionHistoryUpdatedAt(ts);
+          setDriveStatus({ status: 'synced', timestamp: ts });
+        } else {
+          setDriveStatus({ status: 'synced', timestamp: remoteModified || Date.now() });
+        }
+        return true;
+      } catch (error) {
+        console.error('Drive fetch failed', error);
+        if (silent) return false;
+        setDriveConnected(false);
+        setDriveStatus({ status: 'error', timestamp: Date.now() });
+        return false;
+      }
+    },
+    [mapTransactionsWithStockNames]
+  );
+
+  const connectAndSyncDrive = useCallback(
+    async () => {
+      setDriveStatus({ status: 'connecting' });
+      const ok = await fetchFromDriveIfNewer({ silent: false });
+      if (!ok) {
+        setDriveConnected(false);
+      }
+    },
+    [fetchFromDriveIfNewer]
   );
 
   const handleDataSourceChange = useCallback(
     value => {
       setSelectedDataSource(value);
-      runAutoSave(transactionHistory, { provider: value, force: autoSaveEnabled });
-    },
-    [autoSaveEnabled, runAutoSave, transactionHistory]
-  );
-
-  const handleAutoSaveToggle = useCallback(() => {
-    if (autoSaveEnabled) {
-      setAutoSaveEnabled(false);
-      return;
-    }
-
-    (async () => {
-      let syncedList = null;
-      try {
-        syncedList = await maybeRestoreFromBackup(selectedDataSource);
-      } catch (error) {
-        console.error('Auto-save sync before enabling failed', error);
+      localStorage.setItem('inventory_data_source', value);
+      if (value === 'googleDrive') {
+        setDriveStatus({ status: 'connecting' });
+        fetchFromDriveIfNewer({ silent: false }).then(ok => {
+          if (!ok) setDriveConnected(false);
+        });
+      } else {
+        setDriveConnected(false);
+        setDriveStatus({ status: 'idle' });
       }
-      setAutoSaveEnabled(true);
-      const dataToPersist = Array.isArray(syncedList) ? syncedList : transactionHistory;
-      runAutoSave(dataToPersist, { force: true, provider: selectedDataSource });
-    })();
-  }, [
-    autoSaveEnabled,
-    maybeRestoreFromBackup,
-    runAutoSave,
-    selectedDataSource,
-    transactionHistory
-  ]);
+    },
+    [fetchFromDriveIfNewer]
+  );
 
   const handleExport = useCallback(() => {
     const csv = transactionsToCsv(transactionHistory);
@@ -649,99 +411,6 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     }
   };
 
-  const handleDriveExport = async () => {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (isMobile) {
-      const mobileWarning = lang === 'zh'
-        ? '注意：手機瀏覽器可能會封鎖 Google 登入視窗。\n\n如果登入視窗沒有出現，請：\n1. 在瀏覽器設定中允許此網站的彈出視窗\n2. 重新整理頁面後再試\n3. 或使用電腦瀏覽器\n\n是否繼續？'
-        : 'Note: Mobile browsers may block the Google sign-in popup.\n\nIf the sign-in window doesn\'t appear, please:\n1. Enable popups for this site in browser settings\n2. Refresh and try again\n3. Or use a desktop browser\n\nContinue?';
-      if (!window.confirm(mobileWarning)) {
-        return;
-      }
-    } else {
-      if (!window.confirm(msg.exportDriveConfirm)) return;
-    }
-    try {
-      await exportTransactionsToDrive(transactionHistory);
-      Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
-      alert(msg.exportDriveSuccess);
-    } catch (err) {
-      console.error('Drive manual export failed', err);
-      const errorMessage = err?.message || msg.exportDriveFail;
-      alert(errorMessage.includes('timed out') || errorMessage.includes('popup') || errorMessage.includes('封鎖') || errorMessage.includes('驗證')
-        ? errorMessage
-        : msg.exportDriveFail);
-    }
-  };
-
-  const handleDriveImport = async () => {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (isMobile) {
-      const mobileWarning = lang === 'zh'
-        ? '注意：手機瀏覽器可能會封鎖 Google 登入視窗。\n\n如果登入視窗沒有出現，請：\n1. 在瀏覽器設定中允許此網站的彈出視窗\n2. 重新整理頁面後再試\n3. 或使用電腦瀏覽器\n\n是否繼續？'
-        : 'Note: Mobile browsers may block the Google sign-in popup.\n\nIf the sign-in window doesn\'t appear, please:\n1. Enable popups for this site in browser settings\n2. Refresh and try again\n3. Or use a desktop browser\n\nContinue?';
-      if (!window.confirm(mobileWarning)) {
-        return;
-      }
-    }
-    try {
-      const list = await importTransactionsFromDrive();
-      if (!list || list.length === 0) {
-        alert(msg.noBackupFound);
-        return;
-      }
-      if (transactionHistory.length > 0) {
-        if (!window.confirm(msg.importOverwrite)) {
-          return;
-        }
-      }
-      const enriched = mapTransactionsWithStockNames(list);
-      setTransactionHistory(enriched);
-      saveTransactionHistory(enriched);
-      alert(msg.importDriveSuccess);
-    } catch (err) {
-      console.error('Drive manual import failed', err);
-      const errorMessage = err?.message || msg.importDriveFail;
-      alert(errorMessage.includes('timed out') || errorMessage.includes('popup') || errorMessage.includes('封鎖') || errorMessage.includes('驗證')
-        ? errorMessage
-        : msg.importDriveFail);
-    }
-  };
-
-  const handleOneDriveExport = async () => {
-    if (!window.confirm(msg.exportOneDriveConfirm)) return;
-    try {
-      await exportTransactionsToOneDrive(transactionHistory);
-      Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
-      alert(msg.exportOneDriveSuccess);
-    } catch (err) {
-      console.error('OneDrive manual export failed', err);
-      alert(msg.exportOneDriveFail);
-    }
-  };
-
-  const handleOneDriveImport = async () => {
-    try {
-      const list = await importTransactionsFromOneDrive();
-      if (!list || list.length === 0) {
-        alert(msg.noBackupFound);
-        return;
-      }
-      if (transactionHistory.length > 0) {
-        if (!window.confirm(msg.importOverwrite)) {
-          return;
-        }
-      }
-      const enriched = mapTransactionsWithStockNames(list);
-      setTransactionHistory(enriched);
-      saveTransactionHistory(enriched);
-      alert(msg.importOneDriveSuccess);
-    } catch (err) {
-      console.error('OneDrive manual import failed', err);
-      alert(msg.importOneDriveFail);
-    }
-  };
-
   const backupPrompt = msg.backupPrompt;
 
   useEffect(() => {
@@ -757,6 +426,23 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
       Cookies.set(BACKUP_COOKIE_KEY, now.toISOString(), { expires: 365 });
     }
   }, [transactionHistory, handleExport, backupPrompt]);
+
+  // On mount: if Google Drive was previously selected, try silent auth + sync
+  useEffect(() => {
+    if (selectedDataSource !== 'googleDrive') return;
+    let cancelled = false;
+    setDriveStatus({ status: 'connecting' });
+    fetchFromDriveIfNewer({ silent: true }).then(ok => {
+      if (cancelled) return; // React StrictMode unmounts+remounts: ignore stale result
+      if (!ok) {
+        // Silent auth failed (no popup shown) — user needs to click Connect
+        setDriveConnected(false);
+        setDriveStatus({ status: 'idle' });
+      }
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffectOnce(() => {
     let cancelled = false;
@@ -1752,7 +1438,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     setTransactionHistory(updatedHistory);
     setForm(createInitialFormState());
     setShowModal(false);
-    runAutoSave(updatedHistory);
+    if (selectedDataSource === 'googleDrive' && driveConnected) syncToDrive(updatedHistory);
   };
 
   const handleEditSave = idx => {
@@ -1772,14 +1458,14 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     }
     setTransactionHistory(updated);
     setEditingIdx(null);
-    runAutoSave(updated);
+    if (selectedDataSource === 'googleDrive' && driveConnected) syncToDrive(updated);
   };
 
   const handleDelete = idx => {
     if (window.confirm(msg.confirmDeleteRecord)) {
       const updated = transactionHistory.filter((_, i) => i !== idx);
       setTransactionHistory(updated);
-      runAutoSave(updated);
+      if (selectedDataSource === 'googleDrive' && driveConnected) syncToDrive(updated);
     }
   };
 
@@ -1795,7 +1481,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     ];
     setTransactionHistory(updatedHistory);
     setSellModal({ show: false, stock: null });
-    runAutoSave(updatedHistory);
+    if (selectedDataSource === 'googleDrive' && driveConnected) syncToDrive(updatedHistory);
   };
 
   return (
@@ -1832,15 +1518,11 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
               onClose={() => setShowDataMenu(false)}
               handleImportClick={handleImportClick}
               handleExportClick={handleExportClick}
-              handleDriveImport={handleDriveImport}
-              handleDriveExport={handleDriveExport}
-              handleOneDriveImport={handleOneDriveImport}
-              handleOneDriveExport={handleOneDriveExport}
               selectedSource={selectedDataSource}
               onSelectChange={handleDataSourceChange}
-              autoSaveEnabled={autoSaveEnabled}
-              onToggleAutoSave={handleAutoSaveToggle}
-              autoSaveState={autoSaveState}
+              driveConnected={driveConnected}
+              driveStatus={driveStatus}
+              onConnectDrive={connectAndSyncDrive}
             />
           )}
         </div>

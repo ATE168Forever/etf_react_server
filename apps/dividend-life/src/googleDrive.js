@@ -3,12 +3,13 @@ import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 
 const CLIENT_ID = GOOGLE_CLIENT_ID || '';
 const API_KEY = GOOGLE_API_KEY || '';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
 const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
 const GAPI_SCRIPT_ID = 'gapi';
 const GAPI_SCRIPT_SRC = 'https://apis.google.com/js/api.js';
 const GIS_SCRIPT_ID = 'gis';
 const GIS_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
+const BACKUP_FILENAME = 'inventory_backup.csv';
 
 let initialized = false;
 let tokenClient;
@@ -76,6 +77,46 @@ export async function initDrive() {
   initialized = true;
 }
 
+export function isDriveAuthenticated() {
+  return !!accessToken;
+}
+
+let silentAuthPromise = null;
+
+// Attempts to get a token silently (no popup). Returns null if auth requires user interaction.
+// Concurrent calls share the same promise to avoid callback conflicts.
+async function ensureAccessTokenSilent() {
+  if (accessToken) return accessToken;
+  if (silentAuthPromise) return silentAuthPromise;
+  await initDrive();
+  silentAuthPromise = new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      silentAuthPromise = null;
+      resolve(null);
+    }, 5000);
+    const prev = tokenClient.callback;
+    tokenClient.callback = (response) => {
+      clearTimeout(timer);
+      tokenClient.callback = prev;
+      silentAuthPromise = null;
+      if (response?.error || !response?.access_token) {
+        resolve(null);
+      } else {
+        storeTokenResponse(response);
+        resolve(response.access_token);
+      }
+    };
+    try {
+      tokenClient.requestAccessToken({ prompt: '' });
+    } catch {
+      clearTimeout(timer);
+      silentAuthPromise = null;
+      resolve(null);
+    }
+  });
+  return silentAuthPromise;
+}
+
 async function ensureAccessToken() {
   if (!tokenClient) {
     throw new Error('Google Identity Services client has not been initialised');
@@ -119,12 +160,6 @@ async function ensureAccessToken() {
       resolve(result.token);
     };
     try {
-      if (isMobile) {
-        const warningMsg = isZh
-          ? '即將開啟 Google 登入視窗。如果沒有出現，請在瀏覽器設定中允許此網站的彈出視窗。'
-          : 'Opening Google sign-in window. If it doesn\'t appear, please enable popups for this site in your browser settings.';
-        console.log(warningMsg);
-      }
       tokenClient.requestAccessToken({ prompt: accessToken ? '' : 'consent' });
     } catch (error) {
       if (!resolved) {
@@ -144,32 +179,85 @@ async function ensureAccessToken() {
   });
 }
 
-export async function exportTransactionsToDrive(list) {
-  await initDrive();
-  const token = await ensureAccessToken();
-  const csv = transactionsToCsv(list);
-  const file = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const metadata = { name: 'inventory_backup.csv', mimeType: 'text/csv' };
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-  form.append('file', file);
-  await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
-    method: 'POST',
-    headers: new Headers({ 'Authorization': 'Bearer ' + token }),
-    body: form
+async function findBackupFile(token) {
+  const listResult = await window.gapi.client.drive.files.list({
+    spaces: 'appDataFolder',
+    q: `name='${BACKUP_FILENAME}'`,
+    fields: 'files(id)',
+    pageSize: 1,
   });
+  return listResult.result.files?.[0]?.id ?? null;
+}
+
+export async function exportTransactionsToDrive(list, { silent = false } = {}) {
+  await initDrive();
+  const token = silent ? await ensureAccessTokenSilent() : await ensureAccessToken();
+  if (!token) throw new Error('Not authenticated');
+
+  const csv = transactionsToCsv(list);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+
+  const existingFileId = await findBackupFile(token);
+
+  if (existingFileId) {
+    // Update existing file content (no metadata change needed)
+    const res = await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=media`,
+      {
+        method: 'PATCH',
+        headers: new Headers({
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'text/csv',
+        }),
+        body: blob,
+      }
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Drive PATCH failed ${res.status}: ${text}`);
+    }
+  } else {
+    // Create new file in appDataFolder
+    const metadata = {
+      name: BACKUP_FILENAME,
+      mimeType: 'text/csv',
+      parents: ['appDataFolder'],
+    };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', blob);
+    const res = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+      {
+        method: 'POST',
+        headers: new Headers({ 'Authorization': 'Bearer ' + token }),
+        body: form,
+      }
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Drive POST failed ${res.status}: ${text}`);
+    }
+    await res.json();
+  }
 }
 
 export async function importTransactionsFromDrive(options = {}) {
-  const { includeMetadata = false, metadataOnly = false } = options;
+  const { includeMetadata = false, metadataOnly = false, silent = false } = options;
   await initDrive();
-  await ensureAccessToken();
+  if (silent) {
+    const token = await ensureAccessTokenSilent();
+    if (!token) return null;
+  } else {
+    await ensureAccessToken();
+  }
   const fields = metadataOnly || includeMetadata ? 'files(id, modifiedTime)' : 'files(id)';
   const list = await window.gapi.client.drive.files.list({
-    q: "name='inventory_backup.csv' and trashed=false",
+    spaces: 'appDataFolder',
+    q: `name='${BACKUP_FILENAME}'`,
     fields,
     orderBy: 'modifiedTime desc',
-    pageSize: 1
+    pageSize: 1,
   });
   if (!list.result.files || list.result.files.length === 0) return null;
   const fileEntry = list.result.files[0];
