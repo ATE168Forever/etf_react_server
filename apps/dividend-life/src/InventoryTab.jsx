@@ -276,6 +276,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
   const syncToDrive = useCallback(
     async (list) => {
       const data = Array.isArray(list) ? list : transactionHistory;
+      if (!Array.isArray(data) || data.length === 0) return; // never overwrite Drive with empty data
       const requestId = Date.now();
       driveSaveRequestRef.current = requestId;
       setDriveStatus({ status: 'syncing' });
@@ -303,9 +304,14 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         if (result === null) {
           // silent mode: null means auth failed silently (no popup), treat as not connected
           if (silent) return false;
-          // non-silent: auth succeeded but no backup file on Drive yet → already connected, ready to save
+          // non-silent: auth succeeded but no backup file on Drive yet
           setDriveConnected(true);
-          setDriveStatus({ status: 'synced', timestamp: Date.now() });
+          // If local data exists, upload it to create the initial Drive backup
+          if (transactionHistory.length > 0) {
+            syncToDrive(transactionHistory);
+          } else {
+            setDriveStatus({ status: 'synced', timestamp: Date.now() });
+          }
           return true;
         }
 
@@ -332,7 +338,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         return false;
       }
     },
-    [mapTransactionsWithStockNames]
+    [mapTransactionsWithStockNames, syncToDrive, transactionHistory]
   );
 
   const connectAndSyncDrive = useCallback(
