@@ -295,7 +295,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
   );
 
   const fetchFromDriveIfNewer = useCallback(
-    async ({ silent = false } = {}) => {
+    async ({ silent = false, force = false } = {}) => {
       const localUpdatedAt = getTransactionHistoryUpdatedAt() ?? 0;
       try {
         const result = await importTransactionsFromDrive({ includeMetadata: true, silent });
@@ -312,7 +312,8 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         const list = Array.isArray(result) ? result : result?.list;
         const remoteModified = !Array.isArray(result) && Number.isFinite(result?.modifiedTime) ? result.modifiedTime : null;
         setDriveConnected(true);
-        if (Array.isArray(list) && list.length > 0 && (!remoteModified || remoteModified > localUpdatedAt)) {
+        // force=true: user explicitly connected, always import. Otherwise only import if Drive is newer.
+        if (Array.isArray(list) && list.length > 0 && (force || !remoteModified || remoteModified > localUpdatedAt)) {
           const enriched = mapTransactionsWithStockNames(list);
           setTransactionHistory(enriched);
           saveTransactionHistory(enriched);
@@ -337,7 +338,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
   const connectAndSyncDrive = useCallback(
     async () => {
       setDriveStatus({ status: 'connecting' });
-      const ok = await fetchFromDriveIfNewer({ silent: false });
+      const ok = await fetchFromDriveIfNewer({ silent: false, force: true });
       if (!ok) {
         setDriveConnected(false);
       }
@@ -351,7 +352,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
       localStorage.setItem('inventory_data_source', value);
       if (value === 'googleDrive') {
         setDriveStatus({ status: 'connecting' });
-        fetchFromDriveIfNewer({ silent: false }).then(ok => {
+        fetchFromDriveIfNewer({ silent: false, force: true }).then(ok => {
           if (!ok) setDriveConnected(false);
         });
       } else {
