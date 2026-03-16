@@ -40,10 +40,16 @@
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.formToggleButton:hover,
+.formToggleButton:hover {
+  background: rgba(148, 163, 184, 0.2);
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
 .formToggleButton:focus-visible {
   background: rgba(148, 163, 184, 0.2);
   border-color: rgba(148, 163, 184, 0.45);
+  outline: 2px solid var(--accent-gold, #d4af37);
+  outline-offset: 2px;
 }
 
 .metrics {
@@ -218,10 +224,16 @@
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.shareSecondaryButton:hover,
+.shareSecondaryButton:hover {
+  border-color: rgba(148, 163, 184, 0.45);
+  background: rgba(148, 163, 184, 0.18);
+}
+
 .shareSecondaryButton:focus-visible {
   border-color: rgba(148, 163, 184, 0.45);
   background: rgba(148, 163, 184, 0.18);
+  outline: 2px solid var(--accent-gold, #d4af37);
+  outline-offset: 2px;
 }
 
 .shareHeaderText {
@@ -270,10 +282,16 @@
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.shareCopyButton:hover,
+.shareCopyButton:hover {
+  background: rgba(148, 163, 184, 0.2);
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
 .shareCopyButton:focus-visible {
   background: rgba(148, 163, 184, 0.2);
   border-color: rgba(148, 163, 184, 0.45);
+  outline: 2px solid var(--accent-gold, #d4af37);
+  outline-offset: 2px;
 }
 
 .shareFeedback {
@@ -381,9 +399,15 @@
   padding: 4px;
 }
 
-.shareModalClose:hover,
+.shareModalClose:hover {
+  color: var(--accent-gold, #facc15);
+}
+
 .shareModalClose:focus-visible {
   color: var(--accent-gold, #facc15);
+  outline: 2px solid var(--accent-gold, #d4af37);
+  outline-offset: 2px;
+  border-radius: 3px;
 }
 
 .shareModalBody {
@@ -458,6 +482,7 @@
   border: none;
   color: var(--color-text);
   cursor: pointer;
+  width: fit-content;
 }
 
 @media (max-width: 480px) {

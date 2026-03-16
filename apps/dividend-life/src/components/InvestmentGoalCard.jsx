@@ -44,6 +44,7 @@ export default function InvestmentGoalCard({
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [shareDraft, setShareDraft] = useState(shareMessage);
   const statusResetRef = useRef(null);
+  const shareDialogTriggerRef = useRef(null);
   const shareMessageFieldId = useId();
   const shareDialogLabelId = shareConfig?.previewLabel ? `${shareMessageFieldId}-label` : undefined;
 
@@ -125,6 +126,7 @@ export default function InvestmentGoalCard({
     if (!hasShareContent) {
       return;
     }
+    shareDialogTriggerRef.current = document.activeElement;
     setIsShareDialogOpen(true);
     updateShareStatus('idle');
   };
@@ -132,7 +134,22 @@ export default function InvestmentGoalCard({
   const closeShareDialog = () => {
     setIsShareDialogOpen(false);
     updateShareStatus('idle');
+    shareDialogTriggerRef.current?.focus();
+    shareDialogTriggerRef.current = null;
   };
+
+  useEffect(() => {
+    if (!isShareDialogOpen) return;
+    const onKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      setIsShareDialogOpen(false);
+      setShareStatus('idle');
+      shareDialogTriggerRef.current?.focus();
+      shareDialogTriggerRef.current = null;
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [isShareDialogOpen]);
 
   const handleModalShareClick = async () => {
     if (!hasShareContent || !currentShareText) {
@@ -231,6 +248,7 @@ export default function InvestmentGoalCard({
             <div
               className={styles.progressBar}
               role="progressbar"
+              aria-label={row.label}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(Math.min(1, Math.max(0, row.percent || 0)) * 100)}
@@ -331,8 +349,8 @@ export default function InvestmentGoalCard({
               </div>
             ))}
             <div className={styles.inputGroup}>
-              <label>{formProps.saveLabel}</label>
-              <button type="submit" style={{ width: "fit-content" }}>{formProps.saveButton}</button>
+              <span>{formProps.saveLabel}</span>
+              <button type="submit">{formProps.saveButton}</button>
             </div>
           </form>
         ) : null}
@@ -400,11 +418,9 @@ export default function InvestmentGoalCard({
                 <p className={styles.shareUnavailable}>{shareConfig.shareUnavailable}</p>
               ) : null}
             </div>
-            {shareStatusMessage ? (
-              <div className={shareFeedbackClassName} role="status" aria-live="polite">
-                {shareStatusMessage}
-              </div>
-            ) : null}
+            <div className={shareFeedbackClassName} role="status" aria-live="polite">
+              {shareStatusMessage}
+            </div>
             <div className={styles.shareModalActions}>
               <button
                 type="button"

@@ -27,3 +27,8 @@
 .cookie-consent button:hover {
   background-color: var(--accent-gold-hover);
 }
+
+.cookie-consent button:focus-visible {
+  outline: 2px solid var(--color-text, #1f2937);
+  outline-offset: 2px;
+}

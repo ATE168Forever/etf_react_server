@@ -72,7 +72,6 @@ const renderWithLang = (lang = 'zh') => {
 
 test('renders data milestones section', async () => {
   renderWithLang();
-  await screen.findByText(translations.zh.site_stats);
   expect(await screen.findByText('301')).toBeInTheDocument();
 });
 
@@ -110,7 +109,7 @@ test('shows custom goal title when saved', async () => {
 
 test('fetches stats with en flag false for zh', async () => {
   renderWithLang('zh');
-  await screen.findByText(translations.zh.site_stats);
+  await screen.findByText('301');
   expect(fetchWithCache).toHaveBeenCalledWith(
     'http://localhost/site_stats?en=false',
     expect.any(Number)
@@ -119,7 +118,7 @@ test('fetches stats with en flag false for zh', async () => {
 
 test('fetches stats with en flag true for en', async () => {
   renderWithLang('en');
-  await screen.findByText(translations.en.site_stats);
+  await screen.findByText('301');
   expect(fetchWithCache).toHaveBeenCalledWith(
     'http://localhost/site_stats?en=true',
     expect.any(Number)

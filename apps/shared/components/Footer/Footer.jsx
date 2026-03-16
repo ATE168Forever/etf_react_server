@@ -79,12 +79,13 @@ export default function Footer({
       <div className="footer-content">
         <div className="controls">
           {canToggleTheme ? (
-            <div className="theme-control">
+            <div className="theme-control" role="group" aria-label={translate('theme')}>
               {translate('theme')}：
               <button
                 className={['less-style', theme === 'light' ? 'btn-selected' : 'btn-unselected'].join(' ')}
                 onClick={() => handleThemeChange('light')}
                 type="button"
+                aria-pressed={theme === 'light'}
               >
                 {translate('light')}
               </button>
@@ -93,18 +94,20 @@ export default function Footer({
                 className={['less-style', theme === 'dark' ? 'btn-selected' : 'btn-unselected'].join(' ')}
                 onClick={() => handleThemeChange('dark')}
                 type="button"
+                aria-pressed={theme === 'dark'}
               >
                 {translate('dark')}
               </button>
             </div>
           ) : null}
           {showLanguageToggle ? (
-            <div className="language-control">
+            <div className="language-control" role="group" aria-label={translate('language')}>
               {translate('language')}：
               <button
                 className={['less-style', lang === 'zh' ? 'btn-selected' : 'btn-unselected'].join(' ')}
                 onClick={() => handleLanguageChange('zh')}
                 type="button"
+                aria-pressed={lang === 'zh'}
                 disabled={!canToggleLanguage}
               >
                 中文
@@ -114,6 +117,7 @@ export default function Footer({
                 className={['less-style', lang === 'en' ? 'btn-selected' : 'btn-unselected'].join(' ')}
                 onClick={() => handleLanguageChange('en')}
                 type="button"
+                aria-pressed={lang === 'en'}
                 disabled={!canToggleLanguage}
               >
                 English
@@ -128,7 +132,7 @@ export default function Footer({
           </span>
           <span className="donation">
             {translate('donate_prompt')}
-            <a href={donateLink} target="_blank" rel="noreferrer">
+            <a href={donateLink} target="_blank" rel="noreferrer" aria-label={`${donateLabel ?? translate('donate')} (${lang === 'en' ? 'opens in new tab' : '開啟新分頁'})`}>
               {donateLabel ?? translate('donate')}
             </a>
           </span>

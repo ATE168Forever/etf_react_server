@@ -160,6 +160,9 @@ export default function TooltipText({
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       toggle();
+    } else if (event.key === 'Escape' && open) {
+      event.preventDefault();
+      setOpen(false);
     }
   };
 

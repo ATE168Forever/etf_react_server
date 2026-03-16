@@ -4,14 +4,14 @@ import { useLanguage } from './i18n';
 export default function GuideTab() {
   const { lang } = useLanguage();
   return (
-    <div className="container" style={{ maxWidth: 800 }}>
-      <h3 className="mt-4">{lang === 'en' ? 'User Guide' : '使用小幫手'}</h3>
+    <div className="container content-page">
+      <h2 className="h3 mt-4">{lang === 'en' ? 'User Guide' : '使用小幫手'}</h2>
       <p>
         {lang === 'en'
           ? 'Below is an introduction to the current public information features. Feel free to play with them; new tools will come later.'
           : '以下說明目前提供的公開資訊瀏覽功能，先玩玩現有功能，未來有新工具再慢慢上線囉。'}
       </p>
-      <h4>{lang === 'en' ? 'Browse ETF and Dividend Info' : '瀏覽 ETF 與配息資訊'}</h4>
+      <h3 className="h4">{lang === 'en' ? 'Browse ETF and Dividend Info' : '瀏覽 ETF 與配息資訊'}</h3>
       <ol>
         <li>
           <strong>{lang === 'en' ? 'Search and Filter' : '搜尋與篩選'}</strong>

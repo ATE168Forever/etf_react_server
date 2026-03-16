@@ -62,12 +62,12 @@ function DividendDonut({
     onSelect
 }) {
     if (!Array.isArray(slices) || slices.length === 0) {
-        return <p style={{ marginTop: 12 }}>{t('dividend_donut_empty')}</p>;
+        return <p className="chart-empty-msg">{t('dividend_donut_empty')}</p>;
     }
 
     const total = slices.reduce((sum, slice) => sum + (slice.total || 0), 0);
     if (!total) {
-        return <p style={{ marginTop: 12 }}>{t('dividend_donut_empty')}</p>;
+        return <p className="chart-empty-msg">{t('dividend_donut_empty')}</p>;
     }
 
     const viewSize = 280;
@@ -148,7 +148,7 @@ function DividendDonut({
                         </div>
                     </div>
                 </div>
-                <ul className="donut-legend">
+                <ul className="donut-legend" aria-label={t('dividend_donut_heading')}>
                     {slices.map((slice, idx) => {
                         const value = slice.total || 0;
                         const percent = total > 0 ? (value / total) * 100 : 0;
@@ -947,23 +947,51 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
     };
 
     return (
-        <div className="App" style={{ margin: '0 auto' }}>
-            <div style={{ display: "flex", alignItems: "center", margin: "10px 0 0 0", gap: "12px", flexWrap: 'wrap'}}>
-                <h3>{selectedYear} {lang === 'en' ? 'Dividend Overview' : '配息總覽'}</h3>
-                <CurrencyViewToggle
-                    viewMode={viewMode}
-                    onChange={handleViewModeChange}
-                    hasTwd={hasTwd}
-                    hasUsd={hasUsd}
-                    lang={lang}
-                    description={viewDescriptionContent}
-                    labelPrefix={viewLabelPrefix}
-                />
+        <div className="mydividend-tab">
+
+            {/* ── TAB HEADER ── */}
+            <div className="mydividend-header">
+                <div className="mydividend-header__title-row">
+                    <span className="section-label">
+                        {selectedYear} {lang === 'en' ? 'My Dividends' : '我的配息'}
+                    </span>
+                    <CurrencyViewToggle
+                        viewMode={viewMode}
+                        onChange={handleViewModeChange}
+                        hasTwd={hasTwd}
+                        hasUsd={hasUsd}
+                        lang={lang}
+                        description={viewDescriptionContent}
+                        labelPrefix={viewLabelPrefix}
+                    />
+                </div>
+                <div className="mydividend-header__actions">
+                    <button
+                        type="button"
+                        className={`filter-bar__action-btn${showCalendar ? ' filter-bar__action-btn--active' : ''}`}
+                        onClick={() => setShowCalendar(v => !v)}
+                        aria-pressed={showCalendar}
+                    >
+                        📅 {showCalendar
+                            ? (lang === 'en' ? 'Hide Calendar' : '隱藏月曆')
+                            : (lang === 'en' ? 'Show Calendar' : '顯示月曆')}
+                    </button>
+                    <button
+                        type="button"
+                        className="filter-bar__reset-btn"
+                        onClick={handleResetFilters}
+                        disabled={!hasActiveMonthFilters}
+                    >
+                        {lang === 'en' ? '↺ Reset' : '↺ 重置'}
+                    </button>
+                </div>
             </div>
+
+            {/* ── DONUT CHART ── */}
             {activeDonutData && (
                 <section className="donut-section">
                     <div className="chart-header">
-                        <h4 style={{ margin: 0 }}>{t('dividend_donut_heading')}</h4>
+                        <span className="section-label">{t('dividend_donut_heading')}</span>
                         {donutCurrencies.length > 1 && (
                             <div className="dividend-chart-currency-switch">
                                 <span className="currency-switch-label">
@@ -1000,37 +1028,26 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                     />
                 </section>
             )}
-            <div style={{ margin: '10px 0' }}>
-                <button
-                    onClick={() => setShowCalendar(v => !v)}
-                >
-                    {showCalendar ? (lang === 'en' ? 'Hide Calendar' : '隱藏月曆') : (lang === 'en' ? 'Show Calendar' : '顯示月曆')}
-                </button>
-            </div>
 
+            {/* ── CALENDAR PANEL ── */}
             {showCalendar && (
-                <>
-                    <div style={{ margin: '10px 0' }}>
-                        <button
-                            onClick={() => setCalendarFilter('ex')}
-                            className={calendarFilter === 'ex' ? 'btn-selected' : 'btn-unselected'}
-                        >
-                            {lang === 'en' ? 'Ex-dividend Date' : '除息日'}
-                        </button>
-                        <button
-                            onClick={() => setCalendarFilter('pay')}
-                            className={calendarFilter === 'pay' ? 'btn-selected' : 'btn-unselected'}
-                            style={{ marginLeft: 6, marginTop: 6 }}
-                        >
-                            {lang === 'en' ? 'Payment Date' : '發放日'}
-                        </button>
-                        <button
-                            onClick={() => setCalendarFilter('both')}
-                            className={calendarFilter === 'both' ? 'btn-selected' : 'btn-unselected'}
-                            style={{ marginLeft: 6, marginTop: 6 }}
-                        >
-                            {lang === 'en' ? 'Ex/Paid Date' : '除息/發放日'}
-                        </button>
+                <div className="calendar-panel">
+                    <div className="calendar-panel__filter" role="group" aria-label={lang === 'en' ? 'Calendar event type' : '月曆事件類型'}>
+                        {[
+                            { key: 'ex',   label: lang === 'en' ? 'Ex-div' : '除息日' },
+                            { key: 'pay',  label: lang === 'en' ? 'Payment' : '發放日' },
+                            { key: 'both', label: lang === 'en' ? 'Both' : '全部' },
+                        ].map(({ key, label }) => (
+                            <button
+                                key={key}
+                                type="button"
+                                className={`filter-bar__pill${calendarFilter === key ? ' filter-bar__pill--active' : ''}`}
+                                onClick={() => setCalendarFilter(key)}
+                                aria-pressed={calendarFilter === key}
+                            >
+                                {label}
+                            </button>
+                        ))}
                     </div>
                     <DividendCalendar
                         year={selectedYear}
@@ -1041,59 +1058,54 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                         month={calendarMonth}
                         onMonthChange={setCalendarMonth}
                     />
-                </>
+                </div>
             )}
 
-            <div style={{ margin: '10px 0' }}>
-                <button onClick={handleResetFilters} disabled={!hasActiveMonthFilters}>
-                    {lang === 'en' ? 'Reset Filters' : '重置所有篩選'}
-                </button>
-            </div>
-
             <div className="table-responsive" ref={tableContainerRef}>
-            <table className="table table-bordered table-striped" ref={tableElementRef}>
+            <table className="table table-bordered table-striped" ref={tableElementRef} aria-label={lang === 'en' ? 'My dividends by month' : '我的配息月份表'}>
                 <thead>
                     <tr>
-                        <th className="stock-col" rowSpan={activeCurrencies.length > 1 ? 2 : 1}
-                            style={{
-                                outline: "1px solid var(--color-border)",   // 外框顏色與粗細
-                                outlineOffset: "-1px",            // 可選，讓框貼近內容
-                                padding: "6px"                    // 可選，讓文字不擠
-                            }}    
+                        <th scope="col" className="stock-col" rowSpan={activeCurrencies.length > 1 ? 2 : 1}
+                            aria-sort={sortConfig.column === 'stock_id' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
                         >
-                            <span className="sortable" onClick={() => handleSort('stock_id')}>
+                            <button type="button" className="sortable" onClick={() => handleSort('stock_id')}>
                                 {lang === 'en' ? 'Ticker/Name' : '股票代碼/名稱'}
-                                {sortConfig.column === 'stock_id' && (
-                                    <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
-                                )}
-                            </span>
+                                <span className="sort-indicator" aria-hidden="true">
+                                    {sortConfig.column === 'stock_id' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
+                                </span>
+                            </button>
                         </th>
-                        <th rowSpan={activeCurrencies.length > 1 ? 2 : 1}>
-                            <span className="sortable" onClick={() => handleSort('total')}>
+                        <th scope="col" rowSpan={activeCurrencies.length > 1 ? 2 : 1}
+                            aria-sort={sortConfig.column === 'total' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+                        >
+                            <button type="button" className="sortable" onClick={() => handleSort('total')}>
                                 {lang === 'en' ? 'Total' : '總計'}
-                                {sortConfig.column === 'total' && (
-                                    <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
-                                )}
-                            </span>
+                                <span className="sort-indicator" aria-hidden="true">
+                                    {sortConfig.column === 'total' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
+                                </span>
+                            </button>
                         </th>
                         {MONTHS.map((m, idx) => (
                             <th
                                 key={`month-${idx}`}
+                                scope={activeCurrencies.length > 1 ? 'colgroup' : 'col'}
                                 className={idx === currentMonth ? 'current-month' : ''}
                                 colSpan={activeCurrencies.length}
                                 style={{ minWidth: MONTH_COL_WIDTH * activeCurrencies.length }}
+                                aria-sort={sortConfig.column === `month${idx}` ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
                             >
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                                    <span className="sortable" onClick={() => handleSort(`month${idx}`)}>
+                                <div className="month-th-inner">
+                                    <button type="button" className="sortable" onClick={() => handleSort(`month${idx}`)}>
                                         {m}
-                                        {sortConfig.column === `month${idx}` && (
-                                            <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
-                                        )}
-                                    </span>
-                                    <label style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <span className="sort-indicator" aria-hidden="true">
+                                            {sortConfig.column === `month${idx}` ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
+                                        </span>
+                                    </button>
+                                    <label className="month-filter-label">
                                         <input
                                             type="checkbox"
                                             checked={monthFilters[idx]}
+                                            aria-label={`${m} ${lang === 'en' ? 'Dividend' : '配息'}`}
                                             onChange={() => handleMonthFilterToggle(idx)}
                                         />
                                         {lang === 'en' ? 'Dividend' : '配息'}
@@ -1108,6 +1120,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                 activeCurrencies.map(currency => (
                                     <th
                                         key={`month-${idx}-${currency}`}
+                                        scope="col"
                                         className={idx === currentMonth ? 'current-month' : ''}
                                         style={{ width: MONTH_COL_WIDTH }}
                                     >
@@ -1121,13 +1134,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                 <tbody>
                     {filteredStocks.length === 0 ? (
                         <tr>
-                            <td 
-                                style={{
-                                    outline: "1px solid var(--color-border)",   // 外框顏色與粗細
-                                    outlineOffset: "-1px",            // 可選，讓框貼近內容
-                                    padding: "6px"                    // 可選，讓文字不擠
-                                }}
-                            colSpan={totalColumns}>
+                            <td className="row-label-cell" colSpan={totalColumns}>
                                 {hasActiveMonthFilters
                                     ? (lang === 'en' ? 'No dividends match the selected filters' : '目前篩選條件下沒有配息紀錄')
                                     : (lang === 'en' ? 'No holdings, please add transactions first' : '尚無庫存，請先新增交易紀錄')}
@@ -1136,13 +1143,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                     ) : (
                         <>
                             <tr>
-                                <td
-                                    style={{
-                                    outline: "1px solid var(--color-border)",   // 外框顏色與粗細
-                                    outlineOffset: "-1px",            // 可選，讓框貼近內容
-                                    padding: "6px"                    // 可選，讓文字不擠
-                                }}
-                                >{lang === 'en' ? 'Dividend Cost' : '配息成本'}</td>
+                                <td className="row-label-cell">{lang === 'en' ? 'Dividend Cost' : '配息成本'}</td>
                                 <td></td>
                                 {MONTHS.map((m, idx) => (
                                     activeCurrencies.map(currency => {
@@ -1172,7 +1173,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                                     hasTooltip ? (
                                                         <TooltipText
                                                             tooltip={tooltip}
-                                                            style={{ borderBottom: '1px dotted var(--color-text-muted, #777)' }}
+                                                            className="tooltip-dotted"
                                                         >
                                                             {formatPlainAmount(total, { currency })}
                                                         </TooltipText>
@@ -1184,13 +1185,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                 ))}
                             </tr>
                             <tr>
-                                <td 
-                                    style={{
-                                        outline: "1px solid var(--color-border)",   // 外框顏色與粗細
-                                        outlineOffset: "-1px",            // 可選，讓框貼近內容
-                                        padding: "6px"                    // 可選，讓文字不擠
-                                    }}
-                                >{lang === 'en' ? 'Monthly Total' : '月合計'}</td>
+                                <td className="row-label-cell">{lang === 'en' ? 'Monthly Total' : '月合計'}</td>
                                 <td>
                                     {(() => {
                                         const currencySummaries = activeCurrencies
@@ -1218,7 +1213,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                         const content = currencySummaries.length === 1
                                             ? formatCurrencyValue(currencySummaries[0].currency, currencySummaries[0].total, { allowZero: true })
                                             : (
-                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+                                                <div className="cell-multi-value">
                                                     {currencySummaries.map(({ currency, total }) => (
                                                         <span key={`monthly-total-${currency}`}>
                                                             {formatCurrencyValue(currency, total, { allowZero: true })}
@@ -1229,7 +1224,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                         return (
                                             <TooltipText
                                                 tooltip={tooltipLines.join('\n\n')}
-                                                style={{ borderBottom: '1px dotted var(--color-text-muted, #777)' }}
+                                                className="tooltip-dotted"
                                             >
                                                 {content}
                                             </TooltipText>
@@ -1277,14 +1272,9 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
 
                                 return (
                                     <tr key={stock.stock_id + stock.stock_name}>
-                                        <td className="stock-col" 
-                                            style={{
-                                                outline: "1px solid var(--color-border)",   // 外框顏色與粗細
-                                                outlineOffset: "-1px",            // 可選，讓框貼近內容
-                                                padding: "6px"                    // 可選，讓文字不擠
-                                            }}
-                                        >
-                                            <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
+                                        <td className="stock-col">
+                                            <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer"
+                                              aria-label={`${stock.stock_id} ${stock.stock_name || ''} (${lang === 'en' ? 'opens in new tab' : '開啟新分頁'})`}>
                                                 <TooltipText tooltip={tooltipText}>
                                                     {displayText}
                                                 </TooltipText>
@@ -1307,7 +1297,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                             const content = displayValues.length === 1
                                                 ? displayValues[0].text
                                                 : (
-                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+                                                    <div className="cell-multi-value">
                                                         {displayValues.map(item => (
                                                             <span key={`stock-total-${stock.stock_id}-${item.currency}`}>
                                                                 {item.text}
@@ -1319,7 +1309,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                                 return (
                                                     <TooltipText
                                                         tooltip={totalTooltipLines.join('\n\n')}
-                                                        style={{ borderBottom: '1px dotted var(--color-text-muted, #777)' }}
+                                                        className="tooltip-dotted"
                                                     >
                                                         {content}
                                                     </TooltipText>
@@ -1357,9 +1347,9 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                                     <td key={`cell-${stock.stock_id}-${idx}-${currency}`} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}>
                                                         <TooltipText
                                                             tooltip={tooltipContent}
-                                                            style={{ borderBottom: '1px dotted var(--color-text-muted, #777)' }}
+                                                            className="tooltip-dotted"
                                                         >
-                                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                                                            <div className="cell-amount-col">
                                                                 <span>{total > 0 ? formatPlainAmount(total, { currency }) : ''}</span>
                                                             </div>
                                                         </TooltipText>
@@ -1375,11 +1365,14 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                 </tbody>
             </table>
             </div>
-            <p style={{ fontSize: 12, marginTop: 8, color: 'var(--color-text-muted, #666)' }}>
-                {lang === 'en'
-                    ? 'Tip: tap or hover numbers to see holdings, per-share dividends, dates, prices and yield details.'
-                    : '提示：點擊或滑鼠移到數字可看持股、每股配息及日期、價格與殖利率細節。'}
-            </p>
+            <aside className="tip-callout">
+                <span className="tip-callout__icon" aria-hidden="true">💡</span>
+                <span className="tip-callout__text">
+                    {lang === 'en'
+                        ? 'Tap or hover numbers to see holdings, per-share dividends, dates, prices and yield details.'
+                        : '點擊或滑鼠移到數字可看持股、每股配息及日期、價格與殖利率細節。'}
+                </span>
+            </aside>
         </div>
     );
 }

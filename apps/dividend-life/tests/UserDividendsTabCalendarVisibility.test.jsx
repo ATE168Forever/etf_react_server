@@ -12,10 +12,10 @@ test('UserDividendsTab remembers calendar visibility', async () => {
   const allDividendData = [];
   const year = new Date().getFullYear();
   const { unmount } = render(<UserDividendsTab allDividendData={allDividendData} selectedYear={year} />);
-  const hideBtn = await screen.findByRole('button', { name: '隱藏月曆' });
+  const hideBtn = await screen.findByRole('button', { name: /隱藏月曆/ });
   fireEvent.click(hideBtn);
   unmount();
   render(<UserDividendsTab allDividendData={allDividendData} selectedYear={year} />);
-  const showBtn = await screen.findByRole('button', { name: '顯示月曆' });
+  const showBtn = await screen.findByRole('button', { name: /顯示月曆/ });
   expect(showBtn).toBeInTheDocument();
 });

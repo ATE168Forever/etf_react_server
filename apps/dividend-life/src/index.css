@@ -11,6 +11,7 @@
   --color-error: #d62828;
   --color-link: #0d6efd;
   --color-text-on-accent: #1f2937;
+  --color-primary: #7c99ff;
   --accent-gold: #d4af37;
   --accent-gold-hover: #ffd700;
   --accent-green: #2f9e44;
@@ -63,6 +64,7 @@
 }
 
 :root[data-theme='dark'] {
+  --color-primary: #7c99ff;
   --color-text: #f9fafb;
   --color-bg: #111827;
   --color-card-bg: #1f2937;
@@ -116,7 +118,6 @@ body {
   padding: 0;
   min-width: 320px;
   min-height: 100vh;
-  animation: fade-in 0.4s ease-in-out;
   background-color: var(--color-bg);
   color: var(--color-text);
 }
@@ -132,6 +133,12 @@ body {
   }
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  body {
+    animation: fade-in 0.4s ease-in-out;
+  }
+}
+
 
 .site-footer {
   margin-top: 2rem;
@@ -142,10 +149,10 @@ body {
   font-size: 0.9rem;
 }
 
-.about-tab h3 {
+.about-tab h2 {
   text-decoration: underline;
 }
 
-.about-tab h4 {
+.about-tab h3 {
   text-decoration: none;
 }

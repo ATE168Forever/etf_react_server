@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import styles from './QuickPurchaseModal.module.css';
 
 function getCurrencySymbol(country, messages) {
@@ -9,6 +10,12 @@ function getCurrencySymbol(country, messages) {
 }
 
 export default function QuickPurchaseModal({ show, onClose, rows, setRows, onSubmit, messages }) {
+  useEffect(() => {
+    if (!show) return;
+    const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [show, onClose]);
   if (!show) return null;
 
   const list = Array.isArray(rows) ? rows : [];
@@ -33,9 +40,9 @@ export default function QuickPurchaseModal({ show, onClose, rows, setRows, onSub
   const selectedCount = list.filter(row => row?.enabled).length;
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
-        <h5 className={styles.title}>{messages.quickAddTitle}</h5>
+    <div className={styles.overlay} role="presentation">
+      <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="quick-purchase-modal-title">
+        <h5 id="quick-purchase-modal-title" className={styles.title}>{messages.quickAddTitle}</h5>
         {hasRows ? (
           <div className={styles.tableWrapper}>
             <div className={styles.selectionSummary}>
@@ -44,12 +51,12 @@ export default function QuickPurchaseModal({ show, onClose, rows, setRows, onSub
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>{messages.quickAddNoPurchase}</th>
-                  <th>{messages.stockCodeName}</th>
-                  <th>{messages.quickAddDate}</th>
-                  <th>{messages.quickAddQuantity}</th>
-                  <th>{messages.quickAddPrice}</th>
+                  <th scope="col">#</th>
+                  <th scope="col">{messages.quickAddNoPurchase}</th>
+                  <th scope="col">{messages.stockCodeName}</th>
+                  <th scope="col">{messages.quickAddDate}</th>
+                  <th scope="col">{messages.quickAddQuantity}</th>
+                  <th scope="col">{messages.quickAddPrice}</th>
                 </tr>
               </thead>
               <tbody>
@@ -64,6 +71,8 @@ export default function QuickPurchaseModal({ show, onClose, rows, setRows, onSub
                           type="button"
                           className={styles.skipButton}
                           onClick={() => handleToggle(index)}
+                          aria-pressed={!disabled}
+                          aria-label={`${row.stock_id} ${row.stock_name || ''} - ${disabled ? (messages.quickAddNoPurchase || 'skip') : (messages.quickAddDate || 'include')}`}
                         >
                           {disabled ? 'N' : 'Y'}
                         </button>
@@ -80,6 +89,7 @@ export default function QuickPurchaseModal({ show, onClose, rows, setRows, onSub
                           value={row.date || ''}
                           onChange={handleFieldChange(index, 'date')}
                           disabled={disabled}
+                          aria-label={`${row.stock_id} ${messages.quickAddDate}`}
                         />
                       </td>
                       <td>
@@ -91,6 +101,7 @@ export default function QuickPurchaseModal({ show, onClose, rows, setRows, onSub
                           onChange={handleFieldChange(index, 'quantity')}
                           disabled={disabled}
                           placeholder={messages.quickAddPlaceholderQuantity}
+                          aria-label={`${row.stock_id} ${messages.quickAddQuantity}`}
                         />
                       </td>
                       <td>
@@ -104,6 +115,7 @@ export default function QuickPurchaseModal({ show, onClose, rows, setRows, onSub
                             onChange={handleFieldChange(index, 'price')}
                             disabled={disabled}
                             placeholder={messages.quickAddPlaceholderPrice}
+                            aria-label={`${row.stock_id} ${messages.quickAddPrice}`}
                           />
                         </div>
                       </td>
@@ -120,7 +132,7 @@ export default function QuickPurchaseModal({ show, onClose, rows, setRows, onSub
           <button type="button" className={styles.primaryButton} onClick={onSubmit} disabled={!hasRows}>
             {messages.quickAddSave}
           </button>
-          <button type="button" className={styles.secondaryButton} onClick={onClose}>
+          <button type="button" autoFocus className={styles.secondaryButton} onClick={onClose}>
             {messages.quickAddClose}
           </button>
         </div>

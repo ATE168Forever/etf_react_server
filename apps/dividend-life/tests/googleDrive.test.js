@@ -86,9 +86,9 @@ test('exportTransactionsToDrive uploads CSV using client token', async () => {
   expect(setToken).toHaveBeenCalledWith({ access_token: 'client-token' });
   expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   const [, options] = globalThis.fetch.mock.calls[0];
-  expect(options.method).toBe('POST');
+  expect(options.method).toBe('PATCH');
   expect(options.headers.get('Authorization')).toBe('Bearer client-token');
-  expect(options.body).toBeInstanceOf(FormData);
+  expect(options.body).toBeInstanceOf(Blob);
 });
 
 test('subsequent exports reuse cached GIS token', async () => {

@@ -36,6 +36,10 @@ export default function StockDetail({ stockId }) {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    document.documentElement.lang = lang === 'en' ? 'en' : 'zh-Hant';
+  }, [lang]);
+
   const {
     data: stockList = [],
     isLoading: stockLoading,
@@ -169,11 +173,11 @@ export default function StockDetail({ stockId }) {
     ) || 'TWD';
 
   if (stockLoading || dividendLoading) {
-    return <div>{lang === 'en' ? 'Loading...' : '載入中...'}</div>;
+    return <div role="status" aria-live="polite">{lang === 'en' ? 'Loading...' : '載入中...'}</div>;
   }
 
   if (!stock.stock_id) {
-    return <div style={{ padding: 20 }}>{lang === 'en' ? 'Stock not found' : '找不到股票'}</div>;
+    return <div className="stock-detail-message">{lang === 'en' ? 'Stock not found' : '找不到股票'}</div>;
   }
 
   const website = stock.website;
@@ -182,13 +186,13 @@ export default function StockDetail({ stockId }) {
 
   return (
     <>
-      <div className="stock-detail">
-        <h3>
+      <main id="main-content" className="stock-detail">
+        <h1 className="h3">
           {stock.stock_id} {stock.stock_name}
-        </h3>
+        </h1>
 
         {stockUpdatedAt && (
-          <div style={{ textAlign: 'right', fontSize: 12 }}>
+          <div className="stock-detail__timestamp">
             {lang === 'en' ? 'Data updated at:' : '資料更新時間：'}{' '}
             {new Date(stockUpdatedAt).toLocaleString()}
           </div>
@@ -209,7 +213,8 @@ export default function StockDetail({ stockId }) {
         <p>
           {lang === 'en' ? 'Website:' : '官網：'}{' '}
           {website ? (
-            <a href={website} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all' }}>
+            <a href={website} target="_blank" rel="noreferrer" className="word-break-all"
+              aria-label={`${lang === 'en' ? 'Official website (opens in new tab):' : '官網（開啟新分頁）：'} ${website}`}>
               {website}
             </a>
           ) : (
@@ -218,8 +223,9 @@ export default function StockDetail({ stockId }) {
         </p>
         <p>{lang === 'en' ? 'Listing date:' : '上市日期：'} {stock.listing_date || '-'}</p>
 
-        <div style={{ marginTop: 12 }}>
+        <div className="stock-detail__section">
           <button
+            type="button"
             onClick={() => {
               if (!returnsEnabled) {
                 setReturnsEnabled(true);
@@ -244,7 +250,7 @@ export default function StockDetail({ stockId }) {
         </div>
 
         {returnsEnabled && returnsQuery.isError && (
-          <div style={{ marginTop: 8, color: '#f87171' }}>
+          <div className="stock-detail__error" role="alert">
             {lang === 'en'
               ? `Failed to load performance data: ${returnsQuery.error?.message ?? ''}`
               : `無法載入績效資料：${returnsQuery.error?.message ?? ''}`}
@@ -252,21 +258,21 @@ export default function StockDetail({ stockId }) {
         )}
 
         {returnsEnabled && returns.stock_id && !returnsQuery.isFetching && !returnsQuery.isError && (
-          <div className="table-responsive" style={{ marginTop: 12 }}>
-            <table className="dividend-record">
+          <div className="table-responsive stock-detail__section">
+            <table className="dividend-record" aria-label={lang === 'en' ? 'Performance data' : '績效資料'}>
               <thead>
                 <tr>
-                  <th></th>
-                  <th>{lang === 'en' ? 'Price Return (ex-div)' : '價差（不含息）'}</th>
-                  <th>{lang === 'en' ? 'Total Return (incl. div)' : '績效（含息）'}</th>
-                  <th>{lang === 'en' ? 'Highest' : '最高'}</th>
-                  <th>{lang === 'en' ? 'Lowest' : '最低'}</th>
-                  <th>{lang === 'en' ? 'Mean' : '平均'}</th>
+                  <th scope="col"></th>
+                  <th scope="col">{lang === 'en' ? 'Price Return (ex-div)' : '價差（不含息）'}</th>
+                  <th scope="col">{lang === 'en' ? 'Total Return (incl. div)' : '績效（含息）'}</th>
+                  <th scope="col">{lang === 'en' ? 'Highest' : '最高'}</th>
+                  <th scope="col">{lang === 'en' ? 'Lowest' : '最低'}</th>
+                  <th scope="col">{lang === 'en' ? 'Mean' : '平均'}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>{lang === 'en' ? '1M' : '近1月'}</td>
+                  <th scope="row">{lang === 'en' ? '1M' : '近1月'}</th>
                   <td>{formatPercent(returns.price_return_1m)}</td>
                   <td>{formatPercent(returns.total_return_1m)}</td>
                   <td>{formatNumber(returns.highest_1m)}</td>
@@ -274,7 +280,7 @@ export default function StockDetail({ stockId }) {
                   <td>{formatNumber(returns.mean_1m)}</td>
                 </tr>
                 <tr>
-                  <td>{lang === 'en' ? '3M' : '近3月'}</td>
+                  <th scope="row">{lang === 'en' ? '3M' : '近3月'}</th>
                   <td>{formatPercent(returns.price_return_3m)}</td>
                   <td>{formatPercent(returns.total_return_3m)}</td>
                   <td>{formatNumber(returns.highest_3m)}</td>
@@ -282,7 +288,7 @@ export default function StockDetail({ stockId }) {
                   <td>{formatNumber(returns.mean_3m)}</td>
                 </tr>
                 <tr>
-                  <td>{lang === 'en' ? '1Y' : '近1年'}</td>
+                  <th scope="row">{lang === 'en' ? '1Y' : '近1年'}</th>
                   <td>{formatPercent(returns.price_return_1y)}</td>
                   <td>{formatPercent(returns.total_return_1y)}</td>
                   <td>{formatNumber(returns.highest_1y)}</td>
@@ -294,16 +300,17 @@ export default function StockDetail({ stockId }) {
           </div>
         )}
         {returnsEnabled && !returnsQuery.isFetching && !returns.stock_id && !returnsQuery.isError && (
-          <div style={{ marginTop: 8 }}>
+          <div className="stock-detail__note">
             {lang === 'en' ? 'No performance data available.' : '目前沒有可顯示的績效資料。'}
           </div>
         )}
 
-        <p style={{ marginTop: 6 }}>{lang === 'en' ? 'External Data' : '外部資料'}</p>
+        <p className="stock-detail__section-label">{lang === 'en' ? 'External Data' : '外部資料'}</p>
         <ul className="link-list">
           <li>
             {lang === 'en' ? 'Data source:' : '資料來源：'}
-            <a href={`https://www.cmoney.tw/etf/tw/${stockId}/intro`} target="_blank" rel="noreferrer">
+            <a href={`https://www.cmoney.tw/etf/tw/${stockId}/intro`} target="_blank" rel="noreferrer"
+              aria-label={lang === 'en' ? 'CMoney ETF Intro (opens in new tab)' : 'CMoney ETF 介紹（開啟新分頁）'}>
               {lang === 'en' ? 'CMoney ETF Intro' : 'CMoney ETF 介紹'}
             </a>
             {lang === 'en' ? ' (external site)' : '（外部網站）'}
@@ -314,6 +321,7 @@ export default function StockDetail({ stockId }) {
               href={`https://www.moneydj.com/etf/x/basic/basic0003.xdjhtm?etfid=${stockId}.tw`}
               target="_blank"
               rel="noreferrer"
+              aria-label={lang === 'en' ? 'MoneyDJ Basic Info (opens in new tab)' : 'MoneyDJ 基本資料（開啟新分頁）'}
             >
               {lang === 'en' ? 'MoneyDJ Basic Info' : 'MoneyDJ 基本資料'}
             </a>
@@ -325,6 +333,7 @@ export default function StockDetail({ stockId }) {
               href={`https://goodinfo.tw/tw/StockDetail.asp?STOCK_ID=${stockId}`}
               target="_blank"
               rel="noreferrer"
+              aria-label={lang === 'en' ? 'Goodinfo Stock Info (opens in new tab)' : 'Goodinfo 股市資訊（開啟新分頁）'}
             >
               {lang === 'en' ? 'Goodinfo Stock Info' : 'Goodinfo 股市資訊'}
             </a>
@@ -332,28 +341,32 @@ export default function StockDetail({ stockId }) {
           </li>
           <li>
             {lang === 'en' ? 'Data source:' : '資料來源：'}
-            <a href={`https://tw.stock.yahoo.com/quote/${stockId}.TW`} target="_blank" rel="noreferrer">
+            <a href={`https://tw.stock.yahoo.com/quote/${stockId}.TW`} target="_blank" rel="noreferrer"
+              aria-label={lang === 'en' ? 'Yahoo Price (opens in new tab)' : 'Yahoo 股價（開啟新分頁）'}>
               {lang === 'en' ? 'Yahoo Price' : 'Yahoo 股價'}
             </a>
             {lang === 'en' ? ' (external site)' : '（外部網站）'}
           </li>
           <li>
             {lang === 'en' ? 'Data source:' : '資料來源：'}
-            <a href={`https://histock.tw/stock/${stockId}`} target="_blank" rel="noreferrer">
+            <a href={`https://histock.tw/stock/${stockId}`} target="_blank" rel="noreferrer"
+              aria-label={lang === 'en' ? 'HiStock Info (opens in new tab)' : 'HiStock 個股資訊（開啟新分頁）'}>
               {lang === 'en' ? 'HiStock Info' : 'HiStock 個股資訊'}
             </a>
             {lang === 'en' ? ' (external site)' : '（外部網站）'}
           </li>
           <li>
             {lang === 'en' ? 'Data source:' : '資料來源：'}
-            <a href={`https://www.cnyes.com/twstock/${stockId}`} target="_blank" rel="noreferrer">
+            <a href={`https://www.cnyes.com/twstock/${stockId}`} target="_blank" rel="noreferrer"
+              aria-label={lang === 'en' ? 'Cnyes Stock Info (opens in new tab)' : '鉅亨網 個股資訊（開啟新分頁）'}>
               {lang === 'en' ? 'Cnyes Stock Info' : '鉅亨網 個股資訊'}
             </a>
             {lang === 'en' ? ' (external site)' : '（外部網站）'}
           </li>
           <li>
             {lang === 'en' ? 'Data source:' : '資料來源：'}
-            <a href={`https://www.stockq.org/etf/${stockId}.php`} target="_blank" rel="noreferrer">
+            <a href={`https://www.stockq.org/etf/${stockId}.php`} target="_blank" rel="noreferrer"
+              aria-label={lang === 'en' ? 'StockQ ETF Data (opens in new tab)' : 'StockQ ETF 資料（開啟新分頁）'}>
               {lang === 'en' ? 'StockQ ETF Data' : 'StockQ ETF 資料'}
             </a>
             {lang === 'en' ? ' (external site)' : '（外部網站）'}
@@ -418,21 +431,23 @@ export default function StockDetail({ stockId }) {
             <>
               {showNewsEntry && (
                 <>
-                  <div style={{ marginTop: 12 }}>
+                  <div className="stock-detail__section">
                     <div>
                       <a
                         href="https://www.twse.com.tw/zh/products/securities/etf/news.html"
                         target="_blank"
                         rel="noreferrer"
+                        aria-label={lang === 'en' ? `${STR.twseLinkText} (opens in new tab)` : `${STR.twseLinkText}（開啟新分頁）`}
                       >
                         {STR.twseLinkText}
                       </a>
                     </div>
 
                     <button
+                      type="button"
                       onClick={handleClick}
                       disabled={isFetching}
-                      style={{ marginBottom: 12 }}
+                      className="btn-load-news"
                     >
                       {isFetching
                         ? STR.loading
@@ -441,25 +456,26 @@ export default function StockDetail({ stockId }) {
                   </div>
 
                   {dividendHelperEnabled && isError && (
-                    <div style={{ marginTop: 8, color: '#f87171' }}>
+                    <div className="stock-detail__error" role="alert">
                       {`${STR.loadFailed} ${errorMsg}`}
                     </div>
                   )}
 
                   {canRenderNews && hasNewsText && (
-                    <div className="news" style={{ marginTop: 12 }}>
-                      <div style={{ fontWeight: 600 }}>{STR.latest}</div>
-                      <p style={{ paddingLeft: 20, margin: '6px 0' }}>
+                    <div className="news stock-detail__section">
+                      <div className="news__header">{STR.latest}</div>
+                      <p className="news__item">
                         {STR.announceDate} {formatDateStr(newsDate)}
                       </p>
-                      <p style={{ paddingLeft: 20, margin: '6px 0' }}>
+                      <p className="news__item">
                         {STR.link}{' '}
                         {newsUrl ? (
                           <a
                             href={newsUrl}
                             target="_blank"
                             rel="noreferrer"
-                            style={{ wordBreak: 'break-all' }}
+                            className="word-break-all"
+                            aria-label={lang === 'en' ? `Announcement link (opens in new tab): ${newsUrl}` : `公告連結（開啟新分頁）：${newsUrl}`}
                           >
                             {newsUrl}
                           </a>
@@ -471,15 +487,15 @@ export default function StockDetail({ stockId }) {
                   )}
 
                   {canRenderNews && hasNewsText && (
-                    <div className="news-text" style={{ paddingLeft: 20 }}>
-                      <div style={{ fontWeight: 600, marginTop: 6 }}>{STR.breakdown}</div>
-                      <ul style={{ marginTop: 4 }}>
+                    <div className="news-text">
+                      <div className="news-text__header">{STR.breakdown}</div>
+                      <ul className="news-text__list">
                         {newsTextEntries.map(([key, value]) => {
                           const label = distributionLabelMap[key];
                           const displayLabel = label ? (lang === 'en' ? label.en : label.zh) : key;
                           const v = typeof value === 'number' ? `${value}%` : (value ?? '-');
                           return (
-                            <li key={key} style={{ lineHeight: 1.6 }}>
+                            <li key={key}>
                               <strong>{displayLabel}：</strong> {v}
                             </li>
                           );
@@ -489,7 +505,7 @@ export default function StockDetail({ stockId }) {
                   )}
 
                   {canRenderNews && !hasNewsText && (
-                    <div style={{ marginTop: 8 }}>
+                    <div className="stock-detail__note">
                       {STR.noData}
                     </div>
                   )}
@@ -497,24 +513,24 @@ export default function StockDetail({ stockId }) {
               )}
 
               <div className="table-responsive">
-                <table className="dividend-record table-striped table table-bordered">
+                <table className="dividend-record table-striped table table-bordered" aria-label={lang === 'en' ? 'Dividend history' : '配息歷史'}>
                   <thead>
                     <tr>
-                      <th>#</th>
-                      <th>{STR.date}</th>
-                      <th>
+                      <th scope="col">#</th>
+                      <th scope="col">{STR.date}</th>
+                      <th scope="col">
                         {STR.dividend}
                         <span className="table-unit">({dividendCurrencyUnit})</span>
                       </th>
-                      <th>
+                      <th scope="col">
                         {STR.accumetive_dividend}
                         <span className="table-unit">({dividendCurrencyUnit})</span>
                       </th>
-                      <th>
+                      <th scope="col">
                         {STR.yield}
                         <span className="table-unit">(%)</span>
                       </th>
-                      <th>
+                      <th scope="col">
                         {STR.accumetive_yield}
                         <span className="table-unit">(%)</span>
                       </th>
@@ -542,7 +558,7 @@ export default function StockDetail({ stockId }) {
           );
         })()}
 
-      </div>
+      </main>
 
       <Footer
         theme={theme}

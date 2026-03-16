@@ -66,6 +66,7 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose, a
             value={temp.minYield}
             onChange={e => setTemp({ ...temp, minYield: e.target.value })}
             className="advanced-dropdown__input"
+            aria-label={lang === 'en' ? 'Minimum estimated yield (%)' : '最低預估殖利率 (%)'}
           />
           <span className="advanced-dropdown__suffix">%</span>
         </div>
@@ -122,13 +123,14 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose, a
             value={temp.upcomingWithin}
             onChange={e => setTemp({ ...temp, upcomingWithin: e.target.value })}
             className="advanced-dropdown__input"
+            aria-label={lang === 'en' ? 'Upcoming within days' : '即將發生天數'}
           />
           <span className="advanced-dropdown__suffix">{lang === 'en' ? 'days' : '天內'}</span>
         </div>
       </div>
       <div className="advanced-dropdown__actions">
-        <button className="dropdown-btn" onClick={handleClear}>{lang === 'en' ? 'Clear' : '清除'}</button>
-        <button className="dropdown-btn" onClick={handleApply}>{lang === 'en' ? 'Apply' : '確定'}</button>
+        <button type="button" className="dropdown-btn" onClick={handleClear}>{lang === 'en' ? 'Clear' : '清除'}</button>
+        <button type="button" className="dropdown-btn" onClick={handleApply}>{lang === 'en' ? 'Apply' : '確定'}</button>
       </div>
     </div>
   );

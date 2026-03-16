@@ -98,21 +98,23 @@ export default function DataDropdown({
 
       {selectedSource === 'csv' && (
         <div className={styles.buttonGroup}>
-          <button onClick={() => handleAction(handleImportClick)}>{t.importText}</button>
-          <button onClick={() => handleAction(handleExportClick)}>{t.exportText}</button>
+          <button type="button" onClick={() => handleAction(handleImportClick)}>{t.importText}</button>
+          <button type="button" onClick={() => handleAction(handleExportClick)}>{t.exportText}</button>
         </div>
       )}
 
       {selectedSource === 'googleDrive' && (
         <>
-          {driveStatusMessage && (
-            <div className={styles.autoSaveStatus + (driveStatusClass ? ' ' + driveStatusClass : '')}>
-              {driveStatusMessage}
-            </div>
-          )}
+          <div
+            className={styles.autoSaveStatus + (driveStatusClass ? ' ' + driveStatusClass : '')}
+            role={status === 'error' ? 'alert' : 'status'}
+            aria-live={status === 'error' ? 'assertive' : 'polite'}
+          >
+            {driveStatusMessage}
+          </div>
           {!driveConnected && status !== 'connecting' && status !== 'syncing' && (
             <div className={styles.buttonGroup}>
-              <button onClick={() => handleAction(onConnectDrive)}>{t.driveConnect}</button>
+              <button type="button" onClick={() => handleAction(onConnectDrive)}>{t.driveConnect}</button>
             </div>
           )}
         </>

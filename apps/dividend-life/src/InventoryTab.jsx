@@ -68,6 +68,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
   const [quickForm, setQuickForm] = useState([]);
   const fileInputRef = useRef(null);
   const driveSaveRequestRef = useRef(0);
+  const modalTriggerRef = useRef(null);
   const [cacheInfo, setCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [selectedDataSource, setSelectedDataSource] = useState(
@@ -194,12 +195,15 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
   }, [stockList, transactionHistory, latestPrices]);
 
   const handleOpenQuickModal = () => {
+    modalTriggerRef.current = document.activeElement;
     setQuickForm(buildQuickFormEntries());
     setShowQuickModal(true);
   };
 
   const handleQuickModalClose = () => {
     setShowQuickModal(false);
+    modalTriggerRef.current?.focus();
+    modalTriggerRef.current = null;
   };
 
   const handleDividendInclusionToggle = useCallback((stockId) => {
@@ -256,6 +260,8 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     ];
     setTransactionHistory(updatedHistory);
     setShowQuickModal(false);
+    modalTriggerRef.current?.focus();
+    modalTriggerRef.current = null;
     setQuickForm([]);
     if (selectedDataSource === 'googleDrive' && driveConnected) syncToDrive(updatedHistory);
   };
@@ -1445,6 +1451,8 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     setTransactionHistory(updatedHistory);
     setForm(createInitialFormState());
     setShowModal(false);
+    modalTriggerRef.current?.focus();
+    modalTriggerRef.current = null;
     if (selectedDataSource === 'googleDrive' && driveConnected) syncToDrive(updatedHistory);
   };
 
@@ -1488,19 +1496,23 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     ];
     setTransactionHistory(updatedHistory);
     setSellModal({ show: false, stock: null });
+    modalTriggerRef.current?.focus();
+    modalTriggerRef.current = null;
     if (selectedDataSource === 'googleDrive' && driveConnected) syncToDrive(updatedHistory);
   };
 
   return (
-    <div className="App">
+    <div className="inventory-tab">
       <p className={styles.notice}>
         {msg.notice}
       </p>
 
       <div className={styles.topControls}>
         <button
+          type="button"
           className={styles.button}
           onClick={() => {
+            modalTriggerRef.current = document.activeElement;
             setForm(createInitialFormState());
             setShowModal(true);
           }}
@@ -1508,6 +1520,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
           {msg.addRecord}
         </button>
         <button
+          type="button"
           className={styles.button}
           onClick={handleOpenQuickModal}
         >
@@ -1515,8 +1528,11 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         </button>
         <div className="more-item">
           <button
+            type="button"
             className={styles.button}
             onClick={() => setShowDataMenu(v => !v)}
+            aria-expanded={showDataMenu}
+            aria-haspopup="true"
           >
             {msg.dataAccess}
           </button>
@@ -1537,14 +1553,14 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
           type="file"
           accept=".csv"
           ref={fileInputRef}
-          style={{ display: 'none' }}
+          hidden
           onChange={handleImport}
         />
       </div>
 
       <AddTransactionModal
         show={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => { setShowModal(false); modalTriggerRef.current?.focus(); modalTriggerRef.current = null; }}
         stockList={stockList}
         form={form}
         setForm={setForm}
@@ -1561,7 +1577,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
       <SellModal
         show={sellModal.show}
         stock={sellModal.stock}
-        onClose={() => setSellModal({ show: false, stock: null })}
+        onClose={() => { setSellModal({ show: false, stock: null }); modalTriggerRef.current?.focus(); modalTriggerRef.current = null; }}
         onSubmit={handleSell}
       />
 
@@ -1569,8 +1585,9 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         {showInventory ? (
           <>
             <div className={styles.tableHeader}>
-              <h3 className={styles.titleMargin}>{msg.currentInventory}</h3>
+              <h2 className={`${styles.titleMargin} h3`}>{msg.currentInventory}</h2>
               <button
+                type="button"
                 className={styles.button}
                 onClick={() => setShowInventory(false)}
                 title={lang === 'en' ? 'Toggle list display' : '切換列表顯示'}
@@ -1639,14 +1656,14 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
             />
 
             <div className="table-responsive">
-              <table className={`table table-bordered table-striped ${styles.fullWidth}`}>
+              <table className={`table table-bordered table-striped ${styles.fullWidth}`} aria-label={lang === 'en' ? 'Current inventory' : '目前庫存'}>
                 <thead>
                   <tr>
-                    <th className="stock-col">{msg.stockCodeName}</th>
-                    <th>{msg.avgPrice}</th>
-                    <th>{msg.totalQuantity}</th>
-                    <th>{msg.actions}</th>
-                    <th>{msg.active}</th>
+                    <th scope="col" className="stock-col">{msg.stockCodeName}</th>
+                    <th scope="col">{msg.avgPrice}</th>
+                    <th scope="col">{msg.totalQuantity}</th>
+                    <th scope="col">{msg.actions}</th>
+                    <th scope="col">{msg.active}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1660,7 +1677,8 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
                         return (
                           <tr key={idx}>
                           <td className="stock-col">
-                            <a href={`${HOST_URL}/stock/${item.stock_id}`} target="_blank" rel="noreferrer">
+                            <a href={`${HOST_URL}/stock/${item.stock_id}`} target="_blank" rel="noreferrer"
+                              aria-label={`${item.stock_id} ${item.stock_name} (${lang === 'en' ? 'opens in new tab' : '開啟新分頁'})`}>
                               <TooltipText tooltip={item.stock_name}>
                                 <span>
                                   {item.stock_id}
@@ -1685,13 +1703,17 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
                             )}
                           </td>
                           <td>
-                            <button className={styles.sellButton} onClick={() => setSellModal({ show: true, stock: item })}>{msg.sell}</button>
+                            <button type="button" className={styles.sellButton} aria-label={lang === 'en' ? `Sell ${item.stock_id} ${item.stock_name}` : `賣出 ${item.stock_id} ${item.stock_name}`} onClick={() => { modalTriggerRef.current = document.activeElement; setSellModal({ show: true, stock: item }); }}>{msg.sell}</button>
                           </td>
                           <td>
                             <button
                               className={isExcludedFromDividendStats ? styles.buttonExclude : styles.button}
                               type="button"
                               disabled={!normalizedStockId}
+                              aria-pressed={!isExcludedFromDividendStats}
+                              aria-label={lang === 'en'
+                                ? `${item.stock_id} ${item.stock_name}: dividend stats ${isExcludedFromDividendStats ? 'excluded' : 'included'}`
+                                : `${item.stock_id} ${item.stock_name}：股息統計${isExcludedFromDividendStats ? '已排除' : '已包含'}`}
                               onClick={() => handleDividendInclusionToggle(item.stock_id)}
                             >
                               {isExcludedFromDividendStats ? 'N' : 'Y'}
@@ -1707,8 +1729,9 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         ) : (
           <>
             <div className={styles.tableHeader}>
-              <h3 className={styles.titleMargin}>{msg.transactionHistory}</h3>
+              <h2 className={`${styles.titleMargin} h3`}>{msg.transactionHistory}</h2>
               <button
+                type="button"
                 className={styles.button}
                 onClick={() => setShowInventory(true)}
                 title={lang === 'en' ? 'Toggle list display' : '切換列表顯示'}

@@ -53,11 +53,11 @@ describe('dividendApi', () => {
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://api.example.com/get_dividend',
+      'https://api.example.com/get_dividend?country=tw&country=us',
       expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({ Accept: 'application/json', 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ country: ['tw', 'us'] })
+        method: 'GET',
+        headers: expect.objectContaining({ Accept: 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' }),
+        cache: 'no-store'
       })
     );
   });
@@ -68,20 +68,20 @@ describe('dividendApi', () => {
     expect(global.fetch).toHaveBeenCalledTimes(2);
     expect(global.fetch).toHaveBeenNthCalledWith(
       1,
-      'https://api.example.com/get_dividend',
+      'https://api.example.com/get_dividend?year=2024&country=tw&country=us',
       expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({ Accept: 'application/json', 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ year: [2024], country: ['tw', 'us'] })
+        method: 'GET',
+        headers: expect.objectContaining({ Accept: 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' }),
+        cache: 'no-store'
       })
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       2,
-      'https://api.example.com/get_dividend',
+      'https://api.example.com/get_dividend?year=2023&country=tw&country=us',
       expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({ Accept: 'application/json', 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ year: [2023], country: ['tw', 'us'] })
+        method: 'GET',
+        headers: expect.objectContaining({ Accept: 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' }),
+        cache: 'no-store'
       })
     );
   });
@@ -91,11 +91,11 @@ describe('dividendApi', () => {
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://api.example.com/get_dividend',
+      'https://api.example.com/get_dividend?year=2024&country=tw&country=us&stock_ids=0056&stock_ids=0050',
       expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({ Accept: 'application/json', 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ year: [2024], country: ['tw', 'us'], stock_ids: ['0056', '0050'] })
+        method: 'GET',
+        headers: expect.objectContaining({ Accept: 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' }),
+        cache: 'no-store'
       })
     );
   });
@@ -105,11 +105,11 @@ describe('dividendApi', () => {
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://api.example.com/get_dividend',
+      'https://api.example.com/get_dividend?year=2024&country=tw&country=us',
       expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({ Accept: 'application/json', 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ year: [2024], country: ['tw', 'us'] })
+        method: 'GET',
+        headers: expect.objectContaining({ Accept: 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' }),
+        cache: 'no-store'
       })
     );
   });
@@ -126,11 +126,11 @@ describe('dividendApi', () => {
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://api.example.com/get_dividend',
+      'https://api.example.com/get_dividend?year=2024&country=tw&country=us',
       expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({ Accept: 'application/json', 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ year: [2024], country: ['tw', 'us'] })
+        method: 'GET',
+        headers: expect.objectContaining({ Accept: 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' }),
+        cache: 'no-store'
       })
     );
   });

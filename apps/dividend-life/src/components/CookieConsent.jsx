@@ -24,13 +24,13 @@ export default function CookieConsent() {
   if (!visible) return null;
 
   return (
-    <div className="cookie-consent">
-      <span>
+    <div className="cookie-consent" role="alertdialog" aria-modal="false" aria-labelledby="cookie-consent-desc">
+      <span id="cookie-consent-desc">
         {lang === 'en'
           ? 'This site uses cookies to enhance your experience. By continuing to browse, you agree to our use of cookies.'
           : '本網站使用 Cookie 以提升使用者體驗。繼續瀏覽表示您同意我們使用 Cookie。'}
       </span>
-      <button onClick={accept}>{lang === 'en' ? 'Got it!' : '知道了！'}</button>
+      <button type="button" onClick={accept}>{lang === 'en' ? 'Got it!' : '知道了！'}</button>
     </div>
   );
 }

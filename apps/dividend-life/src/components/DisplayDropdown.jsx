@@ -22,13 +22,13 @@ export default function DisplayDropdown({
 
   return (
       <div className="action-dropdown silver-button-container" ref={ref}>
-        <button onClick={() => handleClick(toggleDividendYield)}>
+        <button type="button" onClick={() => handleClick(toggleDividendYield)}>
           {showDividendYield ? (lang === 'en' ? 'Show Dividends' : '顯示配息') : (lang === 'en' ? 'Show Yield' : '顯示殖利率')}
         </button>
-        <button onClick={() => handleClick(togglePerYield)}>
+        <button type="button" onClick={() => handleClick(togglePerYield)}>
           {showPerYield ? (lang === 'en' ? 'Show Yield' : '顯示殖利率') : (lang === 'en' ? 'Show Monthly Avg Yield' : '顯示月平均殖利率')}
         </button>
-        <button onClick={() => handleClick(toggleAxis)}>
+        <button type="button" onClick={() => handleClick(toggleAxis)}>
           {showInfoAxis ? (lang === 'en' ? 'Show Months' : '顯示月份') : (lang === 'en' ? 'Show Info' : '顯示資訊')}
         </button>
       </div>

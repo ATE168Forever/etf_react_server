@@ -8,18 +8,26 @@ export default function SellModal({ show, stock, onClose, onSubmit }) {
   useEffect(() => {
     if (stock) setQuantity(stock.total_quantity);
   }, [stock]);
+  useEffect(() => {
+    if (!show) return;
+    const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [show, onClose]);
   if (!show || !stock) return null;
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
-        <h5 className={styles.title}>{lang === 'en' ? 'Sell Stock' : '賣出股票'}</h5>
+    <div className={styles.overlay} role="presentation">
+      <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="sell-modal-title">
+        <h5 id="sell-modal-title" className={styles.title}>{lang === 'en' ? 'Sell Stock' : '賣出股票'}</h5>
         <p className={styles.text}>{lang === 'en' ? 'Stock:' : '股票：'}{stock.stock_id} - {stock.stock_name}</p>
         <div className={styles.formGroup}>
-          <label className={styles.label}>{lang === 'en' ? 'Sell Quantity:' : '賣出數量：'}</label>
+          <label htmlFor="sell-quantity" className={styles.label}>{lang === 'en' ? 'Sell Quantity:' : '賣出數量：'}</label>
           <input
+            id="sell-quantity"
             type="number"
             min={1}
             max={stock.total_quantity}
+            autoFocus
             step={1}
             value={quantity}
             onChange={e => {
@@ -33,8 +41,8 @@ export default function SellModal({ show, stock, onClose, onSubmit }) {
           />
         </div>
         <div className={styles.buttonRow}>
-          <button onClick={() => { onSubmit(stock.stock_id, quantity); }} className={styles.primaryButton}>{lang === 'en' ? 'Confirm' : '確認'}</button>
-          <button onClick={onClose} className={styles.secondaryButton}>{lang === 'en' ? 'Close' : '關閉'}</button>
+          <button type="button" onClick={() => { onSubmit(stock.stock_id, quantity); }} className={styles.primaryButton}>{lang === 'en' ? 'Confirm' : '確認'}</button>
+          <button type="button" onClick={onClose} className={styles.secondaryButton}>{lang === 'en' ? 'Close' : '關閉'}</button>
         </div>
       </div>
     </div>

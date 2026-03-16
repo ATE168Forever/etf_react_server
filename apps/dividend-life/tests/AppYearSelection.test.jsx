@@ -20,7 +20,8 @@ const mockFetchDividendsByYears = jest.fn();
 
 jest.mock('../src/dividendApi', () => ({
   fetchDividendsByYears: (...args) => mockFetchDividendsByYears(...args),
-  clearDividendsCache: jest.fn()
+  clearDividendsCache: jest.fn(),
+  clearEmptyDividendCaches: jest.fn()
 }));
 
 jest.mock('../config', () => ({ API_HOST: '' }));
@@ -46,7 +47,7 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
-test('falls back to the latest available year when current year has no data', async () => {
+test('keeps current year selected even when current year has no data', async () => {
   const currentYear = new Date().getFullYear();
   const previousYear = currentYear - 1;
 
@@ -82,7 +83,7 @@ test('falls back to the latest available year when current year has no data', as
     );
   });
 
-  const dividendTab = await screen.findByRole('button', { name: 'ETF 配息查詢' });
+  const dividendTab = await screen.findByRole('tab', { name: 'ETF 配息查詢' });
 
   await act(async () => {
     fireEvent.click(dividendTab);
@@ -91,6 +92,6 @@ test('falls back to the latest available year when current year has no data', as
   const [yearSelect] = await screen.findAllByRole('combobox');
 
   await waitFor(() => {
-    expect(yearSelect.value).toBe(String(previousYear));
+    expect(yearSelect.value).toBe(String(currentYear));
   });
 });

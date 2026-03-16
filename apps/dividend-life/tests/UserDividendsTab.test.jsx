@@ -1,5 +1,5 @@
 /* eslint-env jest */
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import UserDividendsTab from '../src/UserDividendsTab';
 import { readTransactionHistory } from '../src/utils/transactionStorage';
 
@@ -55,8 +55,8 @@ test('calendar defaults to showing both ex and payment events', async () => {
   expect(exTotals.some(element => /1,000/.test(element.textContent || ''))).toBe(true);
   const payTotals = await screen.findAllByText(/發放金額/);
   expect(payTotals.some(element => /1,000/.test(element.textContent || ''))).toBe(true);
-  const bothBtn = screen.getByRole('button', { name: '除息/發放日' });
-  expect(bothBtn).toHaveClass('btn-selected');
+  const bothBtn = screen.getByRole('button', { name: '全部' });
+  expect(bothBtn).toHaveClass('filter-bar__pill--active');
 });
 
 test('payment totals fall back to payment date holdings when ex-date missing', async () => {
@@ -85,9 +85,10 @@ test('payment totals fall back to payment date holdings when ex-date missing', a
 });
 
 test('shows dividends for stocks sold before year end', async () => {
+  const year = new Date().getFullYear();
   readTransactionHistory.mockReturnValue([
-    { stock_id: '0056', date: '2024-01-01', quantity: 1000, type: 'buy' },
-    { stock_id: '0056', date: '2024-08-01', quantity: 1000, type: 'sell' }
+    { stock_id: '0056', date: `${year}-01-01`, quantity: 1000, type: 'buy' },
+    { stock_id: '0056', date: `${year}-08-01`, quantity: 1000, type: 'sell' }
   ]);
 
   const data = [
@@ -95,14 +96,14 @@ test('shows dividends for stocks sold before year end', async () => {
       stock_id: '0056',
       stock_name: '高股息ETF',
       dividend: '1.5',
-      dividend_date: '2024-03-15',
-      payment_date: '2024-04-15',
+      dividend_date: `${year}-03-15`,
+      payment_date: `${year}-04-15`,
       dividend_yield: '5',
       last_close_price: '30'
     }
   ];
 
-  render(<UserDividendsTab allDividendData={data} selectedYear={2024} />);
+  render(<UserDividendsTab allDividendData={data} />);
 
   const elements = await screen.findAllByText('0056');
   expect(elements.length).toBeGreaterThan(0);
@@ -110,9 +111,10 @@ test('shows dividends for stocks sold before year end', async () => {
 });
 
 test('allows switching between TWD and USD dividend summaries', async () => {
+  const year = new Date().getFullYear();
   readTransactionHistory.mockReturnValue([
-    { stock_id: '0050', date: '2024-01-01', quantity: 1000, type: 'buy' },
-    { stock_id: 'VUSD', date: '2024-01-01', quantity: 200, type: 'buy' }
+    { stock_id: '0050', date: `${year}-01-01`, quantity: 1000, type: 'buy' },
+    { stock_id: 'VUSD', date: `${year}-01-01`, quantity: 200, type: 'buy' }
   ]);
 
   const data = [
@@ -120,40 +122,39 @@ test('allows switching between TWD and USD dividend summaries', async () => {
       stock_id: '0050',
       stock_name: '台股ETF',
       dividend: '1',
-      dividend_date: '2024-03-15',
-      payment_date: '2024-04-15',
+      dividend_date: `${year}-09-15`,
+      payment_date: `${year}-09-25`,
       currency: 'TWD'
     },
     {
       stock_id: 'VUSD',
       stock_name: 'Vanguard USD',
       dividend: '0.5',
-      dividend_date: '2024-05-10',
-      payment_date: '2024-05-20',
+      dividend_date: `${year}-10-10`,
+      payment_date: `${year}-10-20`,
       currency: 'USD'
     }
   ];
 
-  render(<UserDividendsTab allDividendData={data} selectedYear={2024} />);
+  render(<UserDividendsTab allDividendData={data} />);
 
-  const toTwdButtonInitial = await screen.findByRole('button', { name: /^(台股|NT\$|NT dividends)$/i });
+  const dividendTable = await screen.findByRole('table', { name: '我的配息月份表' });
+
+  const toTwdButtonInitial = screen.getByRole('button', { name: /^(台股|NT\$|NT dividends)$/i });
   fireEvent.click(toTwdButtonInitial);
 
-  const twdElements = await screen.findAllByText('0050');
-  expect(twdElements.length).toBeGreaterThan(0);
-  expect(screen.queryByText('VUSD')).not.toBeInTheDocument();
+  expect(within(dividendTable).getAllByText('0050').length).toBeGreaterThan(0);
+  expect(within(dividendTable).queryByText('VUSD')).not.toBeInTheDocument();
 
-  const toUsdButton = await screen.findByRole('button', { name: /^(美股|US\$|US dividends)$/i });
+  const toUsdButton = screen.getByRole('button', { name: /^(美股|US\$|US dividends)$/i });
   fireEvent.click(toUsdButton);
 
-  const usdElements = await screen.findAllByText('VUSD');
-  expect(usdElements.length).toBeGreaterThan(0);
-  expect(screen.queryByText('0050')).not.toBeInTheDocument();
+  expect(within(dividendTable).getAllByText('VUSD').length).toBeGreaterThan(0);
+  expect(within(dividendTable).queryByText('0050')).not.toBeInTheDocument();
 
-  const toTwdButton = await screen.findByRole('button', { name: /^(台股|NT\$|NT dividends)$/i });
+  const toTwdButton = screen.getByRole('button', { name: /^(台股|NT\$|NT dividends)$/i });
   fireEvent.click(toTwdButton);
 
-  const twdElementsAgain = await screen.findAllByText('0050');
-  expect(twdElementsAgain.length).toBeGreaterThan(0);
-  expect(screen.queryByText('VUSD')).not.toBeInTheDocument();
+  expect(within(dividendTable).getAllByText('0050').length).toBeGreaterThan(0);
+  expect(within(dividendTable).queryByText('VUSD')).not.toBeInTheDocument();
 });

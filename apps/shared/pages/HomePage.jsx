@@ -94,7 +94,7 @@ export default function HomePage() {
   const locale = homeTranslations[lang] ?? homeTranslations.zh;
 
   return (
-    <main className={styles.container}>
+    <main id="main-content" className={styles.container}>
       <header className={styles.hero}>
         <h1 className={styles.heroTitle}>{locale.heroTitle}</h1>
         <p className={styles.heroSubtitle}>{locale.heroSubtitle}</p>

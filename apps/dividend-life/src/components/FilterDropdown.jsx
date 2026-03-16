@@ -56,9 +56,10 @@ export default function FilterDropdown({ options, selected, setSelected, onClose
         value={searchText}
         onChange={e => setSearchText(e.target.value)}
         placeholder={lang === 'en' ? 'Search...' : '搜尋...'}
+        aria-label={lang === 'en' ? 'Search options' : '搜尋選項'}
         autoFocus
       />
-      <div style={{ maxHeight: 180, overflowY: 'auto', marginTop: 6 }}>
+      <div className="dropdown__options-list">
         <label className="dropdown-item">
           <input
             type="checkbox"
@@ -68,11 +69,11 @@ export default function FilterDropdown({ options, selected, setSelected, onClose
             }
             onChange={handleAll}
           />
-          <span style={{ fontWeight: 'bold', marginLeft: 5 }}>{lang === 'en' ? 'Select All' : '全選'}</span>
+          <span className="dropdown__select-all-label">{lang === 'en' ? 'Select All' : '全選'}</span>
         </label>
         <hr />
         {filteredOptions.length === 0 && (
-          <div style={{ color: '#bbb', padding: '8px 0', fontSize: 13 }}>
+          <div className="dropdown__empty-msg">
             {lang === 'en' ? 'No matching options' : '無符合選項'}
           </div>
         )}
@@ -86,9 +87,9 @@ export default function FilterDropdown({ options, selected, setSelected, onClose
           </label>
         ))}
       </div>
-      <div style={{ marginTop: 8, textAlign: 'right' }}>
-        <button className="dropdown-btn" onClick={handleClear}>{lang === 'en' ? 'Clear' : '清除'}</button>
-        <button className="dropdown-btn" style={{ marginLeft: 8 }} onClick={handleApply}>{lang === 'en' ? 'Apply' : '確定'}</button>
+      <div className="dropdown__actions">
+        <button type="button" className="dropdown-btn" onClick={handleClear}>{lang === 'en' ? 'Clear' : '清除'}</button>
+        <button type="button" className="dropdown-btn" onClick={handleApply}>{lang === 'en' ? 'Apply' : '確定'}</button>
       </div>
     </div>
   );

@@ -299,16 +299,16 @@ export default function StockTable({
           {lang === 'zh' ? '顯示模式' : 'Display Mode'}: <strong>{lang === 'zh' ? '資訊' : 'Info'}</strong>
         </div>
         <div className="table-responsive" ref={tableContainerRef}>
-          <table className="table table-bordered table-striped">
+          <table className="table table-bordered table-striped" aria-label={lang === 'en' ? 'ETF info' : 'ETF 資訊'}>
           <thead>
             <tr>
-              <th className="stock-col">{t('stock_code_name')}</th>
-              <th>{t('latest_price')}</th>
-              <th>{t('dividend_total')}</th>
-              <th>{t('current_yield')}</th>
-              <th>{t('average_yield')}</th>
-              <th>{lang === 'zh' ? `月報酬${monthlyIncomeGoal.toLocaleString()}需張數` : `Lots for ${monthlyIncomeGoal.toLocaleString()} monthly income`}</th>
-              <th>{lang === 'zh' ? `月報酬${monthlyIncomeGoal.toLocaleString()}需成本` : `Cost for ${monthlyIncomeGoal.toLocaleString()} monthly income`}</th>
+              <th scope="col" className="stock-col">{t('stock_code_name')}</th>
+              <th scope="col">{t('latest_price')}</th>
+              <th scope="col">{t('dividend_total')}</th>
+              <th scope="col">{t('current_yield')}</th>
+              <th scope="col">{t('average_yield')}</th>
+              <th scope="col">{lang === 'zh' ? `月報酬${monthlyIncomeGoal.toLocaleString()}需張數` : `Lots for ${monthlyIncomeGoal.toLocaleString()} monthly income`}</th>
+              <th scope="col">{lang === 'zh' ? `月報酬${monthlyIncomeGoal.toLocaleString()}需成本` : `Cost for ${monthlyIncomeGoal.toLocaleString()} monthly income`}</th>
             </tr>
           </thead>
           <tbody>
@@ -329,7 +329,8 @@ export default function StockTable({
               return (
                 <tr key={stock.stock_id + stock.stock_name}>
                   <td className="stock-col">
-                    <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
+                    <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer"
+                      aria-label={`${stock.stock_id} ${stock.stock_name} (${lang === 'en' ? 'opens in new tab' : '開啟新分頁'})`}>
                       <TooltipText tooltip={stock.stock_name}>
                           {stock.stock_id}
                       </TooltipText>
@@ -350,6 +351,7 @@ export default function StockTable({
         {hasExtraRows && (
           <div className="table-more-btn-wrapper">
             <button
+              type="button"
               className="more-btn"
               onClick={handleShowMoreClick}
             >
@@ -367,27 +369,32 @@ export default function StockTable({
         {lang === 'zh' ? '顯示模式' : 'Display Mode'}: <strong>{displayModeLabel}</strong>
       </div>
       <div className="table-responsive" ref={tableContainerRef} style={tableScrollStyle}>
-        <table className="table table-bordered table-striped" style={{ minWidth: 1380 }}>
+        <table className="table table-bordered table-striped stock-table" aria-label={lang === 'en' ? 'ETF dividend calendar' : 'ETF 股息月曆'}>
         <thead>
           <tr>
-            <th className="stock-col" rowSpan={activeCurrencies.length > 1 ? 2 : 1}>
-              <span className="sortable" onClick={() => handleSort('stock_id')}>
+            <th scope="col" className="stock-col" rowSpan={activeCurrencies.length > 1 ? 2 : 1}
+              aria-sort={sortConfig.column === 'stock_id' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+            >
+              <button type="button" className="sortable" onClick={() => handleSort('stock_id')}>
                 {t('stock_code_name')}
-                <span className="sort-indicator">
+                <span className="sort-indicator" aria-hidden="true">
                   {sortConfig.column === 'stock_id'
                     ? (sortConfig.direction === 'asc' ? '▲' : '▼')
                     : '↕'}
                 </span>
-              </span>
-              <span
+              </button>
+              <button
+                type="button"
                 className="filter-btn"
-                tabIndex={0}
                 onClick={() => setShowIdDropdown(true)}
                 title={t('filter_by_id')}
+                aria-label={t('filter_by_id')}
+                aria-expanded={showIdDropdown}
+                aria-haspopup="true"
                 ref={idFilterButtonRef}
               >
                 🔎
-              </span>
+              </button>
               {showIdDropdown && idDropdownPosition && (
                 <FilterDropdown
                   options={stockOptions}
@@ -398,15 +405,17 @@ export default function StockTable({
                 />
               )}
             </th>
-            <th style={{ width: NUM_COL_WIDTH }} rowSpan={activeCurrencies.length > 1 ? 2 : 1}>
-              <span className="sortable" onClick={() => handleSort('latest_price')}>
+            <th scope="col" style={{ width: NUM_COL_WIDTH }} rowSpan={activeCurrencies.length > 1 ? 2 : 1}
+              aria-sort={sortConfig.column === 'latest_price' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+            >
+              <button type="button" className="sortable" onClick={() => handleSort('latest_price')}>
                 {lang === 'zh' ? <>最新<br></br>股價</> : <>Latest<br></br>Price</>}
-                <span className="sort-indicator">
+                <span className="sort-indicator" aria-hidden="true">
                   {sortConfig.column === 'latest_price'
                     ? (sortConfig.direction === 'asc' ? '▲' : '▼')
                     : '↕'}
                 </span>
-              </span>
+              </button>
             </th>
             {MONTHS.map((m, idx) => {
               const monthSortKey = `month${idx}`;
@@ -415,28 +424,30 @@ export default function StockTable({
               return (
                 <th
                   key={m}
+                  scope={activeCurrencies.length > 1 ? 'colgroup' : 'col'}
                   className={idx === currentMonth ? 'current-month' : ''}
                   colSpan={activeCurrencies.length}
                   style={{ minWidth: NUM_COL_WIDTH * activeCurrencies.length }}
+                  aria-sort={showMonthSort ? (isMonthActive ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
                 >
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    <span
-                      className={showMonthSort ? 'sortable' : undefined}
-                      onClick={showMonthSort ? () => handleSort(monthSortKey) : undefined}
-                    >
-                      {m}
-                      {showMonthSort && (
-                        <span className="sort-indicator">
+                  <div className="month-th-inner">
+                    {showMonthSort ? (
+                      <button type="button" className="sortable" onClick={() => handleSort(monthSortKey)}>
+                        {m}
+                        <span className="sort-indicator" aria-hidden="true">
                           {isMonthActive
                             ? (sortConfig.direction === 'asc' ? '▲' : '▼')
                             : '↕'}
                         </span>
-                      )}
-                    </span>
-                    <label style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                      </button>
+                    ) : (
+                      <span>{m}</span>
+                    )}
+                    <label className="month-filter-label">
                       <input
                         type="checkbox"
                         checked={monthHasValue[idx]}
+                        aria-label={`${m} ${t('payout')}`}
                         onChange={e => {
                           const arr = [...monthHasValue];
                           arr[idx] = e.target.checked;
@@ -449,26 +460,32 @@ export default function StockTable({
               );
             })}
             <th
+              scope="col"
               rowSpan={activeCurrencies.length > 1 ? 2 : 1}
               style={{ minWidth: NUM_COL_WIDTH * 2 }}
+              aria-sort={
+                sortConfig.column === 'total' || sortConfig.column === 'annual_yield'
+                  ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending')
+                  : 'none'
+              }
             >
-              <span className="sortable" onClick={() => handleSort('total')}>
+              <button type="button" className="sortable" onClick={() => handleSort('total')}>
                 {showDividendYield ? t('total_yield') : t('total_dividend')}
-                <span className="sort-indicator">
+                <span className="sort-indicator" aria-hidden="true">
                   {sortConfig.column === 'total'
                     ? (sortConfig.direction === 'asc' ? '▲' : '▼')
                     : '↕'}
                 </span>
-              </span>
+              </button>
               {' / '}
-              <span className="sortable" onClick={() => handleSort('annual_yield')}>
+              <button type="button" className="sortable" onClick={() => handleSort('annual_yield')}>
                 {t('estimated_yield')}
-                <span className="sort-indicator">
+                <span className="sort-indicator" aria-hidden="true">
                   {sortConfig.column === 'annual_yield'
                     ? (sortConfig.direction === 'asc' ? '▲' : '▼')
                     : '↕'}
                 </span>
-              </span>
+              </button>
             </th>
           </tr>
           {activeCurrencies.length > 1 && (
@@ -480,21 +497,23 @@ export default function StockTable({
                   return (
                     <th
                       key={`${m}-${currency}`}
+                      scope="col"
                       className={idx === currentMonth ? 'current-month' : ''}
                       style={{ width: NUM_COL_WIDTH }}
+                      aria-sort={isActive ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
                     >
-                      <span
-                        className="sortable"
+                      <button
+                        type="button"
+                        className="sortable-inline"
                         onClick={() => handleSort(currencySortKey)}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
                       >
                         {currencyLabelFor(currency)}
-                        <span className="sort-indicator">
+                        <span className="sort-indicator" aria-hidden="true">
                           {isActive
                             ? (sortConfig.direction === 'asc' ? '▲' : '▼')
                             : '↕'}
                         </span>
-                      </span>
+                      </button>
                     </th>
                   );
                 })
@@ -569,6 +588,7 @@ export default function StockTable({
       {hasExtraRows && (
         <div className="table-more-btn-wrapper">
           <button
+            type="button"
             className="more-btn"
             onClick={handleShowMoreClick}
           >
@@ -638,14 +658,14 @@ const StockRow = memo(function StockRow({
         <TooltipText tooltip={tooltipText}>
           {annual.toFixed(1)}%
           {shouldShowCrown && (
-            <span className="crown-icon" role="img" aria-label="crown">👑</span>
+            <span className="crown-icon" role="img" aria-label={lang === 'en' ? 'Highest annual yield' : '最高年度殖利率'}>👑</span>
           )}
         </TooltipText>
       ) : null;
       return (
         <div
           key={`${stock.stock_id}-total-${currency}`}
-          style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}
+          className="total-cell-row"
         >
           <span>{`${currencyLabelFor(currency)}${total.toFixed(3)}`}</span>
           {annualContent && <span>/ {annualContent}</span>}
@@ -657,7 +677,8 @@ const StockRow = memo(function StockRow({
   return (
     <tr ref={rowRef ?? null} {...rowProps}>
       <td className="stock-col">
-        <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer">
+        <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer"
+          aria-label={`${stock.stock_id} ${stock.stock_name} (${lang === 'en' ? 'opens in new tab' : '開啟新分頁'})`}>
           <TooltipText tooltip={stock.stock_name}>
             {stock.stock_id}
           </TooltipText>
@@ -744,11 +765,11 @@ const StockRow = memo(function StockRow({
               style={{ width: NUM_COL_WIDTH }}
             >
               <TooltipText tooltip={tooltip}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                <div className="cell-amount-col">
                   <span>
                     {displayVal}
                     {shouldShowDiamond && (
-                      <span className="diamond-icon" role="img" aria-label="diamond">💎</span>
+                      <span className="diamond-icon" role="img" aria-label={lang === 'en' ? 'Highest monthly yield' : '當月最高殖利率'}>💎</span>
                     )}
                   </span>
                 </div>

@@ -26,7 +26,7 @@ export default function BrandPage({
           />
         ) : null}
       </div>
-      <section className={`${styles.panel} ${styles.content}`}>
+      <section id="main-content" className={`${styles.panel} ${styles.content}`}>
         <h1 className={styles.title}>{title}</h1>
         <p className={styles.description}>{description}</p>
         {children}

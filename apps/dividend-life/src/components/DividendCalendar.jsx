@@ -147,9 +147,9 @@ export default function DividendCalendar({
     <div className="calendar">
       <div className="calendar-header">
         <div className="calendar-nav">
-          <button onClick={prevMonth} style={{ all: 'unset' }}>◀</button>
+          <button type="button" onClick={prevMonth} className="calendar-nav-btn" aria-label={lang === 'en' ? 'Previous month' : '上個月'}>◀</button>
           <span>{year} {MONTH_NAMES[month]}</span>
-          <button onClick={nextMonth} style={{ all: 'unset' }}>▶</button>
+          <button type="button" onClick={nextMonth} className="calendar-nav-btn" aria-label={lang === 'en' ? 'Next month' : '下個月'}>▶</button>
         </div>
         {showTotals && hasTotals && (
           <div className="calendar-summary">
@@ -183,13 +183,13 @@ export default function DividendCalendar({
       </div>
       <div className="calendar-legend">
         <span><span className="legend-box legend-ex"></span>{t('ex_dividend_date')}</span>
-        <span style={{ marginLeft: 8 }}><span className="legend-box legend-pay"></span>{t('payment_date')}</span>
+        <span><span className="legend-box legend-pay"></span>{t('payment_date')}</span>
       </div>
       <div className="table-responsive">
-      <table className="calendar-grid">
+      <table className="calendar-grid" aria-label={`${MONTH_NAMES[month]} ${year}`}>
         <thead>
           <tr>
-            {DAY_NAMES.map(d => <th key={d}>{d}</th>)}
+            {DAY_NAMES.map(d => <th key={d} scope="col">{d}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -238,7 +238,6 @@ export default function DividendCalendar({
                           <div
                             key={j}
                             className={`event ${ev.type === 'ex' ? 'event-ex' : 'event-pay'}`}
-                            style={{ borderBottom: '1px dotted #777', cursor: 'help' }}
                             title={tooltip}
                           >
                             {ev.stock_id}
@@ -247,7 +246,12 @@ export default function DividendCalendar({
                       })}
                       {!expandedDates[d.dateStr] && d.events.length > 1 && (
                         <button
+                          type="button"
                           className="more-btn"
+                          aria-expanded={false}
+                          aria-label={lang === 'zh'
+                            ? `顯示 ${d.dateStr} 其餘 ${d.events.length - 1} 筆`
+                            : `Show ${d.events.length - 1} more events for ${d.dateStr}`}
                           onClick={() => setExpandedDates(prev => ({ ...prev, [d.dateStr]: true }))}
                         >
                           {lang === 'zh'
@@ -257,7 +261,12 @@ export default function DividendCalendar({
                       )}
                       {expandedDates[d.dateStr] && d.events.length > 1 && (
                         <button
+                          type="button"
                           className="more-btn"
+                          aria-expanded={true}
+                          aria-label={lang === 'zh'
+                            ? `收合 ${d.dateStr} 其他項目`
+                            : `Hide additional events for ${d.dateStr}`}
                           onClick={() => setExpandedDates(prev => ({ ...prev, [d.dateStr]: false }))}
                         >
                           {t('hide')}-

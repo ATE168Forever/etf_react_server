@@ -188,6 +188,11 @@
   cursor: pointer;
 }
 
+.primaryButton:focus-visible {
+  outline: 2px solid var(--color-text, #1f2937);
+  outline-offset: 2px;
+}
+
 .primaryButton:disabled {
   cursor: not-allowed;
   opacity: 0.6;

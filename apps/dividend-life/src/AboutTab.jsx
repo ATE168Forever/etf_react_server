@@ -10,8 +10,8 @@ export default function AboutTab() {
   const { lang } = useLanguage();
   return (
     <div className="about-tab">
-      <div className="container" style={{ maxWidth: 800 }}>
-        <h3 className="mt-4">{lang === 'en' ? 'About' : '關於本站'}</h3>
+      <div className="container content-page">
+        <h2 className="h3 mt-4">{lang === 'en' ? 'About' : '關於本站'}</h2>
         <p>
           {lang === 'en'
             ? 'This small site helps you organize ETF dividends and offers a simple holding tracker. Data is for reference only and is not investment advice.'

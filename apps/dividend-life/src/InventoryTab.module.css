@@ -82,10 +82,14 @@
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-.autoSaveButton:hover,
+.autoSaveButton:hover {
+  border-color: var(--accent-gold, #fbbf24);
+}
+
 .autoSaveButton:focus-visible {
   border-color: var(--accent-gold, #fbbf24);
-  outline: none;
+  outline: 2px solid var(--color-text, #1f2937);
+  outline-offset: 2px;
 }
 
 .autoSaveButtonActive {
@@ -136,10 +140,16 @@
   cursor: pointer;
 }
 
-.buttonExclude:hover,
+.buttonExclude:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: rgba(185, 28, 28, 1);
+}
+
 .buttonExclude:focus-visible {
   background: rgba(239, 68, 68, 0.2);
   color: rgba(185, 28, 28, 1);
+  outline: 2px solid var(--color-error, #d62828);
+  outline-offset: 2px;
 }
 
 .tableHeader {
@@ -268,14 +278,24 @@
   cursor: pointer;
 }
 
-.shareGoalActions button:hover,
-.shareGoalActions button:focus-visible {
+.shareGoalActions button:hover {
   background: rgba(148, 163, 184, 0.12);
 }
 
-.cashflowGoalActions button:hover,
+.shareGoalActions button:focus-visible {
+  background: rgba(148, 163, 184, 0.12);
+  outline: 2px solid var(--accent-gold, #d4af37);
+  outline-offset: 2px;
+}
+
+.cashflowGoalActions button:hover {
+  background: rgba(148, 163, 184, 0.12);
+}
+
 .cashflowGoalActions button:focus-visible {
   background: rgba(148, 163, 184, 0.12);
+  outline: 2px solid var(--accent-gold, #d4af37);
+  outline-offset: 2px;
 }
 
 .shareGoalAddButton {
@@ -293,14 +313,24 @@
   cursor: pointer;
 }
 
-.shareGoalAddButton:hover,
-.shareGoalAddButton:focus-visible {
+.shareGoalAddButton:hover {
   opacity: 0.85;
 }
 
-.cashflowGoalAddButton:hover,
+.shareGoalAddButton:focus-visible {
+  opacity: 0.85;
+  outline: 2px solid var(--color-text, #1f2937);
+  outline-offset: 2px;
+}
+
+.cashflowGoalAddButton:hover {
+  opacity: 0.85;
+}
+
 .cashflowGoalAddButton:focus-visible {
   opacity: 0.85;
+  outline: 2px solid var(--color-text, #1f2937);
+  outline-offset: 2px;
 }
 
 .shareGoalEmpty {

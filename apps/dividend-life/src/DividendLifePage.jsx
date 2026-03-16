@@ -88,6 +88,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const [upcomingAlerts, setUpcomingAlerts] = useState([]);
   const fetchSkipRef = useRef(new Map());
   const selectedYearRef = useRef(selectedYear);
+  const groupModalTriggerRef = useRef(null);
 
   // Calendar state
   const {
@@ -132,6 +133,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const [lang, setLang] = useState(getInitialLanguage);
   useEffect(() => {
     localStorage.setItem('lang', lang);
+    document.documentElement.lang = lang === 'en' ? 'en' : 'zh-Hant';
   }, [lang]);
   const t = useMemo(() => (key) => translations[lang][key] || key, [lang]);
 
@@ -177,6 +179,25 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     handleCancelEditGroup,
     handleDeleteGroup,
   } = useWatchGroups({ lang, setSelectedStockIds, handleResetFilters });
+
+  const closeGroupModal = () => {
+    setShowGroupModal(false);
+    groupModalTriggerRef.current?.focus();
+    groupModalTriggerRef.current = null;
+  };
+
+  useEffect(() => {
+    if (!showGroupModal) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowGroupModal(false);
+        groupModalTriggerRef.current?.focus();
+        groupModalTriggerRef.current = null;
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [showGroupModal]);
 
   const handleDividendScopeChange = (scope) => {
     setDividendScope(scope);
@@ -854,7 +875,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
 
   return (
     <LanguageContext.Provider value={{ lang, setLang, t }}>
-      <main className={brandStyles.container}>
+      <main id="main-content" className={brandStyles.container}>
+        <h1 className="sr-only">Dividend Life — {lang === 'en' ? 'ETF Dividend Calendar & Tracking' : 'ETF 股息日曆與配息追蹤'}</h1>
         <div className={brandStyles.navigation}>
           <ExperienceNavigation
             current="dividend-life"
@@ -870,52 +892,75 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           />
         </div>
         <section className={`${brandStyles.panel} ${brandStyles.content} ${brandStyles.contentWide}`}>
-          {upcomingAlerts.length > 0 && (
-            <div className="dividend-alert">
-              {upcomingAlerts.map(a => (
-                <div key={`${a.stock_id}-${a.type}`}>
-                  {lang === 'en'
-                    ? `${a.stock_id} ${a.stock_name} will ${a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'} tomorrow. ${a.dividend} per share, estimated ${Math.round(a.total).toLocaleString()}`
-                    : `${a.stock_id} ${a.stock_name} 明天即將${a.type === 'ex' ? '除息' : '配息'} 每股 ${a.dividend} 元，預估領取 ${Math.round(a.total).toLocaleString()} 元`}
-                </div>
-              ))}
-            </div>
-          )}
-          <ul className="nav nav-tabs mb-1 justify-content-center">
-            <li className="nav-item">
+          <div className="dividend-alert" role="status" aria-live="polite" aria-atomic="false">
+            {upcomingAlerts.map(a => (
+              <div key={`${a.stock_id}-${a.type}`}>
+                {lang === 'en'
+                  ? `${a.stock_id} ${a.stock_name} will ${a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'} tomorrow. ${a.dividend} per share, estimated ${Math.round(a.total).toLocaleString()}`
+                  : `${a.stock_id} ${a.stock_name} 明天即將${a.type === 'ex' ? '除息' : '配息'} 每股 ${a.dividend} 元，預估領取 ${Math.round(a.total).toLocaleString()} 元`}
+              </div>
+            ))}
+          </div>
+          <ul className="nav nav-tabs mb-1 justify-content-center" role="tablist" aria-label={lang === 'en' ? 'Main navigation' : '主導覽'}>
+            <li className="nav-item" role="presentation">
               <button
+                type="button"
+                id="tab-home"
+                role="tab"
+                aria-selected={tab === 'home'}
+                aria-controls="panel-home"
                 className={`nav-link${tab === 'home' ? ' active' : ''}`}
                 onClick={() => setTab('home')}
               >
                 {t('home')}
               </button>
             </li>
-            <li className="nav-item">
+            <li className="nav-item" role="presentation">
               <button
+                type="button"
+                id="tab-mydividend"
+                role="tab"
+                aria-selected={tab === 'mydividend'}
+                aria-controls="panel-mydividend"
                 className={`nav-link${tab === 'mydividend' ? ' active' : ''}`}
                 onClick={() => setTab('mydividend')}
               >
                 {t('mydividend')}
               </button>
             </li>
-            <li className="nav-item">
+            <li className="nav-item" role="presentation">
               <button
+                type="button"
+                id="tab-dividend"
+                role="tab"
+                aria-selected={tab === 'dividend'}
+                aria-controls="panel-dividend"
                 className={`nav-link${tab === 'dividend' ? ' active' : ''}`}
                 onClick={() => setTab('dividend')}
               >
                 {t('dividend_search')}
               </button>
             </li>
-            <li className="nav-item">
+            <li className="nav-item" role="presentation">
               <button
+                type="button"
+                id="tab-inventory"
+                role="tab"
+                aria-selected={tab === 'inventory'}
+                aria-controls="panel-inventory"
                 className={`nav-link${tab === 'inventory' ? ' active' : ''}`}
                 onClick={() => setTab('inventory')}
               >
                 {t('inventory')}
               </button>
             </li>
-            <li className="nav-item">
+            <li className="nav-item" role="presentation">
               <button
+                type="button"
+                id="tab-about"
+                role="tab"
+                aria-selected={tab === 'about'}
+                aria-controls="panel-about"
                 className={`nav-link${tab === 'about' ? ' active' : ''}`}
                 onClick={() => setTab('about')}
               >
@@ -923,177 +968,229 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
               </button>
             </li>
           </ul>
-          {tab === 'home' && <HomeTab />}
+          {tab === 'home' && (
+            <div id="panel-home" role="tabpanel" aria-labelledby="tab-home">
+              <HomeTab />
+            </div>
+          )}
           {tab === 'dividend' && (
-            <div className="App">
-              <h3>{lang === 'en' ? 'Monthly Dividend Summary' : '每月配息總表'}</h3>
-              <div className="dividend-controls">
-                <div className="control-pair">
-                  <label>{lang === 'en' ? 'Year:' : '年份：'}</label>
-                  <select
-                    value={selectedYear}
-                    onChange={e => setSelectedYear(Number(e.target.value))}
-                  >
-                    {years.map(year => (
-                      <option value={year} key={year}>{year}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="control-pair">
-                <label>{lang === 'en' ? 'Watch Group:' : '觀察組合：'}</label>
-                <select value={selectedGroup} onChange={handleGroupChange}>
-                  <option value="">{lang === 'en' ? 'Custom' : '自選'}</option>
-                  {watchGroups.map(g => (
-                    <option key={g.name} value={g.name}>{renderGroupOptionLabel(g)}</option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => setShowGroupModal(true)}
-                  className="group-create-button"
-                >
-                  {lang === 'en' ? 'Create' : '建立'}
-                </button>
-              </div>
-            </div>
-            <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-              <CurrencyViewToggle
-                viewMode={viewMode}
-                onChange={handleViewModeChange}
-                hasTwd={hasTwd}
-                hasUsd={hasUsd}
-                lang={lang}
-                description={viewDescriptionContent}
-                labelPrefix={viewLabelPrefix}
-                style={{ marginTop: 0 }}
-              />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                <button
-                  onClick={() => handleDividendScopeChange('purchased')}
-                  className={dividendScope === 'purchased' ? 'btn-selected' : 'btn-unselected'}
-                  disabled={!canSelectPurchased}
-                  style={canSelectPurchased ? undefined : { opacity: 0.6, cursor: 'not-allowed' }}
-                >
-                  {purchasedScopeLabel}
-                </button>
-                <button
-                  onClick={() => handleDividendScopeChange('all')}
-                  className={dividendScope === 'all' ? 'btn-selected' : 'btn-unselected'}
-                >
-                  {allScopeLabel}
-                </button>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowCalendar(v => !v)}
-              style={{ marginTop: 10 }}
-            >
-              {showCalendar
-                ? (lang === 'en' ? 'Hide Calendar' : '隱藏月曆')
-                : (lang === 'en' ? 'Show Calendar' : '顯示月曆')}
-            </button>
-  
-            {loading ? (
-              <p>Loading...</p>
-            ) : error ? (
-              <p>Error: {error.message}</p>
-            ) : (
-              <>
-                {showCalendar && (
-                  <>
-                    <div style={{ margin: '10px 0' }}>
-                      <button
-                        onClick={() => setCalendarFilter('ex')}
-                        className={calendarFilter === 'ex' ? 'btn-selected' : 'btn-unselected'}
-                      >
-                        {lang === 'en' ? 'Ex-dividend Date' : '除息日'}
-                      </button>
-                      <button
-                        onClick={() => setCalendarFilter('pay')}
-                        className={calendarFilter === 'pay' ? 'btn-selected' : 'btn-unselected'}
-                        style={{ marginLeft: 6, marginTop: 6 }}
-                      >
-                        {lang === 'en' ? 'Payment Date' : '發放日'}
-                      </button>
-                      <button
-                        onClick={() => setCalendarFilter('both')}
-                        className={calendarFilter === 'both' ? 'btn-selected' : 'btn-unselected'}
-                        style={{ marginLeft: 6, marginTop: 6 }}
-                      >
-                        {lang === 'en' ? 'Ex/Paid Date' : '除息/發放日'}
-                      </button>
-                    </div>
-                    <DividendCalendar
-                      year={selectedYear}
-                      events={filteredCalendarEvents}
-                      showTotals={false}
-                      receivableAsPerShare
-                      availableYears={years}
-                      onYearChange={setSelectedYear}
-                      month={calendarMonth}
-                      onMonthChange={setCalendarMonth}
-                    />
-                  </>
-                )}
-  
-                <div className="more-item" style={{ marginTop: 10 }}>
-                  <button onClick={() => setShowDisplays(v => !v)} style={{ marginRight: 10 }}>
-                    {lang === 'en' ? 'Other Options' : '其他顯示'}
-                  </button>
-                  {showDisplays && (
-                    <DisplayDropdown
-                      toggleDividendYield={() => setShowDividendYield(v => !v)}
-                      showDividendYield={showDividendYield}
-                      togglePerYield={() => setShowPerYield(v => !v)}
-                      showPerYield={showPerYield}
-                      toggleAxis={() => setShowInfoAxis(v => !v)}
-                      showInfoAxis={showInfoAxis}
-                      onClose={() => setShowDisplays(false)}
-                    />
-                  )}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
-                    <button onClick={handleResetFilters}>
-                      {lang === 'en' ? 'Reset All Filters' : '重置所有篩選'}
-                    </button>
-                    <div style={{ position: 'relative', display: 'inline-block' }}>
-                      <button onClick={() => setShowAdvancedFilters(v => !v)}>
-                        {lang === 'en' ? 'Advanced Filters' : '進階篩選'}
-                      </button>
-                      {showAdvancedFilters && (
-                        <AdvancedFilterDropdown
-                          filters={extraFilters}
-                          setFilters={setExtraFilters}
-                          onClose={() => setShowAdvancedFilters(false)}
-                          availableCurrencies={availableCurrencies}
-                        />
-                      )}
-                    </div>
-                    <span style={{ fontSize: 13, color: '#adb5bd' }}>
-                      {lang === 'en' ? 'Tip: Use advanced filters to refine the table.' : '提示：使用進階篩選調整顯示內容。'}
-                    </span>
-                  </div>
-                </div>
-  
-                {dividendCacheInfo && (
-                  <div className={appStyles.cacheInfo}>
-                    {lang === 'en' ? 'Cache' : '快取'}: {dividendCacheInfo.cacheStatus}
-                    {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
-                  </div>
-                )}
-  
-                {showInfoAxis && (
-                  <div style={{ margin: '10px 0' }}>
-                    <label>
-                      {lang === 'en' ? 'Estimated Monthly Income:' : '預計月報酬：'}
-                      <input
-                        type="number"
-                        value={monthlyIncomeGoal}
-                        onChange={e => setMonthlyIncomeGoal(Number(e.target.value) || 0)}
-                        style={{ width: 80, marginLeft: 4 }}
-                      />
+            <div id="panel-dividend" role="tabpanel" aria-labelledby="tab-dividend" className="dividend-tab">
+
+              {/* ── FILTER BAR ── */}
+              <div className="filter-bar">
+
+                {/* Row 1: primary selectors */}
+                <div className="filter-bar__row filter-bar__row--primary">
+                  <div className="filter-bar__item">
+                    <label htmlFor="filter-year" className="filter-bar__label">
+                      {lang === 'en' ? 'Year' : '年份'}
                     </label>
+                    <select
+                      id="filter-year"
+                      className="filter-bar__select"
+                      value={selectedYear}
+                      onChange={e => setSelectedYear(Number(e.target.value))}
+                    >
+                      {years.map(year => (
+                        <option value={year} key={year}>{year}</option>
+                      ))}
+                    </select>
                   </div>
-                )}
-  
+
+                  <div className="filter-bar__item filter-bar__item--group">
+                    <label htmlFor="filter-group" className="filter-bar__label">
+                      {lang === 'en' ? 'Group' : '觀察組合'}
+                    </label>
+                    <div className="filter-bar__group-row">
+                      <select
+                        id="filter-group"
+                        className="filter-bar__select"
+                        value={selectedGroup}
+                        onChange={handleGroupChange}
+                      >
+                        <option value="">{lang === 'en' ? 'Custom' : '自選'}</option>
+                        {watchGroups.map(g => (
+                          <option key={g.name} value={g.name}>{renderGroupOptionLabel(g)}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="filter-bar__ghost-btn"
+                        onClick={() => { groupModalTriggerRef.current = document.activeElement; setShowGroupModal(true); }}
+                      >
+                        {lang === 'en' ? '+ New' : '+ 建立'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="filter-bar__item filter-bar__item--scope">
+                    <span className="filter-bar__label">
+                      {lang === 'en' ? 'Scope' : '範圍'}
+                    </span>
+                    <div className="filter-bar__pill-group" role="group" aria-label={lang === 'en' ? 'Scope' : '範圍'}>
+                      <button
+                        type="button"
+                        className={`filter-bar__pill${dividendScope === 'purchased' ? ' filter-bar__pill--active' : ''}`}
+                        onClick={() => handleDividendScopeChange('purchased')}
+                        disabled={!canSelectPurchased}
+                        aria-pressed={dividendScope === 'purchased'}
+                      >
+                        {purchasedScopeLabel}
+                      </button>
+                      <button
+                        type="button"
+                        className={`filter-bar__pill${dividendScope === 'all' ? ' filter-bar__pill--active' : ''}`}
+                        onClick={() => handleDividendScopeChange('all')}
+                        aria-pressed={dividendScope === 'all'}
+                      >
+                        {allScopeLabel}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="filter-bar__item filter-bar__item--currency">
+                    <CurrencyViewToggle
+                      viewMode={viewMode}
+                      onChange={handleViewModeChange}
+                      hasTwd={hasTwd}
+                      hasUsd={hasUsd}
+                      lang={lang}
+                      description={viewDescriptionContent}
+                      labelPrefix={viewLabelPrefix}
+                      style={{ marginTop: 0 }}
+                    />
+                  </div>
+                </div>
+
+                {/* Row 2: secondary actions */}
+                <div className="filter-bar__row filter-bar__row--secondary">
+                  <button
+                    type="button"
+                    className={`filter-bar__action-btn${showCalendar ? ' filter-bar__action-btn--active' : ''}`}
+                    onClick={() => setShowCalendar(v => !v)}
+                    aria-pressed={showCalendar}
+                  >
+                    📅 {showCalendar
+                      ? (lang === 'en' ? 'Hide Calendar' : '隱藏月曆')
+                      : (lang === 'en' ? 'Show Calendar' : '顯示月曆')}
+                  </button>
+
+                  <div className="filter-bar__action-wrap">
+                    <button
+                      type="button"
+                      className="filter-bar__action-btn"
+                      onClick={() => setShowDisplays(v => !v)}
+                      aria-expanded={showDisplays}
+                      aria-haspopup="true"
+                    >
+                      {lang === 'en' ? 'Display ▾' : '顯示選項 ▾'}
+                    </button>
+                    {showDisplays && (
+                      <DisplayDropdown
+                        toggleDividendYield={() => setShowDividendYield(v => !v)}
+                        showDividendYield={showDividendYield}
+                        togglePerYield={() => setShowPerYield(v => !v)}
+                        showPerYield={showPerYield}
+                        toggleAxis={() => setShowInfoAxis(v => !v)}
+                        showInfoAxis={showInfoAxis}
+                        onClose={() => setShowDisplays(false)}
+                      />
+                    )}
+                  </div>
+
+                  <div className="filter-bar__action-wrap">
+                    <button
+                      type="button"
+                      className="filter-bar__action-btn"
+                      onClick={() => setShowAdvancedFilters(v => !v)}
+                      aria-expanded={showAdvancedFilters}
+                      aria-haspopup="true"
+                    >
+                      {lang === 'en' ? '⚙ Filters' : '⚙ 進階篩選'}
+                    </button>
+                    {showAdvancedFilters && (
+                      <AdvancedFilterDropdown
+                        filters={extraFilters}
+                        setFilters={setExtraFilters}
+                        onClose={() => setShowAdvancedFilters(false)}
+                        availableCurrencies={availableCurrencies}
+                      />
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="filter-bar__reset-btn"
+                    onClick={handleResetFilters}
+                  >
+                    {lang === 'en' ? '↺ Reset' : '↺ 重置'}
+                  </button>
+
+                  {dividendCacheInfo && (
+                    <span className="filter-bar__cache-info">
+                      {dividendCacheInfo.cacheStatus}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* ── CALENDAR PANEL ── */}
+              {showCalendar && !loading && !error && (
+                <div className="calendar-panel">
+                  <div className="calendar-panel__filter" role="group" aria-label={lang === 'en' ? 'Calendar filter' : '月曆篩選'}>
+                    {[
+                      { key: 'ex',   label: lang === 'en' ? 'Ex-div' : '除息日' },
+                      { key: 'pay',  label: lang === 'en' ? 'Payment' : '發放日' },
+                      { key: 'both', label: lang === 'en' ? 'Both' : '全部' },
+                    ].map(({ key, label }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={`filter-bar__pill${calendarFilter === key ? ' filter-bar__pill--active' : ''}`}
+                        onClick={() => setCalendarFilter(key)}
+                        aria-pressed={calendarFilter === key}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <DividendCalendar
+                    year={selectedYear}
+                    events={filteredCalendarEvents}
+                    showTotals={false}
+                    receivableAsPerShare
+                    availableYears={years}
+                    onYearChange={setSelectedYear}
+                    month={calendarMonth}
+                    onMonthChange={setCalendarMonth}
+                  />
+                </div>
+              )}
+
+              {/* ── INCOME GOAL INPUT (when info axis active) ── */}
+              {showInfoAxis && (
+                <div className="income-goal-input-row">
+                  <label htmlFor="monthly-income-goal" className="filter-bar__label">
+                    {lang === 'en' ? 'Monthly income target:' : '預計月報酬：'}
+                  </label>
+                  <input
+                    id="monthly-income-goal"
+                    type="number"
+                    className="income-goal-input"
+                    value={monthlyIncomeGoal}
+                    onChange={e => setMonthlyIncomeGoal(Number(e.target.value) || 0)}
+                  />
+                </div>
+              )}
+
+              {/* ── TABLE ── */}
+              {loading ? (
+                <p className="dividend-tab__status" role="status" aria-live="polite">{lang === 'en' ? 'Loading…' : '載入中…'}</p>
+              ) : error ? (
+                <p className="dividend-tab__status dividend-tab__status--error" role="alert">
+                  {lang === 'en' ? 'Error: ' : '錯誤：'}{error.message}
+                </p>
+              ) : (
                 <StockTable
                   stocks={displayStocks}
                   dividendTable={dividendTable}
@@ -1121,76 +1218,91 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                   freqMap={freqMap}
                   activeCurrencies={activeCurrencies}
                 />
-              </>
-            )}
+              )}
+            </div>
+          )}
+        {tab === 'inventory' && (
+          <div id="panel-inventory" role="tabpanel" aria-labelledby="tab-inventory">
+            <InventoryTab
+              allDividendData={data}
+              dividendCacheInfo={dividendCacheInfo}
+            />
           </div>
         )}
-        {tab === 'inventory' && (
-          <InventoryTab
-            allDividendData={data}
-            dividendCacheInfo={dividendCacheInfo}
-          />
-        )}
         {tab === 'mydividend' && (
-          <UserDividendsTab
-            allDividendData={data}
-            availableYears={years}
-          />
+          <div id="panel-mydividend" role="tabpanel" aria-labelledby="tab-mydividend">
+            <UserDividendsTab
+              allDividendData={data}
+              availableYears={years}
+            />
+          </div>
         )}
-        {tab === 'about' && <AboutTab />}
-        <NLHelper />
+        {tab === 'about' && (
+          <div id="panel-about" role="tabpanel" aria-labelledby="tab-about">
+            <AboutTab />
+          </div>
+        )}
         {showGroupModal && (
-          <div className="modal-overlay">
-            <div className="custom-modal">
-              <h3>{lang === 'en' ? 'Watch Groups' : '觀察組合'}</h3>
-              <div style={{ marginBottom: 10 }}>
-                <button onClick={handleAddGroup}>{lang === 'en' ? 'Add Group' : '新增組合'}</button>
+          <div className="modal-overlay" role="presentation">
+            <div className="custom-modal" role="dialog" aria-modal="true" aria-labelledby="watch-group-modal-title">
+              <h3 id="watch-group-modal-title">{lang === 'en' ? 'Watch Groups' : '觀察組合'}</h3>
+              <div className="watch-group-modal__add-row">
+                <button type="button" autoFocus onClick={handleAddGroup}>{lang === 'en' ? 'Add Group' : '新增組合'}</button>
               </div>
               {editingGroupIndex !== null && (
-                <div style={{ marginBottom: 10 }}>
+                <div className="watch-group-modal__edit-form">
                   <div>
                     <input
                       type="text"
+                      aria-label={lang === 'en' ? 'Group Name' : '組合名稱'}
                       placeholder={lang === 'en' ? 'Group Name' : '組合名稱'}
                       value={groupNameInput}
                       onChange={e => setGroupNameInput(e.target.value)}
+                      autoFocus
                     />
                   </div>
                   <div>
                     <input
                       type="text"
+                      className="watch-group-modal__ids-input"
+                      aria-label={lang === 'en' ? 'ETF IDs, comma separated' : 'ETF ID，以逗號分隔'}
                       placeholder={lang === 'en' ? 'ETF IDs, comma separated' : 'ETF ID，以逗號分隔'}
                       value={groupIdsInput}
                       onChange={e => setGroupIdsInput(e.target.value)}
-                      style={{
-                        marginTop: 4,
-                        marginBottom: 4
-                      }}
                     />
                   </div>
-                  <button onClick={handleSaveGroup} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Save' : '儲存'}</button>
-                  <button onClick={handleCancelEditGroup} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Cancel' : '取消'}</button>
+                  <div className="watch-group-modal__edit-actions">
+                    <button type="button" onClick={handleSaveGroup}>{lang === 'en' ? 'Save' : '儲存'}</button>
+                    <button type="button" onClick={handleCancelEditGroup}>{lang === 'en' ? 'Cancel' : '取消'}</button>
+                  </div>
                 </div>
               )}
               {watchGroups.map((g, idx) => (
-                <div key={idx} style={{ marginBottom: 8 }}>
+                <div key={idx} className="watch-group-modal__item">
                   <div>
-                    <strong style={isGroupModified(g) ? { color: 'red' } : {}}>{renderGroupName(g.name)}</strong>: {renderGroupIds(g)}
+                    <strong className={isGroupModified(g) ? 'watch-group-modal__name--modified' : ''}>
+                      {renderGroupName(g.name)}
+                    </strong>: {renderGroupIds(g)}
                   </div>
-                  <div style={{ marginTop: 4 }}>
-                    <button onClick={() => handleEditGroup(idx)}>{lang === 'en' ? 'Edit' : '修改'}</button>
-                    <button onClick={() => handleDeleteGroup(idx)} style={{ marginLeft: 4 }}>{lang === 'en' ? 'Delete' : '刪除'}</button>
+                  <div className="watch-group-modal__item-actions">
+                    <button type="button" aria-label={lang === 'en' ? `Edit ${g.name}` : `修改 ${g.name}`} onClick={() => handleEditGroup(idx)}>{lang === 'en' ? 'Edit' : '修改'}</button>
+                    <button type="button" aria-label={lang === 'en' ? `Delete ${g.name}` : `刪除 ${g.name}`} onClick={() => handleDeleteGroup(idx)}>{lang === 'en' ? 'Delete' : '刪除'}</button>
                   </div>
                 </div>
               ))}
-              {watchGroups.length === 0 && <p style={{ fontSize: 14 }}>{lang === 'en' ? 'No groups yet' : '尚無組合'}</p>}
-              <div style={{ textAlign: 'right', marginTop: 12 }}>
-                <button onClick={() => setShowGroupModal(false)}>{lang === 'en' ? 'Close' : '關閉'}</button>
+              {watchGroups.length === 0 && (
+                <p className="watch-group-modal__empty">
+                  {lang === 'en' ? 'No groups yet' : '尚無組合'}
+                </p>
+              )}
+              <div className="watch-group-modal__footer">
+                <button type="button" onClick={closeGroupModal}>{lang === 'en' ? 'Close' : '關閉'}</button>
               </div>
             </div>
           </div>
         )}
         </section>
+        <NLHelper />
         <div className={brandStyles.footer}>
           <Footer
             theme={theme}

@@ -66,10 +66,10 @@ export default function FaqTab() {
       };
 
   return (
-    <div className="container" style={{ maxWidth: 800 }}>
-      <h3 className="mt-4">{lang === 'en' ? 'FAQ' : '常見問題（FAQ）'}</h3>
+    <div className="container content-page">
+      <h2 className="h3 mt-4">{lang === 'en' ? 'FAQ' : '常見問題（FAQ）'}</h2>
 
-      <h4>{lang === 'en' ? 'Data & Calculations' : '資料與計算'}</h4>
+      <h3 className="h4">{lang === 'en' ? 'Data & Calculations' : '資料與計算'}</h3>
       <ol>
         <li>
           <strong>{lang === 'en' ? 'How is dividend yield calculated?' : '殖利率是怎麼算的？'}</strong>
@@ -114,7 +114,7 @@ export default function FaqTab() {
         </li>
       </ol>
 
-      <h4>{lang === 'en' ? 'Contact Us' : '聯絡我們'}</h4>
+      <h3 className="h4">{lang === 'en' ? 'Contact Us' : '聯絡我們'}</h3>
       <ol start={7}>
         <li>
           <strong>{lang === 'en' ? 'How can I report errors or suggest features?' : '如何報告錯誤或建議新功能？'}</strong>

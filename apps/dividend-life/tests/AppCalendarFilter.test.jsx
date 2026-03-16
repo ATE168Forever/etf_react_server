@@ -9,6 +9,12 @@ jest.mock('../src/api', () => ({
   clearCache: jest.fn(),
 }));
 
+jest.mock('../src/dividendApi', () => ({
+  fetchDividendsByYears: jest.fn(() => Promise.resolve({ data: [], meta: null })),
+  clearDividendsCache: jest.fn(),
+  clearEmptyDividendCaches: jest.fn()
+}));
+
 jest.mock('../config', () => ({ API_HOST: '' }));
 
 import App from '../src/App';
@@ -28,10 +34,10 @@ test('calendar defaults to showing both ex and payment events', async () => {
       </RouterProvider>
     );
   });
-  const dividendTab = screen.getByRole('button', { name: 'ETF 配息查詢' });
+  const dividendTab = screen.getByRole('tab', { name: 'ETF 配息查詢' });
   await act(async () => {
     fireEvent.click(dividendTab);
   });
-  const bothBtn = await screen.findByRole('button', { name: '除息/發放日' });
-  expect(bothBtn).toHaveClass('btn-selected');
+  const bothBtn = await screen.findByRole('button', { name: '全部' });
+  expect(bothBtn).toHaveClass('filter-bar__pill--active');
 });

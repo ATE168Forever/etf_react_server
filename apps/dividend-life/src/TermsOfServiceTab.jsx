@@ -4,8 +4,8 @@ import { useLanguage } from './i18n';
 export default function TermsOfServiceTab() {
   const { lang } = useLanguage();
   return (
-    <div className="container" style={{ maxWidth: 800 }}>
-      <h3 className="mt-4">{lang === 'en' ? 'Terms of Service' : '服務條款'}</h3>
+    <div className="container content-page">
+      <h2 className="h3 mt-4">{lang === 'en' ? 'Terms of Service' : '服務條款'}</h2>
       <p>
         {lang === 'en'
           ? 'By using this service you agree to follow site rules, including user obligations, intellectual property rights and liability limits. Any disputes will be handled according to applicable laws.'

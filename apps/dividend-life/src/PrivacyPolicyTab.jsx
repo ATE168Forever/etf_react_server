@@ -4,8 +4,8 @@ import { useLanguage } from './i18n';
 export default function PrivacyPolicyTab() {
   const { lang } = useLanguage();
   return (
-    <div className="container" style={{ maxWidth: 800 }}>
-      <h3 className="mt-4">{lang === 'en' ? 'Privacy Policy' : '隱私權政策'}</h3>
+    <div className="container content-page">
+      <h2 className="h3 mt-4">{lang === 'en' ? 'Privacy Policy' : '隱私權政策'}</h2>
       <p>
         {lang === 'en'
           ? 'We respect and protect your personal data, collecting only information necessary to provide services. You may query, download, correct or delete your data at any time. See this policy for details.'

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { API_HOST } from '../config';
 import { fetchWithCache } from './api';
 import { useLanguage } from './i18n';
@@ -9,6 +9,19 @@ function NLHelper() {
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const toggleBtnRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        toggleBtnRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open]);
 
   const handleSubmit = async () => {
     if (!query.trim()) return;
@@ -30,27 +43,18 @@ function NLHelper() {
 
   return (
     <>
-      <div className={`nl-helper ${open ? 'open' : ''}`} 
+      <div className={`nl-helper ${open ? 'open' : ''}`}
         aria-hidden={!open}
-        style={{
-          position: 'fixed',
-          right: open ? '20px' : '-320px', // 收合時滑出畫面外
-          bottom: '80px',
-          width: '300px',
-          height: '360px',
-          background: '#fff',
-          border: '1px solid #ddd',
-          borderRadius: '10px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-          padding: '10px',
-          transition: 'right 0.3s ease',
-          zIndex: 1000,
-        }}
-        >
+        inert={!open}
+      >
         <textarea
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder={lang === 'en' ? 'Enter query...' : '輸入查詢...'}
+          aria-label={lang === 'en' ? 'Natural language query' : '自然語言查詢'}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSubmit();
+          }}
         />
         <button type="button" onClick={handleSubmit} disabled={loading}>
           {loading ? (lang === 'en' ? 'Searching...' : '查詢中...') : (lang === 'en' ? 'Submit' : '送出')}
@@ -60,6 +64,7 @@ function NLHelper() {
       <button
         type="button"
         className="nl-helper-toggle"
+        ref={toggleBtnRef}
         onClick={toggleOpen}
         aria-expanded={open}
         aria-label={
@@ -71,21 +76,6 @@ function NLHelper() {
               ? 'Open assistant'
               : '開啟助理'
         }
-        style={{
-          position: 'fixed',
-          right: '20px',
-          bottom: '20px',
-          width: '50px',
-          height: '50px',
-          borderRadius: '50%',
-          border: 'none',
-          backgroundColor: open ? '#f87171' : '#007bff',
-          color: '#fff',
-          fontSize: '22px',
-          cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-          zIndex: 9999,
-        }}
       >
         {open ? '×' : '🤖'}
       </button>

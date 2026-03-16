@@ -52,13 +52,13 @@ function DividendChart({
     ? data.totals.slice(0, 12)
     : [];
   if (!totalsArray.length) {
-    return <p style={{ marginTop: 12 }}>{t('dividend_chart_empty')}</p>;
+    return <p className="chart-empty-msg">{t('dividend_chart_empty')}</p>;
   }
 
   const safeLabels = labels.slice(0, totalsArray.length);
   const monthCount = safeLabels.length;
   if (!monthCount) {
-    return <p style={{ marginTop: 12 }}>{t('dividend_chart_empty')}</p>;
+    return <p className="chart-empty-msg">{t('dividend_chart_empty')}</p>;
   }
 
   const normalizedTotals = totalsArray.slice(0, monthCount).map((value) => Number(value) || 0);
@@ -74,7 +74,7 @@ function DividendChart({
   const hasCumulativeValues = cumulativeSource.some((value) => value > 0);
 
   if (!hasMonthlyValues && !hasCumulativeValues) {
-    return <p style={{ marginTop: 12 }}>{t('dividend_chart_empty')}</p>;
+    return <p className="chart-empty-msg">{t('dividend_chart_empty')}</p>;
   }
 
   const chartHeight = VIEWBOX_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
@@ -102,7 +102,7 @@ function DividendChart({
     <div className="dividend-chart-wrapper">
       <div
         className="dividend-chart"
-        role="img"
+        role="group"
         aria-label={heading}
         ref={chartRef}
       >
@@ -229,7 +229,6 @@ export default function HomeTab() {
   const [transactionHistory, setTransactionHistory] = useState([]);
   const [dividendData, setDividendData] = useState([]);
   const [inventoryLoaded, setInventoryLoaded] = useState(false);
-  const [showFeatureUpdates, setShowFeatureUpdates] = useState(false);
   const [chartCurrency, setChartCurrency] = useState(null);
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(null);
   const [dividendExclusions, setDividendExclusions] = useState(() => loadDividendExclusions());
@@ -580,139 +579,114 @@ export default function HomeTab() {
     image.src = svgUrl;
   }, [chartRef, dividendChartConfig, isSharingChart, t]);
 
+  // Derive hero metrics from dividendSummary
+  const currentMonthIndex = new Date().getMonth();
+  const heroMetrics = useMemo(() => {
+    if (!chartCurrency) return null;
+    const bucket = dividendSummary.perCurrency?.[chartCurrency];
+    if (!bucket) return null;
+    const thisMonth = Number(bucket.monthlyTotalsSeries?.[currentMonthIndex]) || 0;
+    const ytd = Number(bucket.annualTotal) || 0;
+    const holdings = goalSummary.inventoryList.length;
+    const fmt = (v) => v.toLocaleString(lang === 'en' ? 'en-US' : 'zh-TW', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+    return { thisMonth: fmt(thisMonth), ytd: fmt(ytd), holdings, currency: chartCurrency };
+  }, [chartCurrency, dividendSummary, goalSummary.inventoryList.length, currentMonthIndex, lang]);
+
   return (
-    <div className="container" style={{ maxWidth: 800 }}>
-      <section className="mt-4">
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 12
-          }}
-        >
-          <h5 style={{ marginBottom: 0 }}>{t('feature_updates')}</h5>
-          <button
-            type="button"
-            onClick={() => setShowFeatureUpdates((prev) => !prev)}
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--color-border)',
-              borderRadius: 4,
-              padding: '4px 12px',
-              cursor: 'pointer'
-            }}
-            aria-expanded={showFeatureUpdates}
-          >
-            {showFeatureUpdates
-              ? t('hide_feature_updates')
-              : t('show_feature_updates')}
-          </button>
-        </div>
-        {showFeatureUpdates && (
-          <div
-            style={{
-              marginTop: 12,
-              border: '1px solid var(--color-border)',
-              borderRadius: 4,
-              overflow: 'hidden'
-            }}
-          >
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-              <thead style={{ background: 'var(--color-row-even)' }}>
-                <tr>
-                  <th
-                    style={{ textAlign: 'left', padding: '8px 12px', width: '20%' }}
-                  >
-                    {t('feature_update_date')}
-                  </th>
-                  <th
-                    style={{ textAlign: 'left', padding: '8px 12px', width: '20%' }}
-                  >
-                    {t('feature_update_category')}
-                  </th>
-                  <th style={{ textAlign: 'left', padding: '8px 12px' }}>
-                    {t('feature_update_summary')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {featureUpdates.map((update, idx) => (
-                  <tr
-                    key={`${update.date}-${update.category}-${idx}`}
-                    style={{
-                      background: idx % 2 === 0 ? 'transparent' : 'var(--color-row-even)'
-                    }}
-                  >
-                    <td style={{ padding: '8px 12px', verticalAlign: 'top' }}>
-                      {update.date}
-                    </td>
-                    <td style={{ padding: '8px 12px', verticalAlign: 'top' }}>
-                      {update.category}
-                    </td>
-                    <td style={{ padding: '8px 12px', verticalAlign: 'top' }}>
-                      {update.description}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <div className="dashboard-container">
+
+      {/* ═══ TIER 1: INCOME HERO ═══ */}
+      {heroMetrics && (
+        <section className="income-summary-row">
+          <div className="metric-card metric-card--primary">
+            <span className="metric-card__label">
+              {lang === 'en' ? 'This Month' : '本月配息'}
+            </span>
+            <span className="metric-card__value">
+              {heroMetrics.thisMonth}
+            </span>
+            <span className="metric-card__sub">{heroMetrics.currency}</span>
           </div>
-        )}
-      </section>
+          <div className="metric-card metric-card--gold">
+            <span className="metric-card__label">
+              {lang === 'en'
+                ? `${dividendChartConfig?.year ?? new Date().getFullYear()} YTD`
+                : `${dividendChartConfig?.year ?? new Date().getFullYear()} 年度累計`}
+            </span>
+            <span className="metric-card__value">
+              {heroMetrics.ytd}
+            </span>
+            <span className="metric-card__sub">{heroMetrics.currency}</span>
+          </div>
+          <div className="metric-card metric-card--neutral">
+            <span className="metric-card__label">
+              {lang === 'en' ? 'Holdings' : '持有 ETF'}
+            </span>
+            <span className="metric-card__value">
+              {heroMetrics.holdings}
+            </span>
+            <span className="metric-card__sub">
+              {lang === 'en' ? 'ETFs' : '檔'}
+            </span>
+          </div>
+        </section>
+      )}
 
-      <section className="mt-4">
-        <h5>{t('latest')}</h5>
-        <ul>
-          {stats.latest.map((item, idx) => (
-            <li key={idx}>{item}</li>
-          ))}
-        </ul>
-      </section>
+      {/* ═══ TIER 2: GOAL PROGRESS ═══ */}
+      {!goalEmptyState && (
+        <section className="goal-section">
+          <InvestmentGoalCard
+            title={goalTitle}
+            metrics={goalMetrics}
+            rows={goalRows}
+            emptyState={goalEmptyState}
+            share={goalShareConfig}
+          />
+        </section>
+      )}
 
-      <section
-        className="mt-4"
-        style={{ background: 'var(--color-row-even)', padding: 16, borderRadius: 4 }}
-      >
-        <h5>{t('etf_tips')}</h5>
-        <p style={{ margin: 0 }}>{stats.tip}</p>
-      </section>
-
-      <section className="mt-4">
-        <h5>{t('site_stats')}</h5>
-        <div style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'center', marginTop: 16 }}>
-          {stats.milestones.map((m, idx) => (
-            <div key={idx} style={{ flex: 1 }}>
-              <div style={{ fontSize: 32, fontWeight: 'bold' }}>{m.value}</div>
-              <div>{m.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
+      {/* ═══ TIER 3: DIVIDEND CHART ═══ */}
       {dividendChartConfig && (
-        <section className="mt-4">
+        <section className="chart-section">
           <div className="chart-header">
-            <h5>{`${dividendChartConfig.year} ${t('dividend_chart_heading')}`}</h5>
-            {availableChartCurrencies.length > 1 && (
-              <div className="dividend-chart-currency-switch">
-                <span className="currency-switch-label">{t('dividend_currency_label')}</span>
-                {availableChartCurrencies.map((currency) => (
-                  <button
-                    key={`chart-currency-${currency}`}
-                    type="button"
-                    className={
-                      currency === chartCurrency
-                        ? 'currency-pill currency-pill--active'
-                        : 'currency-pill'
-                    }
-                    onClick={() => handleChartCurrencyChange(currency)}
-                  >
-                    {currency}
-                  </button>
-                ))}
-              </div>
-            )}
+            <span className="section-label">
+              {`${dividendChartConfig.year} ${t('dividend_chart_heading')}`}
+            </span>
+            <div className="chart-header-actions">
+              {availableChartCurrencies.length > 1 && (
+                <div className="dividend-chart-currency-switch">
+                  <span className="currency-switch-label">{t('dividend_currency_label')}</span>
+                  <div role="group" aria-label={t('dividend_currency_label')}>
+                  {availableChartCurrencies.map((currency) => (
+                    <button
+                      key={`chart-currency-${currency}`}
+                      type="button"
+                      className={
+                        currency === chartCurrency
+                          ? 'currency-pill currency-pill--active'
+                          : 'currency-pill'
+                      }
+                      onClick={() => handleChartCurrencyChange(currency)}
+                      aria-pressed={currency === chartCurrency}
+                    >
+                      {currency}
+                    </button>
+                  ))}
+                  </div>
+                </div>
+              )}
+              <button
+                type="button"
+                className="chart-share-button"
+                onClick={handleShareChart}
+                disabled={isSharingChart}
+              >
+                {t('share_chart_button')}
+              </button>
+            </div>
           </div>
           <DividendChart
             data={dividendChartConfig}
@@ -725,60 +699,113 @@ export default function HomeTab() {
             onSelect={handleSelectMonth}
             chartRef={chartRef}
           />
-          <div className="chart-actions-footer">
-            <button
-              type="button"
-              className="chart-share-button"
-              onClick={handleShareChart}
-              disabled={isSharingChart}
-            >
-              {t('share_chart_button')}
-            </button>
-          </div>
           {selectedDetail && (
-            <div className="dividend-chart-detail">
-              <div>
-                <div className="detail-label">{t('dividend_chart_detail_title')}</div>
-                <div className="detail-value">
-                  {dividendChartConfig.year} {selectedDetail.monthLabel}
-                </div>
-              </div>
-              <div>
-                <div className="detail-label">{t('dividend_chart_monthly_label')}</div>
-                <div className="detail-value">
+            <div className="chart-detail-row">
+              <span className="chart-detail-month">
+                {dividendChartConfig.year} {selectedDetail.monthLabel}
+              </span>
+              <span className="chart-detail-item">
+                <span className="chart-detail-label">{t('dividend_chart_monthly_label')}</span>
+                <strong>
                   {selectedDetail.monthlyValue.toLocaleString(lang === 'en' ? 'en-US' : 'zh-TW', {
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 2,
                   })}
-                  {' '}
-                  {dividendChartConfig.currency}
-                </div>
-              </div>
-              <div>
-                <div className="detail-label">{t('dividend_chart_cumulative_label')}</div>
-                <div className="detail-value">
+                  {' '}{dividendChartConfig.currency}
+                </strong>
+              </span>
+              <span className="chart-detail-item">
+                <span className="chart-detail-label">{t('dividend_chart_cumulative_label')}</span>
+                <strong>
                   {selectedDetail.cumulativeValue !== null
                     ? selectedDetail.cumulativeValue.toLocaleString(
                         lang === 'en' ? 'en-US' : 'zh-TW',
                         { minimumFractionDigits: 0, maximumFractionDigits: 2 },
                       )
                     : '-'}
-                  {' '}
-                  {dividendChartConfig.currency}
-                </div>
-              </div>
+                  {' '}{dividendChartConfig.currency}
+                </strong>
+              </span>
             </div>
           )}
         </section>
       )}
-      
-      <InvestmentGoalCard
-        title={goalTitle}
-        metrics={goalMetrics}
-        rows={goalRows}
-        emptyState={goalEmptyState}
-        share={goalShareConfig}
-      />
+
+      {/* ═══ TIER 4: DASHBOARD FOOTER ═══ */}
+      <section className="dashboard-footer">
+
+        {/* Site Stats strip */}
+        {stats.milestones.length > 0 && (
+          <div className="stat-strip">
+            {stats.milestones.map((m, idx) => (
+              <div key={idx} className="stat-strip__item">
+                <span className="stat-strip__value">{m.value}</span>
+                <span className="stat-strip__label">{m.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Latest news */}
+        {stats.latest.length > 0 && (
+          <details className="footer-collapsible">
+            <summary>{t('latest')}</summary>
+            <ul className="footer-list">
+              {stats.latest.map((item, idx) => (
+                <li key={idx}>{item}</li>
+              ))}
+            </ul>
+          </details>
+        )}
+
+        {/* ETF Tip */}
+        {stats.tip && (
+          <aside className="tip-callout">
+            <span className="tip-callout__icon" aria-hidden="true">💡</span>
+            <div>
+              <span className="section-label">{t('etf_tips')}</span>
+              <p className="tip-callout__text">{stats.tip}</p>
+            </div>
+          </aside>
+        )}
+
+        {/* Feature Updates — collapsed by default */}
+        <details className="footer-collapsible">
+          <summary>{t('feature_updates')}</summary>
+          <div className="footer-table-wrap">
+            <table className="footer-updates-table" aria-label={t('feature_updates')}>
+              <thead>
+                <tr>
+                  <th scope="col">{t('feature_update_date')}</th>
+                  <th scope="col">{t('feature_update_category')}</th>
+                  <th scope="col">{t('feature_update_summary')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {featureUpdates.map((update, idx) => (
+                  <tr key={`${update.date}-${update.category}-${idx}`}>
+                    <td>{update.date}</td>
+                    <td>{update.category}</td>
+                    <td>{update.description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+
+      </section>
+
+      {/* Render empty-state goal card so user knows they can set up goals */}
+      {goalEmptyState && (
+        <InvestmentGoalCard
+          title={goalTitle}
+          metrics={goalMetrics}
+          rows={goalRows}
+          emptyState={goalEmptyState}
+          share={goalShareConfig}
+        />
+      )}
     </div>
   );
 }

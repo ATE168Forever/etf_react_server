@@ -9,6 +9,12 @@ jest.mock('../src/api', () => ({
   clearCache: jest.fn(),
 }));
 
+jest.mock('../src/dividendApi', () => ({
+  fetchDividendsByYears: jest.fn(() => Promise.resolve({ data: [], meta: null })),
+  clearDividendsCache: jest.fn(),
+  clearEmptyDividendCaches: jest.fn()
+}));
+
 jest.mock('../config', () => ({ API_HOST: '' }));
 
 import App from '../src/App';
@@ -30,12 +36,12 @@ test('App remembers calendar visibility', async () => {
     ));
   });
 
-  const dividendTab = await screen.findByRole('button', { name: 'ETF 配息查詢' });
+  const dividendTab = await screen.findByRole('tab', { name: 'ETF 配息查詢' });
   await act(async () => {
     fireEvent.click(dividendTab);
   });
 
-  const hideBtn = await screen.findByRole('button', { name: '隱藏月曆' });
+  const hideBtn = await screen.findByRole('button', { name: /隱藏月曆/ });
   await act(async () => {
     fireEvent.click(hideBtn);
   });
@@ -52,11 +58,11 @@ test('App remembers calendar visibility', async () => {
     );
   });
 
-  const dividendTab2 = await screen.findByRole('button', { name: 'ETF 配息查詢' });
+  const dividendTab2 = await screen.findByRole('tab', { name: 'ETF 配息查詢' });
   await act(async () => {
     fireEvent.click(dividendTab2);
   });
 
-  const showBtn = await screen.findByRole('button', { name: '顯示月曆' });
+  const showBtn = await screen.findByRole('button', { name: /顯示月曆/ });
   expect(showBtn).toBeInTheDocument();
 });
