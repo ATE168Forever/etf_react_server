@@ -325,7 +325,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         const remoteModified = !Array.isArray(result) && Number.isFinite(result?.modifiedTime) ? result.modifiedTime : null;
         setDriveConnected(true);
         // force=true: user explicitly connected, always import. Otherwise only import if Drive is newer.
-        if (Array.isArray(list) && list.length > 0 && (force || !remoteModified || remoteModified > localUpdatedAt)) {
+        if (Array.isArray(list) && list.length > 0 && (force || !localUpdatedAt || (remoteModified !== null && remoteModified > localUpdatedAt))) {
           const enriched = mapTransactionsWithStockNames(list);
           setTransactionHistory(enriched);
           saveTransactionHistory(enriched);
@@ -350,7 +350,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
   const connectAndSyncDrive = useCallback(
     async () => {
       setDriveStatus({ status: 'connecting' });
-      const ok = await fetchFromDriveIfNewer({ silent: false, force: true });
+      const ok = await fetchFromDriveIfNewer({ silent: false, force: false });
       if (!ok) {
         setDriveConnected(false);
       }
