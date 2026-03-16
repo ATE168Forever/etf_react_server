@@ -364,7 +364,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
       localStorage.setItem('inventory_data_source', value);
       if (value === 'googleDrive') {
         setDriveStatus({ status: 'connecting' });
-        fetchFromDriveIfNewer({ silent: false, force: true }).then(ok => {
+        fetchFromDriveIfNewer({ silent: false, force: false }).then(ok => {
           if (!ok) setDriveConnected(false);
         });
       } else {
