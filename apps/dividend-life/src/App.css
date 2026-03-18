@@ -2201,9 +2201,26 @@ button:active {
     align-items: stretch;
   }
 
+  .filter-bar__item {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
   .filter-bar__item--scope,
   .filter-bar__item--currency {
     flex: none;
+  }
+
+  .filter-bar__select {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .filter-bar__group-row {
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .filter-bar__row--secondary {
