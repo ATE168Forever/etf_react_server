@@ -11,6 +11,8 @@ const text = {
     driveModified: 'Drive 更新時間',
     localModified: '本地更新時間',
     newer: '(較新)',
+    syncToDrive: '同步到 Drive',
+    syncToLocal: '從 Drive 同步',
     records: '筆記錄',
     colStock: '股票代碼',
     colName: '名稱',
@@ -29,6 +31,8 @@ const text = {
     driveModified: 'Drive updated',
     localModified: 'Local updated',
     newer: '(newer)',
+    syncToDrive: 'Sync to Drive',
+    syncToLocal: 'Sync from Drive',
     records: 'records',
     colStock: 'Stock ID',
     colName: 'Name',
@@ -42,7 +46,7 @@ const text = {
   },
 };
 
-export default function DrivePreviewModal({ show, onClose, data, loading }) {
+export default function DrivePreviewModal({ show, onClose, data, loading, onSyncToDrive, onSyncFromDrive }) {
   const { lang } = useLanguage();
   const t = text[lang] || text.zh;
   const locale = lang === 'zh' ? 'zh-TW' : 'en-US';
@@ -144,6 +148,16 @@ export default function DrivePreviewModal({ show, onClose, data, loading }) {
         )}
 
         <div className={styles.footer}>
+          {!loading && list !== null && localIsNewer && onSyncToDrive && (
+            <button type="button" className={styles.syncButton} onClick={() => { onSyncToDrive(); onClose(); }}>
+              {t.syncToDrive}
+            </button>
+          )}
+          {!loading && list !== null && driveIsNewer && onSyncFromDrive && (
+            <button type="button" className={styles.syncButton} onClick={() => { onSyncFromDrive(); onClose(); }}>
+              {t.syncToLocal}
+            </button>
+          )}
           <button type="button" className={styles.closeButton} onClick={onClose}>
             {t.close}
           </button>

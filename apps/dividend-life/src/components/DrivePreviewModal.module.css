@@ -127,6 +127,27 @@
   margin-top: 16px;
   display: flex;
   justify-content: flex-end;
+  gap: 12px;
+}
+
+.syncButton {
+  background: var(--accent-gold, #c9a84c);
+  border: none;
+  color: #1f2937;
+  border-radius: 6px;
+  padding: 7px 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.syncButton:hover {
+  opacity: 0.85;
+}
+
+.syncButton:focus-visible {
+  outline: 2px solid var(--color-text, #1f2937);
+  outline-offset: 2px;
 }
 
 .closeButton {

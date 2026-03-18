@@ -468,9 +468,13 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     }
   }, [transactionHistory, handleExport, backupPrompt]);
 
-  // Periodic Drive timestamp poll: every 5 min, check if Drive is newer → silent sync
+  // Periodic Drive timestamp poll: every 5 min, compare timestamps and sync in the right direction
   const fetchFromDriveIfNewerRef = useRef(fetchFromDriveIfNewer);
   useEffect(() => { fetchFromDriveIfNewerRef.current = fetchFromDriveIfNewer; }, [fetchFromDriveIfNewer]);
+  const syncToDriveRef = useRef(syncToDrive);
+  useEffect(() => { syncToDriveRef.current = syncToDrive; }, [syncToDrive]);
+  const transactionHistoryRef = useRef(transactionHistory);
+  useEffect(() => { transactionHistoryRef.current = transactionHistory; }, [transactionHistory]);
   useEffect(() => {
     if (selectedDataSource !== 'googleDrive' || !driveConnected) return;
     const INTERVAL_MS = 5 * 60 * 1000;
@@ -480,7 +484,11 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         if (!meta?.modifiedTime) return;
         const localUpdatedAt = getTransactionHistoryUpdatedAt() ?? 0;
         if (meta.modifiedTime > localUpdatedAt) {
+          // Drive is newer → import
           fetchFromDriveIfNewerRef.current({ silent: true });
+        } else if (localUpdatedAt > meta.modifiedTime && transactionHistoryRef.current.length > 0) {
+          // Local is newer → upload to Drive
+          syncToDriveRef.current(transactionHistoryRef.current);
         }
       } catch { /* silently ignore */ }
     };
@@ -1640,6 +1648,8 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         loading={drivePreview.loading}
         data={drivePreview.data}
         onClose={handleCloseDrivePreview}
+        onSyncToDrive={() => syncToDrive(transactionHistory)}
+        onSyncFromDrive={() => fetchFromDriveIfNewer({ silent: false, force: true })}
       />
 
       <div className="inventory-tables">
