@@ -16,6 +16,7 @@ import QuickPurchaseModal from './components/QuickPurchaseModal';
 import SellModal from './components/SellModal';
 import TransactionHistoryTable from './components/TransactionHistoryTable';
 import DataDropdown from './components/DataDropdown';
+import DrivePreviewModal from './components/DrivePreviewModal';
 import styles from './InventoryTab.module.css';
 import { useLanguage } from './i18n';
 import InvestmentGoalCard from './components/InvestmentGoalCard';
@@ -69,6 +70,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
   const fileInputRef = useRef(null);
   const driveSaveRequestRef = useRef(0);
   const modalTriggerRef = useRef(null);
+  const skipTimestampRef = useRef(true); // true = skip initial mount timestamp write
   const [cacheInfo, setCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [selectedDataSource, setSelectedDataSource] = useState(
@@ -79,6 +81,8 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
   );
   const [driveConnected, setDriveConnected] = useState(false);
   const [driveStatus, setDriveStatus] = useState({ status: 'idle' });
+  const [drivePreview, setDrivePreview] = useState({ show: false, loading: false, data: null });
+  const drivePreviewTriggerRef = useRef(null);
   const [transactionHistoryUpdatedAt, setTransactionHistoryUpdatedAt] = useState(
     () => getTransactionHistoryUpdatedAt() ?? 0
   );
@@ -324,8 +328,9 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         const list = Array.isArray(result) ? result : result?.list;
         const remoteModified = !Array.isArray(result) && Number.isFinite(result?.modifiedTime) ? result.modifiedTime : null;
         setDriveConnected(true);
-        // force=true: user explicitly connected, always import. Otherwise only import if Drive is newer.
-        if (Array.isArray(list) && list.length > 0 && (force || !localUpdatedAt || (remoteModified !== null && remoteModified > localUpdatedAt))) {
+        // Import from Drive if: forced, local is empty (fresh device), no local timestamp, or Drive is newer.
+        const localIsEmpty = transactionHistory.length === 0;
+        if (Array.isArray(list) && list.length > 0 && (force || localIsEmpty || !localUpdatedAt || (remoteModified !== null && remoteModified > localUpdatedAt))) {
           const enriched = mapTransactionsWithStockNames(list);
           setTransactionHistory(enriched);
           saveTransactionHistory(enriched);
@@ -357,6 +362,29 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     },
     [fetchFromDriveIfNewer]
   );
+
+  const handleViewDriveData = useCallback(async () => {
+    drivePreviewTriggerRef.current = document.activeElement;
+    setDrivePreview({ show: true, loading: true, data: null });
+    try {
+      const result = await importTransactionsFromDrive({ includeMetadata: true, silent: true });
+      if (result === null) {
+        setDrivePreview({ show: true, loading: false, data: { list: null, modifiedTime: null } });
+      } else {
+        const list = Array.isArray(result) ? result : result?.list ?? [];
+        const modifiedTime = !Array.isArray(result) ? result?.modifiedTime ?? null : null;
+        setDrivePreview({ show: true, loading: false, data: { list, modifiedTime } });
+      }
+    } catch {
+      setDrivePreview({ show: true, loading: false, data: { list: null, modifiedTime: null } });
+    }
+  }, []);
+
+  const handleCloseDrivePreview = useCallback(() => {
+    setDrivePreview({ show: false, loading: false, data: null });
+    drivePreviewTriggerRef.current?.focus();
+    drivePreviewTriggerRef.current = null;
+  }, []);
 
   const handleDataSourceChange = useCallback(
     value => {
@@ -440,6 +468,26 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     }
   }, [transactionHistory, handleExport, backupPrompt]);
 
+  // Periodic Drive timestamp poll: every 5 min, check if Drive is newer → silent sync
+  const fetchFromDriveIfNewerRef = useRef(fetchFromDriveIfNewer);
+  useEffect(() => { fetchFromDriveIfNewerRef.current = fetchFromDriveIfNewer; }, [fetchFromDriveIfNewer]);
+  useEffect(() => {
+    if (selectedDataSource !== 'googleDrive' || !driveConnected) return;
+    const INTERVAL_MS = 5 * 60 * 1000;
+    const poll = async () => {
+      try {
+        const meta = await importTransactionsFromDrive({ metadataOnly: true, silent: true });
+        if (!meta?.modifiedTime) return;
+        const localUpdatedAt = getTransactionHistoryUpdatedAt() ?? 0;
+        if (meta.modifiedTime > localUpdatedAt) {
+          fetchFromDriveIfNewerRef.current({ silent: true });
+        }
+      } catch { /* silently ignore */ }
+    };
+    const id = setInterval(poll, INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [selectedDataSource, driveConnected]);
+
   // On mount: if Google Drive was previously selected, try silent auth + sync
   useEffect(() => {
     if (selectedDataSource !== 'googleDrive') return;
@@ -483,6 +531,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
 
   useEffect(() => {
     if (stockList.length === 0) return;
+    skipTimestampRef.current = true; // name enrichment is not a user change
     setTransactionHistory(prev => {
       let changed = false;
       const updated = prev.map(item => {
@@ -494,11 +543,11 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         }
         return item;
       });
-      if (changed) {
-        saveTransactionHistory(updated);
-        return updated;
+      if (!changed) {
+        skipTimestampRef.current = false; // no state change → useEffect 570 won't fire, reset here
+        return prev;
       }
-      return prev;
+      return updated;
     });
   }, [stockList]);
 
@@ -521,8 +570,13 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
   }, [dividendData]);
 
   useEffect(() => {
+    if (skipTimestampRef.current) {
+      // System-triggered change (initial mount or stockList enrichment) — save data only, no timestamp update
+      skipTimestampRef.current = false;
+      try { localStorage.setItem('my_transaction_history', JSON.stringify(transactionHistory)); } catch { /* ignore */ }
+      return;
+    }
     saveTransactionHistory(transactionHistory);
-    setTransactionHistoryUpdatedAt(Date.now());
   }, [transactionHistory]);
 
   useEffect(() => {
@@ -1546,6 +1600,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
               driveConnected={driveConnected}
               driveStatus={driveStatus}
               onConnectDrive={connectAndSyncDrive}
+              onViewDriveData={handleViewDriveData}
             />
           )}
         </div>
@@ -1579,6 +1634,12 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         stock={sellModal.stock}
         onClose={() => { setSellModal({ show: false, stock: null }); modalTriggerRef.current?.focus(); modalTriggerRef.current = null; }}
         onSubmit={handleSell}
+      />
+      <DrivePreviewModal
+        show={drivePreview.show}
+        loading={drivePreview.loading}
+        data={drivePreview.data}
+        onClose={handleCloseDrivePreview}
       />
 
       <div className="inventory-tables">

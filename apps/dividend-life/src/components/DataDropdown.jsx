@@ -11,7 +11,8 @@ export default function DataDropdown({
   onSelectChange,
   driveConnected,
   driveStatus,
-  onConnectDrive
+  onConnectDrive,
+  onViewDriveData
 }) {
   const ref = useRef();
   useClickOutside(ref, onClose);
@@ -28,7 +29,8 @@ export default function DataDropdown({
       driveSynced: '已同步',
       driveError: '同步失敗',
       driveLastSync: '上次同步',
-      driveAutoSync: '自動同步中'
+      driveAutoSync: '自動同步中',
+      driveView: '查看備份資料'
     },
     en: {
       selectLabel: 'Data source',
@@ -40,11 +42,13 @@ export default function DataDropdown({
       driveSynced: 'Synced',
       driveError: 'Sync failed',
       driveLastSync: 'Last synced',
-      driveAutoSync: 'Auto-syncing'
+      driveAutoSync: 'Auto-syncing',
+      driveView: 'View backup'
     }
   };
 
   const t = text[lang] || text.zh;
+  const isDebug = new URLSearchParams(window.location.search).has('debug');
   const locale = lang === 'zh' ? 'zh-TW' : 'en-US';
   const status = driveStatus?.status;
   const timestamp = driveStatus?.timestamp;
@@ -115,6 +119,11 @@ export default function DataDropdown({
           {!driveConnected && status !== 'connecting' && status !== 'syncing' && (
             <div className={styles.buttonGroup}>
               <button type="button" onClick={() => handleAction(onConnectDrive)}>{t.driveConnect}</button>
+            </div>
+          )}
+          {isDebug && driveConnected && status === 'synced' && (
+            <div className={styles.buttonGroup}>
+              <button type="button" onClick={() => handleAction(onViewDriveData)}>{t.driveView}</button>
             </div>
           )}
         </>
