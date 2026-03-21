@@ -30,7 +30,8 @@ export default function DataDropdown({
       driveError: '同步失敗',
       driveLastSync: '上次同步',
       driveAutoSync: '自動同步中',
-      driveView: '查看備份資料'
+      driveView: '查看備份資料',
+      driveHint: '自動備份至 Google Drive，可跨裝置同步交易紀錄'
     },
     en: {
       selectLabel: 'Data source',
@@ -43,7 +44,8 @@ export default function DataDropdown({
       driveError: 'Sync failed',
       driveLastSync: 'Last synced',
       driveAutoSync: 'Auto-syncing',
-      driveView: 'View backup'
+      driveView: 'View backup',
+      driveHint: 'Auto-backup to Google Drive and sync across devices'
     }
   };
 
@@ -117,9 +119,12 @@ export default function DataDropdown({
             {driveStatusMessage}
           </div>
           {!driveConnected && status !== 'connecting' && status !== 'syncing' && (
-            <div className={styles.buttonGroup}>
-              <button type="button" onClick={() => handleAction(onConnectDrive)}>{t.driveConnect}</button>
-            </div>
+            <>
+              <p className={styles.driveHint}>{t.driveHint}</p>
+              <div className={styles.buttonGroup}>
+                <button type="button" onClick={() => handleAction(onConnectDrive)}>{t.driveConnect}</button>
+              </div>
+            </>
           )}
           {isDebug && driveConnected && status === 'synced' && (
             <div className={styles.buttonGroup}>

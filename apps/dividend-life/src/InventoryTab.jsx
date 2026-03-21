@@ -1810,6 +1810,16 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
                 {msg.showInventory}
               </button>
             </div>
+            {transactionHistory.length === 0 && (
+              <div className={styles.emptyGuide} role="region" aria-label={msg.emptyGuideTitle}>
+                <p className={styles.emptyGuideTitle}>{msg.emptyGuideTitle}</p>
+                <ol className={styles.emptyGuideSteps}>
+                  <li>{msg.emptyGuideStep1}</li>
+                  <li>{msg.emptyGuideStep2}</li>
+                  <li>{msg.emptyGuideStep3}</li>
+                </ol>
+              </div>
+            )}
             <TransactionHistoryTable
               transactionHistory={transactionHistory}
               stockList={stockList}

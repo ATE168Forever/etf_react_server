@@ -98,7 +98,11 @@ const inventoryTabText = {
     noInventory: '尚無庫存',
     sell: '賣出',
     transactionHistory: '交易歷史 ',
-    showInventory: '顯示：目前庫存'
+    showInventory: '顯示：目前庫存',
+    emptyGuideTitle: '開始記錄你的投資組合',
+    emptyGuideStep1: '按「+ 新增交易」記錄買入或賣出',
+    emptyGuideStep2: '或點擊「資料」→「匯入 CSV」匯入現有紀錄',
+    emptyGuideStep3: '或點擊「資料」→「Google Drive」從備份還原'
   },
   en: {
     importOverwrite: 'Import will overwrite existing records. Continue?',
@@ -200,7 +204,11 @@ const inventoryTabText = {
     noInventory: 'No inventory',
     sell: 'Sell',
     transactionHistory: 'Transaction ',
-    showInventory: 'Show: Inventory'
+    showInventory: 'Show: Inventory',
+    emptyGuideTitle: 'Start tracking your portfolio',
+    emptyGuideStep1: 'Click "+ Add Transaction" to record a buy or sell',
+    emptyGuideStep2: 'Or go to "Data" → "Import CSV" to import existing records',
+    emptyGuideStep3: 'Or go to "Data" → "Google Drive" to restore from a backup'
   }
 };
 

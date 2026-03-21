@@ -13,6 +13,7 @@ import dividendLifeTextDark from '@shared/assets/dividend-life-text.svg';
 import dividendLifeTextLight from '@shared/assets/dividend-life-text-light.svg';
 import AdvancedFilterDropdown from './components/AdvancedFilterDropdown';
 import CurrencyViewToggle from './components/CurrencyViewToggle';
+import TooltipText from './components/TooltipText';
 
 import './App.css';
 import appStyles from './App.module.css';
@@ -1000,6 +1001,9 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                   <div className="filter-bar__item filter-bar__item--group">
                     <label htmlFor="filter-group" className="filter-bar__label">
                       {lang === 'en' ? 'Group' : '觀察組合'}
+                      <TooltipText tooltip={lang === 'en' ? 'Group stocks together to quickly filter dividend data by portfolio' : '建立自訂股票組合，快速篩選特定組合的股息資料'} style={{ marginLeft: 4 }}>
+                        <span className="filter-bar__help-icon" aria-hidden="true">?</span>
+                      </TooltipText>
                     </label>
                     <div className="filter-bar__group-row">
                       <select
