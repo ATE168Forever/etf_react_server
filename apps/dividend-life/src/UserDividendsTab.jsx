@@ -358,8 +358,8 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
         const divYear = divDate && !Number.isNaN(divDate.getTime()) ? divDate.getFullYear() : null;
         const payYear = payDate && !Number.isNaN(payDate.getTime()) ? payDate.getFullYear() : null;
 
-        // Include items where either dividend_date OR payment_date falls in selected year
-        const yearMatches = divYear === yearNum || payYear === yearNum;
+        // Use dividend_date for year assignment; fall back to payment_date only if dividend_date is absent
+        const yearMatches = divYear !== null ? divYear === yearNum : payYear === yearNum;
         if (!yearMatches) return false;
 
         const checkDate = item.dividend_date || item.payment_date;

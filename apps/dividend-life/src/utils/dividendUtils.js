@@ -20,10 +20,10 @@ export function getTomorrowDividendAlerts(dividendData, history = readTransactio
     if (!qty) return;
     const dividend = parseFloat(item.dividend) || 0;
     if (item.dividend_date === tomorrowStr) {
-      alerts.push({ stock_id: item.stock_id, stock_name: item.stock_name, type: 'ex', dividend, quantity: qty, total: dividend * qty });
+      alerts.push({ stock_id: item.stock_id, stock_name: item.stock_name, type: 'ex', dividend, quantity: qty, total: dividend * qty, date: tomorrowStr });
     }
     if (item.payment_date === tomorrowStr) {
-      alerts.push({ stock_id: item.stock_id, stock_name: item.stock_name, type: 'pay', dividend, quantity: qty, total: dividend * qty });
+      alerts.push({ stock_id: item.stock_id, stock_name: item.stock_name, type: 'pay', dividend, quantity: qty, total: dividend * qty, date: tomorrowStr });
     }
   });
   return alerts;
