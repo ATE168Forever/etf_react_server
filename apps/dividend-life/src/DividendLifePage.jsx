@@ -897,8 +897,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
             {upcomingAlerts.map(a => (
               <div key={`${a.stock_id}-${a.type}`}>
                 {lang === 'en'
-                  ? `${a.date} — ${a.stock_id} ${a.stock_name} will ${a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'} tomorrow. ${a.dividend} per share, estimated ${Math.round(a.total).toLocaleString()}`
-                  : `${a.date} — ${a.stock_id} ${a.stock_name} 明天即將${a.type === 'ex' ? '除息' : '配息'} 每股 ${a.dividend} 元，預估領取 ${Math.round(a.total).toLocaleString()} 元`}
+                  ? `${a.stock_id} ${a.stock_name} will ${a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'} tomorrow (${a.date.split('-').slice(1).map(Number).join('/')}). ${a.dividend} per share, estimated ${Math.round(a.total).toLocaleString()}`
+                  : `${a.stock_id} ${a.stock_name}將於明天（${a.date.split('-').slice(1).map(Number).join('/')}）${a.type === 'ex' ? '除息' : '配息'}，每股 ${a.dividend} 元，預估領取 ${Math.round(a.total).toLocaleString()} 元`}
               </div>
             ))}
           </div>
