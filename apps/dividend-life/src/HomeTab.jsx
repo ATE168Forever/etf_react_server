@@ -587,14 +587,21 @@ export default function HomeTab() {
     if (!bucket) return null;
     const thisMonth = Number(bucket.monthlyTotalsSeries?.[currentMonthIndex]) || 0;
     const ytd = Number(bucket.annualTotal) || 0;
-    const twHoldings = goalSummary.inventoryList.filter(i => (i.country || '').toUpperCase() === 'TW').length;
-    const usHoldings = goalSummary.inventoryList.filter(i => (i.country || '').toUpperCase() === 'US').length;
+    const stockCurrencyMap = {};
+    dividendData.forEach(item => {
+      if (!stockCurrencyMap[item.stock_id] && item.currency) {
+        stockCurrencyMap[item.stock_id] = item.currency.toUpperCase();
+      }
+    });
+    const heldIds = new Set(goalSummary.inventoryList.map(i => i.stock_id));
+    const twHoldings = [...heldIds].filter(id => stockCurrencyMap[id] === 'TWD').length;
+    const usHoldings = [...heldIds].filter(id => stockCurrencyMap[id] === 'USD').length;
     const fmt = (v) => v.toLocaleString(lang === 'en' ? 'en-US' : 'zh-TW', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
     return { thisMonth: fmt(thisMonth), ytd: fmt(ytd), twHoldings, usHoldings, currency: chartCurrency };
-  }, [chartCurrency, dividendSummary, goalSummary.inventoryList.length, currentMonthIndex, lang]);
+  }, [chartCurrency, dividendSummary, goalSummary.inventoryList, dividendData, currentMonthIndex, lang]);
 
   return (
     <div className="dashboard-container">
