@@ -33,6 +33,7 @@ export default defineConfig({
       '/get_stock_list': 'http://127.0.0.1:8001',
       '/site_stats': 'http://127.0.0.1:8001',
       '/nl_query': 'http://127.0.0.1:8001',
+      '/chat': 'http://127.0.0.1:8001',
       '/get_returns': 'http://127.0.0.1:8001',
       '/dividend_helper': 'http://127.0.0.1:8001',
     },

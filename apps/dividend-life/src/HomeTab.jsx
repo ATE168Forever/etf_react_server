@@ -587,12 +587,13 @@ export default function HomeTab() {
     if (!bucket) return null;
     const thisMonth = Number(bucket.monthlyTotalsSeries?.[currentMonthIndex]) || 0;
     const ytd = Number(bucket.annualTotal) || 0;
-    const holdings = goalSummary.inventoryList.length;
+    const twHoldings = goalSummary.inventoryList.filter(i => (i.country || '').toUpperCase() === 'TW').length;
+    const usHoldings = goalSummary.inventoryList.filter(i => (i.country || '').toUpperCase() === 'US').length;
     const fmt = (v) => v.toLocaleString(lang === 'en' ? 'en-US' : 'zh-TW', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
-    return { thisMonth: fmt(thisMonth), ytd: fmt(ytd), holdings, currency: chartCurrency };
+    return { thisMonth: fmt(thisMonth), ytd: fmt(ytd), twHoldings, usHoldings, currency: chartCurrency };
   }, [chartCurrency, dividendSummary, goalSummary.inventoryList.length, currentMonthIndex, lang]);
 
   return (
@@ -626,10 +627,10 @@ export default function HomeTab() {
               {lang === 'en' ? 'Holdings' : '持有 ETF'}
             </span>
             <span className="metric-card__value">
-              {heroMetrics.holdings}
+              {heroMetrics.twHoldings} / {heroMetrics.usHoldings}
             </span>
             <span className="metric-card__sub">
-              {lang === 'en' ? 'ETFs' : '檔'}
+              {lang === 'en' ? 'TW / US' : '台 / 美（檔）'}
             </span>
           </div>
         </section>
