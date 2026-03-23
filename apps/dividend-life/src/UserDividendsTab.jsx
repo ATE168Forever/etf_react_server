@@ -917,11 +917,22 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
             setDonutSelectedIndex(null);
             return;
         }
+        // Sync donutCurrency with viewMode
+        if (viewMode === 'TWD' && donutCurrencies.includes('TWD')) {
+            setDonutCurrency('TWD');
+            setDonutSelectedIndex(null);
+            return;
+        }
+        if (viewMode === 'USD' && donutCurrencies.includes('USD')) {
+            setDonutCurrency('USD');
+            setDonutSelectedIndex(null);
+            return;
+        }
         if (!donutCurrency || !donutCurrencies.includes(donutCurrency)) {
             setDonutCurrency(donutCurrencies[0]);
             setDonutSelectedIndex(null);
         }
-    }, [donutCurrencies, donutCurrency]);
+    }, [donutCurrencies, donutCurrency, viewMode]);
 
     const activeDonutData = donutCurrency ? donutDataByCurrency[donutCurrency] : null;
 
@@ -992,13 +1003,13 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                 <section className="donut-section">
                     <div className="chart-header">
                         <span className="section-label">{t('dividend_donut_heading')}</span>
-                        {donutCurrencies.length > 1 && (
+                        {donutCurrencies.filter(c => activeCurrencies.includes(c)).length > 1 && (
                             <div className="dividend-chart-currency-switch">
                                 <span className="currency-switch-label">
                                     {t('dividend_currency_label')}
                                 </span>
                                 <div className="currency-pill-group" role="group" aria-label={t('dividend_currency_label')}>
-                                    {donutCurrencies.map((currency) => (
+                                    {donutCurrencies.filter(c => activeCurrencies.includes(c)).map((currency) => (
                                         <button
                                             key={`donut-currency-${currency}`}
                                             type="button"
