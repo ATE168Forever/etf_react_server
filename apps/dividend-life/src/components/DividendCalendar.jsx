@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLanguage } from '../i18n';
+import TooltipText from './TooltipText';
 
 const DEFAULT_CURRENCY = 'TWD';
 
@@ -235,13 +236,11 @@ export default function DividendCalendar({
                         );
                         const tooltip = tooltipParts.join('\n');
                         return (
-                          <div
-                            key={j}
-                            className={`event ${ev.type === 'ex' ? 'event-ex' : 'event-pay'}`}
-                            title={tooltip}
-                          >
-                            {ev.stock_id}
-                          </div>
+                          <TooltipText key={j} tooltip={tooltip} style={{ display: 'block' }}>
+                            <div className={`event ${ev.type === 'ex' ? 'event-ex' : 'event-pay'}`}>
+                              {ev.stock_id}
+                            </div>
+                          </TooltipText>
                         );
                       })}
                       {!expandedDates[d.dateStr] && d.events.length > 1 && (

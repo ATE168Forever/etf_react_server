@@ -1031,6 +1031,8 @@ button:active {
   color: var(--color-text-on-accent, #fff);
   border-bottom: 1px dotted rgba(255, 255, 255, 0.5);
   cursor: help;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .event-ex {
   background: #ff6b6b;

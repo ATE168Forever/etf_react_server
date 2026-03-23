@@ -1,13 +1,19 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { DEFAULT_CURRENCY, CURRENCY_NAME } from '../utils/currencyUtils';
 
+const STORAGE_KEY = 'dividend_currency_view_mode';
+
 export default function useCurrencyView({ availableCurrencies, lang }) {
   const hasTwd = availableCurrencies.includes('TWD');
   const hasUsd = availableCurrencies.includes('USD');
   const fallbackView = hasTwd && hasUsd ? 'BOTH' : hasTwd ? 'TWD' : hasUsd ? 'USD' : 'TWD';
 
-  const [viewMode, setViewMode] = useState(fallbackView);
-  const [hasUserSetViewMode, setHasUserSetViewMode] = useState(false);
+  const [viewMode, setViewMode] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'TWD' || saved === 'USD' || saved === 'BOTH') return saved;
+    return fallbackView;
+  });
+  const [hasUserSetViewMode, setHasUserSetViewMode] = useState(() => !!localStorage.getItem(STORAGE_KEY));
 
   useEffect(() => {
     if (!hasUserSetViewMode) {
@@ -24,6 +30,7 @@ export default function useCurrencyView({ availableCurrencies, lang }) {
   const handleViewModeChange = useCallback((mode) => {
     setHasUserSetViewMode(true);
     setViewMode(mode);
+    localStorage.setItem(STORAGE_KEY, mode);
   }, []);
 
   const activeCurrencies = useMemo(() => {
