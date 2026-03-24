@@ -1,5 +1,12 @@
 import { readTransactionHistory } from './transactionStorage';
 
+function toLocalDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export function getTomorrowDividendAlerts(dividendData, history = readTransactionHistory(), daysAhead = 7) {
   if (!Array.isArray(dividendData) || dividendData.length === 0) return [];
 
@@ -24,7 +31,7 @@ export function getTomorrowDividendAlerts(dividendData, history = readTransactio
   for (let i = 1; i <= daysAhead; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() + i);
-    dateStrings[d.toISOString().slice(0, 10)] = i;
+    dateStrings[toLocalDateStr(d)] = i;
   }
 
   const seen = new Set();

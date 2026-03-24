@@ -9,9 +9,9 @@ test('renders contact info and dynamic copyright', () => {
   render(
     <Footer
       theme="dark"
-      setTheme={() => {}}
+      setTheme={() => { }}
       lang={lang}
-      setLang={() => {}}
+      setLang={() => { }}
       t={t}
       translations={translations}
     />
@@ -21,6 +21,6 @@ test('renders contact info and dynamic copyright', () => {
   expect(darkBtn).toHaveClass('btn-selected');
   expect(screen.getByRole('link', { name: /贊助/ })).toBeInTheDocument();
   expect(
-    screen.getByText(`© ${year} ETF Life. All rights reserved.`)
+    screen.getByText(`© 2024-${year} ETF Life. All rights reserved.`)
   ).toBeInTheDocument();
 });
