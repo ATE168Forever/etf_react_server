@@ -1726,6 +1726,17 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
               }}
             />
 
+            {inventoryList.length === 0 && (
+              <div className={styles.emptyGuide} role="region" aria-label={msg.emptyGuideTitle}>
+                <p className={styles.emptyGuideTitle}>{msg.emptyGuideTitle}</p>
+                <ol className={styles.emptyGuideSteps}>
+                  <li>{msg.emptyGuideStep1}</li>
+                  <li>{msg.emptyGuideStep2}</li>
+                  <li>{msg.emptyGuideStep3}</li>
+                </ol>
+              </div>
+            )}
+
             <div className="table-responsive">
               <table className={`table table-bordered table-striped ${styles.fullWidth}`} aria-label={lang === 'en' ? 'Current inventory' : '目前庫存'}>
                 <thead>

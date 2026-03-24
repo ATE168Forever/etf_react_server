@@ -600,16 +600,46 @@ export default function HomeTab() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
-    return { thisMonth: fmt(thisMonth), ytd: fmt(ytd), twHoldings, usHoldings, currency: chartCurrency };
+    const monthlyAvg = Number(bucket.monthlyAverage) || 0;
+    const accumulated = Number(bucket.accumulatedTotal) || 0;
+    return { thisMonth: fmt(thisMonth), ytd: fmt(ytd), twHoldings, usHoldings, currency: chartCurrency, monthlyAvg: fmt(monthlyAvg), accumulated: fmt(accumulated) };
   }, [chartCurrency, dividendSummary, goalSummary.inventoryList, dividendData, currentMonthIndex, lang]);
+
+  const [expandedCard, setExpandedCard] = useState(null);
+  const toggleCard = (id) => setExpandedCard(prev => prev === id ? null : id);
+  const metricRowRef = useRef(null);
+
+  const handleMetricKeyDown = (e) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const row = metricRowRef.current;
+    if (!row) return;
+    const cards = Array.from(row.querySelectorAll('button.metric-card'));
+    const idx = cards.indexOf(document.activeElement);
+    if (idx === -1) return;
+    e.preventDefault();
+    const isNext = e.key === 'ArrowRight' || e.key === 'ArrowDown';
+    const nextIdx = isNext ? (idx + 1) % cards.length : (idx - 1 + cards.length) % cards.length;
+    cards[nextIdx].focus();
+  };
 
   return (
     <div className="dashboard-container">
 
       {/* ═══ TIER 1: INCOME HERO ═══ */}
       {heroMetrics && (
-        <section className="income-summary-row">
-          <div className="metric-card metric-card--primary">
+        <section
+          ref={metricRowRef}
+          className="income-summary-row"
+          role="group"
+          aria-label={lang === 'en' ? 'Income summary' : '收益摘要'}
+          onKeyDown={handleMetricKeyDown}
+        >
+          <button
+            type="button"
+            className="metric-card metric-card--primary"
+            onClick={() => toggleCard('month')}
+            aria-expanded={expandedCard === 'month'}
+          >
             <span className="metric-card__label">
               {lang === 'en' ? 'This Month' : '本月配息'}
             </span>
@@ -617,8 +647,18 @@ export default function HomeTab() {
               {heroMetrics.thisMonth}
             </span>
             <span className="metric-card__sub">{heroMetrics.currency}</span>
-          </div>
-          <div className="metric-card metric-card--gold">
+            {expandedCard === 'month' && (
+              <span className="metric-card__detail">
+                {lang === 'en' ? `Monthly avg: ${heroMetrics.monthlyAvg} ${heroMetrics.currency}` : `月平均：${heroMetrics.monthlyAvg} ${heroMetrics.currency}`}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            className="metric-card metric-card--gold"
+            onClick={() => toggleCard('ytd')}
+            aria-expanded={expandedCard === 'ytd'}
+          >
             <span className="metric-card__label">
               {lang === 'en'
                 ? `${dividendChartConfig?.year ?? new Date().getFullYear()} YTD`
@@ -628,8 +668,18 @@ export default function HomeTab() {
               {heroMetrics.ytd}
             </span>
             <span className="metric-card__sub">{heroMetrics.currency}</span>
-          </div>
-          <div className="metric-card metric-card--neutral">
+            {expandedCard === 'ytd' && (
+              <span className="metric-card__detail">
+                {lang === 'en' ? `All-time total: ${heroMetrics.accumulated} ${heroMetrics.currency}` : `累計總配息：${heroMetrics.accumulated} ${heroMetrics.currency}`}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            className="metric-card metric-card--neutral"
+            onClick={() => toggleCard('holdings')}
+            aria-expanded={expandedCard === 'holdings'}
+          >
             <span className="metric-card__label">
               {lang === 'en' ? 'Holdings' : '持有 ETF'}
             </span>
@@ -639,7 +689,14 @@ export default function HomeTab() {
             <span className="metric-card__sub">
               {lang === 'en' ? 'TW / US' : '台 / 美（檔）'}
             </span>
-          </div>
+            {expandedCard === 'holdings' && (
+              <span className="metric-card__detail">
+                {lang === 'en'
+                  ? `TW: ${heroMetrics.twHoldings} ETFs｜US: ${heroMetrics.usHoldings} ETFs`
+                  : `台股 ${heroMetrics.twHoldings} 檔｜美股 ${heroMetrics.usHoldings} 檔`}
+              </span>
+            )}
+          </button>
         </section>
       )}
 

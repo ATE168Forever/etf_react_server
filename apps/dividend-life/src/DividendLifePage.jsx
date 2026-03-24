@@ -87,6 +87,22 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [upcomingAlerts, setUpcomingAlerts] = useState([]);
+  const [dismissedAlerts, setDismissedAlerts] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('dismissedDividendAlerts');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const dismissAlert = (key) => {
+    setDismissedAlerts(prev => {
+      const next = [...prev, key];
+      try { sessionStorage.setItem('dismissedDividendAlerts', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
   const fetchSkipRef = useRef(new Map());
   const selectedYearRef = useRef(selectedYear);
   const groupModalTriggerRef = useRef(null);
@@ -894,13 +910,26 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         </div>
         <section className={`${brandStyles.panel} ${brandStyles.content} ${brandStyles.contentWide}`}>
           <div className="dividend-alert" role="status" aria-live="polite" aria-atomic="false">
-            {upcomingAlerts.map(a => (
-              <div key={`${a.stock_id}-${a.type}`}>
-                {lang === 'en'
-                  ? `${a.stock_id} ${a.stock_name} will ${a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'} tomorrow (${a.date.split('-').slice(1).map(Number).join('/')}). ${a.dividend} per share, estimated ${Math.round(a.total).toLocaleString()}`
-                  : `${a.stock_id} ${a.stock_name}將於明天（${a.date.split('-').slice(1).map(Number).join('/')}）${a.type === 'ex' ? '除息' : '配息'}，每股 ${a.dividend} 元，預估領取 ${Math.round(a.total).toLocaleString()} 元`}
-              </div>
-            ))}
+            {upcomingAlerts.filter(a => !dismissedAlerts.includes(`${a.stock_id}-${a.type}-${a.date}`)).map(a => {
+              const key = `${a.stock_id}-${a.type}-${a.date}`;
+              const dateLabel = a.date.split('-').slice(1).map(Number).join('/');
+              const countdownZh = a.daysUntil === 1 ? '明天' : `還有 ${a.daysUntil} 天`;
+              const countdownEn = a.daysUntil === 1 ? 'tomorrow' : `in ${a.daysUntil} days`;
+              const text = lang === 'en'
+                ? `${a.stock_id} ${a.stock_name} will ${a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'} ${countdownEn} (${dateLabel}). ${a.dividend} per share, estimated ${Math.round(a.total).toLocaleString()}`
+                : `${a.stock_id} ${a.stock_name}將於${countdownZh}（${dateLabel}）${a.type === 'ex' ? '除息' : '配息'}，每股 ${a.dividend} 元，預估領取 ${Math.round(a.total).toLocaleString()} 元`;
+              return (
+                <div key={key} className="dividend-alert__item">
+                  <span className="dividend-alert__text">{text}</span>
+                  <button
+                    type="button"
+                    className="dividend-alert__dismiss"
+                    onClick={() => dismissAlert(key)}
+                    aria-label={lang === 'en' ? `Dismiss alert for ${a.stock_id}` : `關閉 ${a.stock_id} 提醒`}
+                  >×</button>
+                </div>
+              );
+            })}
           </div>
           <ul className="nav nav-tabs mb-1 justify-content-center" role="tablist" aria-label={lang === 'en' ? 'Main navigation' : '主導覽'}>
             <li className="nav-item" role="presentation">

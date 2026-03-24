@@ -257,6 +257,14 @@ export default function InvestmentGoalCard({
                 className={styles.progressFill}
                 style={{ width: `${Math.min(100, Math.max(0, row.percent || 0) * 100)}%` }}
               />
+              {[25, 50, 75].map(m => (
+                <span
+                  key={m}
+                  className={styles.progressMilestone}
+                  style={{ left: `${m}%` }}
+                  aria-hidden="true"
+                />
+              ))}
             </div>
             {row.encouragement ? <div className={styles.encouragement}>{row.encouragement}</div> : null}
           </div>

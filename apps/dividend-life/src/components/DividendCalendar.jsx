@@ -75,6 +75,8 @@ export default function DividendCalendar({
 
   const monthStr = String(month + 1).padStart(2, '0');
   const monthEvents = events.filter(e => e.date.startsWith(`${year}-${monthStr}`));
+  const maxEventAmount = monthEvents.reduce((max, e) => Math.max(max, Number(e.amount) || 0), 0);
+  const hasAmountVariation = maxEventAmount > 0;
   const totalsByType = monthEvents.reduce((acc, event) => {
     const typeKey = event.type === 'ex' ? 'ex' : 'pay';
     const currency = event.currency || DEFAULT_CURRENCY;
@@ -235,9 +237,15 @@ export default function DividendCalendar({
                           `${t('payment_date')}: ${ev.payment_date || '-'}`
                         );
                         const tooltip = tooltipParts.join('\n');
+                        const eventOpacity = hasAmountVariation
+                          ? 0.4 + 0.6 * Math.min(1, Math.max(0, amountValue) / maxEventAmount)
+                          : 1;
                         return (
                           <TooltipText key={j} tooltip={tooltip} style={{ display: 'block' }}>
-                            <div className={`event ${ev.type === 'ex' ? 'event-ex' : 'event-pay'}`}>
+                            <div
+                              className={`event ${ev.type === 'ex' ? 'event-ex' : 'event-pay'}`}
+                              style={{ opacity: eventOpacity }}
+                            >
                               {ev.stock_id}
                             </div>
                           </TooltipText>
