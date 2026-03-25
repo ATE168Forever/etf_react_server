@@ -7,8 +7,8 @@ const defaultTranslations = {
     dark: '暗',
     language: '語言',
     email_label: '電子信箱：',
-    donate_prompt: '喜歡這個專案嗎？請作者喝杯咖啡',
-    donate: ' ☕贊助',
+    donate_prompt: '喜歡這個專案嗎？請作者喝杯咖啡 ☕',
+    donate: '贊助',
   },
   en: {
     theme: 'Theme',
@@ -63,9 +63,7 @@ export default function Footer({
   };
 
   const handleThemeChange = (nextTheme) => {
-    if (canToggleTheme) {
-      setTheme(nextTheme);
-    }
+    setTheme(nextTheme);
   };
 
   const handleLanguageChange = (nextLang) => {
