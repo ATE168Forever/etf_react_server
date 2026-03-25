@@ -132,7 +132,7 @@ export default function Footer({
           </span>
           <span className="donation">
             {translate('donate_prompt')}
-            <a href={donateLink} target="_blank" rel="noreferrer" aria-label={`${donateLabel ?? translate('donate')} (${lang === 'en' ? 'opens in new tab' : '開啟新分頁'})`}>
+            <a href={donateLink} target="_blank" rel="noreferrer" className="donate-link" aria-label={`${donateLabel ?? translate('donate')} (${lang === 'en' ? 'opens in new tab' : '開啟新分頁'})`}>
               {donateLabel ?? translate('donate')}
             </a>
           </span>
