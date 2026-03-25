@@ -53,6 +53,30 @@
   color: inherit;
 }
 
+.donate-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  color: var(--accent-gold, #d4af37) !important;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.donate-link:hover {
+  background: rgba(212, 175, 55, 0.28);
+  border-color: rgba(212, 175, 55, 0.7);
+}
+
+.donate-link:focus-visible {
+  outline: 2px solid var(--accent-gold, #d4af37);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
 .btn-selected {
   font-weight: 600;
 }
