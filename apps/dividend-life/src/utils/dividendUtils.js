@@ -26,9 +26,9 @@ export function getTomorrowDividendAlerts(dividendData, history = readTransactio
     }
   });
 
-  // Build date strings for the window
+  // Build date strings for the window (0 = today, 1 = tomorrow, ...)
   const dateStrings = {};
-  for (let i = 1; i <= daysAhead; i++) {
+  for (let i = 0; i <= daysAhead; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() + i);
     dateStrings[toLocalDateStr(d)] = i;
