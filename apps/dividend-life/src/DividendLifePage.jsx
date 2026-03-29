@@ -164,6 +164,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   // Month value existence filters
   const [monthHasValue, setMonthHasValue] = useState(Array(12).fill(false));
   const [freqMap, setFreqMap] = useState({});
+  const [stockListPriceMap, setStockListPriceMap] = useState({});
   const timeZone = 'Asia/Taipei';
   const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
   const getIncomeGoalInfo = (dividend, price, goal, freq = 12) =>
@@ -409,11 +410,16 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       .then(({ list }) => {
         if (cancelled) return;
         const map = {};
+        const priceMap = {};
         const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12, '週配': 52 };
         list.forEach(s => {
           map[s.stock_id] = freqMapRaw[s.dividend_frequency] || null;
+          if (s.latest_close_price != null) {
+            priceMap[s.stock_id] = s.latest_close_price;
+          }
         });
         setFreqMap(map);
+        setStockListPriceMap(priceMap);
       })
       .catch(() => {
         if (!cancelled) {
@@ -816,6 +822,14 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           latestYield[stock.stock_id] = { yield: yVal, date: priceDateRaw };
         }
       });
+    }
+  });
+
+  // Override latestPrice with up-to-date close price from stock list API when available
+  displayStocks.forEach(stock => {
+    const stockListPrice = stockListPriceMap[stock.stock_id];
+    if (stockListPrice != null) {
+      latestPrice[stock.stock_id] = { ...latestPrice[stock.stock_id], price: stockListPrice };
     }
   });
 
@@ -1259,6 +1273,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
             <InventoryTab
               allDividendData={data}
               dividendCacheInfo={dividendCacheInfo}
+              stockListPriceMap={stockListPriceMap}
             />
           </div>
         )}

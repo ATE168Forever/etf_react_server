@@ -56,7 +56,7 @@ const createInitialFormState = () => ({
   entries: [createEmptyPurchaseEntry()]
 });
 
-export default function InventoryTab({ allDividendData = [], dividendCacheInfo: incomingDividendCacheInfo = null }) {
+export default function InventoryTab({ allDividendData = [], dividendCacheInfo: incomingDividendCacheInfo = null, stockListPriceMap = {} }) {
   const [stockList, setStockList] = useState([]);
   const [transactionHistory, setTransactionHistory] = useState(() => migrateTransactionHistory());
   const [showModal, setShowModal] = useState(false);
@@ -574,8 +574,15 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     Object.keys(priceMap).forEach(id => {
       prices[id] = priceMap[id].price;
     });
+    // Override with latest_close_price from stock list API when available
+    Object.entries(stockListPriceMap).forEach(([id, price]) => {
+      const parsed = parseFloat(price);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        prices[id] = parsed;
+      }
+    });
     setLatestPrices(prices);
-  }, [dividendData]);
+  }, [dividendData, stockListPriceMap]);
 
   useEffect(() => {
     if (skipTimestampRef.current) {
