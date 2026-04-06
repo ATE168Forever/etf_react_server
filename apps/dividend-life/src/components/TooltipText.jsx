@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 const DEFAULT_BREAKPOINT = 768;
 
@@ -182,7 +183,7 @@ export default function TooltipText({
       onBlur={() => setOpen(false)}
     >
       {children}
-      {isMobile && open && (
+      {isMobile && open && createPortal(
         <span
           ref={tooltipRef}
           className="tooltip-inline tooltip-inline-floating"
@@ -201,7 +202,8 @@ export default function TooltipText({
               {idx < tooltipLines.length - 1 && <br />}
             </span>
           ))}
-        </span>
+        </span>,
+        document.body
       )}
     </span>
   );
