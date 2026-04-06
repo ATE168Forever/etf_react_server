@@ -225,6 +225,8 @@ td {
   font-size: 14px;
   color: var(--color-text-muted, #888);
   display: inline-block;
+  position: relative;
+  z-index: 0;
 }
 
 .display-mode-indicator strong {
