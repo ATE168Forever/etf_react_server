@@ -131,6 +131,17 @@ export default function TooltipText({
     }
   }, [isMobile, open, tooltip, updateFloatingPosition]);
 
+  useEffect(() => {
+    if (!open) return () => {};
+    const handleOutside = (e) => {
+      if (triggerRef.current && !triggerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('click', handleOutside);
+    return () => document.removeEventListener('click', handleOutside);
+  }, [open]);
+
   const hasTooltip = typeof tooltip === 'string' ? tooltip.trim().length > 0 : Boolean(tooltip);
 
   if (!hasTooltip) {
@@ -180,7 +191,6 @@ export default function TooltipText({
       aria-expanded={isMobile ? open : undefined}
       onClick={toggle}
       onKeyDown={handleKeyDown}
-      onBlur={() => setOpen(false)}
     >
       {children}
       {isMobile && open && createPortal(
