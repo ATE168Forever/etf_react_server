@@ -1701,7 +1701,7 @@ tr:nth-child(even) .stock-col {
   position: relative;
 }
 
-.tooltip-text .tooltip-inline {
+.tooltip-inline {
   display: block;
   margin-top: 6px;
   padding: 8px;
@@ -1717,7 +1717,7 @@ tr:nth-child(even) .stock-col {
   word-break: break-word;
 }
 
-.tooltip-text .tooltip-inline-floating {
+.tooltip-inline-floating {
   position: fixed;
   margin-top: 0;
   left: 50%;
