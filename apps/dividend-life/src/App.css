@@ -1710,7 +1710,7 @@ tr:nth-child(even) .stock-col {
   font-size: 12px;
   line-height: 1.4;
   white-space: pre-line;
-  z-index: 1;
+  z-index: 10000;
   max-width: min(280px, calc(100vw - 48px));
   word-break: break-word;
 }
