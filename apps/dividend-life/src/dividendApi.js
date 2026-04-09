@@ -385,12 +385,7 @@ export async function fetchDividendsByYears(years, countries, options = {}) {
   const yearsToFetch = normalizedYears.length ? normalizedYears : [undefined];
 
   const requests = yearsToFetch.map(async targetYear => {
-    const url = buildDividendUrl({
-      years: targetYear !== undefined ? targetYear : undefined,
-      countries: requestCountries,
-      stockIds: normalizedStockIds,
-      fields: normalizedFields
-    });
+    const url = buildDividendUrl();
     const payload = buildDividendPayload({
       targetYear,
       countries: requestCountries,
@@ -521,12 +516,7 @@ export function clearDividendsCache(years, countries, options = {}) {
   const shouldChunk = stockIdArray.length > CHUNK_THRESHOLD;
 
   yearsToClear.forEach(targetYear => {
-    const url = buildDividendUrl({
-      years: targetYear !== undefined ? targetYear : undefined,
-      countries: requestCountries,
-      stockIds: normalizedStockIds,
-      fields: normalizedFields
-    });
+    const url = buildDividendUrl();
     const payload = buildDividendPayload({
       targetYear,
       countries: requestCountries,
@@ -559,7 +549,7 @@ export function buildDividendRequestUrl(year, country, options = {}) {
     stockIds: options?.stockIds,
     fields: options?.fields
   };
-  return buildDividendUrl(mergedOptions);
+  return buildDividendUrl();
 }
 
 export async function fetchDividend({ stockIds, year, country = DEFAULT_DIVIDEND_COUNTRIES, fields } = {}) {

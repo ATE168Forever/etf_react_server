@@ -104,6 +104,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     });
   };
   const fetchSkipRef = useRef(new Map());
+  const lastFetchedAt = useRef(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const selectedYearRef = useRef(selectedYear);
   const groupModalTriggerRef = useRef(null);
 
@@ -239,14 +241,18 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       const history = readTransactionHistory();
       const uniquePurchased = getPurchasedStockIds(history);
 
-      fetch(`${API_HOST}/update_dividend`).finally(() => {
-        // Clear all dividend caches before reload
-        clearDividendsCache();
-        if (uniquePurchased.length) {
-          clearDividendsCache(undefined, undefined, { stockIds: uniquePurchased });
-        }
-        window.location.reload();
-      });
+      fetch(`${API_HOST}/update_dividend`)
+        .then(response => {
+          if (!response.ok) return;
+          clearDividendsCache();
+          if (uniquePurchased.length) {
+            clearDividendsCache(undefined, undefined, { stockIds: uniquePurchased });
+          }
+          window.location.reload();
+        })
+        .catch(() => {
+          // Network error — keep existing cache intact
+        });
     };
 
     const now = new Date();
@@ -356,7 +362,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           fields: REQUIRED_DIVIDEND_FIELDS,
         });
         applyDividendResponse(dividendData, meta);
-      } catch {
+      } catch (fetchError) {
         if (cancelled) return;
         if (API_HOST) {
           try {
@@ -382,10 +388,11 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           }
         }
         applyDividendResponse([], null);
-        setError(null);
+        setError(fetchError);
       } finally {
         if (!cancelled) {
           setLoading(false);
+          lastFetchedAt.current = Date.now();
         }
         skipMap.set(signature, false);
       }
@@ -397,11 +404,25 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       cancelled = true;
       skipMap.set(signature, false);
     };
-  }, [dividendScope, purchasedStockIds, transactionHistoryLoaded]);
+  }, [dividendScope, purchasedStockIds, transactionHistoryLoaded, refreshTrigger]);
 
   useEffect(() => {
     setUpcomingAlerts(getTomorrowDividendAlerts(data));
   }, [data]);
+
+  useEffect(() => {
+    const STALE_THRESHOLD = 30 * 60 * 1000; // 30 minutes
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const age = Date.now() - lastFetchedAt.current;
+        if (age > STALE_THRESHOLD) {
+          setRefreshTrigger(n => n + 1);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
 
   useEffectOnce(() => {
     let cancelled = false;

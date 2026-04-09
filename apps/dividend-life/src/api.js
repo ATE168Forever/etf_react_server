@@ -33,8 +33,8 @@ export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
         }
       }
     }
-  } catch {
-    // ignore parse errors
+  } catch (e) {
+    console.warn('[cache] Failed to parse cache meta for', url, e);
   }
 
   try {
@@ -43,8 +43,8 @@ export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
       cachedData = JSON.parse(raw);
       hasCachedData = true;
     }
-  } catch {
-    // ignore storage or parse errors
+  } catch (e) {
+    console.warn('[cache] Failed to parse cached data for', url, e);
     cachedData = undefined;
     hasCachedData = false;
   }
