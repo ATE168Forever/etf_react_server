@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import styles from './DrivePreviewModal.module.css';
 import { useLanguage } from '../i18n';
+import useFocusTrap from '../hooks/useFocusTrap';
 import { getTransactionHistoryUpdatedAt } from '../utils/transactionStorage';
 
 const text = {
@@ -51,7 +52,9 @@ export default function DrivePreviewModal({ show, onClose, data, loading, onSync
   const t = text[lang] || text.zh;
   const locale = lang === 'zh' ? 'zh-TW' : 'en-US';
   const closeRef = useRef(null);
+  const modalRef = useRef(null);
   const titleId = 'drive-preview-title';
+  useFocusTrap(modalRef, show);
 
   useEffect(() => {
     if (!show) return;
@@ -78,6 +81,7 @@ export default function DrivePreviewModal({ show, onClose, data, loading, onSync
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        ref={modalRef}
         onClick={e => e.stopPropagation()}
       >
         <div className={styles.header}>

@@ -1,13 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Select from 'react-select';
 import styles from './AddTransactionModal.module.css';
 import { useLanguage } from '../i18n';
 import selectStyles from '../selectStyles';
+import useFocusTrap from '../hooks/useFocusTrap';
 
 const createBlankEntry = () => ({ stock_id: '', stock_name: '', quantity: '', price: '' });
 
 export default function AddTransactionModal({ show, onClose, stockList, form, setForm, onSubmit }) {
   const { lang } = useLanguage();
+  const modalRef = useRef(null);
+  useFocusTrap(modalRef, show);
   useEffect(() => {
     if (!show) return;
     const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
@@ -81,7 +84,7 @@ export default function AddTransactionModal({ show, onClose, stockList, form, se
 
   return (
     <div className={styles.overlay} role="presentation">
-      <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="add-transaction-modal-title">
+      <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="add-transaction-modal-title" ref={modalRef}>
         <h5 id="add-transaction-modal-title" className={styles.title}>{lang === 'en' ? 'Add Purchase Record' : '新增購買紀錄'}</h5>
         <div className={styles.form}>
           <div className={styles.formGroup}>

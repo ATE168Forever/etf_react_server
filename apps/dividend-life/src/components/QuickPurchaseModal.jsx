@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import styles from './QuickPurchaseModal.module.css';
+import useFocusTrap from '../hooks/useFocusTrap';
 
 function getCurrencySymbol(country, messages) {
   const code = typeof country === 'string' ? country.trim().toUpperCase() : '';
@@ -10,6 +11,8 @@ function getCurrencySymbol(country, messages) {
 }
 
 export default function QuickPurchaseModal({ show, onClose, rows, setRows, onSubmit, messages }) {
+  const modalRef = useRef(null);
+  useFocusTrap(modalRef, show);
   useEffect(() => {
     if (!show) return;
     const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
@@ -41,7 +44,7 @@ export default function QuickPurchaseModal({ show, onClose, rows, setRows, onSub
 
   return (
     <div className={styles.overlay} role="presentation">
-      <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="quick-purchase-modal-title">
+      <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="quick-purchase-modal-title" ref={modalRef}>
         <h5 id="quick-purchase-modal-title" className={styles.title}>{messages.quickAddTitle}</h5>
         {hasRows ? (
           <div className={styles.tableWrapper}>

@@ -1,24 +1,26 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { LanguageContext, translations } from './i18n';
-import InventoryTab from './InventoryTab';
-import UserDividendsTab from './UserDividendsTab';
-import AboutTab from './AboutTab';
+import { ToastProvider } from './Toast';
 import HomeTab from './HomeTab';
 import DisplayDropdown from './components/DisplayDropdown';
 import DividendCalendar from './components/DividendCalendar';
 import StockTable from './components/StockTable';
 import Footer from '@shared/components/Footer/Footer.jsx';
 import ExperienceNavigation from '@shared/components/ExperienceNavigation/ExperienceNavigation.jsx';
-import dividendLifeTextDark from '@shared/assets/dividend-life-text.svg';
-import dividendLifeTextLight from '@shared/assets/dividend-life-text-light.svg';
 import AdvancedFilterDropdown from './components/AdvancedFilterDropdown';
 import CurrencyViewToggle from './components/CurrencyViewToggle';
 import TooltipText from './components/TooltipText';
+import ErrorBoundary from './components/ErrorBoundary';
+import useFocusTrap from './hooks/useFocusTrap';
+
+const InventoryTab = lazy(() => import('./InventoryTab'));
+const UserDividendsTab = lazy(() => import('./UserDividendsTab'));
+const AboutTab = lazy(() => import('./AboutTab'));
+const NLHelper = lazy(() => import('./NLHelper'));
 
 import './App.css';
 import appStyles from './App.module.css';
 import brandStyles from '@shared/components/BrandPage/BrandPage.module.css';
-import NLHelper from './NLHelper';
 import { API_HOST } from '../config';
 import { fetchWithCache } from './api';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
@@ -74,8 +76,17 @@ const getInitialLanguage = () => {
 };
 
 function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
-  // Tab state
-  const [tab, setTab] = useState('home');
+  // Tab state — persisted in URL hash for shareability/back-nav
+  const VALID_TABS = new Set(['home', 'dividend', 'inventory', 'mydividend', 'about']);
+  const getTabFromHash = () => {
+    const hash = window.location.hash.slice(1);
+    return VALID_TABS.has(hash) ? hash : 'home';
+  };
+  const [tab, setTabState] = useState(getTabFromHash);
+  const setTab = (newTab) => {
+    setTabState(newTab);
+    history.replaceState(null, '', `#${newTab}`);
+  };
 
   // All your existing states for dividend page...
   const [data, setData] = useState([]);
@@ -108,6 +119,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const selectedYearRef = useRef(selectedYear);
   const groupModalTriggerRef = useRef(null);
+  const groupModalRef = useRef(null);
+  useFocusTrap(groupModalRef, showGroupModal);
 
   // Calendar state
   const {
@@ -139,13 +152,28 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const [showAllStocks, setShowAllStocks] = useState(false);
 
   // Theme
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
-  const navigationText = theme === 'light' ? dividendLifeTextLight : dividendLifeTextDark;
+  const [theme, setTheme] = useState(() => {
+    const stored = localStorage.getItem('theme');
+    if (stored === 'light' || stored === 'dark') return stored;
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  // Follow OS theme changes only when user hasn't manually set a preference
+  useEffect(() => {
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (!mq) return;
+    const handler = (e) => {
+      if (localStorage.getItem('theme')) return; // user has explicit preference
+      setTheme(e.matches ? 'dark' : 'light');
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
 
   // Language
@@ -155,6 +183,36 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     document.documentElement.lang = lang === 'en' ? 'en' : 'zh-Hant';
   }, [lang]);
   const t = useMemo(() => (key) => translations[lang][key] || key, [lang]);
+
+  // Dynamic document title
+  useEffect(() => {
+    document.title = lang === 'en'
+      ? 'Dividend Life — ETF Dividend Calendar & Tracking | ETF Life'
+      : 'Dividend Life — ETF 股息日曆與配息追蹤 | ETF Life';
+  }, [lang]);
+
+  // Sync tab with browser back/forward navigation
+  useEffect(() => {
+    const onPopState = () => setTabState(getTabFromHash());
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  // Keyboard shortcuts: T=inventory, D=dividend search, H=home
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      // Skip if focus is in an input, textarea, or select
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === 'T' || e.key === 't') setTab('inventory');
+      else if (e.key === 'D' || e.key === 'd') setTab('dividend');
+      else if (e.key === 'H' || e.key === 'h') setTab('home');
+      // setTab already updates the hash via history.replaceState
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   useEffect(() => {
     // Clear any empty/stale dividend caches on startup
@@ -926,7 +984,9 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
 
 
   return (
+    <ToastProvider>
     <LanguageContext.Provider value={{ lang, setLang, t }}>
+      <a href="#tab-content" className="skip-link">{lang === 'en' ? 'Skip to content' : '跳至主要內容'}</a>
       <main id="main-content" className={brandStyles.container}>
         <h1 className="sr-only">Dividend Life — {lang === 'en' ? 'ETF Dividend Calendar & Tracking' : 'ETF 股息日曆與配息追蹤'}</h1>
         <div className={brandStyles.navigation}>
@@ -934,13 +994,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
             current="dividend-life"
             homeHref={homeHref}
             homeNavigation={homeNavigation}
-          />
-          <img
-            src={navigationText}
-            alt=""
-            aria-hidden="true"
-            loading="lazy"
-            className={brandStyles.navigationTextMark}
           />
         </div>
         <section className={`${brandStyles.panel} ${brandStyles.content} ${brandStyles.contentWide}`}>
@@ -1033,14 +1086,15 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
               </button>
             </li>
           </ul>
+          <div id="tab-content">
           {tab === 'home' && (
             <div id="panel-home" role="tabpanel" aria-labelledby="tab-home">
-              <HomeTab />
+              <ErrorBoundary lang={lang}><Suspense><HomeTab /></Suspense></ErrorBoundary>
             </div>
           )}
           {tab === 'dividend' && (
             <div id="panel-dividend" role="tabpanel" aria-labelledby="tab-dividend" className="dividend-tab">
-
+              <ErrorBoundary lang={lang}>
               {/* ── FILTER BAR ── */}
               <div className="filter-bar">
 
@@ -1194,11 +1248,24 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                     {lang === 'en' ? '↺ Reset' : '↺ 重置'}
                   </button>
 
-                  {dividendCacheInfo && (
-                    <span className="filter-bar__cache-info">
-                      {dividendCacheInfo.cacheStatus}
-                    </span>
-                  )}
+                  {dividendCacheInfo && (() => {
+                    const ts = dividendCacheInfo.timestamp ? new Date(dividendCacheInfo.timestamp) : null;
+                    const minutesAgo = ts ? Math.floor((Date.now() - ts.getTime()) / 60000) : null;
+                    const freshness = minutesAgo === null ? null
+                      : minutesAgo < 60 ? 'fresh'
+                      : minutesAgo < 360 ? 'stale'
+                      : 'old';
+                    const freshnessIcon = freshness === 'fresh' ? '🟢' : freshness === 'stale' ? '🟡' : '🔴';
+                    const timeLabel = minutesAgo === null ? dividendCacheInfo.cacheStatus
+                      : minutesAgo < 1 ? (lang === 'en' ? 'just now' : '剛剛更新')
+                      : minutesAgo < 60 ? (lang === 'en' ? `${minutesAgo}m ago` : `${minutesAgo} 分鐘前更新`)
+                      : (lang === 'en' ? `${Math.floor(minutesAgo / 60)}h ago` : `${Math.floor(minutesAgo / 60)} 小時前更新`);
+                    return (
+                      <span className={`filter-bar__cache-info filter-bar__cache-info--${freshness || 'unknown'}`} title={ts ? ts.toLocaleString() : undefined}>
+                        {freshnessIcon} {timeLabel}
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -1253,7 +1320,17 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
 
               {/* ── TABLE ── */}
               {loading ? (
-                <p className="dividend-tab__status" role="status" aria-live="polite">{lang === 'en' ? 'Loading…' : '載入中…'}</p>
+                <div className="table-skeleton" role="status" aria-live="polite" aria-label={lang === 'en' ? 'Loading…' : '載入中…'}>
+                  {Array.from({ length: 7 }, (_, i) => (
+                    <div key={i} className="table-skeleton__row">
+                      <div className="skeleton-line table-skeleton__cell table-skeleton__cell--id" />
+                      <div className="skeleton-line table-skeleton__cell" />
+                      <div className="skeleton-line table-skeleton__cell" />
+                      <div className="skeleton-line table-skeleton__cell" />
+                      <div className="skeleton-line table-skeleton__cell table-skeleton__cell--wide" />
+                    </div>
+                  ))}
+                </div>
               ) : error ? (
                 <p className="dividend-tab__status dividend-tab__status--error" role="alert">
                   {lang === 'en' ? 'Error: ' : '錯誤：'}{error.message}
@@ -1287,33 +1364,43 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                   activeCurrencies={activeCurrencies}
                 />
               )}
+              </ErrorBoundary>
             </div>
           )}
         {tab === 'inventory' && (
           <div id="panel-inventory" role="tabpanel" aria-labelledby="tab-inventory">
-            <InventoryTab
-              allDividendData={data}
-              dividendCacheInfo={dividendCacheInfo}
-              stockListPriceMap={stockListPriceMap}
-            />
+            <ErrorBoundary lang={lang}>
+              <Suspense>
+                <InventoryTab
+                  allDividendData={data}
+                  dividendCacheInfo={dividendCacheInfo}
+                  stockListPriceMap={stockListPriceMap}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         )}
         {tab === 'mydividend' && (
           <div id="panel-mydividend" role="tabpanel" aria-labelledby="tab-mydividend">
-            <UserDividendsTab
-              allDividendData={data}
-              availableYears={years}
-            />
+            <ErrorBoundary lang={lang}>
+              <Suspense>
+                <UserDividendsTab
+                  allDividendData={data}
+                  availableYears={years}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         )}
         {tab === 'about' && (
           <div id="panel-about" role="tabpanel" aria-labelledby="tab-about">
-            <AboutTab />
+            <Suspense><AboutTab /></Suspense>
           </div>
         )}
+          </div>{/* #tab-content */}
         {showGroupModal && (
           <div className="modal-overlay" role="presentation">
-            <div className="custom-modal" role="dialog" aria-modal="true" aria-labelledby="watch-group-modal-title">
+            <div className="custom-modal" role="dialog" aria-modal="true" aria-labelledby="watch-group-modal-title" ref={groupModalRef}>
               <h3 id="watch-group-modal-title">{lang === 'en' ? 'Watch Groups' : '觀察組合'}</h3>
               <div className="watch-group-modal__add-row">
                 <button type="button" autoFocus onClick={handleAddGroup}>{lang === 'en' ? 'Add Group' : '新增組合'}</button>
@@ -1371,7 +1458,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           </div>
         )}
         </section>
-        <NLHelper />
+        <Suspense><NLHelper /></Suspense>
         <div className={brandStyles.footer}>
           <Footer
             theme={theme}
@@ -1384,6 +1471,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         </div>
       </main>
     </LanguageContext.Provider>
+    </ToastProvider>
   );
 }
 

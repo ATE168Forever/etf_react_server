@@ -259,11 +259,12 @@ export default function DividendCalendar({
                           aria-label={lang === 'zh'
                             ? `顯示 ${d.dateStr} 其餘 ${d.events.length - 1} 筆`
                             : `Show ${d.events.length - 1} more events for ${d.dateStr}`}
+                          title={d.events.slice(1).map(ev => ev.stock_id).join(', ')}
                           onClick={() => setExpandedDates(prev => ({ ...prev, [d.dateStr]: true }))}
                         >
                           {lang === 'zh'
-                            ? `${t('more')}${d.events.length - 1}+`
-                            : `${t('more')} ${d.events.length - 1}+`}
+                            ? `+${d.events.length - 1} 筆`
+                            : `+${d.events.length - 1} more`}
                         </button>
                       )}
                       {expandedDates[d.dateStr] && d.events.length > 1 && (

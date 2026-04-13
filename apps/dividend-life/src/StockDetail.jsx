@@ -27,7 +27,11 @@ const normalizeCurrencyCode = (value) => {
 
 export default function StockDetail({ stockId }) {
   const { lang, setLang, t } = useLanguage();
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const [theme, setTheme] = useState(() => {
+    const stored = localStorage.getItem('theme');
+    if (stored === 'light' || stored === 'dark') return stored;
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
   const [returnsEnabled, setReturnsEnabled] = useState(false);
   const [dividendHelperEnabled, setDividendHelperEnabled] = useState(false);
 
@@ -35,6 +39,17 @@ export default function StockDetail({ stockId }) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (!mq) return;
+    const handler = (e) => {
+      if (localStorage.getItem('theme')) return;
+      setTheme(e.matches ? 'dark' : 'light');
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = lang === 'en' ? 'en' : 'zh-Hant';
@@ -172,8 +187,25 @@ export default function StockDetail({ stockId }) {
       stock.dividend_currency || stock.currency || dividends[0]?.currency,
     ) || 'TWD';
 
+  useEffect(() => {
+    if (!stock?.stock_id) return;
+    const name = stock.stock_name ? `${stock.stock_id} ${stock.stock_name}` : stock.stock_id;
+    document.title = lang === 'en' ? `${name} — Dividend Life` : `${name} — Dividend Life`;
+    return () => { document.title = 'Dividend Life'; };
+  }, [stock?.stock_id, stock?.stock_name, lang]);
+
   if (stockLoading || dividendLoading) {
-    return <div role="status" aria-live="polite">{lang === 'en' ? 'Loading...' : '載入中...'}</div>;
+    return (
+      <div className="stock-detail-skeleton" role="status" aria-live="polite" aria-label={lang === 'en' ? 'Loading…' : '載入中…'} style={{ padding: '24px 16px' }}>
+        {Array.from({ length: 6 }, (_, i) => (
+          <div key={i} className="stock-detail-skeleton__row">
+            <div className="skeleton-line stock-detail-skeleton__cell stock-detail-skeleton__cell--label" />
+            <div className="skeleton-line stock-detail-skeleton__cell" />
+            <div className="skeleton-line stock-detail-skeleton__cell" />
+          </div>
+        ))}
+      </div>
+    );
   }
 
   if (!stock.stock_id) {
@@ -187,6 +219,14 @@ export default function StockDetail({ stockId }) {
   return (
     <>
       <main id="main-content" className="stock-detail">
+        <button
+          type="button"
+          className="stock-detail__back-btn"
+          onClick={() => window.history.back()}
+          aria-label={lang === 'en' ? 'Go back' : '返回上一頁'}
+        >
+          ← {lang === 'en' ? 'Back' : '返回'}
+        </button>
         <h1 className="h3">
           {stock.stock_id} {stock.stock_name}
         </h1>
@@ -248,6 +288,19 @@ export default function StockDetail({ stockId }) {
                   : '載入績效資料'}
           </button>
         </div>
+
+        {returnsEnabled && returnsQuery.isFetching && (
+          <div className="stock-detail-skeleton" aria-busy="true" aria-label={lang === 'en' ? 'Loading…' : '載入中…'}>
+            {Array.from({ length: 4 }, (_, i) => (
+              <div key={i} className="stock-detail-skeleton__row">
+                <div className="skeleton-line stock-detail-skeleton__cell stock-detail-skeleton__cell--label" />
+                <div className="skeleton-line stock-detail-skeleton__cell" />
+                <div className="skeleton-line stock-detail-skeleton__cell" />
+                <div className="skeleton-line stock-detail-skeleton__cell" />
+              </div>
+            ))}
+          </div>
+        )}
 
         {returnsEnabled && returnsQuery.isError && (
           <div className="stock-detail__error" role="alert">

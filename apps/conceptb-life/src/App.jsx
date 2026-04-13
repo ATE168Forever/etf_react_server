@@ -4,10 +4,11 @@ import DividendLifePage from '@dividend-life/DividendLifePage.jsx'
 import BalanceLifePage from '@balance-life/pages/BalanceLifePage.jsx'
 import HealthLifePage from '@health-life/pages/HealthLifePage.jsx'
 import WealthLifePage from '@wealth-life/pages/WealthLifePage.jsx'
+import ConceptCalculatorPage from '@dividend-life/pages/ConceptCalculatorPage.jsx'
 import StockDetail from '@dividend-life/StockDetail.jsx'
 import { useRouter } from '@shared/router'
 
-const KNOWN_PATHS = new Set(['/', '/dividend-life', '/balance-life', '/health-life', '/wealth-life'])
+const KNOWN_PATHS = new Set(['/', '/dividend-life', '/balance-life', '/health-life', '/wealth-life', '/calculator'])
 
 const normalizePath = (path) => {
   if (!path) return '/'
@@ -48,6 +49,8 @@ export default function App() {
       return <HealthLifePage />
     case '/wealth-life':
       return <WealthLifePage />
+    case '/calculator':
+      return <ConceptCalculatorPage />
     default:
       return null
   }

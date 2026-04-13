@@ -19,6 +19,7 @@ import DataDropdown from './components/DataDropdown';
 import DrivePreviewModal from './components/DrivePreviewModal';
 import styles from './InventoryTab.module.css';
 import { useLanguage } from './i18n';
+import { useToast } from './useToast';
 import InvestmentGoalCard from './components/InvestmentGoalCard';
 import { summarizeInventory, getPurchasedStockIds } from './utils/inventoryUtils';
 import { SHARES_PER_LOT } from './utils/currencyUtils';
@@ -56,7 +57,9 @@ const createInitialFormState = () => ({
   entries: [createEmptyPurchaseEntry()]
 });
 
-export default function InventoryTab({ allDividendData = [], dividendCacheInfo: incomingDividendCacheInfo = null, stockListPriceMap = {} }) {
+const EMPTY_PRICE_MAP = {};
+
+export default function InventoryTab({ allDividendData = [], dividendCacheInfo: incomingDividendCacheInfo = null, stockListPriceMap = EMPTY_PRICE_MAP }) {
   const [stockList, setStockList] = useState([]);
   const [transactionHistory, setTransactionHistory] = useState(() => migrateTransactionHistory());
   const [showModal, setShowModal] = useState(false);
@@ -88,6 +91,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
   );
   const [latestPrices, setLatestPrices] = useState({});
   const { lang } = useLanguage();
+  const showToast = useToast();
   const [dividendExclusions, setDividendExclusions] = useState(() => loadDividendExclusions());
   const initialGoals = useMemo(() => loadInvestmentGoals(), []);
   const initialShareTargetList = Array.isArray(initialGoals.shareTargets) ? initialGoals.shareTargets : [];
@@ -294,15 +298,17 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         await exportTransactionsToDrive(data);
         if (driveSaveRequestRef.current === requestId) {
           setDriveStatus({ status: 'synced', timestamp: Date.now() });
+          showToast(lang === 'en' ? '✓ Synced to Google Drive' : '✓ 已同步至 Google Drive');
         }
       } catch (error) {
         console.error('Drive auto-save failed', error);
         if (driveSaveRequestRef.current === requestId) {
           setDriveStatus({ status: 'error', timestamp: Date.now() });
+          showToast(lang === 'en' ? '⚠ Drive sync failed' : '⚠ Google Drive 同步失敗', 'error');
         }
       }
     },
-    [transactionHistory]
+    [transactionHistory, showToast, lang]
   );
 
   const fetchFromDriveIfNewer = useCallback(
@@ -413,7 +419,8 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     a.click();
     URL.revokeObjectURL(url);
     Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
-  }, [transactionHistory]);
+    showToast(lang === 'en' ? '✓ CSV exported' : '✓ 已匯出交易記錄 CSV');
+  }, [transactionHistory, showToast, lang]);
 
   const handleImport = e => {
     const file = e.target.files[0];
@@ -1522,6 +1529,8 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     setShowModal(false);
     modalTriggerRef.current?.focus();
     modalTriggerRef.current = null;
+    const addedIds = normalizedEntries.map(e => e.stock_id).join('、');
+    showToast(lang === 'en' ? `✓ Transaction added: ${addedIds}` : `✓ 已新增 ${addedIds} 交易記錄`);
     if (selectedDataSource === 'googleDrive' && driveConnected) syncToDrive(updatedHistory);
   };
 
@@ -1567,6 +1576,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     setSellModal({ show: false, stock: null });
     modalTriggerRef.current?.focus();
     modalTriggerRef.current = null;
+    showToast(lang === 'en' ? `✓ Sold ${stock_id}` : `✓ 已賣出 ${stock_id}`);
     if (selectedDataSource === 'googleDrive' && driveConnected) syncToDrive(updatedHistory);
   };
 
@@ -1674,18 +1684,34 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
               </button>
             </div>
             
-            {cacheInfo && (
-              <div className={styles.cacheInfo}>
-                {msg.stockCache}: {cacheInfo.cacheStatus}
-                {cacheInfo.timestamp ? ` (${new Date(cacheInfo.timestamp).toLocaleString()})` : ''}
-              </div>
-            )}
-            {dividendCacheInfo && (
-              <div className={styles.cacheInfo}>
-                {msg.dividendCache}: {dividendCacheInfo.cacheStatus}
-                {dividendCacheInfo.timestamp ? ` (${new Date(dividendCacheInfo.timestamp).toLocaleString()})` : ''}
-              </div>
-            )}
+            {cacheInfo && (() => {
+              const ts = cacheInfo.timestamp ? new Date(cacheInfo.timestamp) : null;
+              const minutesAgo = ts ? Math.floor((Date.now() - ts.getTime()) / 60000) : null;
+              const icon = minutesAgo === null ? '' : minutesAgo < 60 ? '🟢' : minutesAgo < 360 ? '🟡' : '🔴';
+              const timeLabel = minutesAgo === null ? cacheInfo.cacheStatus
+                : minutesAgo < 1 ? (lang === 'en' ? 'just now' : '剛剛更新')
+                : minutesAgo < 60 ? (lang === 'en' ? `${minutesAgo}m ago` : `${minutesAgo} 分鐘前更新`)
+                : (lang === 'en' ? `${Math.floor(minutesAgo / 60)}h ago` : `${Math.floor(minutesAgo / 60)} 小時前更新`);
+              return (
+                <div className={styles.cacheInfo} title={ts ? ts.toLocaleString() : undefined}>
+                  {msg.stockCache}: {icon} {timeLabel}
+                </div>
+              );
+            })()}
+            {dividendCacheInfo && (() => {
+              const ts = dividendCacheInfo.timestamp ? new Date(dividendCacheInfo.timestamp) : null;
+              const minutesAgo = ts ? Math.floor((Date.now() - ts.getTime()) / 60000) : null;
+              const icon = minutesAgo === null ? '' : minutesAgo < 60 ? '🟢' : minutesAgo < 360 ? '🟡' : '🔴';
+              const timeLabel = minutesAgo === null ? dividendCacheInfo.cacheStatus
+                : minutesAgo < 1 ? (lang === 'en' ? 'just now' : '剛剛更新')
+                : minutesAgo < 60 ? (lang === 'en' ? `${minutesAgo}m ago` : `${minutesAgo} 分鐘前更新`)
+                : (lang === 'en' ? `${Math.floor(minutesAgo / 60)}h ago` : `${Math.floor(minutesAgo / 60)} 小時前更新`);
+              return (
+                <div className={styles.cacheInfo} title={ts ? ts.toLocaleString() : undefined}>
+                  {msg.dividendCache}: {icon} {timeLabel}
+                </div>
+              );
+            })()}
 
             <div className={styles.totalInvestment}>
               <div>

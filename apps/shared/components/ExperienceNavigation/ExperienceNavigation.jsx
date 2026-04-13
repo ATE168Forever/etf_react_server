@@ -80,8 +80,6 @@ export default function ExperienceNavigation({
             className={isActive ? `${styles.link} ${styles.active}` : styles.link}
             aria-current={isActive ? 'page' : undefined}
             reloadDocument={experience.key === 'home' ? shouldReloadHome : false}
-            aria-label={label}
-            title={label}
           >
             <img
               src={logo}
@@ -89,6 +87,7 @@ export default function ExperienceNavigation({
               aria-hidden="true"
               className={styles.logo}
             />
+            <span className={styles.label}>{label}</span>
           </Link>
         );
       })}

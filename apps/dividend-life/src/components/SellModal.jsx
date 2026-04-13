@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from './SellModal.module.css';
 import { useLanguage } from '../i18n';
+import useFocusTrap from '../hooks/useFocusTrap';
 
 export default function SellModal({ show, stock, onClose, onSubmit }) {
   const { lang } = useLanguage();
   const [quantity, setQuantity] = useState(1);
+  const modalRef = useRef(null);
+  useFocusTrap(modalRef, show);
   useEffect(() => {
     if (stock) setQuantity(stock.total_quantity);
   }, [stock]);
@@ -17,7 +20,7 @@ export default function SellModal({ show, stock, onClose, onSubmit }) {
   if (!show || !stock) return null;
   return (
     <div className={styles.overlay} role="presentation">
-      <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="sell-modal-title">
+      <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="sell-modal-title" ref={modalRef}>
         <h5 id="sell-modal-title" className={styles.title}>{lang === 'en' ? 'Sell Stock' : '賣出股票'}</h5>
         <p className={styles.text}>{lang === 'en' ? 'Stock:' : '股票：'}{stock.stock_id} - {stock.stock_name}</p>
         <div className={styles.formGroup}>

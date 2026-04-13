@@ -215,6 +215,14 @@ td {
   font-size: 12px;
 }
 
+.sortable--active {
+  color: var(--accent-gold);
+}
+
+.sortable--active .sort-indicator {
+  color: var(--accent-gold);
+}
+
 /* === Display Mode Indicator === */
 .display-mode-indicator {
   padding: 8px 12px;
@@ -224,7 +232,9 @@ td {
   border-radius: 6px;
   font-size: 14px;
   color: var(--color-text-muted, #888);
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   position: relative;
   z-index: 0;
 }
@@ -232,6 +242,27 @@ td {
 .display-mode-indicator strong {
   color: var(--accent-gold, #d4af37);
   margin-left: 4px;
+}
+
+.month-expand-btn {
+  all: unset;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold);
+  border-radius: 4px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.month-expand-btn:hover {
+  background: var(--accent-gold);
+  color: var(--color-text-on-accent);
+}
+
+.month-expand-btn:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
 }
 
 /* === Dropdown styles === */
@@ -1043,11 +1074,22 @@ button:active {
 
 .calendar-today {
   background: #fff3bf;
+  outline: 2px solid #d6336c;
+  outline-offset: -2px;
+}
+
+[data-theme='dark'] .calendar-today {
+  background: #3d2a00;
+  outline-color: #ff8fab;
 }
 
 .date-num.today {
   color: #d6336c;
   font-weight: bold;
+}
+
+[data-theme='dark'] .date-num.today {
+  color: #ff8fab;
 }
 .calendar-cell {
   font-size: 14px;
@@ -1114,6 +1156,17 @@ button:active {
   .calendar-grid th,
   .calendar-grid td {
     height: 60px;
+  }
+
+  .event {
+    padding: 4px 4px;
+    min-height: 24px;
+    font-size: 11px;
+  }
+
+  .more-btn {
+    padding: 6px 8px;
+    min-height: 32px;
   }
 
   .inventory-tables {
@@ -1196,6 +1249,10 @@ button:active {
   z-index: 1;
 }
 
+.stock-col a:hover {
+  text-decoration: underline;
+}
+
 /* Override striped-row background so sticky column matches */
 .table-striped > tbody > tr:nth-of-type(odd) > .stock-col,
 tr:nth-child(odd) .stock-col {
@@ -1221,6 +1278,61 @@ tr:nth-child(even) .stock-col {
   font-size: 0.875rem;
 }
 
+/* === Skeleton loading === */
+@keyframes skeleton-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-line {
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--color-border) 25%, var(--color-hover) 50%, var(--color-border) 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s infinite linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-line {
+    animation: none;
+    background: var(--color-border);
+  }
+}
+
+.chart-skeleton {
+  width: 100%;
+  height: 280px;
+  display: flex;
+  align-items: flex-end;
+  padding: 16px 8px 8px;
+  box-sizing: border-box;
+  gap: 4px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.chart-skeleton__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+}
+
+.chart-skeleton__bar {
+  flex: 1;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(90deg, var(--color-border) 25%, var(--color-hover) 50%, var(--color-border) 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s infinite linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-skeleton__bar {
+    animation: none;
+    background: var(--color-border);
+  }
+}
+
 @media (max-width: 576px) {
   .table td, .table th {
     padding: 0.3rem;
@@ -1235,6 +1347,29 @@ tr:nth-child(even) .stock-col {
   border-radius: 8px;
   line-height: 1.6;
   color: var(--color-text);
+}
+
+.stock-detail__back-btn {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.9rem;
+  color: var(--accent-gold);
+  margin-bottom: 12px;
+  padding: 4px 2px;
+}
+
+.stock-detail__back-btn:hover {
+  color: var(--accent-gold-hover);
+  text-decoration: underline;
+}
+
+.stock-detail__back-btn:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .stock-detail .link-list {
@@ -1290,6 +1425,31 @@ tr:nth-child(even) .stock-col {
   color: var(--color-text-muted);
 }
 
+/* StockDetail returns skeleton */
+.stock-detail-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+}
+
+.stock-detail-skeleton__row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  height: 32px;
+}
+
+.stock-detail-skeleton__cell {
+  flex: 1;
+  height: 18px;
+  border-radius: 4px;
+}
+
+.stock-detail-skeleton__cell--label {
+  flex: 0 0 120px;
+}
+
 /* "External Data" section label */
 .stock-detail__section-label {
   margin-top: 6px;
@@ -1333,6 +1493,30 @@ tr:nth-child(even) .stock-col {
 
 .stock-table {
   min-width: 1380px;
+}
+
+.stock-table-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.stock-table-empty__icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.stock-table-empty__msg {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: var(--color-text);
+}
+
+.stock-table-empty__hint {
+  font-size: 0.875rem;
+  margin: 0;
 }
 
 /* CurrencyViewToggle */
@@ -2090,6 +2274,34 @@ button.metric-card:focus-visible {
   color: var(--color-error);
 }
 
+.table-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+}
+
+.table-skeleton__row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 40px;
+}
+
+.table-skeleton__cell {
+  flex: 1;
+  height: 20px;
+  border-radius: 4px;
+}
+
+.table-skeleton__cell--id {
+  flex: 0 0 80px;
+}
+
+.table-skeleton__cell--wide {
+  flex: 2;
+}
+
 /* Filter bar container */
 .filter-bar {
   display: flex;
@@ -2356,6 +2568,19 @@ button.metric-card:focus-visible {
   font-size: 0.72rem;
   color: var(--color-text-muted);
   margin-left: 4px;
+  cursor: default;
+}
+
+.filter-bar__cache-info--stale {
+  color: #b45309;
+}
+
+[data-theme='dark'] .filter-bar__cache-info--stale {
+  color: #fbbf24;
+}
+
+.filter-bar__cache-info--old {
+  color: var(--color-error);
 }
 
 /* ── Calendar panel ── */
@@ -2645,6 +2870,18 @@ button.metric-card:focus-visible {
   -webkit-overflow-scrolling: touch;
   flex-wrap: nowrap;
   scrollbar-width: none; /* Firefox */
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--brand-panel-background, var(--color-card-bg));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding-top: 4px;
+  margin-left: calc(-1 * clamp(24px, 5vw, 64px));
+  margin-right: calc(-1 * clamp(24px, 5vw, 64px));
+  padding-left: clamp(24px, 5vw, 64px);
+  padding-right: clamp(24px, 5vw, 64px);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .nav.nav-tabs::-webkit-scrollbar {

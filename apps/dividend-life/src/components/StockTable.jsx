@@ -47,6 +47,7 @@ export default function StockTable({
   const [showIdDropdown, setShowIdDropdown] = useState(false);
   const [idDropdownPosition, setIdDropdownPosition] = useState(null);
   const [visibleCount, setVisibleCount] = useState(DEFAULT_VISIBLE_COUNT);
+  const [expandMonths, setExpandMonths] = useState(false);
   const tableContainerRef = useRef(null);
   const idFilterButtonRef = useRef(null);
   const { lang, t } = useLanguage();
@@ -64,6 +65,16 @@ export default function StockTable({
         : { 1: 'Annual', 2: 'Semi-annual', 4: 'Quarterly', 6: 'Bimonthly', 12: 'Monthly', 52: 'Weekly' },
     [lang]
   );
+  // Collapsed view: show 3 months around currentMonth
+  const visibleMonthIndices = useMemo(() => {
+    if (expandMonths) return Array.from({ length: 12 }, (_, i) => i);
+    const indices = [];
+    for (let offset = -2; offset <= 0; offset++) {
+      indices.push(((currentMonth + offset) + 12) % 12);
+    }
+    return indices.sort((a, b) => a - b);
+  }, [expandMonths, currentMonth]);
+
   usePreserveScroll(tableContainerRef, 'stockTableScrollLeft', [showInfoAxis]);
 
   const handleSort = (column) => {
@@ -367,15 +378,39 @@ export default function StockTable({
     <>
       <div className="display-mode-indicator">
         {lang === 'zh' ? '顯示模式' : 'Display Mode'}: <strong>{displayModeLabel}</strong>
+        <button
+          type="button"
+          className="month-expand-btn"
+          onClick={() => setExpandMonths(v => !v)}
+          aria-pressed={expandMonths}
+          aria-label={expandMonths
+            ? (lang === 'zh' ? '收合月份欄' : 'Collapse months')
+            : (lang === 'zh' ? '展開全部月份' : 'Expand all months')}
+        >
+          {expandMonths
+            ? (lang === 'zh' ? '收合月份 ▲' : 'Collapse ▲')
+            : (lang === 'zh' ? '展開全部月份 ▼' : 'Expand all months ▼')}
+        </button>
       </div>
-      <div className="table-responsive" ref={tableContainerRef} style={tableScrollStyle}>
+      {stocks.length === 0 ? (
+        <div className="stock-table-empty">
+          <div className="stock-table-empty__icon" aria-hidden="true">📊</div>
+          <p className="stock-table-empty__msg">
+            {lang === 'zh' ? '沒有符合條件的股票' : 'No matching stocks'}
+          </p>
+          <p className="stock-table-empty__hint">
+            {lang === 'zh' ? '請調整篩選條件或重置篩選' : 'Try adjusting or resetting your filters'}
+          </p>
+        </div>
+      ) : null}
+      <div className="table-responsive" ref={tableContainerRef} style={stocks.length === 0 ? { display: 'none' } : tableScrollStyle}>
         <table className="table table-bordered table-striped stock-table" aria-label={lang === 'en' ? 'ETF dividend calendar' : 'ETF 股息月曆'}>
         <thead>
           <tr>
             <th scope="col" className="stock-col" rowSpan={activeCurrencies.length > 1 ? 2 : 1}
               aria-sort={sortConfig.column === 'stock_id' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
-              <button type="button" className="sortable" onClick={() => handleSort('stock_id')}>
+              <button type="button" className={`sortable${sortConfig.column === 'stock_id' ? ' sortable--active' : ''}`} onClick={() => handleSort('stock_id')}>
                 {t('stock_code_name')}
                 <span className="sort-indicator" aria-hidden="true">
                   {sortConfig.column === 'stock_id'
@@ -408,7 +443,7 @@ export default function StockTable({
             <th scope="col" style={{ width: NUM_COL_WIDTH }} rowSpan={activeCurrencies.length > 1 ? 2 : 1}
               aria-sort={sortConfig.column === 'latest_price' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
-              <button type="button" className="sortable" onClick={() => handleSort('latest_price')}>
+              <button type="button" className={`sortable${sortConfig.column === 'latest_price' ? ' sortable--active' : ''}`} onClick={() => handleSort('latest_price')}>
                 {lang === 'zh' ? <>最新<br></br>股價</> : <>Latest<br></br>Price</>}
                 <span className="sort-indicator" aria-hidden="true">
                   {sortConfig.column === 'latest_price'
@@ -418,6 +453,7 @@ export default function StockTable({
               </button>
             </th>
             {MONTHS.map((m, idx) => {
+              if (!visibleMonthIndices.includes(idx)) return null;
               const monthSortKey = `month${idx}`;
               const showMonthSort = activeCurrencies.length === 1;
               const isMonthActive = sortConfig.column === monthSortKey;
@@ -432,7 +468,7 @@ export default function StockTable({
                 >
                   <div className="month-th-inner">
                     {showMonthSort ? (
-                      <button type="button" className="sortable" onClick={() => handleSort(monthSortKey)}>
+                      <button type="button" className={`sortable${isMonthActive ? ' sortable--active' : ''}`} onClick={() => handleSort(monthSortKey)}>
                         {m}
                         <span className="sort-indicator" aria-hidden="true">
                           {isMonthActive
@@ -469,7 +505,7 @@ export default function StockTable({
                   : 'none'
               }
             >
-              <button type="button" className="sortable" onClick={() => handleSort('total')}>
+              <button type="button" className={`sortable${sortConfig.column === 'total' ? ' sortable--active' : ''}`} onClick={() => handleSort('total')}>
                 {showDividendYield ? t('total_yield') : t('total_dividend')}
                 <span className="sort-indicator" aria-hidden="true">
                   {sortConfig.column === 'total'
@@ -478,7 +514,7 @@ export default function StockTable({
                 </span>
               </button>
               {' / '}
-              <button type="button" className="sortable" onClick={() => handleSort('annual_yield')}>
+              <button type="button" className={`sortable${sortConfig.column === 'annual_yield' ? ' sortable--active' : ''}`} onClick={() => handleSort('annual_yield')}>
                 {t('estimated_yield')}
                 <span className="sort-indicator" aria-hidden="true">
                   {sortConfig.column === 'annual_yield'
@@ -491,7 +527,7 @@ export default function StockTable({
           {activeCurrencies.length > 1 && (
             <tr>
               {MONTHS.map((m, idx) => (
-                activeCurrencies.map(currency => {
+                !visibleMonthIndices.includes(idx) ? null : activeCurrencies.map(currency => {
                   const currencySortKey = `month${idx}:${currency}`;
                   const isActive = sortConfig.column === currencySortKey;
                   return (
@@ -504,7 +540,7 @@ export default function StockTable({
                     >
                       <button
                         type="button"
-                        className="sortable-inline"
+                        className={`sortable-inline${isActive ? ' sortable--active' : ''}`}
                         onClick={() => handleSort(currencySortKey)}
                       >
                         {currencyLabelFor(currency)}
@@ -533,6 +569,7 @@ export default function StockTable({
                     stock={stock}
                     months={MONTHS}
                     monthCells={monthCellCache.get(stock.stock_id)}
+                    visibleMonthIndices={visibleMonthIndices}
                     activeCurrencies={activeCurrencies}
                     currentMonth={currentMonth}
                     showDividendYield={showDividendYield}
@@ -563,6 +600,7 @@ export default function StockTable({
                 stock={stock}
                 months={MONTHS}
                 monthCells={monthCellCache.get(stock.stock_id)}
+                visibleMonthIndices={visibleMonthIndices}
                 activeCurrencies={activeCurrencies}
                 currentMonth={currentMonth}
                 showDividendYield={showDividendYield}
@@ -604,6 +642,7 @@ const StockRow = memo(function StockRow({
   stock,
   months,
   monthCells,
+  visibleMonthIndices,
   activeCurrencies,
   currentMonth,
   showDividendYield,
@@ -686,7 +725,7 @@ const StockRow = memo(function StockRow({
       </td>
       <td style={{ width: NUM_COL_WIDTH }}>{price ?? ''}</td>
       {months.map((_, idx) =>
-        activeCurrencies.map((currency, currencyIdx) => {
+        !visibleMonthIndices.includes(idx) ? null : activeCurrencies.map((currency, currencyIdx) => {
           const monthCurrencyCells = safeMonthCells[idx] || [];
           const cell = monthCurrencyCells[currencyIdx];
           if (!cell) {

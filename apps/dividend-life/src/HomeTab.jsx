@@ -228,6 +228,7 @@ export default function HomeTab() {
   });
   const [transactionHistory, setTransactionHistory] = useState([]);
   const [dividendData, setDividendData] = useState([]);
+  const [dividendLoading, setDividendLoading] = useState(true);
   const [inventoryLoaded, setInventoryLoaded] = useState(false);
   const [chartCurrency, setChartCurrency] = useState(null);
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(null);
@@ -283,15 +284,18 @@ export default function HomeTab() {
     const purchasedIds = getPurchasedStockIds(transactionHistory);
     const stockIdsOption = purchasedIds.length ? purchasedIds : 'all';
 
+    setDividendLoading(true);
     fetchDividendsByYears(undefined, undefined, { stockIds: stockIdsOption })
       .then(({ data }) => {
         if (!cancelled) {
           setDividendData(data);
+          setDividendLoading(false);
         }
       })
       .catch(() => {
         if (!cancelled) {
           setDividendData([]);
+          setDividendLoading(false);
         }
       });
 
@@ -753,17 +757,27 @@ export default function HomeTab() {
               </button>
             </div>
           </div>
-          <DividendChart
-            data={dividendChartConfig}
-            labels={monthLabels}
-            currency={dividendChartConfig.currency}
-            heading={`${dividendChartConfig.year} ${t('dividend_chart_heading')}`}
-            t={t}
-            lang={lang}
-            selectedIndex={selectedMonthIndex}
-            onSelect={handleSelectMonth}
-            chartRef={chartRef}
-          />
+          {dividendLoading ? (
+            <div className="chart-skeleton" aria-busy="true" aria-label={lang === 'en' ? 'Loading chart…' : '圖表載入中…'}>
+              <div className="chart-skeleton__bars">
+                {Array.from({ length: 12 }, (_, i) => (
+                  <div key={i} className="chart-skeleton__bar" style={{ height: `${30 + Math.sin(i * 0.8) * 20 + 20}%` }} />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <DividendChart
+              data={dividendChartConfig}
+              labels={monthLabels}
+              currency={dividendChartConfig.currency}
+              heading={`${dividendChartConfig.year} ${t('dividend_chart_heading')}`}
+              t={t}
+              lang={lang}
+              selectedIndex={selectedMonthIndex}
+              onSelect={handleSelectMonth}
+              chartRef={chartRef}
+            />
+          )}
           {selectedDetail && (
             <div className="chart-detail-row">
               <span className="chart-detail-month">
