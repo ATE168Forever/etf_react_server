@@ -120,7 +120,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const selectedYearRef = useRef(selectedYear);
   const groupModalTriggerRef = useRef(null);
   const groupModalRef = useRef(null);
-  useFocusTrap(groupModalRef, showGroupModal);
 
   // Calendar state
   const {
@@ -257,6 +256,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     handleCancelEditGroup,
     handleDeleteGroup,
   } = useWatchGroups({ lang, setSelectedStockIds, handleResetFilters });
+
+  useFocusTrap(groupModalRef, showGroupModal);
 
   const closeGroupModal = () => {
     setShowGroupModal(false);
