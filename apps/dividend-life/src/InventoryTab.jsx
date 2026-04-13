@@ -192,7 +192,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
         stock_id: stockId,
         stock_name: stockName,
         country,
-        enabled: true,
+        enabled: false,
         date: getToday(),
         quantity,
         price
