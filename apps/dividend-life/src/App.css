@@ -1215,7 +1215,10 @@ button:active {
 .table-responsive table td:first-child {
   position: sticky;
   left: 0;
-  background: var(--color-card-bg);
+  background-color: var(--color-card-bg, #fff) !important;
+  /* Neutralise Bootstrap 5.3's inset-9999px box-shadow overlay so the
+     explicit background-color always covers horizontally-scrolled content */
+  box-shadow: none !important;
   z-index: 100;
 }
 
@@ -1249,14 +1252,15 @@ button:active {
   text-decoration: underline;
 }
 
-/* Override striped-row background so sticky column matches */
+/* Override striped-row background so sticky column matches.
+   !important needed to beat the td:first-child !important base rule above. */
 .table-striped > tbody > tr:nth-of-type(odd) > .stock-col,
 tr:nth-child(odd) .stock-col {
-  background: var(--color-row-odd, var(--bs-table-striped-bg, #f9f9f9));
+  background-color: var(--color-row-odd, var(--bs-table-striped-bg, #f9f9f9)) !important;
 }
 .table-striped > tbody > tr:nth-of-type(even) > .stock-col,
 tr:nth-child(even) .stock-col {
-  background: var(--color-row-even, var(--color-card-bg, #fff));
+  background-color: var(--color-row-even, var(--color-card-bg, #fff)) !important;
 }
 
 .row-label-cell {
@@ -1274,11 +1278,11 @@ tr:nth-child(even) .stock-col {
 
 .table-striped > tbody > tr:nth-of-type(odd) > .row-label-cell,
 tr:nth-child(odd) .row-label-cell {
-  background: var(--color-row-odd, var(--bs-table-striped-bg, #f3f4f6));
+  background-color: var(--color-row-odd, var(--bs-table-striped-bg, #f3f4f6)) !important;
 }
 .table-striped > tbody > tr:nth-of-type(even) > .row-label-cell,
 tr:nth-child(even) .row-label-cell {
-  background: var(--color-row-even, var(--color-card-bg, #fff));
+  background-color: var(--color-row-even, var(--color-card-bg, #fff)) !important;
 }
 
 .chart-empty-msg {
