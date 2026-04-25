@@ -469,29 +469,12 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     setUpcomingAlerts(getTomorrowDividendAlerts(data));
   }, [data]);
 
-  useEffect(() => {
-    const STALE_THRESHOLD = 30 * 60 * 1000; // 30 minutes
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        const age = Date.now() - lastFetchedAt.current;
-        if (age > STALE_THRESHOLD) {
-          setRefreshTrigger(n => n + 1);
-        }
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, []);
-
-  useEffectOnce(() => {
-    let cancelled = false;
-
-    fetchStockList()
+  const loadStockList = useCallback(() => {
+    const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12, '週配': 52 };
+    return fetchStockList()
       .then(({ list }) => {
-        if (cancelled) return;
         const map = {};
         const priceMap = {};
-        const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12, '週配': 52 };
         list.forEach(s => {
           map[s.stock_id] = freqMapRaw[s.dividend_frequency] || null;
           if (s.latest_close_price != null) {
@@ -500,12 +483,30 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         });
         setFreqMap(map);
         setStockListPriceMap(priceMap);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setFreqMap({});
-        }
       });
+  }, []);
+
+  useEffect(() => {
+    const STALE_THRESHOLD = 30 * 60 * 1000; // 30 minutes
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const age = Date.now() - lastFetchedAt.current;
+        if (age > STALE_THRESHOLD) {
+          setRefreshTrigger(n => n + 1);
+          loadStockList().catch(() => {});
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [loadStockList]);
+
+  useEffectOnce(() => {
+    let cancelled = false;
+
+    loadStockList().catch(() => {
+      if (!cancelled) setFreqMap({});
+    });
 
     return () => {
       cancelled = true;
