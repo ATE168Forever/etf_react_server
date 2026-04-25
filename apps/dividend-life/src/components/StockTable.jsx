@@ -706,7 +706,7 @@ const StockRow = memo(function StockRow({
           key={`${stock.stock_id}-total-${currency}`}
           className="total-cell-row"
         >
-          <span>{`${currencyLabelFor(currency)}${total.toFixed(3)}`}</span>
+          <span>{`${currencyLabelFor(currency)}${currency === 'USD' ? total.toFixed(2) : Math.round(total)}`}</span>
           {annualContent && <span>/ {annualContent}</span>}
         </div>
       );
