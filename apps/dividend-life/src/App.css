@@ -2881,6 +2881,10 @@ button.metric-card:focus-visible {
 }
 
 /* ── Tab bar horizontal scroll on mobile ── */
+.nav.nav-tabs .nav-link {
+  white-space: nowrap;
+}
+
 .nav.nav-tabs {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
