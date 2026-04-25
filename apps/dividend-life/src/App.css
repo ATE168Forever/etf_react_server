@@ -143,7 +143,6 @@
 table {
   width: 100%;
   margin-top: 20px;
-  overflow: visible !important;
   --bs-table-bg: var(--color-card-bg);
   --bs-table-striped-bg: var(--color-row-even);
   --bs-table-striped-color: var(--color-text);
@@ -170,9 +169,6 @@ th,
 td {
   padding: 8px;
   text-align: left;
-  position: relative;
-  overflow: visible !important;
-  background-clip: padding-box;
   color: var(--color-text);
 }
 
@@ -1270,6 +1266,19 @@ tr:nth-child(even) .stock-col {
   font-weight: 500;
   white-space: nowrap;
   color: var(--color-text-muted);
+  position: sticky;
+  left: 0;
+  background: var(--color-card-bg);
+  z-index: 2;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > .row-label-cell,
+tr:nth-child(odd) .row-label-cell {
+  background: var(--color-row-odd, var(--bs-table-striped-bg, #f3f4f6));
+}
+.table-striped > tbody > tr:nth-of-type(even) > .row-label-cell,
+tr:nth-child(even) .row-label-cell {
+  background: var(--color-row-even, var(--color-card-bg, #fff));
 }
 
 .chart-empty-msg {
@@ -1337,6 +1346,13 @@ tr:nth-child(even) .stock-col {
   .table td, .table th {
     padding: 0.3rem;
     font-size: 13px;
+  }
+  .stock-col {
+    width: 90px;
+    min-width: 90px;
+  }
+  .stock-table {
+    min-width: 0;
   }
 }
 
