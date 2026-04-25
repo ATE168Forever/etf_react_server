@@ -541,15 +541,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   }, [data, selectedYear]);
 
   // Build inventory map for calculating actual dividend payouts
-  const inventoryMap = useMemo(() => {
-    const { inventoryList } = summarizeInventory(transactionHistory);
-    const map = {};
-    inventoryList.forEach(item => {
-      map[item.stock_id] = item.total_quantity || 0;
-    });
-    return map;
-  }, [transactionHistory]);
-
   const { stocks, stockCurrencyMap } = useMemo(() => {
     const stocksList = [];
     const stockMap = {};
@@ -871,7 +862,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     yieldCount[stock.stock_id] = {};
     latestPrice[stock.stock_id] = { price: null, date: null };
     latestYield[stock.stock_id] = { yield: null, date: null };
-    const shares = inventoryMap[stock.stock_id] || 0;
     // Only process data from dividendTable (which is already year-filtered)
     const stockTable = dividendTable[stock.stock_id];
     if (!stockTable) return; // No dividend data for this stock in selected year
@@ -882,7 +872,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         const cell = monthEntry?.[currency];
         if (!cell) return;
         const dividendPerShare = Number(cell.dividend);
-        const val = Number.isFinite(dividendPerShare) ? dividendPerShare * shares : 0;
+        const val = Number.isFinite(dividendPerShare) ? dividendPerShare * 1000 : 0;
         const yValRaw = Number(cell.dividend_yield);
         const yVal = Number.isFinite(yValRaw) ? yValRaw : 0;
         totalPerStock[stock.stock_id][currency] = (totalPerStock[stock.stock_id][currency] || 0) + val;

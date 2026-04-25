@@ -506,7 +506,7 @@ export default function StockTable({
               }
             >
               <button type="button" className={`sortable${sortConfig.column === 'total' ? ' sortable--active' : ''}`} onClick={() => handleSort('total')}>
-                {showDividendYield ? t('total_yield') : t('total_dividend')}
+                {showDividendYield ? t('total_yield') : t('per_lot_dividend')}
                 <span className="sort-indicator" aria-hidden="true">
                   {sortConfig.column === 'total'
                     ? (sortConfig.direction === 'asc' ? '▲' : '▼')

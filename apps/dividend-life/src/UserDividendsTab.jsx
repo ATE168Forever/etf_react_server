@@ -852,7 +852,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
         }
     }
     const aggregatedAvgPerMonth = aggregatedMonthsForAverage > 0 ? aggregatedGrandTotal / aggregatedMonthsForAverage : 0;
-    const totalColumns = 2 + (MONTHS.length * activeCurrencies.length);
+    const totalColumns = 3 + (MONTHS.length * activeCurrencies.length);
 
     const donutDataByCurrency = useMemo(() => {
         const map = {};
@@ -1124,6 +1124,9 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                 </div>
                             </th>
                         ))}
+                        <th scope="col" rowSpan={activeCurrencies.length > 1 ? 2 : 1} style={{ minWidth: MONTH_COL_WIDTH * 2 }}>
+                            {lang === 'en' ? 'Total Dividend / Est. Yield' : '累積股息 / 預估殖利率'}
+                        </th>
                     </tr>
                     {activeCurrencies.length > 1 && (
                         <tr>
@@ -1194,6 +1197,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                         );
                                     })
                                 ))}
+                                <td></td>
                             </tr>
                             <tr>
                                 <td className="row-label-cell">{lang === 'en' ? 'Monthly Total' : '月合計'}</td>
@@ -1253,6 +1257,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                         );
                                     })
                                 ))}
+                                <td></td>
                             </tr>
                             {filteredStocks.map(stock => {
                                 const totalsByCurrency = {};
@@ -1332,7 +1337,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                             activeCurrencies.map(currency => {
                                                 const cell = currencyContexts[currency]?.dividendTable[stock.stock_id]?.[idx];
                                                 if (!cell || !cell.dividend || !cell.quantity) {
-                                                    return <td key={`cell-${stock.stock_id}-${idx}-${currency}`} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }}></td>;
+                                                    return <td key={`cell-${stock.stock_id}-${idx}-${currency}`} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }} />;
                                                 }
                                                 const total = cell.dividend * cell.quantity;
                                                 const currencySymbol = CURRENCY_SYMBOLS[currency] || `${currency} `;
@@ -1368,6 +1373,25 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                                 );
                                             })
                                         ))}
+                                        <td style={{ minWidth: MONTH_COL_WIDTH * 2 }}>
+                                            {(() => {
+                                                const items = activeCurrencies.map(currency => {
+                                                    const total = totalsByCurrency[currency] || 0;
+                                                    const info = yieldDetail[currency];
+                                                    const monthsCount = info?.monthsCount || 0;
+                                                    const avgYield = monthsCount > 0 ? (info?.sumYield || 0) / monthsCount : 0;
+                                                    const estAnnual = avgYield * 12;
+                                                    if (total <= 0 && estAnnual <= 0) return null;
+                                                    return (
+                                                        <div key={`cumul-${stock.stock_id}-${currency}`} className="total-cell-row">
+                                                            <span>{formatCurrencyValue(currency, total)}</span>
+                                                            {estAnnual > 0 && <span>/ {estAnnual.toFixed(1)}%</span>}
+                                                        </div>
+                                                    );
+                                                }).filter(Boolean);
+                                                return items.length > 0 ? items : '';
+                                            })()}
+                                        </td>
                                     </tr>
                                 );
                             })}
