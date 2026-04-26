@@ -2901,10 +2901,10 @@ button.metric-card:focus-visible {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   padding-top: 4px;
-  margin-left: calc(-1 * clamp(24px, 5vw, 64px));
-  margin-right: calc(-1 * clamp(24px, 5vw, 64px));
-  padding-left: clamp(24px, 5vw, 64px);
-  padding-right: clamp(24px, 5vw, 64px);
+  margin-left: -2em;
+  margin-right: -2em;
+  padding-left: 2em;
+  padding-right: 2em;
   border-bottom: 1px solid var(--color-border);
 }
 
