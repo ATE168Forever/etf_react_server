@@ -2912,17 +2912,7 @@ button.metric-card:focus-visible {
   display: none; /* Chrome/Safari */
 }
 
-@media (max-width: 640px) {
-  /* Horizontal tab bar, but each tab's text rendered vertically (直式) */
-  .nav.nav-tabs .nav-link {
-    writing-mode: vertical-lr;
-    text-orientation: mixed;
-    white-space: nowrap;
-    padding: 10px 6px;
-    min-height: 56px;
-    text-align: center;
-  }
-
+@media (max-width: 767px) {
   .nav.nav-tabs.justify-content-center {
     justify-content: flex-start !important;
   }
