@@ -2912,12 +2912,6 @@ button.metric-card:focus-visible {
   display: none; /* Chrome/Safari */
 }
 
-@media (max-width: 767px) {
-  .nav.nav-tabs.justify-content-center {
-    justify-content: flex-start !important;
-  }
-}
-
 /* ── Sticky filter bar (stock table) ── */
 .filter-bar {
   position: sticky;
