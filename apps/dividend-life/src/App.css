@@ -2912,7 +2912,40 @@ button.metric-card:focus-visible {
   display: none; /* Chrome/Safari */
 }
 
-@media (max-width: 767px) {
+@media (max-width: 640px) {
+  /* Vertical tab layout on narrow mobile screens */
+  .nav.nav-tabs {
+    flex-direction: column !important;
+    flex-wrap: wrap !important;
+    overflow-x: visible !important;
+    border-bottom: none !important;
+    gap: 0 !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+  }
+
+  .nav.nav-tabs .nav-item {
+    width: 100%;
+  }
+
+  .nav.nav-tabs .nav-link {
+    width: 100%;
+    text-align: left !important;
+    white-space: normal !important;
+    /* Replace Bootstrap's bottom-border active indicator with a left stripe */
+    border: none !important;
+    border-left: 3px solid transparent !important;
+    border-bottom: 1px solid var(--color-border) !important;
+    border-radius: 0 !important;
+    margin-bottom: 0 !important;
+    padding: 11px 16px 11px 13px !important;
+  }
+
+  .nav.nav-tabs .nav-link.active {
+    border-left-color: var(--accent-gold, #f5c842) !important;
+    background: var(--color-hover, rgba(255, 255, 255, 0.06)) !important;
+  }
+
   .nav.nav-tabs.justify-content-center {
     justify-content: flex-start !important;
   }

@@ -248,6 +248,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
     const [stockNameMap, setStockNameMap] = useState({});
+    const [freqMap, setFreqMap] = useState({});
     const [dividendExclusions, setDividendExclusions] = useState(() => loadDividendExclusions());
     const timeZone = 'Asia/Taipei';
     const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
@@ -294,12 +295,16 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
         fetchStockList()
             .then(({ list }) => {
                 if (cancelled) return;
-                const map = {};
+                const nameMap = {};
+                const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12, '週配': 52 };
+                const freq = {};
                 list.forEach(item => {
                     if (!item?.stock_id) return;
-                    map[item.stock_id] = item.stock_name || '';
+                    nameMap[item.stock_id] = item.stock_name || '';
+                    freq[item.stock_id] = freqMapRaw[item.dividend_frequency] || null;
                 });
-                setStockNameMap(map);
+                setStockNameMap(nameMap);
+                setFreqMap(freq);
             })
             .catch(() => {
                 if (!cancelled) {
@@ -638,12 +643,14 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
             const totalYield = {};
             const latestClosePrice = {};
             const monthsCount = {};
+            const dividendCount = {};
 
             stocksForCurrency.forEach(stock => {
                 totalPerStock[stock.stock_id] = 0;
                 totalYield[stock.stock_id] = 0;
                 latestClosePrice[stock.stock_id] = null;
                 monthsCount[stock.stock_id] = 0;
+                dividendCount[stock.stock_id] = 0;
                 for (let m = 0; m < 12; m++) {
                     const cell = dividendTable[stock.stock_id]?.[m];
                     if (cell && cell.dividend && cell.quantity) {
@@ -651,6 +658,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                         totalPerStock[stock.stock_id] += amt;
                         totalYield[stock.stock_id] += parseFloat(cell.dividend_yield) || 0;
                         monthsCount[stock.stock_id] = m + 1;
+                        dividendCount[stock.stock_id] += 1;
 
                         if (!latestClosePrice[stock.stock_id] || new Date(cell.dividend_date) > new Date(latestClosePrice[stock.stock_id].date)) {
                             latestClosePrice[stock.stock_id] = { price: cell.last_close_price, date: cell.dividend_date };
@@ -666,6 +674,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                 totalYield,
                 latestClosePrice,
                 monthsCount,
+                dividendCount,
             };
         });
         return contextMap;
@@ -715,36 +724,32 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
 
     const getYieldInfo = (stockId) => {
         const detail = {};
-        let maxMonthsCount = 0;
+        let maxDividendCount = 0;
         activeCurrencies.forEach(currency => {
             const context = currencyContexts[currency];
             if (!context) return;
             if (!hasActiveMonthFilters) {
                 const sumYield = context.totalYield[stockId] || 0;
-                const monthsCount = context.monthsCount[stockId] || 0;
-                detail[currency] = { sumYield, monthsCount };
-                if (monthsCount > maxMonthsCount) {
-                    maxMonthsCount = monthsCount;
-                }
+                const count = context.dividendCount[stockId] || 0;
+                detail[currency] = { sumYield, dividendCount: count };
+                if (count > maxDividendCount) maxDividendCount = count;
                 return;
             }
             let sumYield = 0;
-            let lastMonth = 0;
+            let count = 0;
             for (let idx = 0; idx < 12; idx++) {
                 if (!monthFilters[idx]) continue;
                 const cell = context.dividendTable[stockId]?.[idx];
                 if (cell && cell.dividend && cell.quantity) {
                     sumYield += parseFloat(cell.dividend_yield) || 0;
-                    lastMonth = idx + 1;
+                    count += 1;
                 }
             }
-            detail[currency] = { sumYield, monthsCount: lastMonth };
-            if (lastMonth > maxMonthsCount) {
-                maxMonthsCount = lastMonth;
-            }
+            detail[currency] = { sumYield, dividendCount: count };
+            if (count > maxDividendCount) maxDividendCount = count;
         });
         const sumYield = Object.values(detail).reduce((sum, info) => sum + (info?.sumYield || 0), 0);
-        return { sumYield, monthsCount: maxMonthsCount, detail };
+        return { sumYield, dividendCount: maxDividendCount, detail };
     };
 
     const sortedStocks = [...combinedStocks].sort((a, b) => {
@@ -1271,9 +1276,10 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                     if (!info) return null;
                                     const context = currencyContexts[currency];
                                     const latest = context?.latestClosePrice[stock.stock_id]?.price ?? '-';
-                                    const monthsCount = info.monthsCount || 0;
-                                    const avgYield = monthsCount > 0 ? info.sumYield / monthsCount : 0;
-                                    const estAnnual = avgYield * 12;
+                                    const count = info.dividendCount || 0;
+                                    const knownFreq = [1, 2, 4, 6, 12, 52].includes(freqMap[stock.stock_id]) ? freqMap[stock.stock_id] : count;
+                                    const avgYield = count > 0 ? info.sumYield / count : 0;
+                                    const estAnnual = avgYield * knownFreq;
                                     if (lang === 'en') {
                                         return `${currencyHeaderLabel(currency)} - Latest close: ${latest}\nSum yield: ${info.sumYield.toFixed(1)}%\nEst. annual yield: ${estAnnual.toFixed(1)}%`;
                                     }
@@ -1378,9 +1384,10 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                                 const items = activeCurrencies.map(currency => {
                                                     const total = totalsByCurrency[currency] || 0;
                                                     const info = yieldDetail[currency];
-                                                    const monthsCount = info?.monthsCount || 0;
-                                                    const avgYield = monthsCount > 0 ? (info?.sumYield || 0) / monthsCount : 0;
-                                                    const estAnnual = avgYield * 12;
+                                                    const count = info?.dividendCount || 0;
+                                                    const knownFreq = [1, 2, 4, 6, 12, 52].includes(freqMap[stock.stock_id]) ? freqMap[stock.stock_id] : count;
+                                                    const avgYield = count > 0 ? (info?.sumYield || 0) / count : 0;
+                                                    const estAnnual = avgYield * knownFreq;
                                                     if (total <= 0 && estAnnual <= 0) return null;
                                                     return (
                                                         <div key={`cumul-${stock.stock_id}-${currency}`} className="total-cell-row">
