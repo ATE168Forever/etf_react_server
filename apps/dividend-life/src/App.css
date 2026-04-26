@@ -2901,10 +2901,10 @@ button.metric-card:focus-visible {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   padding-top: 4px;
-  margin-left: calc(-1 * clamp(24px, 5vw, 64px));
-  margin-right: calc(-1 * clamp(24px, 5vw, 64px));
-  padding-left: clamp(24px, 5vw, 64px);
-  padding-right: clamp(24px, 5vw, 64px);
+  margin-left: -2em;
+  margin-right: -2em;
+  padding-left: 2em;
+  padding-right: 2em;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -2913,37 +2913,14 @@ button.metric-card:focus-visible {
 }
 
 @media (max-width: 640px) {
-  /* Vertical tab layout on narrow mobile screens */
-  .nav.nav-tabs {
-    flex-direction: column !important;
-    flex-wrap: wrap !important;
-    overflow-x: visible !important;
-    border-bottom: none !important;
-    gap: 0 !important;
-    padding-top: 2px !important;
-    padding-bottom: 2px !important;
-  }
-
-  .nav.nav-tabs .nav-item {
-    width: 100%;
-  }
-
+  /* Horizontal tab bar, but each tab's text rendered vertically (直式) */
   .nav.nav-tabs .nav-link {
-    width: 100%;
-    text-align: left !important;
-    white-space: normal !important;
-    /* Replace Bootstrap's bottom-border active indicator with a left stripe */
-    border: none !important;
-    border-left: 3px solid transparent !important;
-    border-bottom: 1px solid var(--color-border) !important;
-    border-radius: 0 !important;
-    margin-bottom: 0 !important;
-    padding: 11px 16px 11px 13px !important;
-  }
-
-  .nav.nav-tabs .nav-link.active {
-    border-left-color: var(--accent-gold, #f5c842) !important;
-    background: var(--color-hover, rgba(255, 255, 255, 0.06)) !important;
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    white-space: nowrap;
+    padding: 10px 6px;
+    min-height: 56px;
+    text-align: center;
   }
 
   .nav.nav-tabs.justify-content-center {
