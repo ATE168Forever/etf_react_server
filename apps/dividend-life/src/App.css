@@ -2914,8 +2914,9 @@ button.metric-card:focus-visible {
 
 @media (max-width: 576px) {
   .nav.nav-tabs .nav-link {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
+    font-size: 0.78rem;
+    padding-left: 0.6em;
+    padding-right: 0.6em;
   }
 }
 
