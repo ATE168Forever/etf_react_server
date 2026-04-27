@@ -469,29 +469,12 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     setUpcomingAlerts(getTomorrowDividendAlerts(data));
   }, [data]);
 
-  useEffect(() => {
-    const STALE_THRESHOLD = 30 * 60 * 1000; // 30 minutes
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        const age = Date.now() - lastFetchedAt.current;
-        if (age > STALE_THRESHOLD) {
-          setRefreshTrigger(n => n + 1);
-        }
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, []);
-
-  useEffectOnce(() => {
-    let cancelled = false;
-
-    fetchStockList()
+  const loadStockList = useCallback(() => {
+    const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12, '週配': 52 };
+    return fetchStockList()
       .then(({ list }) => {
-        if (cancelled) return;
         const map = {};
         const priceMap = {};
-        const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12, '週配': 52 };
         list.forEach(s => {
           map[s.stock_id] = freqMapRaw[s.dividend_frequency] || null;
           if (s.latest_close_price != null) {
@@ -500,12 +483,30 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         });
         setFreqMap(map);
         setStockListPriceMap(priceMap);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setFreqMap({});
-        }
       });
+  }, []);
+
+  useEffect(() => {
+    const STALE_THRESHOLD = 30 * 60 * 1000; // 30 minutes
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const age = Date.now() - lastFetchedAt.current;
+        if (age > STALE_THRESHOLD) {
+          setRefreshTrigger(n => n + 1);
+          loadStockList().catch(() => {});
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [loadStockList]);
+
+  useEffectOnce(() => {
+    let cancelled = false;
+
+    loadStockList().catch(() => {
+      if (!cancelled) setFreqMap({});
+    });
 
     return () => {
       cancelled = true;
@@ -540,15 +541,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   }, [data, selectedYear]);
 
   // Build inventory map for calculating actual dividend payouts
-  const inventoryMap = useMemo(() => {
-    const { inventoryList } = summarizeInventory(transactionHistory);
-    const map = {};
-    inventoryList.forEach(item => {
-      map[item.stock_id] = item.total_quantity || 0;
-    });
-    return map;
-  }, [transactionHistory]);
-
   const { stocks, stockCurrencyMap } = useMemo(() => {
     const stocksList = [];
     const stockMap = {};
@@ -870,7 +862,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     yieldCount[stock.stock_id] = {};
     latestPrice[stock.stock_id] = { price: null, date: null };
     latestYield[stock.stock_id] = { yield: null, date: null };
-    const shares = inventoryMap[stock.stock_id] || 0;
     // Only process data from dividendTable (which is already year-filtered)
     const stockTable = dividendTable[stock.stock_id];
     if (!stockTable) return; // No dividend data for this stock in selected year
@@ -881,7 +872,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         const cell = monthEntry?.[currency];
         if (!cell) return;
         const dividendPerShare = Number(cell.dividend);
-        const val = Number.isFinite(dividendPerShare) ? dividendPerShare * shares : 0;
+        const val = Number.isFinite(dividendPerShare) ? dividendPerShare * 1000 : 0;
         const yValRaw = Number(cell.dividend_yield);
         const yVal = Number.isFinite(yValRaw) ? yValRaw : 0;
         totalPerStock[stock.stock_id][currency] = (totalPerStock[stock.stock_id][currency] || 0) + val;

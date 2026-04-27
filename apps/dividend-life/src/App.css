@@ -143,7 +143,6 @@
 table {
   width: 100%;
   margin-top: 20px;
-  overflow: visible !important;
   --bs-table-bg: var(--color-card-bg);
   --bs-table-striped-bg: var(--color-row-even);
   --bs-table-striped-color: var(--color-text);
@@ -170,9 +169,6 @@ th,
 td {
   padding: 8px;
   text-align: left;
-  position: relative;
-  overflow: visible !important;
-  background-clip: padding-box;
   color: var(--color-text);
 }
 
@@ -1219,7 +1215,10 @@ button:active {
 .table-responsive table td:first-child {
   position: sticky;
   left: 0;
-  background: var(--color-card-bg);
+  background-color: var(--color-card-bg, #fff) !important;
+  /* Neutralise Bootstrap 5.3's inset-9999px box-shadow overlay so the
+     explicit background-color always covers horizontally-scrolled content */
+  box-shadow: none !important;
   z-index: 100;
 }
 
@@ -1253,14 +1252,15 @@ button:active {
   text-decoration: underline;
 }
 
-/* Override striped-row background so sticky column matches */
+/* Override striped-row background so sticky column matches.
+   !important needed to beat the td:first-child !important base rule above. */
 .table-striped > tbody > tr:nth-of-type(odd) > .stock-col,
 tr:nth-child(odd) .stock-col {
-  background: var(--color-row-odd, var(--bs-table-striped-bg, #f9f9f9));
+  background-color: var(--color-row-odd, var(--bs-table-striped-bg, #f9f9f9)) !important;
 }
 .table-striped > tbody > tr:nth-of-type(even) > .stock-col,
 tr:nth-child(even) .stock-col {
-  background: var(--color-row-even, var(--color-card-bg, #fff));
+  background-color: var(--color-row-even, var(--color-card-bg, #fff)) !important;
 }
 
 .row-label-cell {
@@ -1270,6 +1270,19 @@ tr:nth-child(even) .stock-col {
   font-weight: 500;
   white-space: nowrap;
   color: var(--color-text-muted);
+  position: sticky;
+  left: 0;
+  background: var(--color-card-bg);
+  z-index: 2;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > .row-label-cell,
+tr:nth-child(odd) .row-label-cell {
+  background-color: var(--color-row-odd, var(--bs-table-striped-bg, #f3f4f6)) !important;
+}
+.table-striped > tbody > tr:nth-of-type(even) > .row-label-cell,
+tr:nth-child(even) .row-label-cell {
+  background-color: var(--color-row-even, var(--color-card-bg, #fff)) !important;
 }
 
 .chart-empty-msg {
@@ -1337,6 +1350,13 @@ tr:nth-child(even) .stock-col {
   .table td, .table th {
     padding: 0.3rem;
     font-size: 13px;
+  }
+  .stock-col {
+    width: 90px;
+    min-width: 90px;
+  }
+  .stock-table {
+    min-width: 0;
   }
 }
 
@@ -2865,6 +2885,10 @@ button.metric-card:focus-visible {
 }
 
 /* ── Tab bar horizontal scroll on mobile ── */
+.nav.nav-tabs .nav-link {
+  white-space: nowrap;
+}
+
 .nav.nav-tabs {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -2877,21 +2901,15 @@ button.metric-card:focus-visible {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   padding-top: 4px;
-  margin-left: calc(-1 * clamp(24px, 5vw, 64px));
-  margin-right: calc(-1 * clamp(24px, 5vw, 64px));
-  padding-left: clamp(24px, 5vw, 64px);
-  padding-right: clamp(24px, 5vw, 64px);
+  margin-left: -2em;
+  margin-right: -2em;
+  padding-left: 2em;
+  padding-right: 2em;
   border-bottom: 1px solid var(--color-border);
 }
 
 .nav.nav-tabs::-webkit-scrollbar {
   display: none; /* Chrome/Safari */
-}
-
-@media (max-width: 767px) {
-  .nav.nav-tabs.justify-content-center {
-    justify-content: flex-start !important;
-  }
 }
 
 /* ── Sticky filter bar (stock table) ── */

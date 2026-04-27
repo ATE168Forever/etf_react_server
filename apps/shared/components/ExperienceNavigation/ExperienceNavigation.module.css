@@ -30,8 +30,10 @@
   top: -6px;
   left: -6px;
   right: -6px;
-  bottom: calc(6px + 1em + 6px); /* exclude label area */
-  border-radius: 32px;
+  /* 4px padding-bottom + 0.68rem label height + 6px gap — puts bottom edge
+     6 px below the logo, matching the 6 px overhang on the other three sides */
+  bottom: calc(4px + 0.68rem);
+  border-radius: 38px; /* 32px logo radius + 6px border offset */
   border: 1px solid transparent;
   opacity: 0;
   transition: opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
@@ -126,5 +128,14 @@
   .link {
     width: 96px;
     border-radius: 24px;
+  }
+
+  /* Logo is 75 px centred inside the 96 px tap target.
+     Offset left/right so the border tracks the logo, not the full link width:
+     (96 - 75) / 2 - 6px_border = 4.5 px inset from each link edge */
+  .link::after {
+    left: 4.5px;
+    right: 4.5px;
+    border-radius: 30px; /* 24px + 6px */
   }
 }
