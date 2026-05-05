@@ -46,6 +46,7 @@ export default function Footer({
   donateLink = 'https://www.buymeacoffee.com/ginatbean',
   donateLabel,
   brandName = 'ETF Life',
+  copyrightStartYear = 2024,
 }) {
   const year = new Date().getFullYear();
   const canToggleTheme = showThemeToggle && typeof setTheme === 'function';
@@ -136,7 +137,7 @@ export default function Footer({
           </span>
         </div>
       </div>
-      <div className="copyright">© {year} {brandName}. All rights reserved.</div>
+      <div className="copyright">© {copyrightStartYear < year ? `${copyrightStartYear}-${year}` : `${year}`} {brandName}. All rights reserved.</div>
     </footer>
   );
 }

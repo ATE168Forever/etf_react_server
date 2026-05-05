@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import styles from './TransactionHistoryTable.module.css';
 import { HOST_URL } from '../../config';
 import { useLanguage } from '../i18n';
@@ -5,16 +6,74 @@ import TooltipText from './TooltipText';
 
 export default function TransactionHistoryTable({ transactionHistory, stockList, editingIdx, editForm, setEditForm, setEditingIdx, handleEditSave, handleDelete }) {
   const { lang } = useLanguage();
+  const [sortKey, setSortKey] = useState('date');
+  const [sortDir, setSortDir] = useState('desc');
+
+  const handleSort = (key) => {
+    setSortKey(prev => {
+      if (prev === key) { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); return key; }
+      setSortDir(key === 'date' ? 'desc' : 'asc');
+      return key;
+    });
+  };
+
+  const sortedHistory = useMemo(() => {
+    return transactionHistory
+      .map((item, origIdx) => ({ item, origIdx }))
+      .sort(({ item: a }, { item: b }) => {
+        if (sortKey === 'stock_id') {
+          const av = (a.stock_id || '').toLowerCase();
+          const bv = (b.stock_id || '').toLowerCase();
+          return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+        }
+        if (sortKey === 'date') {
+          const av = a.date || '';
+          const bv = b.date || '';
+          return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+        }
+        if (sortKey === 'type') {
+          const av = a.type || '';
+          const bv = b.type || '';
+          return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+        }
+        const av = +(a[sortKey] ?? 0);
+        const bv = +(b[sortKey] ?? 0);
+        return sortDir === 'asc' ? av - bv : bv - av;
+      });
+  }, [transactionHistory, sortKey, sortDir]);
+
+  const thSort = (key, label) => {
+    const active = sortKey === key;
+    const indicator = active ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅';
+    const currentState = active ? (sortDir === 'asc' ? (lang === 'en' ? 'ascending' : '升冪') : (lang === 'en' ? 'descending' : '降冪')) : (lang === 'en' ? 'unsorted' : '未排序');
+    return (
+      <button type="button" className={`sortable${active ? ' sortable--active' : ''}`} onClick={() => handleSort(key)}
+        aria-label={lang === 'en' ? `Sort by ${label}, currently ${currentState}` : `依${label}排序，目前${currentState}`}>
+        {lang === 'en' ? label : label}<span className="sort-indicator" aria-hidden="true">{indicator}</span>
+      </button>
+    );
+  };
+
   return (
     <div className="table-responsive">
       <table className={`table table-bordered table-striped ${styles.table}`} aria-label={lang === 'en' ? 'Transaction history' : '交易紀錄'}>
         <thead>
           <tr>
-            <th scope="col" className="stock-col">{lang === 'en' ? 'Stock Code/Name' : '股票代碼/名稱'}</th>
-            <th scope="col">{lang === 'en' ? 'Transaction Date' : '交易日期'}</th>
-            <th scope="col">{lang === 'en' ? 'Quantity (shares)' : '數量(股)'}</th>
-            <th scope="col">{lang === 'en' ? 'Price(NT$)' : '價格(元)'}</th>
-            <th scope="col">{lang === 'en' ? 'Type' : '類型'}</th>
+            <th scope="col" className="stock-col" aria-sort={sortKey === 'stock_id' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+              {thSort('stock_id', lang === 'en' ? 'Stock Code/Name' : '股票代碼/名稱')}
+            </th>
+            <th scope="col" aria-sort={sortKey === 'date' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+              {thSort('date', lang === 'en' ? 'Transaction Date' : '交易日期')}
+            </th>
+            <th scope="col" aria-sort={sortKey === 'quantity' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+              {thSort('quantity', lang === 'en' ? 'Quantity (shares)' : '數量(股)')}
+            </th>
+            <th scope="col" aria-sort={sortKey === 'price' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+              {thSort('price', lang === 'en' ? 'Price(NT$)' : '價格(元)')}
+            </th>
+            <th scope="col" aria-sort={sortKey === 'type' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+              {thSort('type', lang === 'en' ? 'Type' : '類型')}
+            </th>
             <th scope="col" className={styles.operationCol}>{lang === 'en' ? 'Actions' : '操作'}</th>
           </tr>
         </thead>
@@ -22,13 +81,13 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
           {transactionHistory.length === 0 ? (
             <tr><td colSpan={6}>{lang === 'en' ? 'No transaction records' : '尚無交易紀錄'}</td></tr>
           ) : (
-            transactionHistory.map((item, idx) => {
+            sortedHistory.map(({ item, origIdx }) => {
               const stock = stockList.find(s => s.stock_id === item.stock_id) || {};
               const isUsStock = (stock.country || '').toUpperCase() === 'US';
-              const isEditing = editingIdx === idx;
+              const isEditing = editingIdx === origIdx;
               const name = stock.stock_name || item.stock_name || '';
               return (
-                <tr key={idx}>
+                <tr key={origIdx}>
                   <td className="stock-col">
                     <a href={`${HOST_URL}/stock/${item.stock_id}`} target="_blank" rel="noreferrer"
                       aria-label={`${item.stock_id} ${name} (${lang === 'en' ? 'opens in new tab' : '開啟新分頁'})`}>
@@ -95,7 +154,7 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
                     <div className={styles.actions}>
                       {isEditing ? (
                         <>
-                          <button type="button" onClick={() => handleEditSave(idx)}>{lang === 'en' ? 'Save' : '儲存'}</button>
+                          <button type="button" onClick={() => handleEditSave(origIdx)}>{lang === 'en' ? 'Save' : '儲存'}</button>
                           <button type="button" onClick={() => setEditingIdx(null)} className={styles.actionButton}>{lang === 'en' ? 'Cancel' : '取消'}</button>
                         </>
                       ) : (
@@ -104,7 +163,7 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
                             type="button"
                             aria-label={lang === 'en' ? `Edit ${item.stock_id} ${name}` : `修改 ${item.stock_id} ${name}`}
                             onClick={() => {
-                              setEditingIdx(idx);
+                              setEditingIdx(origIdx);
                               setEditForm({ date: item.date, quantity: item.quantity, price: item.price });
                             }}
                           >
@@ -113,7 +172,7 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
                           <button
                             type="button"
                             aria-label={lang === 'en' ? `Delete ${item.stock_id} ${name}` : `刪除 ${item.stock_id} ${name}`}
-                            onClick={() => handleDelete(idx)}
+                            onClick={() => handleDelete(origIdx)}
                             className={styles.actionButton}
                           >
                             {lang === 'en' ? 'Delete' : '刪除'}

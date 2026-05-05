@@ -1253,10 +1253,12 @@ button:active {
 }
 
 /* Override striped-row background so sticky column matches.
-   !important needed to beat the td:first-child !important base rule above. */
+   !important needed to beat the td:first-child !important base rule above.
+   Do NOT fall back to --bs-table-striped-bg: Bootstrap sets it to rgba(0,0,0,0.05)
+   on the .table element, which is semi-transparent and lets scrolled content bleed through. */
 .table-striped > tbody > tr:nth-of-type(odd) > .stock-col,
 tr:nth-child(odd) .stock-col {
-  background-color: var(--color-row-odd, var(--bs-table-striped-bg, #f9f9f9)) !important;
+  background-color: var(--color-row-odd, var(--color-card-bg, #fff)) !important;
 }
 .table-striped > tbody > tr:nth-of-type(even) > .stock-col,
 tr:nth-child(even) .stock-col {
@@ -1278,7 +1280,7 @@ tr:nth-child(even) .stock-col {
 
 .table-striped > tbody > tr:nth-of-type(odd) > .row-label-cell,
 tr:nth-child(odd) .row-label-cell {
-  background-color: var(--color-row-odd, var(--bs-table-striped-bg, #f3f4f6)) !important;
+  background-color: var(--color-row-odd, var(--color-card-bg, #fff)) !important;
 }
 .table-striped > tbody > tr:nth-of-type(even) > .row-label-cell,
 tr:nth-child(even) .row-label-cell {

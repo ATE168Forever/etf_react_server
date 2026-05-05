@@ -58,8 +58,9 @@ const createInitialFormState = () => ({
 });
 
 const EMPTY_PRICE_MAP = {};
+const EMPTY_ARRAY = [];
 
-export default function InventoryTab({ allDividendData = [], dividendCacheInfo: incomingDividendCacheInfo = null, stockListPriceMap = EMPTY_PRICE_MAP }) {
+export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCacheInfo: incomingDividendCacheInfo = null, stockListPriceMap = EMPTY_PRICE_MAP }) {
   const [stockList, setStockList] = useState([]);
   const [transactionHistory, setTransactionHistory] = useState(() => migrateTransactionHistory());
   const [showModal, setShowModal] = useState(false);
@@ -90,6 +91,8 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     () => getTransactionHistoryUpdatedAt() ?? 0
   );
   const [latestPrices, setLatestPrices] = useState({});
+  const [invSortKey, setInvSortKey] = useState('stock_id');
+  const [invSortDir, setInvSortDir] = useState('asc');
   const { lang } = useLanguage();
   const showToast = useToast();
   const [dividendExclusions, setDividendExclusions] = useState(() => loadDividendExclusions());
@@ -617,6 +620,32 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
     stockList,
     latestPrices
   );
+
+  const sortedInventoryList = useMemo(() => {
+    if (!invSortKey) return inventoryList;
+    return [...inventoryList].sort((a, b) => {
+      let av, bv;
+      if (invSortKey === 'stock_id') {
+        av = (a.stock_id || '').toLowerCase();
+        bv = (b.stock_id || '').toLowerCase();
+        return invSortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      }
+      av = a[invSortKey] ?? 0;
+      bv = b[invSortKey] ?? 0;
+      return invSortDir === 'asc' ? av - bv : bv - av;
+    });
+  }, [inventoryList, invSortKey, invSortDir]);
+
+  const handleInvSort = (key) => {
+    setInvSortKey(prev => {
+      if (prev === key) {
+        setInvSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        return key;
+      }
+      setInvSortDir('asc');
+      return key;
+    });
+  };
 
   const shareTargetNameLookup = useMemo(() => {
     const map = new Map();
@@ -1774,9 +1803,24 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
               <table className={`table table-bordered table-striped ${styles.fullWidth}`} aria-label={lang === 'en' ? 'Current inventory' : '目前庫存'}>
                 <thead>
                   <tr>
-                    <th scope="col" className="stock-col">{msg.stockCodeName}</th>
-                    <th scope="col">{msg.avgPrice}</th>
-                    <th scope="col">{msg.totalQuantity}</th>
+                    <th scope="col" className="stock-col" aria-sort={invSortKey === 'stock_id' ? (invSortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      <button type="button" className={`sortable${invSortKey === 'stock_id' ? ' sortable--active' : ''}`} onClick={() => handleInvSort('stock_id')}
+                        aria-label={lang === 'en' ? `Sort by stock code, currently ${invSortKey === 'stock_id' ? (invSortDir === 'asc' ? 'ascending' : 'descending') : 'unsorted'}` : `依股票代碼排序，目前${invSortKey === 'stock_id' ? (invSortDir === 'asc' ? '升冪' : '降冪') : '未排序'}`}>
+                        {msg.stockCodeName}<span className="sort-indicator" aria-hidden="true">{invSortKey === 'stock_id' ? (invSortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}</span>
+                      </button>
+                    </th>
+                    <th scope="col" aria-sort={invSortKey === 'avg_price' ? (invSortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      <button type="button" className={`sortable${invSortKey === 'avg_price' ? ' sortable--active' : ''}`} onClick={() => handleInvSort('avg_price')}
+                        aria-label={lang === 'en' ? `Sort by average price, currently ${invSortKey === 'avg_price' ? (invSortDir === 'asc' ? 'ascending' : 'descending') : 'unsorted'}` : `依平均股價排序，目前${invSortKey === 'avg_price' ? (invSortDir === 'asc' ? '升冪' : '降冪') : '未排序'}`}>
+                        {msg.avgPrice}<span className="sort-indicator" aria-hidden="true">{invSortKey === 'avg_price' ? (invSortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}</span>
+                      </button>
+                    </th>
+                    <th scope="col" aria-sort={invSortKey === 'total_quantity' ? (invSortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      <button type="button" className={`sortable${invSortKey === 'total_quantity' ? ' sortable--active' : ''}`} onClick={() => handleInvSort('total_quantity')}
+                        aria-label={lang === 'en' ? `Sort by total quantity, currently ${invSortKey === 'total_quantity' ? (invSortDir === 'asc' ? 'ascending' : 'descending') : 'unsorted'}` : `依總數量排序，目前${invSortKey === 'total_quantity' ? (invSortDir === 'asc' ? '升冪' : '降冪') : '未排序'}`}>
+                        {msg.totalQuantity}<span className="sort-indicator" aria-hidden="true">{invSortKey === 'total_quantity' ? (invSortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}</span>
+                      </button>
+                    </th>
                     <th scope="col">{msg.actions}</th>
                     <th scope="col">{msg.active}</th>
                   </tr>
@@ -1784,7 +1828,7 @@ export default function InventoryTab({ allDividendData = [], dividendCacheInfo: 
                 <tbody>
                   {inventoryList.length === 0
                     ? <tr><td colSpan={5}>{msg.noInventory}</td></tr>
-                    : inventoryList.map((item, idx) => {
+                    : sortedInventoryList.map((item, idx) => {
                         const normalizedStockId = normalizeStockId(item.stock_id);
                         const isExcludedFromDividendStats = Boolean(
                           normalizedStockId && dividendExclusions[normalizedStockId]

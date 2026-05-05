@@ -1,5 +1,5 @@
 /* eslint-env jest */
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import Cookies from 'js-cookie';
 import InventoryTab from '../src/InventoryTab';
 import { fetchWithCache } from '../src/api';
@@ -102,7 +102,7 @@ describe('InventoryTab interactions', () => {
     localStorage.setItem('my_transaction_history', JSON.stringify([
       { stock_id: '0050', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 }
     ]));
-    render(<InventoryTab />);
+    render(<InventoryTab stockListPriceMap={{ '0050': 20 }} />);
     await screen.findByText('顯示：交易歷史');
     await screen.findByText('預期的股息目標');
     expect(await screen.findByText('總投資金額：10,000.00')).toBeInTheDocument();
@@ -146,6 +146,87 @@ describe('InventoryTab interactions', () => {
     await screen.findByText(/2000/);
     const saved = JSON.parse(localStorage.getItem('my_transaction_history'));
     expect(saved[0].quantity).toBe(2000);
+  });
+
+  test('inventory table shows stocks sorted by code ascending by default', async () => {
+    localStorage.setItem('my_transaction_history', JSON.stringify([
+      { stock_id: '0056', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 },
+      { stock_id: '0050', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 },
+      { stock_id: '00878', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 },
+    ]));
+    fetchStockList.mockResolvedValue({
+      list: [
+        { stock_id: '0050', stock_name: 'ETF A', dividend_frequency: 1, country: 'TW' },
+        { stock_id: '0056', stock_name: 'ETF B', dividend_frequency: 1, country: 'TW' },
+        { stock_id: '00878', stock_name: 'ETF C', dividend_frequency: 1, country: 'TW' },
+      ],
+      meta: null
+    });
+    render(<InventoryTab />);
+    await screen.findByText('顯示：交易歷史');
+    const table = screen.getByRole('table', { name: '目前庫存' });
+    const rows = within(table).getAllByRole('row');
+    expect(rows[1]).toHaveTextContent('0050');
+    expect(rows[2]).toHaveTextContent('0056');
+    expect(rows[3]).toHaveTextContent('00878');
+  });
+
+  test('inventory table toggles to descending when stock code header is clicked', async () => {
+    localStorage.setItem('my_transaction_history', JSON.stringify([
+      { stock_id: '0056', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 },
+      { stock_id: '0050', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 },
+      { stock_id: '00878', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 },
+    ]));
+    fetchStockList.mockResolvedValue({
+      list: [
+        { stock_id: '0050', stock_name: 'ETF A', dividend_frequency: 1, country: 'TW' },
+        { stock_id: '0056', stock_name: 'ETF B', dividend_frequency: 1, country: 'TW' },
+        { stock_id: '00878', stock_name: 'ETF C', dividend_frequency: 1, country: 'TW' },
+      ],
+      meta: null
+    });
+    render(<InventoryTab />);
+    await screen.findByText('顯示：交易歷史');
+    fireEvent.click(screen.getByRole('button', { name: /依股票代碼排序/ }));
+    const table = screen.getByRole('table', { name: '目前庫存' });
+    const rows = within(table).getAllByRole('row');
+    expect(rows[1]).toHaveTextContent('00878');
+    expect(rows[2]).toHaveTextContent('0056');
+    expect(rows[3]).toHaveTextContent('0050');
+  });
+
+  test('transaction history table defaults to date descending', async () => {
+    localStorage.setItem('my_transaction_history', JSON.stringify([
+      { stock_id: '0050', date: '2024-01-15', quantity: 1000, type: 'buy', price: 10 },
+      { stock_id: '0050', date: '2024-03-01', quantity: 1000, type: 'buy', price: 10 },
+      { stock_id: '0050', date: '2024-02-10', quantity: 1000, type: 'buy', price: 10 },
+    ]));
+    render(<InventoryTab />);
+    await screen.findByText('顯示：交易歷史');
+    fireEvent.click(screen.getByText('顯示：交易歷史'));
+    const table = await screen.findByRole('table', { name: '交易紀錄' });
+    const rows = within(table).getAllByRole('row');
+    expect(rows[1]).toHaveTextContent('2024-03-01');
+    expect(rows[2]).toHaveTextContent('2024-02-10');
+    expect(rows[3]).toHaveTextContent('2024-01-15');
+  });
+
+  test('transaction history table sorts ascending when date header is clicked', async () => {
+    localStorage.setItem('my_transaction_history', JSON.stringify([
+      { stock_id: '0050', date: '2024-01-15', quantity: 1000, type: 'buy', price: 10 },
+      { stock_id: '0050', date: '2024-03-01', quantity: 1000, type: 'buy', price: 10 },
+      { stock_id: '0050', date: '2024-02-10', quantity: 1000, type: 'buy', price: 10 },
+    ]));
+    render(<InventoryTab />);
+    await screen.findByText('顯示：交易歷史');
+    fireEvent.click(screen.getByText('顯示：交易歷史'));
+    await screen.findByRole('table', { name: '交易紀錄' });
+    fireEvent.click(screen.getByRole('button', { name: /依交易日期排序/ }));
+    const table = screen.getByRole('table', { name: '交易紀錄' });
+    const rows = within(table).getAllByRole('row');
+    expect(rows[1]).toHaveTextContent('2024-01-15');
+    expect(rows[2]).toHaveTextContent('2024-02-10');
+    expect(rows[3]).toHaveTextContent('2024-03-01');
   });
 
   test('renders saved custom goal name', async () => {
