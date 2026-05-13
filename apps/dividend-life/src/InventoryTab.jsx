@@ -15,6 +15,7 @@ import AddTransactionModal from './components/AddTransactionModal';
 import QuickPurchaseModal from './components/QuickPurchaseModal';
 import SellModal from './components/SellModal';
 import TransactionHistoryTable from './components/TransactionHistoryTable';
+import FilterDropdown from './components/FilterDropdown';
 import DataDropdown from './components/DataDropdown';
 import DrivePreviewModal from './components/DrivePreviewModal';
 import styles from './InventoryTab.module.css';
@@ -93,6 +94,10 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
   const [latestPrices, setLatestPrices] = useState({});
   const [invSortKey, setInvSortKey] = useState('stock_id');
   const [invSortDir, setInvSortDir] = useState('asc');
+  const [selectedInvStockIds, setSelectedInvStockIds] = useState([]);
+  const [showInvIdDropdown, setShowInvIdDropdown] = useState(false);
+  const [invIdDropdownPosition, setInvIdDropdownPosition] = useState(null);
+  const invIdFilterButtonRef = useRef(null);
   const { lang } = useLanguage();
   const showToast = useToast();
   const [dividendExclusions, setDividendExclusions] = useState(() => loadDividendExclusions());
@@ -630,11 +635,56 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
         bv = (b.stock_id || '').toLowerCase();
         return invSortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
       }
+      if (invSortKey === 'currency') {
+        av = (a.country || '').toUpperCase() === 'US' ? 'USD' : 'TWD';
+        bv = (b.country || '').toUpperCase() === 'US' ? 'USD' : 'TWD';
+        return invSortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      }
       av = a[invSortKey] ?? 0;
       bv = b[invSortKey] ?? 0;
       return invSortDir === 'asc' ? av - bv : bv - av;
     });
   }, [inventoryList, invSortKey, invSortDir]);
+
+  const invStockOptions = useMemo(() => inventoryList.map(item => ({
+    value: item.stock_id,
+    label: item.stock_name ? `${item.stock_id} ${item.stock_name}` : item.stock_id,
+  })).sort((a, b) => a.value.localeCompare(b.value)), [inventoryList]);
+
+  const filteredInventoryList = useMemo(() => {
+    if (selectedInvStockIds.length === 0) return sortedInventoryList;
+    return sortedInventoryList.filter(item => selectedInvStockIds.includes(item.stock_id));
+  }, [sortedInventoryList, selectedInvStockIds]);
+
+  const updateInvIdDropdownPosition = useCallback(() => {
+    if (!showInvIdDropdown || !invIdFilterButtonRef.current || typeof window === 'undefined') return;
+    const rect = invIdFilterButtonRef.current.getBoundingClientRect();
+    const scrollX = window.scrollX ?? window.pageXOffset ?? 0;
+    const scrollY = window.scrollY ?? window.pageYOffset ?? 0;
+    const dropdownWidth = 260;
+    const viewportRight = scrollX + window.innerWidth;
+    const horizontalPadding = 16;
+    let left = rect.left + scrollX;
+    if (left + dropdownWidth > viewportRight - horizontalPadding) {
+      left = Math.max(scrollX + horizontalPadding, viewportRight - dropdownWidth - horizontalPadding);
+    }
+    setInvIdDropdownPosition({ top: rect.bottom + scrollY + 8, left });
+  }, [showInvIdDropdown]);
+
+  useEffect(() => {
+    if (!showInvIdDropdown || typeof window === 'undefined') return;
+    updateInvIdDropdownPosition();
+    window.addEventListener('scroll', updateInvIdDropdownPosition, true);
+    window.addEventListener('resize', updateInvIdDropdownPosition);
+    return () => {
+      window.removeEventListener('scroll', updateInvIdDropdownPosition, true);
+      window.removeEventListener('resize', updateInvIdDropdownPosition);
+    };
+  }, [showInvIdDropdown, updateInvIdDropdownPosition]);
+
+  useEffect(() => {
+    if (!showInvIdDropdown) setInvIdDropdownPosition(null);
+  }, [showInvIdDropdown]);
 
   const handleInvSort = (key) => {
     setInvSortKey(prev => {
@@ -1808,11 +1858,38 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
                         aria-label={lang === 'en' ? `Sort by stock code, currently ${invSortKey === 'stock_id' ? (invSortDir === 'asc' ? 'ascending' : 'descending') : 'unsorted'}` : `依股票代碼排序，目前${invSortKey === 'stock_id' ? (invSortDir === 'asc' ? '升冪' : '降冪') : '未排序'}`}>
                         {msg.stockCodeName}<span className="sort-indicator" aria-hidden="true">{invSortKey === 'stock_id' ? (invSortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}</span>
                       </button>
+                      <button
+                        type="button"
+                        className={`filter-btn${selectedInvStockIds.length > 0 ? ' filter-btn--active' : ''}`}
+                        onClick={() => setShowInvIdDropdown(true)}
+                        title={lang === 'en' ? 'Filter by stock code' : '依股票代碼篩選'}
+                        aria-label={lang === 'en' ? 'Filter by stock code' : '依股票代碼篩選'}
+                        aria-expanded={showInvIdDropdown}
+                        aria-haspopup="true"
+                        ref={invIdFilterButtonRef}
+                      >
+                        🔎
+                      </button>
+                      {showInvIdDropdown && invIdDropdownPosition && (
+                        <FilterDropdown
+                          options={invStockOptions}
+                          selected={selectedInvStockIds}
+                          setSelected={setSelectedInvStockIds}
+                          onClose={() => setShowInvIdDropdown(false)}
+                          position={invIdDropdownPosition}
+                        />
+                      )}
                     </th>
                     <th scope="col" aria-sort={invSortKey === 'avg_price' ? (invSortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
                       <button type="button" className={`sortable${invSortKey === 'avg_price' ? ' sortable--active' : ''}`} onClick={() => handleInvSort('avg_price')}
                         aria-label={lang === 'en' ? `Sort by average price, currently ${invSortKey === 'avg_price' ? (invSortDir === 'asc' ? 'ascending' : 'descending') : 'unsorted'}` : `依平均股價排序，目前${invSortKey === 'avg_price' ? (invSortDir === 'asc' ? '升冪' : '降冪') : '未排序'}`}>
                         {msg.avgPrice}<span className="sort-indicator" aria-hidden="true">{invSortKey === 'avg_price' ? (invSortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}</span>
+                      </button>
+                    </th>
+                    <th scope="col" aria-sort={invSortKey === 'currency' ? (invSortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      <button type="button" className={`sortable${invSortKey === 'currency' ? ' sortable--active' : ''}`} onClick={() => handleInvSort('currency')}
+                        aria-label={lang === 'en' ? `Sort by currency, currently ${invSortKey === 'currency' ? (invSortDir === 'asc' ? 'ascending' : 'descending') : 'unsorted'}` : `依幣別排序，目前${invSortKey === 'currency' ? (invSortDir === 'asc' ? '升冪' : '降冪') : '未排序'}`}>
+                        {lang === 'en' ? 'Currency' : '幣別'}<span className="sort-indicator" aria-hidden="true">{invSortKey === 'currency' ? (invSortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}</span>
                       </button>
                     </th>
                     <th scope="col" aria-sort={invSortKey === 'total_quantity' ? (invSortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>
@@ -1827,8 +1904,10 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
                 </thead>
                 <tbody>
                   {inventoryList.length === 0
-                    ? <tr><td colSpan={5}>{msg.noInventory}</td></tr>
-                    : sortedInventoryList.map((item, idx) => {
+                    ? <tr><td colSpan={6}>{msg.noInventory}</td></tr>
+                    : filteredInventoryList.length === 0
+                    ? <tr><td colSpan={6}>{lang === 'en' ? 'No matching stocks' : '無符合的股票'}</td></tr>
+                    : filteredInventoryList.map((item, idx) => {
                         const normalizedStockId = normalizeStockId(item.stock_id);
                         const isExcludedFromDividendStats = Boolean(
                           normalizedStockId && dividendExclusions[normalizedStockId]
@@ -1846,6 +1925,7 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
                             </a>
                           </td>
                           <td>{item.avg_price.toFixed(2)}</td>
+                          <td>{(item.country || '').toUpperCase() === 'US' ? 'USD' : 'TWD'}</td>
                           <td>
                             {item.total_quantity}
                             {(() => {

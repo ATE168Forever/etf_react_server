@@ -22,7 +22,6 @@ import './App.css';
 import appStyles from './App.module.css';
 import brandStyles from '@shared/components/BrandPage/BrandPage.module.css';
 import { API_HOST } from '../config';
-import { fetchWithCache } from './api';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
 import { fetchDividendsByYears, clearDividendsCache, clearEmptyDividendCaches } from './dividendApi';
 import { fetchStockList } from './stockApi';
@@ -423,29 +422,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         applyDividendResponse(dividendData, meta);
       } catch (fetchError) {
         if (cancelled) return;
-        if (API_HOST) {
-          try {
-            const response = await fetchWithCache(`${API_HOST}/get_dividend`);
-            const payload = response?.data;
-            const list = Array.isArray(payload?.data)
-              ? payload.data
-              : Array.isArray(payload?.items)
-                ? payload.items
-                : Array.isArray(payload)
-                  ? payload
-                  : [];
-            applyDividendResponse(list, {
-              cacheStatus: response?.cacheStatus ?? null,
-              timestamp: response?.timestamp ?? null
-            });
-            setError(null);
-            return;
-          } catch (fallbackError) {
-            applyDividendResponse([], null);
-            setError(fallbackError);
-            return;
-          }
-        }
         applyDividendResponse([], null);
         setError(fetchError);
       } finally {
@@ -1081,7 +1057,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           <div id="tab-content">
           {tab === 'home' && (
             <div id="panel-home" role="tabpanel" aria-labelledby="tab-home">
-              <ErrorBoundary lang={lang}><Suspense><HomeTab /></Suspense></ErrorBoundary>
+              <ErrorBoundary lang={lang}><Suspense><HomeTab dividendData={data} dividendLoading={loading} /></Suspense></ErrorBoundary>
             </div>
           )}
           {tab === 'dividend' && (

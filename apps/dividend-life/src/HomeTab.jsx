@@ -217,7 +217,7 @@ function DividendChart({
   );
 }
 
-export default function HomeTab() {
+export default function HomeTab({ dividendData: dividendDataProp = null, dividendLoading: dividendLoadingProp = null }) {
   const [stats, setStats] = useState({ milestones: [], latest: [], tip: '' });
   const [goalSummary, setGoalSummary] = useState(() => {
     const goals = loadInvestmentGoals();
@@ -279,6 +279,11 @@ export default function HomeTab() {
   useStorageListener(DIVIDEND_EXCLUSION_STORAGE_KEY, DIVIDEND_EXCLUSION_EVENT, refreshExclusions);
 
   useEffect(() => {
+    if (dividendDataProp !== null) {
+      setDividendData(dividendDataProp);
+      setDividendLoading(dividendLoadingProp ?? false);
+      return;
+    }
     if (!inventoryLoaded) return;
     let cancelled = false;
     const purchasedIds = getPurchasedStockIds(transactionHistory);
@@ -302,7 +307,7 @@ export default function HomeTab() {
     return () => {
       cancelled = true;
     };
-  }, [transactionHistory, inventoryLoaded]);
+  }, [transactionHistory, inventoryLoaded, dividendDataProp, dividendLoadingProp]);
 
   const dividendSummary = useMemo(
     () => calculateDividendSummary({

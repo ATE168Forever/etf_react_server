@@ -126,9 +126,9 @@ describe('InventoryTab interactions', () => {
     const row = link.closest('tr');
     expect(row).not.toBeNull();
     const cells = row.querySelectorAll('td');
-    expect(cells[2].textContent).toContain('10');
-    expect(cells[2].textContent).not.toMatch(/張/);
-    expect(cells[2].textContent).not.toMatch(/lots/i);
+    expect(cells[3].textContent).toContain('10');
+    expect(cells[3].textContent).not.toMatch(/張/);
+    expect(cells[3].textContent).not.toMatch(/lots/i);
   });
 
   test('edits existing transaction', async () => {

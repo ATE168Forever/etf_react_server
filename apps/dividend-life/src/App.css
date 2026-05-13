@@ -283,6 +283,11 @@ td {
   outline: 2px solid var(--accent-gold);
   outline-offset: 2px;
 }
+.filter-btn--active {
+  background: rgba(212, 175, 55, 0.25);
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
 
 .dropdown {
   position: absolute;
