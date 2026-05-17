@@ -15,11 +15,12 @@ export default function TransactionHistoryTable({ transactionHistory, stockList,
   const idFilterButtonRef = useRef(null);
 
   const handleSort = (key) => {
-    setSortKey(prev => {
-      if (prev === key) { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); return key; }
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
       setSortDir(key === 'date' ? 'desc' : 'asc');
-      return key;
-    });
+    }
   };
 
   const stockOptions = useMemo(() => {

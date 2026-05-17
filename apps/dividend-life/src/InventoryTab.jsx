@@ -37,6 +37,10 @@ import {
   persistDividendExclusions,
   normalizeStockId
 } from './utils/dividendExclusions';
+import {
+  loadDividendBankOverrides,
+  saveDividendBankOverrides
+} from './utils/dividendBankStorage';
 
 
 const BACKUP_COOKIE_KEY = 'inventory_last_backup';
@@ -94,6 +98,9 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
   const [latestPrices, setLatestPrices] = useState({});
   const [invSortKey, setInvSortKey] = useState('stock_id');
   const [invSortDir, setInvSortDir] = useState('asc');
+  const [dividendBankOverrides, setDividendBankOverrides] = useState(() => loadDividendBankOverrides());
+  const [editingBankStockId, setEditingBankStockId] = useState(null);
+  const [bankEditValue, setBankEditValue] = useState('');
   const [selectedInvStockIds, setSelectedInvStockIds] = useState([]);
   const [showInvIdDropdown, setShowInvIdDropdown] = useState(false);
   const [invIdDropdownPosition, setInvIdDropdownPosition] = useState(null);
@@ -687,14 +694,28 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
   }, [showInvIdDropdown]);
 
   const handleInvSort = (key) => {
-    setInvSortKey(prev => {
-      if (prev === key) {
-        setInvSortDir(d => d === 'asc' ? 'desc' : 'asc');
-        return key;
-      }
+    if (invSortKey === key) {
+      setInvSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setInvSortKey(key);
       setInvSortDir('asc');
-      return key;
-    });
+    }
+  };
+
+  const stockInfoMap = useMemo(() => new Map(stockList.map(s => [s.stock_id, s])), [stockList]);
+
+  const saveBankEdit = (stockId, custodian) => {
+    const trimmed = bankEditValue.trim();
+    const next = { ...dividendBankOverrides };
+    if (!trimmed || trimmed === custodian) {
+      delete next[stockId];
+    } else {
+      next[stockId] = trimmed;
+    }
+    saveDividendBankOverrides(next);
+    setDividendBankOverrides(next);
+    setEditingBankStockId(null);
+    setBankEditValue('');
   };
 
   const shareTargetNameLookup = useMemo(() => {
@@ -1923,6 +1944,49 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
                                 </span>
                               </TooltipText>
                             </a>
+                            {(() => {
+                              const custodian = stockInfoMap.get(item.stock_id)?.custodian || '';
+                              const override = dividendBankOverrides[item.stock_id];
+                              const dividendBank = override || custodian;
+                              const isDiff = custodian && dividendBank && dividendBank !== custodian;
+                              const isEditing = editingBankStockId === item.stock_id;
+                              const bankBtnLabel = dividendBank
+                                ? (lang === 'en' ? `Edit dividend bank for ${item.stock_id}` : `修改 ${item.stock_id} 配息銀行`)
+                                : (lang === 'en' ? `Add dividend bank for ${item.stock_id}` : `新增 ${item.stock_id} 配息銀行`);
+                              const editBtn = (
+                                <button type="button" className={styles.bankEditBtn}
+                                  onClick={() => { setEditingBankStockId(item.stock_id); setBankEditValue(dividendBank); }}
+                                  aria-label={bankBtnLabel}
+                                  title={bankBtnLabel}>✎</button>
+                              );
+                              const inputEl = (
+                                <input className={styles.bankInput} value={bankEditValue} autoFocus
+                                  onChange={e => setBankEditValue(e.target.value)}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') saveBankEdit(item.stock_id, custodian);
+                                    if (e.key === 'Escape') { setEditingBankStockId(null); setBankEditValue(''); }
+                                  }}
+                                  onBlur={() => saveBankEdit(item.stock_id, custodian)}
+                                  aria-label={lang === 'en' ? `Edit dividend bank for ${item.stock_id}` : `修改 ${item.stock_id} 配息銀行`} />
+                              );
+                              const custodianLabel = lang === 'en' ? 'Custodian bank' : '保管銀行';
+                              const dividendLabel = lang === 'en' ? 'Dividend bank' : '配息銀行';
+                              const bothLabel = lang === 'en' ? 'Custodian / Dividend bank' : '保管銀行 / 配息銀行';
+                              return (
+                                <div className={styles.bankInfo}>
+                                  {isDiff
+                                    ? <>
+                                        <span title={custodianLabel}>{lang === 'en' ? 'Custodian' : '保管'}: {custodian}</span><br />
+                                        <span title={dividendLabel}>{lang === 'en' ? 'Dividend' : '配息'}: </span>
+                                        {isEditing ? inputEl : <>{dividendBank}{editBtn}</>}
+                                      </>
+                                    : isEditing
+                                      ? inputEl
+                                      : <><span title={bothLabel}>{dividendBank || '—'}</span>{editBtn}</>
+                                  }
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td>{item.avg_price.toFixed(2)}</td>
                           <td>{(item.country || '').toUpperCase() === 'US' ? 'USD' : 'TWD'}</td>

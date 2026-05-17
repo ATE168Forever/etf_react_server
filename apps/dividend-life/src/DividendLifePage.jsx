@@ -1038,12 +1038,15 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
               const dateLabel = a.date.split('-').slice(1).map(Number).join('/');
               const countdownZh = a.daysUntil === 0 ? '今天' : a.daysUntil === 1 ? '明天' : `還有 ${a.daysUntil} 天`;
               const countdownEn = a.daysUntil === 0 ? 'today' : a.daysUntil === 1 ? 'tomorrow' : `in ${a.daysUntil} days`;
-              const text = lang === 'en'
-                ? `${a.stock_id} ${a.stock_name} will ${a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'} ${countdownEn} (${dateLabel}). ${a.dividend} per share, estimated ${Math.round(a.total).toLocaleString()}`
-                : `${a.stock_id} ${a.stock_name}將於${countdownZh}（${dateLabel}）${a.type === 'ex' ? '除息' : '配息'}，每股 ${a.dividend} 元，預估領取 ${Math.round(a.total).toLocaleString()} 元`;
+              const keywordColor = a.type === 'ex' ? '#ff8fa3' : '#2f9e44';
               return (
                 <div key={key} className="dividend-alert__item">
-                  <span className="dividend-alert__text">{text}</span>
+                  <span className="dividend-alert__text">
+                    {lang === 'en'
+                      ? <>{a.stock_id} {a.stock_name} will <span style={{ color: keywordColor }}>{a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'}</span> {countdownEn} ({dateLabel}). {a.dividend} per share, estimated {Math.round(a.total).toLocaleString()}</>
+                      : <>{a.stock_id} {a.stock_name}將於{countdownZh}（{dateLabel}）<span style={{ color: keywordColor }}>{a.type === 'ex' ? '除息' : '配息'}</span>，每股 {a.dividend} 元，預估領取 {Math.round(a.total).toLocaleString()} 元</>
+                    }
+                  </span>
                   <button
                     type="button"
                     className="dividend-alert__dismiss"
