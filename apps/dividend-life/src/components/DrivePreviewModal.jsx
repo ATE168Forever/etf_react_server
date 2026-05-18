@@ -135,7 +135,7 @@ export default function DrivePreviewModal({ show, onClose, data, loading, onSync
                   </tr>
                 </thead>
                 <tbody>
-                  {list.map((row, i) => (
+                  {[...list].sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0)).map((row, i) => (
                     <tr key={i}>
                       <td>{row.stock_id}</td>
                       <td>{row.stock_name || '—'}</td>
