@@ -14,6 +14,18 @@ const BACKUP_FILENAME = 'inventory_backup.csv';
 let initialized = false;
 let tokenClient;
 let accessToken;
+let accessTokenExpiresAt = 0; // ms timestamp
+let everAuthenticated = false; // true once we have received a valid token this session
+
+function isTokenValid() {
+  return !!accessToken && Date.now() < accessTokenExpiresAt - 60_000; // 1-min buffer
+}
+
+function clearToken() {
+  accessToken = null;
+  accessTokenExpiresAt = 0;
+  // everAuthenticated intentionally kept — used to choose silent re-auth vs first-time consent
+}
 
 async function loadScript(id, src) {
   if (typeof document === 'undefined') return;
@@ -46,6 +58,9 @@ function storeTokenResponse(response) {
     return { error: new Error(response.error) };
   }
   accessToken = response.access_token;
+  const expiresIn = Number(response.expires_in) || 3600;
+  accessTokenExpiresAt = Date.now() + expiresIn * 1000;
+  everAuthenticated = true;
   window.gapi.client.setToken({ access_token: accessToken });
   return { token: accessToken };
 }
@@ -78,7 +93,7 @@ export async function initDrive() {
 }
 
 export function isDriveAuthenticated() {
-  return !!accessToken;
+  return isTokenValid();
 }
 
 let silentAuthPromise = null;
@@ -86,7 +101,8 @@ let silentAuthPromise = null;
 // Attempts to get a token silently (no popup). Returns null if auth requires user interaction.
 // Concurrent calls share the same promise to avoid callback conflicts.
 async function ensureAccessTokenSilent() {
-  if (accessToken) return accessToken;
+  if (isTokenValid()) return accessToken;
+  clearToken();
   if (silentAuthPromise) return silentAuthPromise;
   await initDrive();
   silentAuthPromise = new Promise((resolve) => {
@@ -121,9 +137,10 @@ async function ensureAccessToken() {
   if (!tokenClient) {
     throw new Error('Google Identity Services client has not been initialised');
   }
-  if (accessToken) {
+  if (isTokenValid()) {
     return accessToken;
   }
+  clearToken();
 
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   const isZh = navigator.language && navigator.language.toLowerCase().startsWith('zh');
@@ -160,7 +177,7 @@ async function ensureAccessToken() {
       resolve(result.token);
     };
     try {
-      tokenClient.requestAccessToken({ prompt: accessToken ? '' : 'consent' });
+      tokenClient.requestAccessToken({ prompt: everAuthenticated ? '' : 'consent' });
     } catch (error) {
       if (!resolved) {
         resolved = true;
