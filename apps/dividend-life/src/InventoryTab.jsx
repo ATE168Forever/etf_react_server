@@ -9,7 +9,7 @@ import {
   saveTransactionHistory,
   getTransactionHistoryUpdatedAt
 } from './utils/transactionStorage';
-import { exportTransactionsToDrive, importTransactionsFromDrive, isDriveAuthenticated } from './googleDrive';
+import { exportTransactionsToDrive, importTransactionsFromDrive, isDriveAuthenticated, exportDividendBankToDrive, importDividendBankFromDrive } from './googleDrive';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 import AddTransactionModal from './components/AddTransactionModal';
 import QuickPurchaseModal from './components/QuickPurchaseModal';
@@ -311,6 +311,7 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
       setDriveStatus({ status: 'syncing' });
       try {
         await exportTransactionsToDrive(data);
+        exportDividendBankToDrive(dividendBankOverridesRef.current).catch(() => {});
         if (driveSaveRequestRef.current === requestId) {
           setDriveStatus({ status: 'synced', timestamp: Date.now() });
           showToast(lang === 'en' ? '✓ Synced to Google Drive' : '✓ 已同步至 Google Drive');
@@ -361,6 +362,12 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
         } else {
           setDriveStatus({ status: 'synced', timestamp: remoteModified || Date.now() });
         }
+        importDividendBankFromDrive().then(bankData => {
+          if (bankData) {
+            saveDividendBankOverrides(bankData);
+            setDividendBankOverrides(bankData);
+          }
+        }).catch(() => {});
         return true;
       } catch (error) {
         console.error('Drive fetch failed', error);
@@ -497,6 +504,8 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
   useEffect(() => { syncToDriveRef.current = syncToDrive; }, [syncToDrive]);
   const transactionHistoryRef = useRef(transactionHistory);
   useEffect(() => { transactionHistoryRef.current = transactionHistory; }, [transactionHistory]);
+  const dividendBankOverridesRef = useRef(dividendBankOverrides);
+  useEffect(() => { dividendBankOverridesRef.current = dividendBankOverrides; }, [dividendBankOverrides]);
   useEffect(() => {
     if (selectedDataSource !== 'googleDrive' || !driveConnected) return;
     const INTERVAL_MS = 5 * 60 * 1000;
@@ -633,6 +642,22 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
     latestPrices
   );
 
+  const twdInvestment = inventoryList.reduce((s, i) => i.country === 'TW' ? s + i.total_cost : s, 0);
+  const usdInvestment = inventoryList.reduce((s, i) => i.country === 'US' ? s + i.total_cost : s, 0);
+  const twdValue = inventoryList.reduce((s, i) => {
+    if (i.country !== 'TW') return s;
+    const p = Number(latestPrices[i.stock_id]);
+    return s + i.total_quantity * (Number.isFinite(p) ? p : 0);
+  }, 0);
+  const usdValue = inventoryList.reduce((s, i) => {
+    if (i.country !== 'US') return s;
+    const p = Number(latestPrices[i.stock_id]);
+    return s + i.total_quantity * (Number.isFinite(p) ? p : 0);
+  }, 0);
+  const hasTwd = twdInvestment > 0 || twdValue > 0;
+  const hasUsd = usdInvestment > 0 || usdValue > 0;
+  const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
+
   const sortedInventoryList = useMemo(() => {
     if (!invSortKey) return inventoryList;
     return [...inventoryList].sort((a, b) => {
@@ -716,6 +741,9 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
     setDividendBankOverrides(next);
     setEditingBankStockId(null);
     setBankEditValue('');
+    if (selectedDataSource === 'googleDrive' && driveConnected) {
+      exportDividendBankToDrive(next).catch(() => {});
+    }
   };
 
   const shareTargetNameLookup = useMemo(() => {
@@ -1814,21 +1842,85 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
             })()}
 
             <div className={styles.totalInvestment}>
-              <div>
-                {msg.totalInvestment}
-                {totalInvestment.toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}
-              </div>
-              <span>
-                {msg.totalValue}
-                {totalValue.toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}
-              </span>
+              {hasTwd || hasUsd ? (
+                <>
+                  {hasTwd && (
+                    <div>
+                      <span className={styles.currencyTag}>TWD</span>
+                      {msg.totalInvestment}{twdInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className={styles.totalValueInline}>{msg.totalValue}{twdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
+                  {hasUsd && (
+                    <div>
+                      <span className={styles.currencyTag}>USD</span>
+                      {msg.totalInvestment}{usdInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className={styles.totalValueInline}>{msg.totalValue}{usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div>
+                    {msg.totalInvestment}
+                    {totalInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                  <span>
+                    {msg.totalValue}
+                    {totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </>
+              )}
             </div>
+
+            {isDebug && inventoryList.length > 0 && (() => {
+              const fmt = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              const rows = [...inventoryList]
+                .map(item => {
+                  const p = Number(latestPrices[item.stock_id]);
+                  const value = item.total_quantity * (Number.isFinite(p) ? p : 0);
+                  return { ...item, value, gain: value - item.total_cost };
+                })
+                .sort((a, b) => b.total_cost - a.total_cost);
+              const totalGain = totalValue - totalInvestment;
+              return (
+                <div className={styles.debugBreakdown}>
+                  <button type="button" className={styles.debugBreakdownBtn} aria-label="debug: 個股金額明細">ⓘ</button>
+                  <div className={styles.debugBreakdownTable}>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>代碼</th><th>名稱</th><th>幣</th>
+                          <th style={{ textAlign: 'right' }}>成本</th>
+                          <th style={{ textAlign: 'right' }}>市值</th>
+                          <th style={{ textAlign: 'right' }}>損益</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map(item => (
+                          <tr key={item.stock_id}>
+                            <td>{item.stock_id}</td>
+                            <td>{item.stock_name || '—'}</td>
+                            <td>{item.country === 'TW' ? 'TWD' : item.country === 'US' ? 'USD' : item.country}</td>
+                            <td style={{ textAlign: 'right' }}>{fmt(item.total_cost)}</td>
+                            <td style={{ textAlign: 'right' }}>{fmt(item.value)}</td>
+                            <td style={{ textAlign: 'right', color: item.gain >= 0 ? 'green' : 'red' }}>{item.gain >= 0 ? '+' : ''}{fmt(item.gain)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr style={{ fontWeight: 'bold', borderTop: '2px solid currentColor' }}>
+                          <td colSpan={3}>合計</td>
+                          <td style={{ textAlign: 'right' }}>{fmt(totalInvestment)}</td>
+                          <td style={{ textAlign: 'right' }}>{fmt(totalValue)}</td>
+                          <td style={{ textAlign: 'right', color: totalGain >= 0 ? 'green' : 'red' }}>{totalGain >= 0 ? '+' : ''}{fmt(totalGain)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
 
             <InvestmentGoalCard
               title={goalTitle}

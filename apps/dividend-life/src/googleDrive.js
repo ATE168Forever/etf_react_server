@@ -10,6 +10,7 @@ const GAPI_SCRIPT_SRC = 'https://apis.google.com/js/api.js';
 const GIS_SCRIPT_ID = 'gis';
 const GIS_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 const BACKUP_FILENAME = 'inventory_backup.csv';
+const BANK_BACKUP_FILENAME = 'dividend_bank_backup.json';
 
 let initialized = false;
 let tokenClient;
@@ -256,6 +257,61 @@ export async function exportTransactionsToDrive(list, { silent = false } = {}) {
       throw new Error(`Drive POST failed ${res.status}: ${text}`);
     }
     await res.json();
+  }
+}
+
+async function findBankBackupFile() {
+  const listResult = await window.gapi.client.drive.files.list({
+    spaces: 'appDataFolder',
+    q: `name='${BANK_BACKUP_FILENAME}'`,
+    fields: 'files(id)',
+    pageSize: 1,
+  });
+  return listResult.result.files?.[0]?.id ?? null;
+}
+
+export async function exportDividendBankToDrive(overrides) {
+  const token = await ensureAccessTokenSilent();
+  if (!token) return;
+  const json = JSON.stringify(overrides || {});
+  const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+  const existingFileId = await findBankBackupFile();
+  if (existingFileId) {
+    await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=media`,
+      {
+        method: 'PATCH',
+        headers: new Headers({ 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }),
+        body: blob,
+      }
+    );
+  } else {
+    const metadata = { name: BANK_BACKUP_FILENAME, mimeType: 'application/json', parents: ['appDataFolder'] };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', blob);
+    await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+      {
+        method: 'POST',
+        headers: new Headers({ 'Authorization': 'Bearer ' + token }),
+        body: form,
+      }
+    );
+  }
+}
+
+export async function importDividendBankFromDrive() {
+  const token = await ensureAccessTokenSilent();
+  if (!token) return null;
+  const fileId = await findBankBackupFile();
+  if (!fileId) return null;
+  try {
+    const file = await window.gapi.client.drive.files.get({ fileId, alt: 'media' });
+    const parsed = JSON.parse(file.body);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
   }
 }
 

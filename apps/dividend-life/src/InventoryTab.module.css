@@ -214,6 +214,72 @@
   /* margin: 4px 0; */
 }
 
+.currencyTag {
+  font-size: 0.75em;
+  opacity: 0.7;
+  margin-right: 0.4em;
+}
+
+.totalValueInline {
+  margin-left: 1em;
+}
+
+.debugBreakdown {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+.debugBreakdownBtn {
+  font-size: 0.75em;
+  opacity: 0.5;
+  cursor: help;
+  background: none;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  line-height: 16px;
+  text-align: center;
+}
+
+.debugBreakdownTable {
+  display: none;
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  background: var(--color-bg, #fff);
+  border: 1px solid var(--color-border, #ccc);
+  border-radius: 6px;
+  padding: 8px 12px;
+  z-index: 200;
+  min-width: 480px;
+  max-height: 55vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  text-align: left;
+  font-weight: normal;
+  font-size: 0.82em;
+  white-space: nowrap;
+}
+
+.debugBreakdown:hover .debugBreakdownTable {
+  display: block;
+}
+
+.debugBreakdownTable table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.debugBreakdownTable th,
+.debugBreakdownTable td {
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--color-border, #eee);
+}
+
 .shareGoalSection {
   display: flex;
   flex-direction: column;
