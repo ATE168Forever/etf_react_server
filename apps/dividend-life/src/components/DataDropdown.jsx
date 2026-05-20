@@ -11,6 +11,7 @@ export default function DataDropdown({
   onSelectChange,
   driveConnected,
   driveStatus,
+  driveMismatch,
   onConnectDrive,
   onViewDriveData
 }) {
@@ -31,7 +32,8 @@ export default function DataDropdown({
       driveLastSync: '上次同步',
       driveAutoSync: '自動同步中',
       driveView: '查看備份資料',
-      driveHint: '自動備份至 Google Drive，可跨裝置同步交易紀錄'
+      driveHint: '自動備份至 Google Drive，可跨裝置同步交易紀錄',
+      driveMismatch: '⚠ 本地有比 Drive 更新的交易紀錄，已暫停自動同步，請確認後再手動同步',
     },
     en: {
       selectLabel: 'Data source',
@@ -45,12 +47,12 @@ export default function DataDropdown({
       driveLastSync: 'Last synced',
       driveAutoSync: 'Auto-syncing',
       driveView: 'View backup',
-      driveHint: 'Auto-backup to Google Drive and sync across devices'
+      driveHint: 'Auto-backup to Google Drive and sync across devices',
+      driveMismatch: '⚠ Local has newer transactions than Drive. Auto-sync paused — please review before syncing manually.',
     }
   };
 
   const t = text[lang] || text.zh;
-  const isDebug = new URLSearchParams(window.location.search).has('debug');
   const locale = lang === 'zh' ? 'zh-TW' : 'en-US';
   const status = driveStatus?.status;
   const timestamp = driveStatus?.timestamp;
@@ -112,11 +114,11 @@ export default function DataDropdown({
       {selectedSource === 'googleDrive' && (
         <>
           <div
-            className={styles.autoSaveStatus + (driveStatusClass ? ' ' + driveStatusClass : '')}
-            role={status === 'error' ? 'alert' : 'status'}
-            aria-live={status === 'error' ? 'assertive' : 'polite'}
+            className={styles.autoSaveStatus + (driveMismatch ? ' ' + styles.autoSaveStatusError : (driveStatusClass ? ' ' + driveStatusClass : ''))}
+            role={driveMismatch || status === 'error' ? 'alert' : 'status'}
+            aria-live={driveMismatch || status === 'error' ? 'assertive' : 'polite'}
           >
-            {driveStatusMessage}
+            {driveMismatch ? t.driveMismatch : driveStatusMessage}
           </div>
           {!driveConnected && status !== 'connecting' && status !== 'syncing' && (
             <>
@@ -126,7 +128,7 @@ export default function DataDropdown({
               </div>
             </>
           )}
-          {isDebug && driveConnected && status === 'synced' && (
+          {driveConnected && status === 'synced' && (
             <div className={styles.buttonGroup}>
               <button type="button" onClick={() => handleAction(onViewDriveData)}>{t.driveView}</button>
             </div>

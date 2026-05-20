@@ -90,6 +90,7 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
   );
   const [driveConnected, setDriveConnected] = useState(false);
   const [driveStatus, setDriveStatus] = useState({ status: 'idle' });
+  const [driveMismatch, setDriveMismatch] = useState(false);
   const [drivePreview, setDrivePreview] = useState({ show: false, loading: false, data: null });
   const drivePreviewTriggerRef = useRef(null);
   const [transactionHistoryUpdatedAt, setTransactionHistoryUpdatedAt] = useState(
@@ -163,6 +164,19 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
   const [goalSaved, setGoalSaved] = useState('');
   const [isGoalFormVisible, setIsGoalFormVisible] = useState(false);
   const [shareTargetDraft, setShareTargetDraft] = useState({ stockId: '', stockName: '', quantity: '' });
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [debugColTab, setDebugColTab] = useState('tw');
+  const debugBreakdownRef = useRef(null);
+  useEffect(() => {
+    if (!debugOpen) return;
+    const handleOutside = (e) => {
+      if (debugBreakdownRef.current && !debugBreakdownRef.current.contains(e.target)) {
+        setDebugOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [debugOpen]);
   const msg = inventoryTabText[lang];
 
   const buildQuickFormEntries = useCallback(() => {
@@ -314,6 +328,7 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
         exportDividendBankToDrive(dividendBankOverridesRef.current).catch(() => {});
         if (driveSaveRequestRef.current === requestId) {
           setDriveStatus({ status: 'synced', timestamp: Date.now() });
+          setDriveMismatch(false);
           showToast(lang === 'en' ? '✓ Synced to Google Drive' : '✓ 已同步至 Google Drive');
         }
       } catch (error) {
@@ -352,7 +367,19 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
         setDriveConnected(true);
         // Import from Drive if: forced, local is empty (fresh device), no local timestamp, or Drive is newer.
         const localIsEmpty = transactionHistory.length === 0;
-        if (Array.isArray(list) && list.length > 0 && (force || localIsEmpty || !localUpdatedAt || (remoteModified !== null && remoteModified > localUpdatedAt))) {
+        const driveIsNewer = remoteModified !== null && remoteModified > localUpdatedAt;
+        if (Array.isArray(list) && list.length > 0 && (force || localIsEmpty || !localUpdatedAt || driveIsNewer)) {
+          // Check for date mismatch: Drive timestamp newer but local has transactions with newer dates than Drive
+          if (!force && driveIsNewer && !localIsEmpty) {
+            const localMaxDate = transactionHistory.reduce((max, t) => (t.date > max ? t.date : max), '');
+            const driveMaxDate = list.reduce((max, t) => (t.date > max ? t.date : max), '');
+            if (localMaxDate > driveMaxDate) {
+              setDriveMismatch(true);
+              setDriveStatus({ status: 'synced', timestamp: remoteModified || Date.now() });
+              return true;
+            }
+          }
+          setDriveMismatch(false);
           const enriched = mapTransactionsWithStockNames(list);
           setTransactionHistory(enriched);
           saveTransactionHistory(enriched);
@@ -360,6 +387,7 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
           setTransactionHistoryUpdatedAt(ts);
           setDriveStatus({ status: 'synced', timestamp: ts });
         } else {
+          setDriveMismatch(false);
           setDriveStatus({ status: 'synced', timestamp: remoteModified || Date.now() });
         }
         importDividendBankFromDrive().then(bankData => {
@@ -656,7 +684,6 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
   }, 0);
   const hasTwd = twdInvestment > 0 || twdValue > 0;
   const hasUsd = usdInvestment > 0 || usdValue > 0;
-  const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
 
   const sortedInventoryList = useMemo(() => {
     if (!invSortKey) return inventoryList;
@@ -1752,6 +1779,7 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
               onSelectChange={handleDataSourceChange}
               driveConnected={driveConnected}
               driveStatus={driveStatus}
+              driveMismatch={driveMismatch}
               onConnectDrive={connectAndSyncDrive}
               onViewDriveData={handleViewDriveData}
             />
@@ -1792,6 +1820,7 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
         show={drivePreview.show}
         loading={drivePreview.loading}
         data={drivePreview.data}
+        localList={transactionHistory}
         onClose={handleCloseDrivePreview}
         onSyncToDrive={() => syncToDrive(transactionHistory)}
         onSyncFromDrive={() => fetchFromDriveIfNewer({ silent: false, force: true })}
@@ -1873,7 +1902,7 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
               )}
             </div>
 
-            {isDebug && inventoryList.length > 0 && (() => {
+            {inventoryList.length > 0 && (() => {
               const fmt = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
               const rows = [...inventoryList]
                 .map(item => {
@@ -1883,25 +1912,31 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
                 })
                 .sort((a, b) => b.total_cost - a.total_cost);
               const totalGain = totalValue - totalInvestment;
-              return (
-                <div className={styles.debugBreakdown}>
-                  <button type="button" className={styles.debugBreakdownBtn} aria-label="debug: 個股金額明細">ⓘ</button>
-                  <div className={styles.debugBreakdownTable}>
+              const twRows = rows.filter(r => r.country === 'TW');
+              const usRows = rows.filter(r => r.country === 'US');
+              const twCost = twRows.reduce((s, r) => s + r.total_cost, 0);
+              const twValue = twRows.reduce((s, r) => s + r.value, 0);
+              const twGain = twValue - twCost;
+              const usCost = usRows.reduce((s, r) => s + r.total_cost, 0);
+              const usValue = usRows.reduce((s, r) => s + r.value, 0);
+              const usGain = usValue - usCost;
+              const renderCol = (colRows, colCost, colValue, colGain) => (
+                <div className={styles.debugBreakdownCol}>
+                  <div className={styles.debugBreakdownColScroll}>
                     <table>
                       <thead>
                         <tr>
-                          <th>代碼</th><th>名稱</th><th>幣</th>
+                          <th>代碼</th><th>名稱</th>
                           <th style={{ textAlign: 'right' }}>成本</th>
                           <th style={{ textAlign: 'right' }}>市值</th>
                           <th style={{ textAlign: 'right' }}>損益</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {rows.map(item => (
+                        {colRows.map(item => (
                           <tr key={item.stock_id}>
                             <td>{item.stock_id}</td>
                             <td>{item.stock_name || '—'}</td>
-                            <td>{item.country === 'TW' ? 'TWD' : item.country === 'US' ? 'USD' : item.country}</td>
                             <td style={{ textAlign: 'right' }}>{fmt(item.total_cost)}</td>
                             <td style={{ textAlign: 'right' }}>{fmt(item.value)}</td>
                             <td style={{ textAlign: 'right', color: item.gain >= 0 ? 'green' : 'red' }}>{item.gain >= 0 ? '+' : ''}{fmt(item.gain)}</td>
@@ -1910,13 +1945,38 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
                       </tbody>
                       <tfoot>
                         <tr style={{ fontWeight: 'bold', borderTop: '2px solid currentColor' }}>
-                          <td colSpan={3}>合計</td>
-                          <td style={{ textAlign: 'right' }}>{fmt(totalInvestment)}</td>
-                          <td style={{ textAlign: 'right' }}>{fmt(totalValue)}</td>
-                          <td style={{ textAlign: 'right', color: totalGain >= 0 ? 'green' : 'red' }}>{totalGain >= 0 ? '+' : ''}{fmt(totalGain)}</td>
+                          <td colSpan={2}>小計</td>
+                          <td style={{ textAlign: 'right' }}>{fmt(colCost)}</td>
+                          <td style={{ textAlign: 'right' }}>{fmt(colValue)}</td>
+                          <td style={{ textAlign: 'right', color: colGain >= 0 ? 'green' : 'red' }}>{colGain >= 0 ? '+' : ''}{fmt(colGain)}</td>
                         </tr>
                       </tfoot>
                     </table>
+                  </div>
+                </div>
+              );
+              return (
+                <div className={styles.debugBreakdown} ref={debugBreakdownRef}>
+                  <button type="button" className={styles.debugBreakdownBtn} aria-label="個股金額明細" onClick={() => setDebugOpen(v => !v)}>ⓘ</button>
+                  <div className={`${styles.debugBreakdownTable}${debugOpen ? ` ${styles.debugBreakdownTableOpen}` : ''}`}>
+                    <div className={styles.debugBreakdownHeader}>
+                      <span>個股金額明細</span>
+                      <button type="button" className={styles.debugBreakdownClose} onClick={() => setDebugOpen(false)} aria-label="關閉">✕</button>
+                    </div>
+                    <div className={styles.debugBreakdownMobileTabs}>
+                      <button type="button" className={`${styles.debugBreakdownMobileTab}${debugColTab === 'tw' ? ` ${styles.debugBreakdownMobileTabActive}` : ''}`} onClick={() => setDebugColTab('tw')}>🇹🇼 台股</button>
+                      <button type="button" className={`${styles.debugBreakdownMobileTab}${debugColTab === 'us' ? ` ${styles.debugBreakdownMobileTabActive}` : ''}`} onClick={() => setDebugColTab('us')}>🇺🇸 美股</button>
+                    </div>
+                    <div className={styles.debugBreakdownSplit}>
+                      <div className={styles.debugBreakdownColLabel}>🇹🇼 台股</div>
+                      <div className={styles.debugBreakdownColLabel}>🇺🇸 美股</div>
+                      <div className={`${styles.debugBreakdownColWrap}${debugColTab === 'tw' ? ` ${styles.debugBreakdownColActive}` : ''}`}>
+                        {renderCol(twRows, twCost, twValue, twGain)}
+                      </div>
+                      <div className={`${styles.debugBreakdownColWrap}${debugColTab === 'us' ? ` ${styles.debugBreakdownColActive}` : ''}`}>
+                        {renderCol(usRows, usCost, usValue, usGain)}
+                      </div>
+                    </div>
                   </div>
                 </div>
               );

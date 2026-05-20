@@ -234,7 +234,7 @@
 .debugBreakdownBtn {
   font-size: 0.75em;
   opacity: 0.5;
-  cursor: help;
+  cursor: pointer;
   background: none;
   border: 1px solid currentColor;
   border-radius: 50%;
@@ -253,31 +253,151 @@
   background: var(--color-bg, #fff);
   border: 1px solid var(--color-border, #ccc);
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 10px 12px 12px;
   z-index: 200;
-  min-width: 480px;
-  max-height: 55vh;
-  overflow-y: auto;
+  width: min(820px, calc(100vw - 24px));
+  max-height: 60vh;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
   text-align: left;
   font-weight: normal;
   font-size: 0.82em;
   white-space: nowrap;
+  flex-direction: column;
 }
 
-.debugBreakdown:hover .debugBreakdownTable {
-  display: block;
+.debugBreakdownTableOpen {
+  display: flex;
 }
 
-.debugBreakdownTable table {
+.debugBreakdownHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.9em;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.debugBreakdownClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted, #888);
+  font-size: 0.95em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.debugBreakdownClose:hover {
+  color: var(--color-text);
+}
+
+.debugBreakdownSplit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 0 12px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.debugBreakdownColLabel {
+  font-weight: 600;
+  font-size: 0.82em;
+  color: var(--color-text-muted, #888);
+  padding: 0 2px 4px;
+}
+
+.debugBreakdownCol {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.debugBreakdownColScroll {
+  overflow-y: auto;
+  flex: 1;
+  border: 1px solid var(--color-border, #eee);
+  border-radius: 4px;
+}
+
+.debugBreakdownColScroll table {
   border-collapse: collapse;
   width: 100%;
 }
 
-.debugBreakdownTable th,
-.debugBreakdownTable td {
+.debugBreakdownColScroll th,
+.debugBreakdownColScroll td {
   padding: 2px 8px;
   border-bottom: 1px solid var(--color-border, #eee);
+}
+
+.debugBreakdownColScroll thead th {
+  position: sticky;
+  top: 0;
+  background: var(--color-bg, #fff);
+}
+
+.debugBreakdownMobileTabs {
+  display: none;
+}
+
+.debugBreakdownColWrap {
+  display: contents;
+}
+
+@media (max-width: 600px) {
+  .debugBreakdownMobileTabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--color-border, #ccc);
+    flex-shrink: 0;
+  }
+
+  .debugBreakdownMobileTab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    padding: 5px 14px;
+    font-size: 0.85rem;
+    color: var(--color-text-muted, #888);
+    cursor: pointer;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .debugBreakdownMobileTabActive {
+    color: var(--color-text);
+    border-bottom-color: var(--accent-gold, #c9a84c);
+    font-weight: 600;
+  }
+
+  .debugBreakdownSplit {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+
+  .debugBreakdownColLabel {
+    display: none;
+  }
+
+  .debugBreakdownColWrap {
+    display: none;
+    contents: unset;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .debugBreakdownColWrap.debugBreakdownColActive {
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 .shareGoalSection {
