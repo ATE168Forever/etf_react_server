@@ -1,36 +1,34 @@
-import { useRef } from 'react';
-import useClickOutside from './useClickOutside';
 import { useLanguage } from '../i18n';
 
-export default function DisplayDropdown({
-  toggleDividendYield,
-  showDividendYield,
-  togglePerYield,
-  showPerYield,
-  toggleAxis,
-  showInfoAxis,
-  onClose
-}) {
-  const ref = useRef();
-  useClickOutside(ref, onClose);
-  const { lang } = useLanguage();
+const MODES = {
+  zh: [
+    { value: 'default', label: '預設' },
+    { value: 'yield', label: '殖利率' },
+    { value: 'perYield', label: '月化殖利率' },
+    { value: 'info', label: '資訊' },
+  ],
+  en: [
+    { value: 'default', label: 'Default' },
+    { value: 'yield', label: 'Yield' },
+    { value: 'perYield', label: 'Monthly Avg Yield' },
+    { value: 'info', label: 'Info' },
+  ],
+};
 
-  const handleClick = (action) => {
-    action();
-    onClose();
-  };
+export default function DisplayDropdown({ displayMode, onModeChange }) {
+  const { lang } = useLanguage();
+  const options = MODES[lang] ?? MODES.zh;
 
   return (
-      <div className="action-dropdown silver-button-container" ref={ref}>
-        <button type="button" onClick={() => handleClick(toggleDividendYield)}>
-          {showDividendYield ? (lang === 'en' ? 'Show Dividends' : '顯示配息') : (lang === 'en' ? 'Show Yield' : '顯示殖利率')}
-        </button>
-        <button type="button" onClick={() => handleClick(togglePerYield)}>
-          {showPerYield ? (lang === 'en' ? 'Show Yield' : '顯示殖利率') : (lang === 'en' ? 'Show Monthly Avg Yield' : '顯示月平均殖利率')}
-        </button>
-        <button type="button" onClick={() => handleClick(toggleAxis)}>
-          {showInfoAxis ? (lang === 'en' ? 'Show Months' : '顯示月份') : (lang === 'en' ? 'Show Info' : '顯示資訊')}
-        </button>
-      </div>
+    <select
+      className="filter-bar__display-select"
+      value={displayMode}
+      onChange={e => onModeChange(e.target.value)}
+      aria-label={lang === 'en' ? 'Display mode' : '顯示模式'}
+    >
+      {options.map(o => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
   );
 }

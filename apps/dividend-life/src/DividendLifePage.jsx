@@ -131,12 +131,15 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     selectedYearRef.current = selectedYear;
   }, [selectedYear]);
 
-  // Toggle between showing dividend or dividend yield
   const [showDividendYield, setShowDividendYield] = useState(false);
-  // Toggle showing monthly average yield (perYield)
   const [showPerYield, setShowPerYield] = useState(false);
-  // Toggle axis between months and info categories
   const [showInfoAxis, setShowInfoAxis] = useState(false);
+  const displayMode = showDividendYield ? 'yield' : showPerYield ? 'perYield' : showInfoAxis ? 'info' : 'default';
+  const handleDisplayModeChange = (mode) => {
+    setShowDividendYield(mode === 'yield');
+    setShowPerYield(mode === 'perYield');
+    setShowInfoAxis(mode === 'info');
+  };
   // Monthly income goal input
   const [monthlyIncomeGoal, setMonthlyIncomeGoal] = useState(DEFAULT_MONTHLY_GOAL);
 
@@ -145,7 +148,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     const [extraFilters, setExtraFilters] = useState({ minYield: '', freq: [], upcomingWithin: '', diamond: false, currencies: [] });
 
   // Display toggles
-  const [showDisplays, setShowDisplays] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showAllStocks, setShowAllStocks] = useState(false);
 
@@ -1168,28 +1170,13 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                       : (lang === 'en' ? 'Show Calendar' : '顯示月曆')}
                   </button>
 
-                  <div className="filter-bar__action-wrap">
-                    <button
-                      type="button"
-                      className="filter-bar__action-btn"
-                      onClick={() => setShowDisplays(v => !v)}
-                      aria-expanded={showDisplays}
-                      aria-haspopup="true"
-                    >
-                      {lang === 'en' ? 'Display ▾' : '顯示選項 ▾'}
-                    </button>
-                    {showDisplays && (
-                      <DisplayDropdown
-                        toggleDividendYield={() => setShowDividendYield(v => !v)}
-                        showDividendYield={showDividendYield}
-                        togglePerYield={() => setShowPerYield(v => !v)}
-                        showPerYield={showPerYield}
-                        toggleAxis={() => setShowInfoAxis(v => !v)}
-                        showInfoAxis={showInfoAxis}
-                        onClose={() => setShowDisplays(false)}
-                      />
-                    )}
-                  </div>
+                  <label className="filter-bar__display-label">
+                    {lang === 'en' ? 'Display:' : '顯示：'}
+                    <DisplayDropdown
+                      displayMode={displayMode}
+                      onModeChange={handleDisplayModeChange}
+                    />
+                  </label>
 
                   <div className="filter-bar__action-wrap">
                     <button

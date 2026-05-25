@@ -2562,6 +2562,37 @@ button.metric-card:focus-visible {
   display: inline-block;
 }
 
+.filter-bar__display-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--color-text);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.filter-bar__display-select {
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.filter-bar__display-select:hover {
+  border-color: var(--accent-gold);
+}
+
+.filter-bar__display-select:focus-visible {
+  border-color: var(--accent-gold);
+  outline: 2px solid var(--accent-gold, #d4af37);
+  outline-offset: 2px;
+}
+
 /* Reset button — distinct from others */
 .filter-bar__reset-btn {
   padding: 5px 12px;
