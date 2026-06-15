@@ -120,6 +120,11 @@
   flex: 1;
 }
 
+.dividend-alert__bank {
+  font-size: 0.85em;
+  color: var(--muted-foreground, #6b7280);
+}
+
 .dividend-alert__dismiss {
   all: unset;
   cursor: pointer;

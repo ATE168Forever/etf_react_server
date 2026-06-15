@@ -763,13 +763,36 @@ const StockRow = memo(function StockRow({
             : showDividendYield
               ? displayYield
               : displayDividend;
+          const entries = cell.entries || [];
+          const isMulti = entries.length > 1;
+          const shortDate = (d) => d ? d.slice(5).replace('-', '/') : '-';
           const tooltipLines = [];
-          if (isDividendValid) {
-            tooltipLines.push(
-              lang === 'zh'
-                ? `每股配息: ${rawDividend.toFixed(3)} ${currencyUnitZhFor(currency)}`
-                : `Dividend per share: ${currencyLabelFor(currency)}${rawDividend.toFixed(3)}`
-            );
+          if (isMulti) {
+            const sorted = [...entries].sort((a, b) => (a.dividend_date || '') < (b.dividend_date || '') ? -1 : 1);
+            sorted.forEach((entry, i) => {
+              const amt = Number.isFinite(entry.dividend) ? entry.dividend.toFixed(3) : '-';
+              tooltipLines.push(
+                lang === 'zh'
+                  ? `[${i + 1}] ${amt} ${currencyUnitZhFor(currency)} | ${shortDate(entry.dividend_date)} → ${shortDate(entry.payment_date)}`
+                  : `[${i + 1}] ${currencyLabelFor(currency)}${amt} | ${shortDate(entry.dividend_date)} → ${shortDate(entry.payment_date)}`
+              );
+            });
+            if (isDividendValid) {
+              tooltipLines.push(
+                lang === 'zh'
+                  ? `合計: ${rawDividend.toFixed(3)} ${currencyUnitZhFor(currency)}`
+                  : `Total: ${currencyLabelFor(currency)}${rawDividend.toFixed(3)}`
+              );
+            }
+          } else {
+            if (isDividendValid) {
+              tooltipLines.push(
+                lang === 'zh'
+                  ? `每股配息: ${rawDividend.toFixed(3)} ${currencyUnitZhFor(currency)}`
+                  : `Dividend per share: ${currencyLabelFor(currency)}${rawDividend.toFixed(3)}`
+              );
+            }
+            tooltipLines.push(`${t('prev_close')}: ${cell.last_close_price ?? '-'}`);
           }
           const tooltipYield = isYieldValid
             ? `${rawYield.toFixed(1)}%`
@@ -777,13 +800,16 @@ const StockRow = memo(function StockRow({
               ? pendingText
               : '';
           tooltipLines.push(
-            `${t('prev_close')}: ${cell.last_close_price ?? '-'}`,
             `${t('current_yield')}: ${tooltipYield}`,
             `${t('avg_month_yield')}: ${perYield.toFixed(2)}%`,
             `${t('payout_frequency')}: ${freqNameMap[freq] || t('irregular')}`,
-            `${t('dividend_date')}: ${cell.dividend_date || '-'}`,
-            `${t('payment_date')}: ${cell.payment_date || '-'}`
           );
+          if (!isMulti) {
+            tooltipLines.push(
+              `${t('dividend_date')}: ${cell.dividend_date || '-'}`,
+              `${t('payment_date')}: ${cell.payment_date || '-'}`
+            );
+          }
           const extraInfo = getIncomeGoalInfo(
             isDividendValid ? rawDividend : 0,
             price,

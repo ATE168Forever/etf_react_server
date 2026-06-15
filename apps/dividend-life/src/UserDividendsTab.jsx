@@ -626,7 +626,20 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                 const quantity = getHolding(stockId, thisDate);
                 const avgCost = getAverageCostBeforeDate(stockId, thisDate);
                 const costBasis = avgCost > 0 && quantity > 0 ? avgCost * quantity : 0;
+                const existingCell = dividendTable[stockId][month];
+                const entryAmount = Number.isFinite(dividend) && quantity > 0 ? dividend * quantity : 0;
                 dividendTable[stockId][month] = {
+                    entries: [...(existingCell?.entries || []), {
+                        dividend: Number.isFinite(dividend) ? dividend : null,
+                        quantity,
+                        dividend_date: item.dividend_date || null,
+                        payment_date: item.payment_date || null,
+                        last_close_price: item.last_close_price ?? null,
+                        dividend_yield: item.dividend_yield ?? null,
+                    }],
+                    totalAmount: (existingCell?.totalAmount || 0) + entryAmount,
+                    totalCostBasis: (existingCell?.totalCostBasis || 0) + costBasis,
+                    // Last-entry fields kept for backward-compat existence checks
                     dividend,
                     quantity,
                     dividend_date: item.dividend_date,
@@ -653,8 +666,8 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                 dividendCount[stock.stock_id] = 0;
                 for (let m = 0; m < 12; m++) {
                     const cell = dividendTable[stock.stock_id]?.[m];
-                    if (cell && cell.dividend && cell.quantity) {
-                        const amt = cell.dividend * cell.quantity;
+                    if (cell && cell.totalAmount > 0) {
+                        const amt = cell.totalAmount;
                         totalPerStock[stock.stock_id] += amt;
                         totalYield[stock.stock_id] += parseFloat(cell.dividend_yield) || 0;
                         monthsCount[stock.stock_id] = m + 1;
@@ -766,17 +779,11 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
             const idx = Number(sortConfig.column.slice(5));
             const aVal = activeCurrencies.reduce((sum, currency) => {
                 const cell = currencyContexts[currency]?.dividendTable[a.stock_id]?.[idx];
-                if (cell && cell.dividend && cell.quantity) {
-                    return sum + cell.dividend * cell.quantity;
-                }
-                return sum;
+                return sum + (cell?.totalAmount || 0);
             }, 0);
             const bVal = activeCurrencies.reduce((sum, currency) => {
                 const cell = currencyContexts[currency]?.dividendTable[b.stock_id]?.[idx];
-                if (cell && cell.dividend && cell.quantity) {
-                    return sum + cell.dividend * cell.quantity;
-                }
-                return sum;
+                return sum + (cell?.totalAmount || 0);
             }, 0);
             return (aVal - bVal) * dir;
         }
@@ -814,10 +821,10 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
             filteredStocks.forEach(stock => {
                 for (let idx = 0; idx < 12; idx++) {
                     const cell = context.dividendTable[stock.stock_id]?.[idx];
-                    if (cell && cell.dividend && cell.quantity) {
-                        const total = cell.dividend * cell.quantity;
+                    if (cell && cell.totalAmount > 0) {
+                        const total = cell.totalAmount;
                         totals[idx] += total;
-                        const cost = Number(cell.cost_basis) || 0;
+                        const cost = Number(cell.totalCostBasis) || 0;
                         if (cost > 0) {
                             costs[idx] += cost;
                             details[idx].push({
@@ -1342,23 +1349,41 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                         {MONTHS.map((m, idx) => (
                                             activeCurrencies.map(currency => {
                                                 const cell = currencyContexts[currency]?.dividendTable[stock.stock_id]?.[idx];
-                                                if (!cell || !cell.dividend || !cell.quantity) {
+                                                if (!cell || !cell.totalAmount) {
                                                     return <td key={`cell-${stock.stock_id}-${idx}-${currency}`} className={idx === currentMonth ? 'current-month' : ''} style={{ width: MONTH_COL_WIDTH }} />;
                                                 }
-                                                const total = cell.dividend * cell.quantity;
+                                                const total = cell.totalAmount;
                                                 const currencySymbol = CURRENCY_SYMBOLS[currency] || `${currency} `;
-                                                const lotText = (cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '');
-                                                const quantityLineEn = currency === 'USD'
-                                                    ? `Shares held: ${cell.quantity}`
-                                                    : `Shares held: ${cell.quantity} (${lotText} lots)`;
-                                                const quantityLineZh = currency === 'USD'
-                                                    ? `持有數量: ${cell.quantity} 股`
-                                                    : `持有數量: ${cell.quantity} 股 (${lotText} 張)`;
-                                                const dividendPerShareEn = `Dividend per share: ${currencySymbol}${formatDividendAmount(cell.dividend)}`;
-                                                const dividendPerShareZh = `每股配息: ${formatDividendAmount(cell.dividend)} ${currencyUnitZh(currency)}`;
-                                                const tooltipContent = lang === 'en'
-                                                    ? `${quantityLineEn}\n${dividendPerShareEn}\nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
-                                                    : `${quantityLineZh}\n${dividendPerShareZh}\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`;
+                                                const shortDate = (d) => d ? d.slice(5).replace('-', '/') : '-';
+                                                const entries = cell.entries || [];
+                                                const isMulti = entries.length > 1;
+                                                let tooltipContent;
+                                                if (isMulti) {
+                                                    const sorted = [...entries].sort((a, b) => (a.dividend_date || '') < (b.dividend_date || '') ? -1 : 1);
+                                                    const lines = sorted.map((entry, i) => {
+                                                        const lotText = currency !== 'USD' ? ` (${(entry.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')} ${lang === 'en' ? 'lots' : '張'})` : '';
+                                                        return lang === 'en'
+                                                            ? `[${i + 1}] ${currencySymbol}${formatDividendAmount(entry.dividend ?? 0)} × ${entry.quantity}${lotText} | ${shortDate(entry.dividend_date)} → ${shortDate(entry.payment_date)}`
+                                                            : `[${i + 1}] ${formatDividendAmount(entry.dividend ?? 0)} ${currencyUnitZh(currency)} × ${entry.quantity} 股${lotText} | ${shortDate(entry.dividend_date)} → ${shortDate(entry.payment_date)}`;
+                                                    });
+                                                    const totalLine = lang === 'en'
+                                                        ? `Total: ${formatPlainAmount(total, { currency })}`
+                                                        : `合計: ${formatPlainAmount(total, { currency })}`;
+                                                    tooltipContent = [...lines, totalLine].join('\n');
+                                                } else {
+                                                    const lotText = (cell.quantity / 1000).toFixed(3).replace(/\.?0+$/, '');
+                                                    const quantityLineEn = currency === 'USD'
+                                                        ? `Shares held: ${cell.quantity}`
+                                                        : `Shares held: ${cell.quantity} (${lotText} lots)`;
+                                                    const quantityLineZh = currency === 'USD'
+                                                        ? `持有數量: ${cell.quantity} 股`
+                                                        : `持有數量: ${cell.quantity} 股 (${lotText} 張)`;
+                                                    const dividendPerShareEn = `Dividend per share: ${currencySymbol}${formatDividendAmount(cell.dividend)}`;
+                                                    const dividendPerShareZh = `每股配息: ${formatDividendAmount(cell.dividend)} ${currencyUnitZh(currency)}`;
+                                                    tooltipContent = lang === 'en'
+                                                        ? `${quantityLineEn}\n${dividendPerShareEn}\nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
+                                                        : `${quantityLineZh}\n${dividendPerShareZh}\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`;
+                                                }
 
                                                 // const paymentDate = cell.payment_date ? formatShortDate(cell.payment_date) : null;
                                                 // const dividendDate = cell.dividend_date ? formatShortDate(cell.dividend_date) : null;

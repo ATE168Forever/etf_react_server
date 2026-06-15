@@ -225,6 +225,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const [monthHasValue, setMonthHasValue] = useState(Array(12).fill(false));
   const [freqMap, setFreqMap] = useState({});
   const [stockListPriceMap, setStockListPriceMap] = useState({});
+  const [custodianMap, setCustodianMap] = useState({});
   const timeZone = 'Asia/Taipei';
   const currentMonth = Number(new Date().toLocaleString('en-US', { timeZone, month: 'numeric' })) - 1;
   const getIncomeGoalInfo = (dividend, price, goal, freq = 12) =>
@@ -453,14 +454,19 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       .then(({ list }) => {
         const map = {};
         const priceMap = {};
+        const custMap = {};
         list.forEach(s => {
           map[s.stock_id] = freqMapRaw[s.dividend_frequency] || null;
           if (s.latest_close_price != null) {
             priceMap[s.stock_id] = s.latest_close_price;
           }
+          if (s.custodian) {
+            custMap[s.stock_id] = s.custodian;
+          }
         });
         setFreqMap(map);
         setStockListPriceMap(priceMap);
+        setCustodianMap(custMap);
       });
   }, []);
 
@@ -601,6 +607,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         hasPendingYield: false,
         hasValidDividend: false,
         hasValidYield: false,
+        entries: [],
       };
 
       if (!Number.isFinite(cell.dividend)) {
@@ -641,6 +648,14 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       if (item.payment_date) {
         cell.payment_date = item.payment_date;
       }
+
+      cell.entries.push({
+        dividend: Number.isFinite(dividendValue) ? dividendValue : null,
+        dividend_yield: Number.isFinite(yieldValue) ? yieldValue : null,
+        dividend_date: item.dividend_date || null,
+        payment_date: item.payment_date || null,
+        last_close_price: item.last_close_price ?? null,
+      });
 
       table[item.stock_id][month][currency] = cell;
     });
@@ -1041,12 +1056,13 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
               const countdownZh = a.daysUntil === 0 ? '今天' : a.daysUntil === 1 ? '明天' : `還有 ${a.daysUntil} 天`;
               const countdownEn = a.daysUntil === 0 ? 'today' : a.daysUntil === 1 ? 'tomorrow' : `in ${a.daysUntil} days`;
               const keywordColor = a.type === 'ex' ? '#ff8fa3' : '#2f9e44';
+              const bank = custodianMap[a.stock_id];
               return (
                 <div key={key} className="dividend-alert__item">
                   <span className="dividend-alert__text">
                     {lang === 'en'
-                      ? <>{a.stock_id} {a.stock_name} will <span style={{ color: keywordColor }}>{a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'}</span> {countdownEn} ({dateLabel}). {a.dividend} per share, estimated {Math.round(a.total).toLocaleString()}</>
-                      : <>{a.stock_id} {a.stock_name}將於{countdownZh}（{dateLabel}）<span style={{ color: keywordColor }}>{a.type === 'ex' ? '除息' : '配息'}</span>，每股 {a.dividend} 元，預估領取 {Math.round(a.total).toLocaleString()} 元</>
+                      ? <>{a.stock_id} {a.stock_name} will <span style={{ color: keywordColor }}>{a.type === 'ex' ? 'go ex-dividend' : 'pay dividend'}</span> {countdownEn} ({dateLabel}). {a.dividend} per share, estimated {Math.round(a.total).toLocaleString()}{bank && <span className="dividend-alert__bank"> · Custodian: {bank}</span>}</>
+                      : <>{a.stock_id} {a.stock_name}將於{countdownZh}（{dateLabel}）<span style={{ color: keywordColor }}>{a.type === 'ex' ? '除息' : '配息'}</span>，每股 {a.dividend} 元，預估領取 {Math.round(a.total).toLocaleString()} 元{bank && <span className="dividend-alert__bank"> · 保管銀行：{bank}</span>}</>
                     }
                   </span>
                   <button

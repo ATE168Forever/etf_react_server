@@ -162,10 +162,18 @@ export default function DividendCalendar({
                   .map(currency => {
                     const total = totalsByType[key]?.[currency] || 0;
                     if (total <= 0) return null;
+                    const contributing = monthEvents
+                      .filter(e => (e.type === 'ex' ? 'ex' : 'pay') === key && (e.currency || DEFAULT_CURRENCY) === currency && (Number(e.amount) || 0) > 0)
+                      .sort((a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0));
+                    const tooltipText = contributing
+                      .map(e => `${e.stock_id}: ${formatSummaryAmount(currency, Number(e.amount))}`)
+                      .join('\n');
                     return (
                       <span key={`${key}-${currency}`} className="calendar-summary-value">
                         <span className="calendar-summary-currency">{currencyLabel(currency)}</span>
-                        <span className="calendar-summary-amount">{formatSummaryAmount(currency, total)}</span>
+                        <TooltipText tooltip={tooltipText} className="calendar-summary-amount">
+                          {formatSummaryAmount(currency, total)}
+                        </TooltipText>
                       </span>
                     );
                   })
