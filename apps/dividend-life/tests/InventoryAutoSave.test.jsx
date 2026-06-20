@@ -16,6 +16,8 @@ jest.mock('../config', () => ({
 jest.mock('../src/googleDrive', () => ({
   exportTransactionsToDrive: jest.fn(() => Promise.resolve()),
   importTransactionsFromDrive: jest.fn(() => Promise.resolve(null)),
+  exportDividendBankToDrive: jest.fn(() => Promise.resolve()),
+  importDividendBankFromDrive: jest.fn(() => Promise.resolve(null)),
   isDriveAuthenticated: jest.fn(() => false)
 }));
 jest.mock('../src/stockApi', () => ({

@@ -35,13 +35,22 @@ export default function useWatchGroups({ lang, setSelectedStockIds, handleResetF
       }
     } else {
       setWatchGroups(DEFAULT_WATCH_GROUPS);
-      localStorage.setItem('watchGroups', JSON.stringify(DEFAULT_WATCH_GROUPS));
+      try {
+        localStorage.setItem('watchGroups', JSON.stringify(DEFAULT_WATCH_GROUPS));
+      } catch (e) {
+        console.error('[storage] write failed:', e);
+      }
     }
   }, []);
 
   const saveGroups = useCallback((groups) => {
     setWatchGroups(groups);
-    localStorage.setItem('watchGroups', JSON.stringify(groups));
+    try {
+      localStorage.setItem('watchGroups', JSON.stringify(groups));
+    } catch (e) {
+      console.error('[storage] write failed:', e);
+      throw e;
+    }
   }, []);
 
   const isGroupModified = useCallback((group) => {

@@ -12,7 +12,8 @@ export function loadDividendBankOverrides() {
 export function saveDividendBankOverrides(overrides) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
-  } catch {
-    // ignore storage write errors
+  } catch (e) {
+    console.error('[storage] write failed:', e);
+    throw e;
   }
 }

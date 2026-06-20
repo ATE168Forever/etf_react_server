@@ -197,7 +197,7 @@ async function ensureAccessToken() {
   });
 }
 
-async function findBackupFile(token) {
+async function findBackupFile() {
   const listResult = await window.gapi.client.drive.files.list({
     spaces: 'appDataFolder',
     q: `name='${BACKUP_FILENAME}'`,
@@ -215,7 +215,7 @@ export async function exportTransactionsToDrive(list, { silent = false } = {}) {
   const csv = transactionsToCsv(list);
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
 
-  const existingFileId = await findBackupFile(token);
+  const existingFileId = await findBackupFile();
 
   if (existingFileId) {
     // Update existing file content (no metadata change needed)
@@ -277,7 +277,7 @@ export async function exportDividendBankToDrive(overrides) {
   const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
   const existingFileId = await findBankBackupFile();
   if (existingFileId) {
-    await fetch(
+    const res = await fetch(
       `https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=media`,
       {
         method: 'PATCH',
@@ -285,12 +285,13 @@ export async function exportDividendBankToDrive(overrides) {
         body: blob,
       }
     );
+    if (!res.ok) throw new Error(`Drive upload failed: ${res.status} ${res.statusText}`);
   } else {
     const metadata = { name: BANK_BACKUP_FILENAME, mimeType: 'application/json', parents: ['appDataFolder'] };
     const form = new FormData();
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
     form.append('file', blob);
-    await fetch(
+    const res = await fetch(
       'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
       {
         method: 'POST',
@@ -298,6 +299,7 @@ export async function exportDividendBankToDrive(overrides) {
         body: form,
       }
     );
+    if (!res.ok) throw new Error(`Drive upload failed: ${res.status} ${res.statusText}`);
   }
 }
 

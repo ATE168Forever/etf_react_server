@@ -201,7 +201,8 @@ export function saveInvestmentGoals(goals) {
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  } catch {
-    // ignore write errors (quota, privacy mode, etc.)
+  } catch (e) {
+    console.error('[storage] write failed:', e);
+    throw e;
   }
 }

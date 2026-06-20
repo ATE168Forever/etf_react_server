@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { LanguageContext, translations } from './i18n';
 import { ToastProvider } from './Toast';
+import { useToast } from './useToast';
 import HomeTab from './HomeTab';
 import DisplayDropdown from './components/DisplayDropdown';
 import DividendCalendar from './components/DividendCalendar';
@@ -19,7 +20,6 @@ const AboutTab = lazy(() => import('./AboutTab'));
 const NLHelper = lazy(() => import('./NLHelper'));
 
 import './App.css';
-import appStyles from './App.module.css';
 import brandStyles from '@shared/components/BrandPage/BrandPage.module.css';
 import { API_HOST } from '../config';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
@@ -113,6 +113,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       return next;
     });
   };
+  const showToast = useToast();
   const fetchSkipRef = useRef(new Map());
   const lastFetchedAt = useRef(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -196,6 +197,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     const onPopState = () => setTabState(getTabFromHash());
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
+    // getTabFromHash reads window.location.hash at call time; register listener once only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Keyboard shortcuts: T=inventory, D=dividend search, H=home
@@ -212,6 +215,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
+    // setTab wraps setTabState (stable) + replaceState; register listener once only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -297,6 +302,11 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     setDividendScope('all');
   }, [dividendScope, purchasedStockIds.length, transactionHistoryLoaded, transactionHistory.length]);
 
+  const langRef = useRef(lang);
+  useEffect(() => { langRef.current = lang; }, [lang]);
+  const showToastRef = useRef(showToast);
+  useEffect(() => { showToastRef.current = showToast; }, [showToast]);
+
   useEffect(() => {
     const callUpdate = () => {
       const history = readTransactionHistory();
@@ -309,7 +319,10 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           if (uniquePurchased.length) {
             clearDividendsCache(undefined, undefined, { stockIds: uniquePurchased });
           }
-          window.location.reload();
+          const msg = langRef.current === 'en'
+            ? 'Data updated. Please refresh to see the latest.'
+            : '資料已更新，請重新整理頁面';
+          showToastRef.current(msg, 'success', 8000);
         })
         .catch(() => {
           // Network error — keep existing cache intact
@@ -719,7 +732,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const allScopeLabel = lang === 'en' ? 'All ETFs' : '全部 ETF';
   const canSelectPurchased = purchasedStockIds.length > 0;
 
-  const filteredStocks = stocks.filter(stock => {
+  const filteredStocks = useMemo(() => stocks.filter(stock => {
     if (selectedStockIds.length && !selectedStockIds.includes(stock.stock_id)) return false;
 
     // Check if this is a purchased stock with no dividend data
@@ -803,28 +816,31 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       }
     }
     return true;
-  });
+  }), [stocks, selectedStockIds, dividendScope, purchasedStockIds, dividendTable, monthHasValue, viewMode, stockCurrencyMap, extraFilters, activeCurrencies, freqMap]);
 
-  const currenciesForMax = availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
-  const maxYieldPerMonth = currenciesForMax.reduce((acc, currency) => {
-    acc[currency] = Array(12).fill(0);
-    return acc;
-  }, {});
-  filteredStocks.forEach(stock => {
-    for (let m = 0; m < 12; m++) {
-      const monthEntry = dividendTable[stock.stock_id]?.[m];
-      if (!monthEntry) continue;
-      currenciesForMax.forEach(currency => {
-        const cell = monthEntry?.[currency];
-        const y = cell?.perYield || 0;
-        if (y > (maxYieldPerMonth[currency]?.[m] || 0)) {
-          maxYieldPerMonth[currency][m] = y;
-        }
-      });
-    }
-  });
+  const maxYieldPerMonth = useMemo(() => {
+    const currenciesForMax = availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
+    const result = currenciesForMax.reduce((acc, currency) => {
+      acc[currency] = Array(12).fill(0);
+      return acc;
+    }, {});
+    filteredStocks.forEach(stock => {
+      for (let m = 0; m < 12; m++) {
+        const monthEntry = dividendTable[stock.stock_id]?.[m];
+        if (!monthEntry) continue;
+        currenciesForMax.forEach(currency => {
+          const cell = monthEntry?.[currency];
+          const y = cell?.perYield || 0;
+          if (y > (result[currency]?.[m] || 0)) {
+            result[currency][m] = y;
+          }
+        });
+      }
+    });
+    return result;
+  }, [filteredStocks, dividendTable, availableCurrencies]);
 
-  const displayStocks = extraFilters.diamond
+  const displayStocks = useMemo(() => extraFilters.diamond
     ? filteredStocks.filter(stock => {
         for (let m = 0; m < 12; m++) {
           const monthEntry = dividendTable[stock.stock_id]?.[m];
@@ -841,85 +857,98 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         }
         return false;
       })
-    : filteredStocks;
+    : filteredStocks,
+  [extraFilters.diamond, extraFilters.currencies, filteredStocks, dividendTable, activeCurrencies, maxYieldPerMonth]);
 
-  const currenciesForTotals = availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
-  const totalPerStock = {};
-  const yieldSum = {};
-  const yieldCount = {};
-  const latestPrice = {};
-  const latestYield = {};
-  displayStocks.forEach(stock => {
-    totalPerStock[stock.stock_id] = {};
-    yieldSum[stock.stock_id] = {};
-    yieldCount[stock.stock_id] = {};
-    latestPrice[stock.stock_id] = { price: null, date: null };
-    latestYield[stock.stock_id] = { yield: null, date: null };
-    // Only process data from dividendTable (which is already year-filtered)
-    const stockTable = dividendTable[stock.stock_id];
-    if (!stockTable) return; // No dividend data for this stock in selected year
-    for (let m = 0; m < 12; m++) {
-      const monthEntry = stockTable[m];
-      if (!monthEntry) continue;
-      currenciesForTotals.forEach(currency => {
-        const cell = monthEntry?.[currency];
-        if (!cell) return;
-        const dividendPerShare = Number(cell.dividend);
-        const val = Number.isFinite(dividendPerShare) ? dividendPerShare * 1000 : 0;
-        const yValRaw = Number(cell.dividend_yield);
-        const yVal = Number.isFinite(yValRaw) ? yValRaw : 0;
-        totalPerStock[stock.stock_id][currency] = (totalPerStock[stock.stock_id][currency] || 0) + val;
-        if (yVal > 0) {
-          yieldSum[stock.stock_id][currency] = (yieldSum[stock.stock_id][currency] || 0) + yVal;
-          yieldCount[stock.stock_id][currency] = (yieldCount[stock.stock_id][currency] || 0) + 1;
-        }
-        const lastClose = Number(cell.last_close_price);
-        const safeLastClose = Number.isFinite(lastClose) ? lastClose : cell.last_close_price ?? null;
-        const priceDateRaw = cell.reference_date || cell.dividend_date || cell.payment_date || null;
-        const priceDate = priceDateRaw ? new Date(priceDateRaw) : null;
-        const existingDate = latestPrice[stock.stock_id].date ? new Date(latestPrice[stock.stock_id].date) : null;
-        if (!existingDate || (priceDate && priceDate > existingDate)) {
-          latestPrice[stock.stock_id] = { price: safeLastClose, date: priceDateRaw };
-        }
-        const existingYieldDate = latestYield[stock.stock_id].date ? new Date(latestYield[stock.stock_id].date) : null;
-        if (!existingYieldDate || (priceDate && priceDate > existingYieldDate)) {
-          latestYield[stock.stock_id] = { yield: yVal, date: priceDateRaw };
-        }
-      });
-    }
-  });
-
-  // Override latestPrice with up-to-date close price from stock list API when available
-  displayStocks.forEach(stock => {
-    const stockListPrice = stockListPriceMap[stock.stock_id];
-    if (stockListPrice != null) {
-      latestPrice[stock.stock_id] = { ...latestPrice[stock.stock_id], price: stockListPrice };
-    }
-  });
-
-  const estAnnualYield = {};
-  const maxAnnualYield = currenciesForTotals.reduce((acc, currency) => {
-    acc[currency] = 0;
-    return acc;
-  }, {});
-  Object.keys(yieldSum).forEach(id => {
-    estAnnualYield[id] = {};
-    currenciesForTotals.forEach(currency => {
-      const sum = yieldSum[id][currency] || 0;
-      const count = yieldCount[id][currency] || 0;
-      if (count === 0) return;
-      const avgYield = sum / count;
-      const freq = [1, 2, 4, 6, 12, 52].includes(freqMap[id]) ? freqMap[id] : count;
-      const est = avgYield * freq;
-      estAnnualYield[id][currency] = est;
-      if (est > (maxAnnualYield[currency] || 0)) {
-        maxAnnualYield[currency] = est;
+  const {
+    totalPerStock,
+    yieldSum,
+    yieldCount,
+    latestPrice,
+    latestYield,
+    estAnnualYield,
+    maxAnnualYield,
+  } = useMemo(() => {
+    const currenciesForTotals = availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
+    const totalPerStock = {};
+    const yieldSum = {};
+    const yieldCount = {};
+    const latestPrice = {};
+    const latestYield = {};
+    displayStocks.forEach(stock => {
+      totalPerStock[stock.stock_id] = {};
+      yieldSum[stock.stock_id] = {};
+      yieldCount[stock.stock_id] = {};
+      latestPrice[stock.stock_id] = { price: null, date: null };
+      latestYield[stock.stock_id] = { yield: null, date: null };
+      // Only process data from dividendTable (which is already year-filtered)
+      const stockTable = dividendTable[stock.stock_id];
+      if (!stockTable) return; // No dividend data for this stock in selected year
+      for (let m = 0; m < 12; m++) {
+        const monthEntry = stockTable[m];
+        if (!monthEntry) continue;
+        currenciesForTotals.forEach(currency => {
+          const cell = monthEntry?.[currency];
+          if (!cell) return;
+          const dividendPerShare = Number(cell.dividend);
+          const val = Number.isFinite(dividendPerShare) ? dividendPerShare * 1000 : 0;
+          const yValRaw = Number(cell.dividend_yield);
+          const yVal = Number.isFinite(yValRaw) ? yValRaw : 0;
+          totalPerStock[stock.stock_id][currency] = (totalPerStock[stock.stock_id][currency] || 0) + val;
+          if (yVal > 0) {
+            yieldSum[stock.stock_id][currency] = (yieldSum[stock.stock_id][currency] || 0) + yVal;
+            yieldCount[stock.stock_id][currency] = (yieldCount[stock.stock_id][currency] || 0) + 1;
+          }
+          const lastClose = Number(cell.last_close_price);
+          const safeLastClose = Number.isFinite(lastClose) ? lastClose : cell.last_close_price ?? null;
+          const priceDateRaw = cell.reference_date || cell.dividend_date || cell.payment_date || null;
+          const priceDate = priceDateRaw ? new Date(priceDateRaw) : null;
+          const existingDate = latestPrice[stock.stock_id].date ? new Date(latestPrice[stock.stock_id].date) : null;
+          if (!existingDate || (priceDate && priceDate > existingDate)) {
+            latestPrice[stock.stock_id] = { price: safeLastClose, date: priceDateRaw };
+          }
+          const existingYieldDate = latestYield[stock.stock_id].date ? new Date(latestYield[stock.stock_id].date) : null;
+          if (!existingYieldDate || (priceDate && priceDate > existingYieldDate)) {
+            latestYield[stock.stock_id] = { yield: yVal, date: priceDateRaw };
+          }
+        });
       }
     });
-  });
+
+    // Override latestPrice with up-to-date close price from stock list API when available
+    displayStocks.forEach(stock => {
+      const stockListPrice = stockListPriceMap[stock.stock_id];
+      if (stockListPrice != null) {
+        latestPrice[stock.stock_id] = { ...latestPrice[stock.stock_id], price: stockListPrice };
+      }
+    });
+
+    const estAnnualYield = {};
+    const maxAnnualYield = currenciesForTotals.reduce((acc, currency) => {
+      acc[currency] = 0;
+      return acc;
+    }, {});
+    Object.keys(yieldSum).forEach(id => {
+      estAnnualYield[id] = {};
+      currenciesForTotals.forEach(currency => {
+        const sum = yieldSum[id][currency] || 0;
+        const count = yieldCount[id][currency] || 0;
+        if (count === 0) return;
+        const avgYield = sum / count;
+        const freq = [1, 2, 4, 6, 12, 52].includes(freqMap[id]) ? freqMap[id] : count;
+        const est = avgYield * freq;
+        estAnnualYield[id][currency] = est;
+        if (est > (maxAnnualYield[currency] || 0)) {
+          maxAnnualYield[currency] = est;
+        }
+      });
+    });
+
+    return { totalPerStock, yieldSum, yieldCount, latestPrice, latestYield, estAnnualYield, maxAnnualYield };
+  }, [displayStocks, dividendTable, availableCurrencies, stockListPriceMap, freqMap]);
 
   // Prepare events for calendar view
-  const calendarEvents = filteredData
+  const calendarEvents = useMemo(() => filteredData
     .filter(item => {
       if (selectedStockIds.length && !selectedStockIds.includes(item.stock_id)) return false;
       const currency = item.currency || DEFAULT_CURRENCY;
@@ -961,11 +990,12 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         });
       }
       return arr;
-    });
+    }),
+  [filteredData, selectedStockIds, extraFilters.currencies, activeCurrencies]);
 
-  const filteredCalendarEvents = calendarEvents.filter(ev =>
+  const filteredCalendarEvents = useMemo(() => calendarEvents.filter(ev =>
     calendarFilter === 'both' || ev.type === calendarFilter
-  );
+  ), [calendarEvents, calendarFilter]);
 
 
   return (

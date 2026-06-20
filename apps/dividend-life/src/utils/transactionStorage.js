@@ -45,14 +45,26 @@ export function migrateTransactionHistory() {
   try {
     const cookieVal = Cookies.get(STORAGE_KEY);
     if (cookieVal) {
-      const list = JSON.parse(cookieVal);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      let list;
+      try {
+        list = JSON.parse(cookieVal);
+      } catch {
+        Cookies.remove(STORAGE_KEY);
+        return [];
+      }
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      } catch (e) {
+        console.error('[storage] write failed:', e);
+        throw e;
+      }
       writeUpdatedAt(Date.now());
       Cookies.remove(STORAGE_KEY);
       return list;
     }
-  } catch {
+  } catch (e) {
     Cookies.remove(STORAGE_KEY);
+    throw e;
   }
   return [];
 }
@@ -67,7 +79,12 @@ export function readTransactionHistory() {
 }
 
 export function saveTransactionHistory(list) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.error('[storage] write failed:', e);
+    throw e;
+  }
   writeUpdatedAt(Date.now());
 }
 

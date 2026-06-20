@@ -34,3 +34,7 @@ jobs:
 
       # 6. Run tests or other steps
       - run: pnpm test
+
+      # 7. Lint
+      - name: Lint
+        run: pnpm lint

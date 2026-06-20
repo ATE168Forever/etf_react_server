@@ -4,8 +4,8 @@ import { normalizeDividendResponse, DIVIDEND_YEARS } from './utils/dividendGoalU
 import { parseJSONResponse } from './utils/safeFetchJSON';
 
 const DEFAULT_DIVIDEND_COUNTRIES = ['tw', 'us'];
-const CHUNK_THRESHOLD = 3000;
-const CHUNK_SIZE = 1200;
+const CHUNK_THRESHOLD = 50;  // chunk when more than 50 IDs to keep URLs under ~2 KB
+const CHUNK_SIZE = 80;       // 80 IDs × ~13 chars = ~1 KB per request
 const CONCURRENCY = 4;
 
 function toArray(value) {
@@ -253,8 +253,8 @@ async function fetchWithCache(url, payload, maxAge = DEFAULT_CACHE_MAX_AGE, opti
   }
 
   const hasFreshCache = hasCachedData && age < maxAge;
-  // Don't use cache if it has empty items - likely stale/incorrect data
-  const hasValidCachedItems = cachedData?.items?.length > 0;
+  // Cache is valid if we have a cached response (even with 0 items); null/undefined means no cache
+  const hasValidCachedItems = hasCachedData && cachedData !== null && cachedData !== undefined;
   if (hasFreshCache && hasValidCachedItems) {
     return {
       data: cachedData,
@@ -266,15 +266,11 @@ async function fetchWithCache(url, payload, maxAge = DEFAULT_CACHE_MAX_AGE, opti
   try {
     const data = await executeDividendRequest(url, payload);
     const timestamp = new Date().toISOString();
-    // Only cache if we have actual data items to avoid caching empty responses
-    const hasItems = data?.items?.length > 0;
-    if (hasItems) {
-      try {
-        localStorage.setItem(cacheKey, JSON.stringify(data));
-        localStorage.setItem(metaKey, JSON.stringify({ timestamp }));
-      } catch {
-        // ignore storage write errors
-      }
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(data));
+      localStorage.setItem(metaKey, JSON.stringify({ timestamp }));
+    } catch {
+      // ignore storage write errors
     }
     return {
       data,
@@ -282,8 +278,8 @@ async function fetchWithCache(url, payload, maxAge = DEFAULT_CACHE_MAX_AGE, opti
       timestamp
     };
   } catch (error) {
-    // Only fall back to cache if it has valid items
-    if (hasCachedData && cachedData?.items?.length > 0) {
+    // Fall back to cache if we have any cached data
+    if (hasCachedData) {
       return {
         data: cachedData,
         cacheStatus: age < maxAge ? 'cached' : 'stale',
@@ -465,7 +461,7 @@ export async function fetchDividendsByYears(years, countries, options = {}) {
   };
 }
 
-// Clear all dividend-related localStorage cache entries that have empty items
+// Clear all dividend-related localStorage cache entries that are unparseable/invalid
 export function clearEmptyDividendCaches() {
   try {
     const keysToRemove = [];
@@ -475,18 +471,14 @@ export function clearEmptyDividendCaches() {
         try {
           const value = localStorage.getItem(key);
           if (value) {
-            const parsed = JSON.parse(value);
-            // Remove if items is empty or doesn't exist
-            if (!parsed?.items?.length) {
-              keysToRemove.push(key);
-              // Also remove corresponding meta key
-              const metaKey = key.replace('cache:data:', 'cache:meta:');
-              keysToRemove.push(metaKey);
-            }
+            // Only validate that the entry is parseable; empty items arrays are valid cached responses
+            JSON.parse(value);
           }
         } catch {
-          // Remove invalid cache entries
+          // Remove unparseable/invalid cache entries
           keysToRemove.push(key);
+          const metaKey = key.replace('cache:data:', 'cache:meta:');
+          keysToRemove.push(metaKey);
         }
       }
     }
@@ -498,7 +490,7 @@ export function clearEmptyDividendCaches() {
       }
     });
     if (keysToRemove.length > 0) {
-      console.log('[dividendApi] Cleared', keysToRemove.length, 'empty/invalid cache entries');
+      console.log('[dividendApi] Cleared', keysToRemove.length, 'invalid/unparseable cache entries');
     }
   } catch (e) {
     console.warn('[dividendApi] Failed to clear empty caches:', e);
@@ -539,16 +531,6 @@ export function clearDividendsCache(years, countries, options = {}) {
 }
 
 export function buildDividendRequestUrl(year, country, options = {}) {
-  const normalizedYears = normalizeYearList(options?.years ?? year);
-  const primaryYear = normalizedYears.length ? normalizedYears[0] : undefined;
-
-  const mergedOptions = {
-    years: primaryYear,
-    countries: options?.countries ?? country,
-    stockId: options?.stockId,
-    stockIds: options?.stockIds,
-    fields: options?.fields
-  };
   return buildDividendUrl();
 }
 
