@@ -156,7 +156,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem('theme');
     if (stored === 'light' || stored === 'dark') return stored;
-    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return 'dark';
   });
 
   useEffect(() => {
@@ -306,44 +306,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   useEffect(() => { langRef.current = lang; }, [lang]);
   const showToastRef = useRef(showToast);
   useEffect(() => { showToastRef.current = showToast; }, [showToast]);
-
-  useEffect(() => {
-    const callUpdate = () => {
-      const history = readTransactionHistory();
-      const uniquePurchased = getPurchasedStockIds(history);
-
-      fetch(`${API_HOST}/update_dividend`)
-        .then(response => {
-          if (!response.ok) return;
-          clearDividendsCache();
-          if (uniquePurchased.length) {
-            clearDividendsCache(undefined, undefined, { stockIds: uniquePurchased });
-          }
-          const msg = langRef.current === 'en'
-            ? 'Data updated. Please refresh to see the latest.'
-            : '資料已更新，請重新整理頁面';
-          showToastRef.current(msg, 'success', 8000);
-        })
-        .catch(() => {
-          // Network error — keep existing cache intact
-        });
-    };
-
-    const now = new Date();
-    const first = new Date();
-    first.setHours(18, 30, 0, 0);
-    if (now > first) first.setDate(first.getDate() + 1);
-    let intervalId;
-    const timeoutId = setTimeout(() => {
-      callUpdate();
-      intervalId = setInterval(callUpdate, 24 * 60 * 60 * 1000);
-    }, first.getTime() - now.getTime());
-
-    return () => {
-      clearTimeout(timeoutId);
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, []);
 
   const [dividendCacheInfo, setDividendCacheInfo] = useState(null);
 
@@ -1011,73 +973,28 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
             homeNavigation={homeNavigation}
           />
         </div>
-        <ul className="nav nav-tabs mb-1 justify-content-center" role="tablist" aria-label={lang === 'en' ? 'Main navigation' : '主導覽'}>
-            <li className="nav-item" role="presentation">
-              <button
-                type="button"
-                id="tab-home"
-                role="tab"
-                aria-selected={tab === 'home'}
-                aria-controls="panel-home"
-                className={`nav-link${tab === 'home' ? ' active' : ''}`}
-                onClick={() => setTab('home')}
-              >
-                {t('home')}
-              </button>
-            </li>
-            <li className="nav-item" role="presentation">
-              <button
-                type="button"
-                id="tab-mydividend"
-                role="tab"
-                aria-selected={tab === 'mydividend'}
-                aria-controls="panel-mydividend"
-                className={`nav-link${tab === 'mydividend' ? ' active' : ''}`}
-                onClick={() => setTab('mydividend')}
-              >
-                {t('mydividend')}
-              </button>
-            </li>
-            <li className="nav-item" role="presentation">
-              <button
-                type="button"
-                id="tab-dividend"
-                role="tab"
-                aria-selected={tab === 'dividend'}
-                aria-controls="panel-dividend"
-                className={`nav-link${tab === 'dividend' ? ' active' : ''}`}
-                onClick={() => setTab('dividend')}
-              >
-                {t('dividend_search')}
-              </button>
-            </li>
-            <li className="nav-item" role="presentation">
-              <button
-                type="button"
-                id="tab-inventory"
-                role="tab"
-                aria-selected={tab === 'inventory'}
-                aria-controls="panel-inventory"
-                className={`nav-link${tab === 'inventory' ? ' active' : ''}`}
-                onClick={() => setTab('inventory')}
-              >
-                {t('inventory')}
-              </button>
-            </li>
-            <li className="nav-item" role="presentation">
-              <button
-                type="button"
-                id="tab-about"
-                role="tab"
-                aria-selected={tab === 'about'}
-                aria-controls="panel-about"
-                className={`nav-link${tab === 'about' ? ' active' : ''}`}
-                onClick={() => setTab('about')}
-              >
-                {t('about')}
-              </button>
-            </li>
-          </ul>
+        <nav className="custom-tab-bar" role="tablist" aria-label={lang === 'en' ? 'Main navigation' : '主導覽'}>
+          {[
+            { key: 'home',      label: t('home') },
+            { key: 'mydividend', label: t('mydividend') },
+            { key: 'dividend',  label: t('dividend_search') },
+            { key: 'inventory', label: t('inventory') },
+            { key: 'about',     label: t('about') },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              id={`tab-${key}`}
+              role="tab"
+              aria-selected={tab === key}
+              aria-controls={`panel-${key}`}
+              className={`custom-tab-btn${tab === key ? ' custom-tab-btn--active' : ''}`}
+              onClick={() => setTab(key)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
         <section className={`${brandStyles.panel} ${brandStyles.content} ${brandStyles.contentWide}`}>
           <div className="dividend-alert" role="status" aria-live="polite" aria-atomic="false">
             {upcomingAlerts.filter(a => !dismissedAlerts.includes(`${a.stock_id}-${a.type}-${a.date}`)).map(a => {
