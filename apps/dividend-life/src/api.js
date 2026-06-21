@@ -141,10 +141,16 @@ export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
     };
   }
 
+  // 4xx errors indicate a problem with the request — don't silently serve stale data
+  if (response.status >= 400 && response.status < 500) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  // 5xx/unexpected: serve stale if available (transient server error)
   if (hasCachedData) {
     return {
       data: cachedData,
-      cacheStatus: hasFreshCache ? 'cached' : 'stale',
+      cacheStatus: 'stale',
       timestamp: cachedTimestamp
     };
   }
