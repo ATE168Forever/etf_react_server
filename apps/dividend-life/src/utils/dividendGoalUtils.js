@@ -22,7 +22,16 @@ function toValidDate(value) {
 
 const holdingsTimelineCache = new WeakMap();
 const objectCacheKeyRegistry = new WeakMap();
+const SUMMARY_CACHE_MAX = 50;
 const summaryCache = new Map();
+
+function summaryCacheSet(key, value) {
+  if (summaryCache.size >= SUMMARY_CACHE_MAX) {
+    summaryCache.delete(summaryCache.keys().next().value);
+  }
+  summaryCache.set(key, value);
+}
+
 let objectCacheKeySeed = 0;
 
 function getObjectCacheKey(obj, fallback) {
@@ -330,7 +339,7 @@ export function calculateDividendSummary({
     baseCurrency: preferredCurrency
   };
 
-  summaryCache.set(cacheKey, result);
+  summaryCacheSet(cacheKey, result);
   return result;
 }
 
