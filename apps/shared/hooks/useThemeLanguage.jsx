@@ -5,10 +5,7 @@ const ThemeLanguageContext = createContext(null);
 const isChineseLanguage = (lang) => typeof lang === 'string' && lang.toLowerCase().startsWith('zh');
 
 const getPreferredTheme = () => {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    return 'dark';
-  }
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'dark';
 };
 
 const getInitialTheme = () => {
