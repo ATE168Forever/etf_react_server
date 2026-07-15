@@ -1,8 +1,7 @@
-import { GOOGLE_API_KEY, GOOGLE_CLIENT_ID } from '../config';
+import { GOOGLE_CLIENT_ID } from '../config';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 
 const CLIENT_ID = GOOGLE_CLIENT_ID || '';
-const API_KEY = GOOGLE_API_KEY || '';
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
 const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
 const GAPI_SCRIPT_ID = 'gapi';
@@ -49,7 +48,6 @@ async function requestGapiClient() {
     });
   });
   await window.gapi.client.init({
-    apiKey: API_KEY,
     discoveryDocs: DISCOVERY_DOCS
   });
 }
@@ -97,41 +95,11 @@ export function isDriveAuthenticated() {
   return isTokenValid();
 }
 
-let silentAuthPromise = null;
-
-// Attempts to get a token silently (no popup). Returns null if auth requires user interaction.
-// Concurrent calls share the same promise to avoid callback conflicts.
+// GIS token requests use a popup even with prompt: ''. Browsers may block that popup
+// when it is not triggered by a user action, so background work only reuses a token
+// that is already valid. Reauthentication is initiated by the Connect button.
 async function ensureAccessTokenSilent() {
-  if (isTokenValid()) return accessToken;
-  clearToken();
-  if (silentAuthPromise) return silentAuthPromise;
-  await initDrive();
-  silentAuthPromise = new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      silentAuthPromise = null;
-      resolve(null);
-    }, 5000);
-    const prev = tokenClient.callback;
-    tokenClient.callback = (response) => {
-      clearTimeout(timer);
-      tokenClient.callback = prev;
-      silentAuthPromise = null;
-      if (response?.error || !response?.access_token) {
-        resolve(null);
-      } else {
-        storeTokenResponse(response);
-        resolve(response.access_token);
-      }
-    };
-    try {
-      tokenClient.requestAccessToken({ prompt: '' });
-    } catch {
-      clearTimeout(timer);
-      silentAuthPromise = null;
-      resolve(null);
-    }
-  });
-  return silentAuthPromise;
+  return isTokenValid() ? accessToken : null;
 }
 
 async function ensureAccessToken() {

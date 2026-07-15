@@ -81,7 +81,9 @@ test('exportTransactionsToDrive uploads CSV using client token', async () => {
     { stock_id: '2330', stock_name: 'TSMC', date: '2024-01-01', quantity: 10, price: 500, type: 'buy' }
   ]);
 
-  expect(window.gapi.client.init).toHaveBeenCalled();
+  expect(window.gapi.client.init).toHaveBeenCalledWith({
+    discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+  });
   expect(tokenClient.requestAccessToken).toHaveBeenCalled();
   expect(setToken).toHaveBeenCalledWith({ access_token: 'client-token' });
   expect(globalThis.fetch).toHaveBeenCalledTimes(1);
@@ -103,6 +105,16 @@ test('subsequent exports reuse cached GIS token', async () => {
   ]);
 
   expect(tokenClient.requestAccessToken).toHaveBeenCalledTimes(1);
+});
+
+test('silent import does not open an OAuth popup without a cached token', async () => {
+  const { importTransactionsFromDrive } = await loadModule();
+  const { tokenClient, list } = mockGoogleApis();
+
+  await expect(importTransactionsFromDrive({ silent: true })).resolves.toBeNull();
+
+  expect(tokenClient.requestAccessToken).not.toHaveBeenCalled();
+  expect(list).not.toHaveBeenCalled();
 });
 
 test('importTransactionsFromDrive parses CSV rows from Drive', async () => {
