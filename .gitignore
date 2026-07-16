@@ -24,5 +24,10 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment variables
+# Environment variables — copy .env.template to .env / .env.production locally.
+# Real credentials belong only in Cloudflare Pages dashboard env vars for prod.
+.env
+.env.production
 .env.development
+apps/*/.env
+apps/*/.env.production
