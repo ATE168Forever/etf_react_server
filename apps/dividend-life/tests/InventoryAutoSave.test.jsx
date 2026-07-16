@@ -4,7 +4,6 @@ import InventoryTab from '../src/InventoryTab';
 import { fetchWithCache } from '../src/api';
 import { fetchStockList } from '../src/stockApi';
 import {
-  exportTransactionsToDrive,
   importTransactionsFromDrive
 } from '../src/googleDrive';
 

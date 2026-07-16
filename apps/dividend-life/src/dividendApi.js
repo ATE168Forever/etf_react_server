@@ -530,7 +530,7 @@ export function clearDividendsCache(years, countries, options = {}) {
   });
 }
 
-export function buildDividendRequestUrl(year, country, options = {}) {
+export function buildDividendRequestUrl() {
   return buildDividendUrl();
 }
 

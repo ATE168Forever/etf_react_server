@@ -83,7 +83,6 @@ export function transactionsFromCsv(text) {
   if (cleanText.charCodeAt(0) === 0xFEFF) {
     cleanText = cleanText.slice(1);
   }
-  cleanText = cleanText.replace(/^﻿/, '');
   cleanText = cleanText.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
   const lines = cleanText.split('\n');

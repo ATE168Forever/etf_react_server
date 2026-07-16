@@ -23,7 +23,7 @@ import './App.css';
 import brandStyles from '@shared/components/BrandPage/BrandPage.module.css';
 import { API_HOST } from '../config';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
-import { fetchDividendsByYears, clearDividendsCache, clearEmptyDividendCaches } from './dividendApi';
+import { fetchDividendsByYears, clearEmptyDividendCaches } from './dividendApi';
 import { fetchStockList } from './stockApi';
 import useEffectOnce from './hooks/useEffectOnce';
 import useWatchGroups from './hooks/useWatchGroups';
@@ -215,8 +215,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-    // setTab wraps setTabState (stable) + replaceState; register listener once only
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -283,7 +281,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [showGroupModal]);
+  }, [showGroupModal, setShowGroupModal]);
 
   const handleDividendScopeChange = (scope) => {
     setDividendScope(scope);

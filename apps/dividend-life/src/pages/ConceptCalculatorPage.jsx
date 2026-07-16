@@ -103,7 +103,10 @@ function CalcChart({ rows, rowsB, lang, svgRef, hoveredIdx, onHover, onHoverEnd 
   );
 
   const toY = (v) => PAD.top + CHART_H - (v / maxIncome) * CHART_H;
-  const toX = (i) => PAD.left + (i / Math.max(visible.length - 1, 1)) * CHART_W;
+  const toX = useCallback(
+    (i) => PAD.left + (i / Math.max(visible.length - 1, 1)) * CHART_W,
+    [visible.length]
+  );
   const barW = Math.max(3, CHART_W / visible.length - 2);
 
   const targetPath = visible
@@ -126,7 +129,7 @@ function CalcChart({ rows, rowsB, lang, svgRef, hoveredIdx, onHover, onHoverEnd 
       if (d < minDist) { minDist = d; best = i; }
     });
     onHover(best);
-  }, [visible, onHover]);
+  }, [visible, onHover, toX]);
 
   const hovered = hoveredIdx !== null && hoveredIdx < visible.length ? visible[hoveredIdx] : null;
   const hoveredB = hoveredIdx !== null && visibleB && hoveredIdx < visibleB.length ? visibleB[hoveredIdx] : null;
@@ -318,7 +321,6 @@ function buildSummaryText(rows, lang, styles) {
 
 function CalculatorContent() {
   const { lang } = useThemeLanguage();
-  const meta = PARAM_META[lang] ?? PARAM_META.zh;
 
   // ── Scenario A ──
   const [activePreset, setActivePreset] = useState('moderate');

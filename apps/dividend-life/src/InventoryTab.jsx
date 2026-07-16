@@ -9,7 +9,7 @@ import {
   saveTransactionHistory,
   getTransactionHistoryUpdatedAt
 } from './utils/transactionStorage';
-import { exportTransactionsToDrive, importTransactionsFromDrive, isDriveAuthenticated, exportDividendBankToDrive, importDividendBankFromDrive } from './googleDrive';
+import { exportTransactionsToDrive, importTransactionsFromDrive, exportDividendBankToDrive, importDividendBankFromDrive } from './googleDrive';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
 import AddTransactionModal from './components/AddTransactionModal';
 import QuickPurchaseModal from './components/QuickPurchaseModal';
@@ -22,7 +22,7 @@ import styles from './InventoryTab.module.css';
 import { useLanguage } from './i18n';
 import { useToast } from './useToast';
 import InvestmentGoalCard from './components/InvestmentGoalCard';
-import { summarizeInventory, getPurchasedStockIds } from './utils/inventoryUtils';
+import { summarizeInventory } from './utils/inventoryUtils';
 import { SHARES_PER_LOT } from './utils/currencyUtils';
 import { loadInvestmentGoals, saveInvestmentGoals } from './utils/investmentGoalsStorage';
 import {
@@ -93,7 +93,7 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
   const [driveMismatch, setDriveMismatch] = useState(false);
   const [drivePreview, setDrivePreview] = useState({ show: false, loading: false, data: null });
   const drivePreviewTriggerRef = useRef(null);
-  const [transactionHistoryUpdatedAt, setTransactionHistoryUpdatedAt] = useState(
+  const [, setTransactionHistoryUpdatedAt] = useState(
     () => getTransactionHistoryUpdatedAt() ?? 0
   );
   const [latestPrices, setLatestPrices] = useState({});
@@ -1911,7 +1911,6 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
                   return { ...item, value, gain: value - item.total_cost };
                 })
                 .sort((a, b) => b.total_cost - a.total_cost);
-              const totalGain = totalValue - totalInvestment;
               const twRows = rows.filter(r => r.country === 'TW');
               const usRows = rows.filter(r => r.country === 'US');
               const twCost = twRows.reduce((s, r) => s + r.total_cost, 0);
