@@ -40,7 +40,10 @@ Jest powers the ETF Life unit tests. The suite and targeted commands continue to
 
 ```bash
 pnpm --filter dividend-life test
-pnpm --filter dividend-life test -- --runTestsByPath tests/googleDrive.test.js
+# Omit "--" before jest flags: pnpm forwards args as-is, but a literal "--"
+# makes Jest treat everything after it as a test path pattern instead of
+# parsing flags.
+pnpm --filter dividend-life test --runTestsByPath tests/googleDrive.test.js
 ```
 
 Refer to the documentation in `apps/dividend-life/README.md` (if present) for additional ETF-specific guidance.
