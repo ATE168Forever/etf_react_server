@@ -1,5 +1,5 @@
 /* eslint-env jest */
-import { fetchDividendsByYears, clearDividendsCache, buildDividendRequestUrl } from '../src/dividendApi';
+import { fetchDividendsByYears, clearDividendsCache, buildDividendRequestUrl, clearEmptyDividendCaches } from '../src/dividendApi';
 import { clearCache } from '../src/api';
 
 jest.mock('../src/api', () => ({
@@ -162,5 +162,31 @@ describe('dividendApi', () => {
 
     expect(clearCache).toHaveBeenCalledTimes(1);
     expect(clearCache).toHaveBeenCalledWith('https://api.example.com/get_dividend');
+  });
+
+  test('fetchDividendsByYears caches responses under the versioned cache:v1: prefix and skips re-fetching within maxAge', async () => {
+    await fetchDividendsByYears([2024], ['TW']);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
+    const storedKeys = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i));
+    const cacheKey = storedKeys.find(key => key.startsWith('cache:v1:data:') && key.includes('get_dividend'));
+    expect(cacheKey).toBeDefined();
+
+    await fetchDividendsByYears([2024], ['TW']);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  test('clearEmptyDividendCaches removes corrupt versioned dividend cache entries without touching legacy-prefixed entries', () => {
+    localStorage.setItem('cache:v1:data:https://api.example.com/get_dividend?year=2024', '{not valid json');
+    localStorage.setItem('cache:v1:meta:https://api.example.com/get_dividend?year=2024', JSON.stringify({ timestamp: '2026-01-01T00:00:00.000Z' }));
+    localStorage.setItem('cache:data:https://api.example.com/get_stock_list', JSON.stringify({ value: 1 }));
+    localStorage.setItem('cache:meta:https://api.example.com/get_stock_list', JSON.stringify({ timestamp: '2026-01-01T00:00:00.000Z' }));
+
+    clearEmptyDividendCaches();
+
+    expect(localStorage.getItem('cache:v1:data:https://api.example.com/get_dividend?year=2024')).toBeNull();
+    expect(localStorage.getItem('cache:v1:meta:https://api.example.com/get_dividend?year=2024')).toBeNull();
+    expect(localStorage.getItem('cache:data:https://api.example.com/get_stock_list')).not.toBeNull();
+    expect(localStorage.getItem('cache:meta:https://api.example.com/get_stock_list')).not.toBeNull();
   });
 });

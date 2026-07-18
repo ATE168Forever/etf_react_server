@@ -4,7 +4,8 @@ import {
   readEntry,
   writeEntry,
   removeEntry,
-  sweepInvalidEntries
+  sweepInvalidEntries,
+  sweepInvalidVersionedEntries
 } from '../src/utils/localCacheStore';
 
 describe('localCacheStore', () => {
@@ -154,6 +155,31 @@ describe('localCacheStore', () => {
     test('returns 0 and leaves storage untouched when everything is valid', () => {
       writeEntry('https://example.com/valid', { value: 1 }, { timestamp: '2026-01-01T00:00:00.000Z' });
       expect(sweepInvalidEntries()).toBe(0);
+      expect(localStorage.getItem('cache:v1:data:https://example.com/valid')).not.toBeNull();
+    });
+  });
+
+  describe('sweepInvalidVersionedEntries', () => {
+    test('removes only corrupt versioned entries, leaves legacy-prefixed entries untouched', () => {
+      writeEntry('https://example.com/valid', { value: 1 }, { timestamp: '2026-01-01T00:00:00.000Z' });
+      localStorage.setItem('cache:v1:data:https://example.com/corrupt', '{not valid json');
+      localStorage.setItem('cache:v1:meta:https://example.com/corrupt', JSON.stringify({ timestamp: '2026-01-01T00:00:00.000Z' }));
+      localStorage.setItem('cache:data:https://example.com/legacy', JSON.stringify({ value: 1 }));
+      localStorage.setItem('cache:meta:https://example.com/legacy', JSON.stringify({ timestamp: '2026-01-01T00:00:00.000Z' }));
+
+      const removedCount = sweepInvalidVersionedEntries();
+
+      expect(removedCount).toBe(2);
+      expect(localStorage.getItem('cache:v1:data:https://example.com/valid')).not.toBeNull();
+      expect(localStorage.getItem('cache:v1:data:https://example.com/corrupt')).toBeNull();
+      expect(localStorage.getItem('cache:v1:meta:https://example.com/corrupt')).toBeNull();
+      expect(localStorage.getItem('cache:data:https://example.com/legacy')).not.toBeNull();
+      expect(localStorage.getItem('cache:meta:https://example.com/legacy')).not.toBeNull();
+    });
+
+    test('returns 0 and leaves storage untouched when everything is valid', () => {
+      writeEntry('https://example.com/valid', { value: 1 }, { timestamp: '2026-01-01T00:00:00.000Z' });
+      expect(sweepInvalidVersionedEntries()).toBe(0);
       expect(localStorage.getItem('cache:v1:data:https://example.com/valid')).not.toBeNull();
     });
   });

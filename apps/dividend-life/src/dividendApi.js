@@ -2,6 +2,7 @@ import { API_HOST } from '../config';
 import { clearCache } from './api';
 import { normalizeDividendResponse, DIVIDEND_YEARS } from './utils/dividendGoalUtils';
 import { parseJSONResponse } from './utils/safeFetchJSON';
+import { buildKeyBase, readEntry, writeEntry, removeEntry, sweepInvalidVersionedEntries } from './utils/localCacheStore';
 
 const DEFAULT_DIVIDEND_COUNTRIES = ['tw', 'us'];
 const CHUNK_THRESHOLD = 50;  // chunk when more than 50 IDs to keep URLs under ~2 KB
@@ -142,32 +143,6 @@ function mergeDividendItems(responses = []) {
   });
 }
 
-function normalizeForCache(value) {
-  if (Array.isArray(value)) {
-    return value.map(item => normalizeForCache(item));
-  }
-  if (value && typeof value === 'object') {
-    const result = {};
-    Object.keys(value)
-      .sort()
-      .forEach(key => {
-        result[key] = normalizeForCache(value[key]);
-      });
-    return result;
-  }
-  return value;
-}
-
-function buildCacheKeyBase(url, payload) {
-  if (!payload) return url;
-  try {
-    const normalized = normalizeForCache(payload);
-    return `${url}|${JSON.stringify(normalized)}`;
-  } catch {
-    return url;
-  }
-}
-
 const DEFAULT_CACHE_MAX_AGE = 2 * 60 * 60 * 1000;
 
 async function executeDividendRequest(url, payload) {
@@ -216,41 +191,8 @@ async function fetchWithCache(url, payload, maxAge = DEFAULT_CACHE_MAX_AGE, opti
     };
   }
 
-  const cacheKeyBase = buildCacheKeyBase(url, payload);
-  const cacheKey = `cache:data:${cacheKeyBase}`;
-  const metaKey = `cache:meta:${cacheKeyBase}`;
-
-  let cachedData;
-  let cachedTimestamp = null;
-  let age = Infinity;
-  let hasCachedData = false;
-
-  try {
-    const metaRaw = localStorage.getItem(metaKey);
-    if (metaRaw) {
-      const meta = JSON.parse(metaRaw);
-      if (meta?.timestamp) {
-        cachedTimestamp = meta.timestamp;
-        const cachedTime = new Date(meta.timestamp);
-        if (!Number.isNaN(cachedTime.getTime())) {
-          age = Date.now() - cachedTime.getTime();
-        }
-      }
-    }
-  } catch {
-    // ignore parse errors
-  }
-
-  try {
-    const raw = localStorage.getItem(cacheKey);
-    if (raw !== null) {
-      cachedData = JSON.parse(raw);
-      hasCachedData = true;
-    }
-  } catch {
-    cachedData = undefined;
-    hasCachedData = false;
-  }
+  const cacheKeyBase = buildKeyBase(url, payload);
+  const { hasCachedData, cachedData, cachedTimestamp, age } = readEntry(cacheKeyBase);
 
   const hasFreshCache = hasCachedData && age < maxAge;
   // Cache is valid if we have a cached response (even with 0 items); null/undefined means no cache
@@ -266,12 +208,7 @@ async function fetchWithCache(url, payload, maxAge = DEFAULT_CACHE_MAX_AGE, opti
   try {
     const data = await executeDividendRequest(url, payload);
     const timestamp = new Date().toISOString();
-    try {
-      localStorage.setItem(cacheKey, JSON.stringify(data));
-      localStorage.setItem(metaKey, JSON.stringify({ timestamp }));
-    } catch {
-      // ignore storage write errors
-    }
+    writeEntry(cacheKeyBase, data, { timestamp });
     return {
       data,
       cacheStatus: 'fresh',
@@ -291,13 +228,7 @@ async function fetchWithCache(url, payload, maxAge = DEFAULT_CACHE_MAX_AGE, opti
 }
 
 function clearFetchCache(url, payload) {
-  const cacheKeyBase = buildCacheKeyBase(url, payload);
-  try {
-    localStorage.removeItem(`cache:data:${cacheKeyBase}`);
-    localStorage.removeItem(`cache:meta:${cacheKeyBase}`);
-  } catch {
-    // ignore errors
-  }
+  removeEntry(buildKeyBase(url, payload));
 }
 
 async function fetchDividendWithChunks(url, basePayload, stockIds, options = {}) {
@@ -461,36 +392,12 @@ export async function fetchDividendsByYears(years, countries, options = {}) {
   };
 }
 
-// Clear all dividend-related localStorage cache entries that are unparseable/invalid
+// Clear dividend-related localStorage cache entries that are unparseable/invalid
 export function clearEmptyDividendCaches() {
   try {
-    const keysToRemove = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('cache:data:')) {
-        try {
-          const value = localStorage.getItem(key);
-          if (value) {
-            // Only validate that the entry is parseable; empty items arrays are valid cached responses
-            JSON.parse(value);
-          }
-        } catch {
-          // Remove unparseable/invalid cache entries
-          keysToRemove.push(key);
-          const metaKey = key.replace('cache:data:', 'cache:meta:');
-          keysToRemove.push(metaKey);
-        }
-      }
-    }
-    keysToRemove.forEach(key => {
-      try {
-        localStorage.removeItem(key);
-      } catch {
-        // ignore
-      }
-    });
-    if (keysToRemove.length > 0) {
-      console.log('[dividendApi] Cleared', keysToRemove.length, 'invalid/unparseable cache entries');
+    const removedCount = sweepInvalidVersionedEntries();
+    if (removedCount > 0) {
+      console.log('[dividendApi] Cleared', removedCount, 'invalid/unparseable cache entries');
     }
   } catch (e) {
     console.warn('[dividendApi] Failed to clear empty caches:', e);

@@ -144,23 +144,19 @@ export function writeEntry(keyBase, data, meta) {
   return false;
 }
 
-export function sweepInvalidEntries() {
+export function sweepInvalidVersionedEntries() {
   const keysToRemove = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (!key) continue;
-    if (key.startsWith(VERSIONED_DATA_PREFIX)) {
-      try {
-        const value = localStorage.getItem(key);
-        if (value) {
-          JSON.parse(value);
-        }
-      } catch {
-        keysToRemove.push(key);
-        keysToRemove.push(`${VERSIONED_META_PREFIX}${key.slice(VERSIONED_DATA_PREFIX.length)}`);
+    if (!key || !key.startsWith(VERSIONED_DATA_PREFIX)) continue;
+    try {
+      const value = localStorage.getItem(key);
+      if (value) {
+        JSON.parse(value);
       }
-    } else if (key.startsWith(LEGACY_DATA_PREFIX) || key.startsWith(LEGACY_META_PREFIX)) {
+    } catch {
       keysToRemove.push(key);
+      keysToRemove.push(`${VERSIONED_META_PREFIX}${key.slice(VERSIONED_DATA_PREFIX.length)}`);
     }
   }
 
@@ -173,4 +169,25 @@ export function sweepInvalidEntries() {
     }
   });
   return uniqueKeys.length;
+}
+
+export function sweepInvalidEntries() {
+  const removedVersioned = sweepInvalidVersionedEntries();
+
+  const legacyKeysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.startsWith(LEGACY_DATA_PREFIX) || key.startsWith(LEGACY_META_PREFIX))) {
+      legacyKeysToRemove.push(key);
+    }
+  }
+  legacyKeysToRemove.forEach(key => {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // ignore
+    }
+  });
+
+  return removedVersioned + legacyKeysToRemove.length;
 }
