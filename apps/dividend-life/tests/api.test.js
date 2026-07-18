@@ -21,8 +21,8 @@ function createMockResponse({ status = 200, body = {}, headers = {} } = {}) {
 
 describe('fetchWithCache', () => {
   const URL = 'https://example.com/data';
-  const cacheKey = `cache:data:${URL}`;
-  const metaKey = `cache:meta:${URL}`;
+  const cacheKey = `cache:v1:data:${URL}`;
+  const metaKey = `cache:v1:meta:${URL}`;
   const realFetch = globalThis.fetch;
 
   afterEach(() => {
