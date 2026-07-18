@@ -176,7 +176,7 @@ describe('dividendApi', () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
-  test('clearEmptyDividendCaches removes corrupt versioned dividend cache entries without touching legacy-prefixed entries', () => {
+  test('clearEmptyDividendCaches removes corrupt versioned dividend cache entries and sweeps leftover legacy-prefixed entries', () => {
     localStorage.setItem('cache:v1:data:https://api.example.com/get_dividend?year=2024', '{not valid json');
     localStorage.setItem('cache:v1:meta:https://api.example.com/get_dividend?year=2024', JSON.stringify({ timestamp: '2026-01-01T00:00:00.000Z' }));
     localStorage.setItem('cache:data:https://api.example.com/get_stock_list', JSON.stringify({ value: 1 }));
@@ -186,7 +186,7 @@ describe('dividendApi', () => {
 
     expect(localStorage.getItem('cache:v1:data:https://api.example.com/get_dividend?year=2024')).toBeNull();
     expect(localStorage.getItem('cache:v1:meta:https://api.example.com/get_dividend?year=2024')).toBeNull();
-    expect(localStorage.getItem('cache:data:https://api.example.com/get_stock_list')).not.toBeNull();
-    expect(localStorage.getItem('cache:meta:https://api.example.com/get_stock_list')).not.toBeNull();
+    expect(localStorage.getItem('cache:data:https://api.example.com/get_stock_list')).toBeNull();
+    expect(localStorage.getItem('cache:meta:https://api.example.com/get_stock_list')).toBeNull();
   });
 });
