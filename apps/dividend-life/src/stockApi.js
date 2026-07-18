@@ -1,5 +1,5 @@
 import { API_HOST } from '../config';
-import { fetchWithCache } from './api';
+import { fetchWithCache, clearCache } from './api';
 
 export function normalizeStockListResponse(payload) {
   if (Array.isArray(payload)) return payload;
@@ -83,10 +83,5 @@ export async function fetchStockList(options = {}) {
 
 export function clearStockListCache(options = {}) {
   const url = buildStockListUrl(options);
-  try {
-    localStorage.removeItem(`cache:data:${url}`);
-    localStorage.removeItem(`cache:meta:${url}`);
-  } catch {
-    // ignore storage errors
-  }
+  clearCache(url);
 }

@@ -2,7 +2,7 @@ import { API_HOST } from '../config';
 import { clearCache } from './api';
 import { normalizeDividendResponse, DIVIDEND_YEARS } from './utils/dividendGoalUtils';
 import { parseJSONResponse } from './utils/safeFetchJSON';
-import { buildKeyBase, readEntry, writeEntry, removeEntry, sweepInvalidVersionedEntries } from './utils/localCacheStore';
+import { buildKeyBase, readEntry, writeEntry, removeEntry, sweepInvalidEntries } from './utils/localCacheStore';
 
 const DEFAULT_DIVIDEND_COUNTRIES = ['tw', 'us'];
 const CHUNK_THRESHOLD = 50;  // chunk when more than 50 IDs to keep URLs under ~2 KB
@@ -392,10 +392,11 @@ export async function fetchDividendsByYears(years, countries, options = {}) {
   };
 }
 
-// Clear dividend-related localStorage cache entries that are unparseable/invalid
+// Clear all dividend-related localStorage cache entries that are unparseable/invalid,
+// plus any leftover pre-v1 (unversioned) cache keys.
 export function clearEmptyDividendCaches() {
   try {
-    const removedCount = sweepInvalidVersionedEntries();
+    const removedCount = sweepInvalidEntries();
     if (removedCount > 0) {
       console.log('[dividendApi] Cleared', removedCount, 'invalid/unparseable cache entries');
     }

@@ -1,9 +1,10 @@
 import { parseJSONResponse } from './utils/safeFetchJSON';
+import { buildKeyBase, readEntry, writeEntry, removeEntry } from './utils/localCacheStore';
 
-export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
+export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000, options = {}) {
   // maxAge controls how long cached data is considered "fresh" before we label it stale.
-  const cacheKey = `cache:data:${url}`;
-  const metaKey = `cache:meta:${url}`;
+  const { signal } = options;
+  const keyBase = buildKeyBase(url);
   const getHeader = (res, key) => {
     if (!res || !res.headers) return null;
     if (typeof res.headers.get === 'function') {
@@ -15,39 +16,8 @@ export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
     }
     return res.headers?.[key] ?? null;
   };
-  let meta;
-  let age = Infinity;
-  let cachedTimestamp = null;
-  let cachedData;
-  let hasCachedData = false;
 
-  try {
-    const metaRaw = localStorage.getItem(metaKey);
-    if (metaRaw) {
-      meta = JSON.parse(metaRaw);
-      if (meta?.timestamp) {
-        cachedTimestamp = meta.timestamp;
-        const cachedTime = new Date(meta.timestamp);
-        if (!Number.isNaN(cachedTime.getTime())) {
-          age = Date.now() - cachedTime.getTime();
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('[cache] Failed to parse cache meta for', url, e);
-  }
-
-  try {
-    const raw = localStorage.getItem(cacheKey);
-    if (raw !== null) {
-      cachedData = JSON.parse(raw);
-      hasCachedData = true;
-    }
-  } catch (e) {
-    console.warn('[cache] Failed to parse cached data for', url, e);
-    cachedData = undefined;
-    hasCachedData = false;
-  }
+  const { hasCachedData, cachedData, meta, cachedTimestamp, age } = readEntry(keyBase);
 
   const hasFreshCache = hasCachedData && age < maxAge;
   const shouldSendValidators = hasFreshCache || (hasCachedData && age < maxAge * 2);
@@ -62,7 +32,7 @@ export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
 
   let response;
   try {
-    response = await fetch(url, { headers });
+    response = await fetch(url, { headers, ...(signal ? { signal } : {}) });
   } catch (err) {
     if (hasCachedData) {
       return {
@@ -79,12 +49,7 @@ export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
     const etag = getHeader(response, 'ETag');
     const lastModified = getHeader(response, 'Last-Modified');
     const timestamp = new Date().toISOString();
-    try {
-      localStorage.setItem(cacheKey, JSON.stringify(data));
-      localStorage.setItem(metaKey, JSON.stringify({ etag, lastModified, timestamp }));
-    } catch {
-      // localStorage may be unavailable or full
-    }
+    writeEntry(keyBase, data, { etag, lastModified, timestamp });
     return { data, cacheStatus: 'fresh', timestamp };
   }
 
@@ -93,11 +58,7 @@ export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
       const etag = getHeader(response, 'ETag') || meta?.etag || null;
       const lastModified = getHeader(response, 'Last-Modified') || meta?.lastModified || null;
       const timestamp = new Date().toISOString();
-      try {
-        localStorage.setItem(metaKey, JSON.stringify({ etag, lastModified, timestamp }));
-      } catch {
-        // ignore write errors
-      }
+      writeEntry(keyBase, cachedData, { etag, lastModified, timestamp });
       return { data: cachedData, cacheStatus: 'cached', timestamp };
     }
 
@@ -106,28 +67,22 @@ export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
       const cacheBustUrl = url.includes('?')
         ? `${url}&cacheBust=${cacheBustValue}`
         : `${url}?cacheBust=${cacheBustValue}`;
-      const revalidatedResponse = await fetch(cacheBustUrl, { cache: 'no-store' });
+      const revalidatedResponse = await fetch(cacheBustUrl, { cache: 'no-store', ...(signal ? { signal } : {}) });
 
       if (revalidatedResponse.status === 200) {
         const data = await parseJSONResponse(revalidatedResponse, cacheBustUrl);
         const etag = getHeader(revalidatedResponse, 'ETag');
         const lastModified = getHeader(revalidatedResponse, 'Last-Modified');
         const timestamp = new Date().toISOString();
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify(data));
-          localStorage.setItem(metaKey, JSON.stringify({ etag, lastModified, timestamp }));
-        } catch {
-          // ignore write errors
-        }
+        writeEntry(keyBase, data, { etag, lastModified, timestamp });
         return { data, cacheStatus: 'fresh', timestamp };
       }
 
       if (revalidatedResponse.status === 304) {
-        const timestamp = cachedTimestamp;
         return {
           data: cachedData,
           cacheStatus: 'stale',
-          timestamp
+          timestamp: cachedTimestamp
         };
       }
     } catch {
@@ -159,10 +114,5 @@ export async function fetchWithCache(url, maxAge = 2 * 60 * 60 * 1000) {
 }
 
 export function clearCache(url) {
-  try {
-    localStorage.removeItem(`cache:data:${url}`);
-    localStorage.removeItem(`cache:meta:${url}`);
-  } catch {
-    // ignore errors
-  }
+  removeEntry(buildKeyBase(url));
 }
