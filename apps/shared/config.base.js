@@ -11,20 +11,12 @@ export const API_HOST = readEnv('VITE_API_HOST') ?? ''
 export const HOST_URL = readEnv('VITE_HOST_URL') ?? ''
 export const GOOGLE_API_KEY = readEnv('VITE_GOOGLE_API_KEY') ?? ''
 export const GOOGLE_CLIENT_ID = readEnv('VITE_GOOGLE_CLIENT_ID') ?? ''
-export const ONEDRIVE_CLIENT_ID = readEnv('VITE_ONEDRIVE_CLIENT_ID') ?? ''
-export const ONEDRIVE_SCOPES = readEnv('VITE_ONEDRIVE_SCOPES') ?? ''
-export const ONEDRIVE_AUTHORITY = readEnv('VITE_ONEDRIVE_AUTHORITY') ?? ''
-export const ONEDRIVE_GRAPH_BASE = readEnv('VITE_ONEDRIVE_GRAPH_BASE') ?? ''
 
 export const baseConfig = {
   API_HOST,
   HOST_URL,
   GOOGLE_API_KEY,
   GOOGLE_CLIENT_ID,
-  ONEDRIVE_CLIENT_ID,
-  ONEDRIVE_SCOPES,
-  ONEDRIVE_AUTHORITY,
-  ONEDRIVE_GRAPH_BASE,
 }
 
 // if (typeof window !== 'undefined') {

@@ -17,10 +17,16 @@ Jest powers the ETF Life unit tests. Run the entire suite locally with:
 pnpm --filter dividend-life test
 ```
 
-To focus on the auto-save coverage that verifies CSV, Google Drive, and OneDrive behaviour, target the specific suite:
+To focus on the auto-save coverage that verifies CSV and Google Drive behaviour, target the specific suite:
 
 ```bash
-pnpm --filter dividend-life test -- InventoryAutoSave.test.jsx
+pnpm --filter dividend-life test InventoryAutoSave.test.jsx
+```
+
+To specify a full test file path instead, use:
+
+```bash
+pnpm --filter dividend-life test --runTestsByPath tests/InventoryAutoSave.test.jsx
 ```
 
 Codex does not run Jest automatically—you should execute the tests yourself before sending changes for review so that regressions are caught early.
@@ -39,6 +45,6 @@ docker run -p 3000:80 etf-view
 
 Rebuild the image whenever dependencies change so the container has the correct `node_modules`.
 
-## OneDrive and Google Drive Backup
+## Google Drive Backup
 
-Environment variable documentation for the various backup providers lives inside the source files and comments. Set the values in a `.env` file at the package root so Vite exposes them to the client at build time.
+Environment variable documentation for the backup provider lives inside the source files and comments. Set the values in a `.env` file at the frontend workspace root (`etf_react_server/`) so Vite exposes them to the client at build time.

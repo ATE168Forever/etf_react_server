@@ -39,12 +39,21 @@ function setupFetchMock() {
 }
 
 describe('InventoryTab data access UI', () => {
+  let consoleErrorSpy;
+
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
     setupFetchMock();
     window.alert = jest.fn();
     window.confirm = jest.fn(() => true);
+  });
+
+  afterEach(() => {
+    if (consoleErrorSpy) {
+      consoleErrorSpy.mockRestore();
+      consoleErrorSpy = undefined;
+    }
   });
 
   async function openDataMenu() {
@@ -87,6 +96,7 @@ describe('InventoryTab data access UI', () => {
   });
 
   test('Connect Google Drive button triggers import attempt after initial failure', async () => {
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     importTransactionsFromDrive.mockRejectedValueOnce(new Error('Auth failed'));
     importTransactionsFromDrive.mockResolvedValue({
       list: [{ stock_id: '0050', stock_name: '重新連接', date: '2024-03-01', quantity: 10, price: 30, type: 'buy' }],
@@ -105,5 +115,6 @@ describe('InventoryTab data access UI', () => {
     await waitFor(() => {
       expect(importTransactionsFromDrive).toHaveBeenCalledWith({ includeMetadata: true, silent: false });
     });
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Drive fetch failed', expect.any(Error));
   });
 });
