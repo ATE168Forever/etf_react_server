@@ -7,7 +7,8 @@ import useEffectOnce from './hooks/useEffectOnce';
 import {
   migrateTransactionHistory,
   saveTransactionHistory,
-  getTransactionHistoryUpdatedAt
+  getTransactionHistoryUpdatedAt,
+  setTransactionHistoryUpdatedAt
 } from './utils/transactionStorage';
 import { exportTransactionsToDrive, importTransactionsFromDrive, exportDividendBankToDrive, importDividendBankFromDrive } from './googleDrive';
 import { transactionsToCsv, transactionsFromCsv } from './utils/csvUtils';
@@ -93,9 +94,6 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
   const [driveMismatch, setDriveMismatch] = useState(false);
   const [drivePreview, setDrivePreview] = useState({ show: false, loading: false, data: null });
   const drivePreviewTriggerRef = useRef(null);
-  const [, setTransactionHistoryUpdatedAt] = useState(
-    () => getTransactionHistoryUpdatedAt() ?? 0
-  );
   const [latestPrices, setLatestPrices] = useState({});
   const [invSortKey, setInvSortKey] = useState('stock_id');
   const [invSortDir, setInvSortDir] = useState('asc');
@@ -381,6 +379,7 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
           }
           setDriveMismatch(false);
           const enriched = mapTransactionsWithStockNames(list);
+          skipTimestampRef.current = true; // Drive import sets its own timestamp below, not "now"
           setTransactionHistory(enriched);
           saveTransactionHistory(enriched);
           const ts = remoteModified || Date.now();
@@ -388,7 +387,11 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
           setDriveStatus({ status: 'synced', timestamp: ts });
         } else {
           setDriveMismatch(false);
-          setDriveStatus({ status: 'synced', timestamp: remoteModified || Date.now() });
+          if (remoteModified !== null && localUpdatedAt > remoteModified) {
+            syncToDrive(transactionHistory);
+          } else {
+            setDriveStatus({ status: 'synced', timestamp: remoteModified || Date.now() });
+          }
         }
         importDividendBankFromDrive().then(bankData => {
           if (bankData) {

@@ -10,6 +10,7 @@ const GIS_SCRIPT_ID = 'gis';
 const GIS_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 const BACKUP_FILENAME = 'inventory_backup.csv';
 const BANK_BACKUP_FILENAME = 'dividend_bank_backup.json';
+const TOKEN_STORAGE_KEY = 'google_drive_token';
 
 let initialized = false;
 let tokenClient;
@@ -25,6 +26,39 @@ function clearToken() {
   accessToken = null;
   accessTokenExpiresAt = 0;
   // everAuthenticated intentionally kept — used to choose silent re-auth vs first-time consent
+  try {
+    sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+  } catch {
+    // sessionStorage unavailable (e.g. private browsing) — in-memory state is still cleared
+  }
+}
+
+// Access tokens outlive a single page load (~1hr), but the in-memory variables above
+// don't survive a reload. Persisting to sessionStorage lets a reload reuse a still-valid
+// token instead of forcing the user through the Google consent popup again.
+function saveTokenToStorage() {
+  try {
+    sessionStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify({
+      access_token: accessToken,
+      expires_at: accessTokenExpiresAt,
+    }));
+  } catch {
+    // sessionStorage unavailable — token simply won't survive a reload
+  }
+}
+
+function restoreTokenFromStorage() {
+  let stored;
+  try {
+    stored = JSON.parse(sessionStorage.getItem(TOKEN_STORAGE_KEY));
+  } catch {
+    return;
+  }
+  if (!stored?.access_token || Date.now() >= stored.expires_at - 60_000) return;
+  accessToken = stored.access_token;
+  accessTokenExpiresAt = stored.expires_at;
+  everAuthenticated = true;
+  window.gapi.client.setToken({ access_token: accessToken });
 }
 
 async function loadScript(id, src) {
@@ -61,6 +95,7 @@ function storeTokenResponse(response) {
   accessTokenExpiresAt = Date.now() + expiresIn * 1000;
   everAuthenticated = true;
   window.gapi.client.setToken({ access_token: accessToken });
+  saveTokenToStorage();
   return { token: accessToken };
 }
 
@@ -88,6 +123,7 @@ export async function initDrive() {
   await loadScript(GIS_SCRIPT_ID, GIS_SCRIPT_SRC);
   await requestGapiClient();
   initialiseTokenClient();
+  restoreTokenFromStorage();
   initialized = true;
 }
 

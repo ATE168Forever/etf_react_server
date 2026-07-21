@@ -67,6 +67,7 @@ afterEach(() => {
   delete window.gapi;
   delete window.google;
   delete globalThis.fetch;
+  sessionStorage.clear();
 });
 
 async function loadModule() {
@@ -148,4 +149,49 @@ test('importTransactionsFromDrive returns null when no backup exists', async () 
   const rows = await importTransactionsFromDrive();
 
   expect(rows).toBeNull();
+});
+
+test('persists the access token to sessionStorage after authenticating', async () => {
+  const { exportTransactionsToDrive } = await loadModule();
+  mockGoogleApis({ tokenResponse: { access_token: 'persisted-token', expires_in: 3600 } });
+
+  await exportTransactionsToDrive([
+    { stock_id: '2330', stock_name: 'TSMC', date: '2024-01-01', quantity: 10, price: 500, type: 'buy' }
+  ]);
+
+  const stored = JSON.parse(sessionStorage.getItem('google_drive_token'));
+  expect(stored.access_token).toBe('persisted-token');
+  expect(stored.expires_at).toBeGreaterThan(Date.now());
+});
+
+test('restores a valid persisted token on reload, avoiding a new OAuth popup', async () => {
+  sessionStorage.setItem('google_drive_token', JSON.stringify({
+    access_token: 'restored-token',
+    expires_at: Date.now() + 60 * 60 * 1000,
+  }));
+
+  const { importTransactionsFromDrive } = await loadModule();
+  const { tokenClient, list } = mockGoogleApis({ listResult: { result: { files: [] } } });
+
+  const result = await importTransactionsFromDrive({ silent: true });
+
+  expect(tokenClient.requestAccessToken).not.toHaveBeenCalled();
+  expect(list).toHaveBeenCalled();
+  expect(result).toBeNull();
+});
+
+test('does not restore an expired token from sessionStorage', async () => {
+  sessionStorage.setItem('google_drive_token', JSON.stringify({
+    access_token: 'expired-token',
+    expires_at: Date.now() - 1000,
+  }));
+
+  const { importTransactionsFromDrive } = await loadModule();
+  const { tokenClient, list } = mockGoogleApis();
+
+  const result = await importTransactionsFromDrive({ silent: true });
+
+  expect(tokenClient.requestAccessToken).not.toHaveBeenCalled();
+  expect(list).not.toHaveBeenCalled();
+  expect(result).toBeNull();
 });

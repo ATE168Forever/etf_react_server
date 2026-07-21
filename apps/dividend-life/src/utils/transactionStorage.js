@@ -91,3 +91,7 @@ export function saveTransactionHistory(list) {
 export function getTransactionHistoryUpdatedAt() {
   return readUpdatedAt();
 }
+
+export function setTransactionHistoryUpdatedAt(timestamp) {
+  writeUpdatedAt(timestamp);
+}

@@ -4,7 +4,8 @@ import InventoryTab from '../src/InventoryTab';
 import { fetchWithCache } from '../src/api';
 import { fetchStockList } from '../src/stockApi';
 import {
-  importTransactionsFromDrive
+  importTransactionsFromDrive,
+  exportTransactionsToDrive
 } from '../src/googleDrive';
 
 jest.mock('../src/api');
@@ -93,6 +94,54 @@ describe('InventoryTab data access UI', () => {
       const saved = JSON.parse(localStorage.getItem('my_transaction_history'));
       expect(saved).toEqual(remoteList);
     });
+  });
+
+  test('importing from Drive stores Drive\'s modifiedTime as local updatedAt, not the current time', async () => {
+    const driveModifiedTime = Date.now() - 60 * 60 * 1000; // 1 hour ago — a stale-but-real Drive backup
+    const remoteList = [
+      { stock_id: '0050', stock_name: 'Drive 同步', date: '2024-02-01', quantity: 12, price: 25, type: 'buy' }
+    ];
+    importTransactionsFromDrive.mockResolvedValue({
+      list: remoteList,
+      modifiedTime: driveModifiedTime
+    });
+    localStorage.setItem('my_transaction_history', JSON.stringify([]));
+    localStorage.setItem('my_transaction_history_updated_at', '1000');
+
+    await openDataMenu();
+    const select = screen.getByLabelText('存取方式');
+    fireEvent.change(select, { target: { value: 'googleDrive' } });
+
+    await waitFor(() => {
+      const saved = JSON.parse(localStorage.getItem('my_transaction_history'));
+      expect(saved).toEqual(remoteList);
+    });
+
+    expect(Number(localStorage.getItem('my_transaction_history_updated_at'))).toBe(driveModifiedTime);
+  });
+
+  test('reconnecting with newer local data pushes it to Drive instead of just marking synced', async () => {
+    const driveModifiedTime = Date.now() - 60 * 60 * 1000; // Drive backup is 1 hour old
+    const localUpdatedAt = Date.now() - 30 * 60 * 1000; // local is newer, but not "now"
+    const localList = [
+      { stock_id: '0050', stock_name: '本地資料', date: '2024-04-01', quantity: 8, price: 22, type: 'buy' }
+    ];
+    importTransactionsFromDrive.mockResolvedValue({
+      list: [{ stock_id: '0050', stock_name: 'Drive 舊資料', date: '2024-01-01', quantity: 3, price: 20, type: 'buy' }],
+      modifiedTime: driveModifiedTime
+    });
+    localStorage.setItem('my_transaction_history', JSON.stringify(localList));
+    localStorage.setItem('my_transaction_history_updated_at', String(localUpdatedAt));
+
+    await openDataMenu();
+    const select = screen.getByLabelText('存取方式');
+    fireEvent.change(select, { target: { value: 'googleDrive' } });
+
+    await waitFor(() => {
+      expect(exportTransactionsToDrive).toHaveBeenCalled();
+    });
+    const saved = JSON.parse(localStorage.getItem('my_transaction_history'));
+    expect(saved).toEqual(localList);
   });
 
   test('Connect Google Drive button triggers import attempt after initial failure', async () => {

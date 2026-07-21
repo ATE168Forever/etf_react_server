@@ -1,6 +1,10 @@
 /* eslint-env jest */
 import Cookies from 'js-cookie';
-import { migrateTransactionHistory } from '../src/utils/transactionStorage';
+import {
+  migrateTransactionHistory,
+  getTransactionHistoryUpdatedAt,
+  setTransactionHistoryUpdatedAt
+} from '../src/utils/transactionStorage';
 
 describe('transaction storage migration', () => {
   beforeEach(() => {
@@ -15,5 +19,10 @@ describe('transaction storage migration', () => {
     expect(result).toEqual(sample);
     expect(JSON.parse(localStorage.getItem('my_transaction_history'))).toEqual(sample);
     expect(Cookies.get('my_transaction_history')).toBeUndefined();
+  });
+
+  test('setTransactionHistoryUpdatedAt writes an explicit timestamp', () => {
+    setTransactionHistoryUpdatedAt(1700000000000);
+    expect(getTransactionHistoryUpdatedAt()).toBe(1700000000000);
   });
 });
