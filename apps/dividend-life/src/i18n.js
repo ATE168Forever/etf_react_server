@@ -2,6 +2,9 @@ import { createContext, useContext } from 'react';
 
 export const translations = {
   zh: {
+    empty_portfolio_title: '還沒有任何持股紀錄',
+    empty_portfolio_description: '新增你的第一筆交易，開始追蹤配息現金流。',
+    empty_portfolio_cta: '前往新增持股',
     insight_card_title: '年度進度',
     insight_card_no_goal: '尚未設定年度目標',
     cashflow_chart_title: '未來現金流',
@@ -139,6 +142,9 @@ export const translations = {
     dividend_date: '配息日期'
   },
   en: {
+    empty_portfolio_title: 'No holdings yet',
+    empty_portfolio_description: 'Add your first transaction to start tracking dividend cashflow.',
+    empty_portfolio_cta: 'Go add a holding',
     insight_card_title: 'Annual Progress',
     insight_card_no_goal: 'No annual goal set yet',
     cashflow_chart_title: 'Future Cashflow',
