@@ -1,38 +1,64 @@
 :root {
-  --color-text: #1f2937;
-  --color-bg: #f9fafb;
-  --color-card-bg: #fff;
-  --color-border: #e5e7eb;
-  --color-row-even: #f3f4f6;
-  --color-hover: #e5e7eb;
-  --color-header-bg: #f3f4f6;
-  --color-text-muted: #6b7280;
-  --color-input-bg: #fff;
-  --color-error: #d62828;
-  --color-link: #0d6efd;
-  --color-text-on-accent: #1f2937;
-  --color-primary: #7c99ff;
-  --accent-gold: #d4af37;
-  --accent-gold-hover: #ffd700;
-  --accent-green: #2f9e44;
-  --share-preview-bg: #f8fafc;
-  --share-preview-border: rgba(148, 163, 184, 0.35);
-  --share-preview-text: #1f2937;
-  --share-preview-label: #475569;
-  --brand-body-bg: #f8fafc;
-  --brand-page-background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 40%, #ffffff 100%);
-  --brand-panel-background: rgba(255, 255, 255, 0.92);
-  --brand-panel-border: rgba(148, 163, 184, 0.35);
-  --brand-panel-shadow: 0 25px 60px rgba(148, 163, 184, 0.3);
-  --brand-description-color: rgba(51, 65, 85, 0.85);
-  --brand-feature-text-color: rgba(30, 41, 59, 0.82);
-  --brand-secondary-button-background: rgba(226, 232, 240, 0.85);
-  --brand-secondary-button-color: rgba(30, 41, 59, 0.85);
-  --brand-secondary-button-border: rgba(148, 163, 184, 0.6);
-  --brand-secondary-button-hover-border: rgba(99, 102, 241, 0.65);
-  --brand-secondary-button-hover-color: #3730a3;
-  --brand-logo-drop-shadow: drop-shadow(0 12px 24px rgba(148, 163, 184, 0.35));
-  --brand-footer-note-color: rgba(100, 116, 139, 0.9);
+  --bg: #f6f1e6;
+  --surface: #ffffff;
+  --surface-2: #fbf6ec;
+  --ink: #2d2a22;
+  --ink-soft: #55503f;
+  --muted: #948a72;
+  --border: #e4dcc8;
+
+  --sage: #6e8062;
+  --sage-hover: #596b50;
+  --sage-soft: #dce6d5;
+  --terracotta: #be6a4c;
+  --terracotta-soft: #f3dcd1;
+  --gold: #a9813b;
+  --gold-soft: #efe0be;
+
+  --focus: #356f5b;
+  --shadow-card: 0 8px 28px rgba(55, 67, 58, 0.08);
+  --radius-card: 18px;
+  --radius-control: 10px;
+
+  --font-display: "Noto Serif TC", "Iowan Old Style", "Songti TC", "PMingLiU", serif;
+  --font-body: "PingFang TC", "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-number: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Legacy aliases — keep every existing consumer working unchanged */
+  --color-text: var(--ink);
+  --color-bg: var(--bg);
+  --color-card-bg: var(--surface);
+  --color-border: var(--border);
+  --color-row-even: var(--surface-2);
+  --color-hover: var(--sage-soft);
+  --color-header-bg: var(--surface-2);
+  --color-text-muted: var(--muted);
+  --color-input-bg: var(--surface);
+  --color-error: #be6a4c;
+  --color-link: var(--sage);
+  --color-text-on-accent: #ffffff;
+  --color-primary: var(--sage);
+  --accent-gold: var(--gold);
+  --accent-gold-hover: var(--sage-hover);
+  --accent-green: var(--sage);
+  --share-preview-bg: var(--surface-2);
+  --share-preview-border: var(--border);
+  --share-preview-text: var(--ink);
+  --share-preview-label: var(--ink-soft);
+  --brand-body-bg: var(--bg);
+  --brand-page-background: var(--bg);
+  --brand-panel-background: var(--surface);
+  --brand-panel-border: var(--border);
+  --brand-panel-shadow: var(--shadow-card);
+  --brand-description-color: var(--ink-soft);
+  --brand-feature-text-color: var(--ink-soft);
+  --brand-secondary-button-background: var(--surface-2);
+  --brand-secondary-button-color: var(--ink-soft);
+  --brand-secondary-button-border: var(--border);
+  --brand-secondary-button-hover-border: var(--sage);
+  --brand-secondary-button-hover-color: var(--sage-hover);
+  --brand-logo-drop-shadow: drop-shadow(0 8px 20px rgba(55, 67, 58, 0.12));
+  --brand-footer-note-color: var(--muted);
 
   /* Bootstrap color variables */
   --bs-body-color: var(--color-text);
@@ -50,7 +76,7 @@
   --bs-nav-tabs-link-active-bg: var(--color-bg);
   --bs-nav-tabs-link-active-border-color: var(--color-border);
 
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: var(--font-body);
   line-height: 1.5;
   font-weight: 400;
 
@@ -64,37 +90,62 @@
 }
 
 :root[data-theme='dark'] {
-  --color-primary: #7c99ff;
-  --color-text: #f9fafb;
-  --color-bg: #111827;
-  --color-card-bg: #1f2937;
-  --color-border: #f9fafb;
-  --color-row-even: #1f2937;
-  --color-hover: #374151;
-  --color-header-bg: #374151;
-  --color-text-muted: #9ca3af;
-  --color-input-bg: #1f2937;
-  --color-error: #ef4444;
-  --color-link: #60a5fa;
-  --color-text-on-accent: #f9fafb;
-  --share-preview-bg: rgba(30, 41, 59, 0.9);
-  --share-preview-border: rgba(148, 163, 184, 0.45);
-  --share-preview-text: #f8fafc;
-  --share-preview-label: #cbd5f5;
-  --brand-body-bg: #04050a;
-  --brand-page-background: linear-gradient(180deg, #04050a 0%, #06070f 35%, #020204 100%);
-  --brand-panel-background: rgba(12, 14, 20, 0.92);
-  --brand-panel-border: rgba(121, 147, 255, 0.18);
-  --brand-panel-shadow: 0 25px 60px rgba(5, 8, 30, 0.45);
-  --brand-description-color: rgba(224, 229, 255, 0.8);
-  --brand-feature-text-color: rgba(214, 224, 255, 0.86);
-  --brand-secondary-button-background: rgba(10, 12, 22, 0.85);
-  --brand-secondary-button-color: rgba(224, 229, 255, 0.85);
-  --brand-secondary-button-border: rgba(153, 172, 255, 0.45);
-  --brand-secondary-button-hover-border: rgba(172, 192, 255, 0.7);
-  --brand-secondary-button-hover-color: #dce5ff;
-  --brand-logo-drop-shadow: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4));
-  --brand-footer-note-color: rgba(214, 224, 255, 0.72);
+  --bg: #221e17;
+  --surface: #2b261d;
+  --surface-2: #322c21;
+  --ink: #f3ecdd;
+  --ink-soft: #d8cfb8;
+  --muted: #9c927a;
+  --border: #3e382a;
+  --sage: #93aa87;
+  --sage-hover: #a9bea0;
+  --sage-soft: #33402e;
+  --terracotta: #db8e6d;
+  --terracotta-soft: #4a2e24;
+  --gold: #d2ac5f;
+  --gold-soft: #453722;
+  --focus: #b8d6c1;
+  --shadow-card: 0 10px 32px rgba(0, 0, 0, 0.22);
+  --radius-card: 18px;
+  --radius-control: 10px;
+
+  --font-display: "Noto Serif TC", "Iowan Old Style", "Songti TC", "PMingLiU", serif;
+  --font-body: "PingFang TC", "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-number: ui-monospace, "SF Mono", Menlo, monospace;
+
+  --color-primary: var(--sage);
+  --color-text: var(--ink);
+  --color-bg: var(--bg);
+  --color-card-bg: var(--surface);
+  --color-border: var(--border);
+  --color-row-even: var(--surface-2);
+  --color-hover: var(--sage-soft);
+  --color-header-bg: var(--surface-2);
+  --color-text-muted: var(--muted);
+  --color-input-bg: var(--surface);
+  --color-error: #db8e6d;
+  --color-link: var(--sage);
+  --color-text-on-accent: #221e17;
+  --accent-gold: var(--gold);
+  --accent-gold-hover: var(--sage-hover);
+  --share-preview-bg: var(--surface-2);
+  --share-preview-border: var(--border);
+  --share-preview-text: var(--ink);
+  --share-preview-label: var(--ink-soft);
+  --brand-body-bg: var(--bg);
+  --brand-page-background: var(--bg);
+  --brand-panel-background: var(--surface);
+  --brand-panel-border: var(--border);
+  --brand-panel-shadow: var(--shadow-card);
+  --brand-description-color: var(--ink-soft);
+  --brand-feature-text-color: var(--ink-soft);
+  --brand-secondary-button-background: var(--surface-2);
+  --brand-secondary-button-color: var(--ink-soft);
+  --brand-secondary-button-border: var(--border);
+  --brand-secondary-button-hover-border: var(--sage);
+  --brand-secondary-button-hover-color: var(--sage-hover);
+  --brand-logo-drop-shadow: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
+  --brand-footer-note-color: var(--muted);
 }
 
 [data-theme='dark'] .nav-tabs .nav-link.active {
