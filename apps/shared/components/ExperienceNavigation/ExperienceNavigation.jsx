@@ -48,8 +48,10 @@ export default function ExperienceNavigation({
   current,
   homeHref = '/',
   homeNavigation = 'router',
+  theme: themeProp,
 }) {
-  const { theme, lang } = useThemeLanguage();
+  const { theme: hookTheme, lang } = useThemeLanguage();
+  const theme = themeProp ?? hookTheme;
 
   const experiences = baseExperiences.map((experience) =>
     experience.key === 'home'

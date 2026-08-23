@@ -570,6 +570,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
             current="dividend-life"
             homeHref={homeHref}
             homeNavigation={homeNavigation}
+            theme={theme}
           />
         )}
         footer={(
