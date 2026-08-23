@@ -565,6 +565,9 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       <a href="#tab-content" className="skip-link">{lang === 'en' ? 'Skip to content' : '跳至主要內容'}</a>
       <PageContainer
         wide
+        heading={(
+          <h1 className="sr-only">Dividend Life — {lang === 'en' ? 'ETF Dividend Calendar & Tracking' : 'ETF 股息日曆與配息追蹤'}</h1>
+        )}
         navigation={(
           <ExperienceNavigation
             current="dividend-life"
@@ -583,8 +586,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
             translations={translations}
           />
         )}
+        overlay={<Suspense><NLHelper /></Suspense>}
       >
-        <h1 className="sr-only">Dividend Life — {lang === 'en' ? 'ETF Dividend Calendar & Tracking' : 'ETF 股息日曆與配息追蹤'}</h1>
         <ul className="nav nav-tabs mb-1 justify-content-center" role="tablist" aria-label={lang === 'en' ? 'Main navigation' : '主導覽'}>
             <li className="nav-item" role="presentation">
               <button
@@ -1034,7 +1037,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
             </div>
           </div>
         )}
-        <Suspense><NLHelper /></Suspense>
       </PageContainer>
     </LanguageContext.Provider>
     </ToastProvider>

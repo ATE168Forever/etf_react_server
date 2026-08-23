@@ -25,6 +25,9 @@
 .skip-link:focus {
   top: 0;
 }
+.skip-link:hover {
+  color: var(--color-text-on-accent);
+}
 
 #root {
   max-width: 1280px;
