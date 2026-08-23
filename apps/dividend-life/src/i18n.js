@@ -2,6 +2,12 @@ import { createContext, useContext } from 'react';
 
 export const translations = {
   zh: {
+    next_payment_card_title: '下一筆入帳',
+    next_payment_empty: '目前沒有已公告的入帳資料',
+    next_payment_days_today: '今天',
+    next_payment_days_tomorrow: '明天',
+    next_payment_days_in_n: '還有 {days} 天',
+    next_payment_estimated_amount_label: '預估入帳金額',
     coverage_card_title: '本月生活覆蓋率',
     coverage_living_cost_label: '每月生活費',
     coverage_living_cost_cta: '設定每月生活費',
@@ -128,6 +134,12 @@ export const translations = {
     dividend_date: '配息日期'
   },
   en: {
+    next_payment_card_title: 'Next Payment',
+    next_payment_empty: 'No announced payment yet',
+    next_payment_days_today: 'today',
+    next_payment_days_tomorrow: 'tomorrow',
+    next_payment_days_in_n: 'in {days} days',
+    next_payment_estimated_amount_label: 'Estimated amount',
     coverage_card_title: 'This Month\'s Living Cost Coverage',
     coverage_living_cost_label: 'Monthly living cost',
     coverage_living_cost_cta: 'Set monthly living cost',

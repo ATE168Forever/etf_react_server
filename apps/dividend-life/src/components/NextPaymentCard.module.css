@@ -1,0 +1,33 @@
+.card {
+  padding: 20px 24px;
+  border-radius: var(--radius-card, 18px);
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e4dcc8);
+}
+
+.title {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.empty {
+  color: var(--muted, #948a72);
+  margin: 0;
+}
+
+.stockLine {
+  margin: 0;
+  font-weight: 600;
+}
+
+.countdown {
+  color: var(--gold, #a9813b);
+  margin: 4px 0;
+}
+
+.amountLine {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0 0;
+  font-variant-numeric: tabular-nums;
+}
