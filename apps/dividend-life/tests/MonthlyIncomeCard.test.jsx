@@ -17,7 +17,7 @@ test('shows scheduled, received, and pending amounts', () => {
   expect(screen.getByText('NT$500')).toBeInTheDocument();
 });
 
-test('shows the US pre-tax disclaimer only when a US amount is present', () => {
+test('shows the US pre-tax disclaimer and US amount only when a US amount is present', () => {
   const { rerender } = render(
     <MonthlyIncomeCard
       twScheduled={2000} twReceived={2000} twPending={0}
@@ -25,6 +25,8 @@ test('shows the US pre-tax disclaimer only when a US amount is present', () => {
     />
   );
   expect(screen.queryByText(t('us_dividend_pretax_disclaimer'))).not.toBeInTheDocument();
+  expect(screen.queryByText(t('monthly_income_us_label'))).not.toBeInTheDocument();
+  expect(screen.queryByText('US$450.00')).not.toBeInTheDocument();
 
   rerender(
     <MonthlyIncomeCard
@@ -33,4 +35,6 @@ test('shows the US pre-tax disclaimer only when a US amount is present', () => {
     />
   );
   expect(screen.getByText(t('us_dividend_pretax_disclaimer'))).toBeInTheDocument();
+  expect(screen.getByText(t('monthly_income_us_label'))).toBeInTheDocument();
+  expect(screen.getByText('US$450.00')).toBeInTheDocument();
 });

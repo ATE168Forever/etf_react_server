@@ -1,5 +1,5 @@
 /* eslint-env jest */
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import HomeTab from '../src/HomeTab';
 import { fetchWithCache } from '../src/api';
 import { LanguageContext, translations } from '../src/i18n';
@@ -152,4 +152,15 @@ test('still renders the existing investment goals card below the new Phase 2 con
   renderWithLang();
   await screen.findByText(translations.zh.empty_portfolio_title);
   expect(await screen.findByText(translations.zh.investment_goals)).toBeInTheDocument();
+});
+
+test('shows the InsightCard no-goal message (not "0%") for holdings with no configured goal', async () => {
+  localStorage.setItem(
+    'my_transaction_history',
+    JSON.stringify([{ stock_id: '0050', date: '2023-01-01', type: 'buy', quantity: 1000 }])
+  );
+  renderWithLang();
+  const insightCard = (await screen.findByText(translations.zh.insight_card_no_goal)).closest('section');
+  expect(within(insightCard).getByText(translations.zh.insight_card_no_goal)).toBeInTheDocument();
+  expect(within(insightCard).queryByText('0%')).not.toBeInTheDocument();
 });

@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 
 export const translations = {
   zh: {
+    monthly_income_us_label: '本月美股配息',
     demo_mode_banner_text: '目前顯示示範資料',
     demo_mode_banner_exit: '結束示範／回到我的資料',
     empty_portfolio_title: '還沒有任何持股紀錄',
@@ -21,6 +22,7 @@ export const translations = {
     coverage_card_title: '本月生活覆蓋率',
     coverage_living_cost_label: '每月生活費',
     coverage_living_cost_cta: '設定每月生活費',
+    coverage_living_cost_edit: '修改每月生活費',
     coverage_living_cost_save: '儲存',
     coverage_living_cost_placeholder: '輸入每月生活費金額',
     monthly_income_card_title: '本月配息',
@@ -144,6 +146,7 @@ export const translations = {
     dividend_date: '配息日期'
   },
   en: {
+    monthly_income_us_label: "This Month's US Dividends",
     demo_mode_banner_text: 'Showing demo data',
     demo_mode_banner_exit: 'Exit demo / back to my data',
     empty_portfolio_title: 'No holdings yet',
@@ -163,6 +166,7 @@ export const translations = {
     coverage_card_title: 'This Month\'s Living Cost Coverage',
     coverage_living_cost_label: 'Monthly living cost',
     coverage_living_cost_cta: 'Set monthly living cost',
+    coverage_living_cost_edit: 'Edit monthly living cost',
     coverage_living_cost_save: 'Save',
     coverage_living_cost_placeholder: 'Enter your monthly living cost',
     monthly_income_card_title: 'This Month\'s Dividends',

@@ -7,7 +7,7 @@ function formatCountdown(daysUntil, t) {
   return t('next_payment_days_in_n').replace('{days}', String(daysUntil));
 }
 
-export default function NextPaymentCard({ nextPayment, lang, t, calendarAction = null }) {
+export default function NextPaymentCard({ nextPayment, t, calendarAction = null }) {
   return (
     <section className={styles.card} aria-label={t('next_payment_card_title')}>
       <h3 className={styles.title}>{t('next_payment_card_title')}</h3>

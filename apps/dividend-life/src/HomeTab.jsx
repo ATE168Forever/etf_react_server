@@ -349,10 +349,10 @@ export default function HomeTab({ dividendData: dividendDataProp = null, dividen
     () => calculateFutureCashflow({
       dividendData,
       inventoryList: goalSummary.inventoryList,
-      baseCurrency: dividendSummary.baseCurrency,
+      baseCurrency: 'TWD',
       monthlyLivingCost
     }),
-    [dividendData, goalSummary.inventoryList, dividendSummary.baseCurrency, monthlyLivingCost]
+    [dividendData, goalSummary.inventoryList, monthlyLivingCost]
   );
 
   const hasHoldings = goalSummary.inventoryList.length > 0;
@@ -689,7 +689,6 @@ export default function HomeTab({ dividendData: dividendDataProp = null, dividen
             monthLabel={currentMonthLabel}
             twScheduled={coverage.twScheduled}
             coveragePercent={coverage.coveragePercent}
-            lang={lang}
             t={t}
           />
           <MonthlyIncomeCard
@@ -698,23 +697,20 @@ export default function HomeTab({ dividendData: dividendDataProp = null, dividen
             twPending={coverage.twPending}
             hasUsAmount={coverage.hasUsAmount}
             usScheduled={coverage.usScheduled}
-            lang={lang}
             t={t}
           />
           <CoverageProgress
             monthlyLivingCost={monthlyLivingCost}
             isLivingCostSet={coverage.isLivingCostSet}
             coveragePercent={coverage.coveragePercent}
-            twScheduled={coverage.twScheduled}
             hasUsAmount={coverage.hasUsAmount}
-            lang={lang}
             t={t}
             onLivingCostSaved={setMonthlyLivingCost}
           />
-          <NextPaymentCard nextPayment={nextPayment} lang={lang} t={t} />
+          <NextPaymentCard nextPayment={nextPayment} t={t} />
           <CashflowChart months={futureCashflow.months} lang={lang} t={t} />
           <InsightCard
-            achievementLabel={achievementMetric ? achievementMetric.value : null}
+            achievementLabel={goalEmptyState ? null : (achievementMetric ? achievementMetric.value : null)}
             lowIncomeMonthMessage={null}
             lang={lang}
             t={t}

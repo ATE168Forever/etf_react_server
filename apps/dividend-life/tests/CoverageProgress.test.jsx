@@ -42,6 +42,18 @@ test('shows the US pre-tax disclaimer when hasUsAmount is true', () => {
   expect(screen.getByText(t('us_dividend_pretax_disclaimer'))).toBeInTheDocument();
 });
 
+test('allows editing the living cost after it has already been set', () => {
+  render(
+    <CoverageProgress
+      monthlyLivingCost={10000} isLivingCostSet coveragePercent={50}
+      twScheduled={5000} hasUsAmount={false} lang="zh" t={t} onLivingCostSaved={() => {}}
+    />
+  );
+  expect(screen.queryByPlaceholderText(t('coverage_living_cost_placeholder'))).not.toBeInTheDocument();
+  fireEvent.click(screen.getByText(t('coverage_living_cost_edit')));
+  expect(screen.getByPlaceholderText(t('coverage_living_cost_placeholder'))).toHaveValue(10000);
+});
+
 test('saving a new living cost persists it and calls onLivingCostSaved', () => {
   const onLivingCostSaved = jest.fn();
   render(

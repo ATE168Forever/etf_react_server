@@ -4,7 +4,7 @@ import { formatTwd } from '../utils/homeCurrencyFormat';
 import { saveLivingCost } from '../utils/livingCostStorage';
 
 export default function CoverageProgress({
-  monthlyLivingCost, isLivingCostSet, coveragePercent, twScheduled, hasUsAmount, lang, t, onLivingCostSaved
+  monthlyLivingCost, isLivingCostSet, coveragePercent, hasUsAmount, t, onLivingCostSaved
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftValue, setDraftValue] = useState(String(monthlyLivingCost || ''));
@@ -27,6 +27,19 @@ export default function CoverageProgress({
       {!isLivingCostSet && !isEditing && (
         <button type="button" className={styles.ctaButton} onClick={() => setIsEditing(true)}>
           {t('coverage_living_cost_cta')}
+        </button>
+      )}
+
+      {isLivingCostSet && !isEditing && (
+        <button
+          type="button"
+          className={styles.editButton}
+          onClick={() => {
+            setDraftValue(String(monthlyLivingCost || ''));
+            setIsEditing(true);
+          }}
+        >
+          {t('coverage_living_cost_edit')}
         </button>
       )}
 

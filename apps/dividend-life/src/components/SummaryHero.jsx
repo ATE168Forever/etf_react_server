@@ -1,7 +1,7 @@
 import styles from './SummaryHero.module.css';
 import { formatTwd } from '../utils/homeCurrencyFormat';
 
-export default function SummaryHero({ monthLabel, twScheduled, coveragePercent, lang, t }) {
+export default function SummaryHero({ monthLabel, twScheduled, coveragePercent, t }) {
   const amount = formatTwd(twScheduled);
   const headline = t('home_greeting_headline').replace('{month}', monthLabel);
   const detail = coveragePercent === null

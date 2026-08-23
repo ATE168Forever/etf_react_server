@@ -1,8 +1,22 @@
 import styles from './MonthlyIncomeCard.module.css';
 import { formatTwd } from '../utils/homeCurrencyFormat';
 
+function formatUsd(value) {
+  if (value === null || value === undefined) {
+    return '—';
+  }
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return '—';
+  }
+  return `US$${numericValue.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
 export default function MonthlyIncomeCard({
-  twScheduled, twReceived, twPending, hasUsAmount, usScheduled, lang, t
+  twScheduled, twReceived, twPending, hasUsAmount, usScheduled, t
 }) {
   return (
     <section className={styles.card} aria-label={t('monthly_income_card_title')}>
@@ -20,6 +34,12 @@ export default function MonthlyIncomeCard({
           <dt>{t('monthly_income_pending_label')}</dt>
           <dd>{formatTwd(twPending)}</dd>
         </div>
+        {hasUsAmount && (
+          <div className={styles.row}>
+            <dt>{t('monthly_income_us_label')}</dt>
+            <dd>{formatUsd(usScheduled)}</dd>
+          </div>
+        )}
       </dl>
       {hasUsAmount && (
         <p className={styles.disclaimer}>{t('us_dividend_pretax_disclaimer')}</p>
