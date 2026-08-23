@@ -20,7 +20,7 @@ const AboutTab = lazy(() => import('./AboutTab'));
 const NLHelper = lazy(() => import('./NLHelper'));
 
 import './App.css';
-import brandStyles from '@shared/components/BrandPage/BrandPage.module.css';
+import PageContainer from './components/PageContainer.jsx';
 import { API_HOST } from '../config';
 import { getTomorrowDividendAlerts } from './utils/dividendUtils';
 import { clearEmptyDividendCaches } from './dividendApi';
@@ -563,15 +563,27 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     <ToastProvider>
     <LanguageContext.Provider value={{ lang, setLang, t }}>
       <a href="#tab-content" className="skip-link">{lang === 'en' ? 'Skip to content' : '跳至主要內容'}</a>
-      <main id="main-content" className={brandStyles.container}>
-        <h1 className="sr-only">Dividend Life — {lang === 'en' ? 'ETF Dividend Calendar & Tracking' : 'ETF 股息日曆與配息追蹤'}</h1>
-        <div className={brandStyles.navigation}>
+      <PageContainer
+        wide
+        navigation={(
           <ExperienceNavigation
             current="dividend-life"
             homeHref={homeHref}
             homeNavigation={homeNavigation}
           />
-        </div>
+        )}
+        footer={(
+          <Footer
+            theme={theme}
+            setTheme={setTheme}
+            lang={lang}
+            setLang={setLang}
+            t={t}
+            translations={translations}
+          />
+        )}
+      >
+        <h1 className="sr-only">Dividend Life — {lang === 'en' ? 'ETF Dividend Calendar & Tracking' : 'ETF 股息日曆與配息追蹤'}</h1>
         <ul className="nav nav-tabs mb-1 justify-content-center" role="tablist" aria-label={lang === 'en' ? 'Main navigation' : '主導覽'}>
             <li className="nav-item" role="presentation">
               <button
@@ -639,7 +651,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
               </button>
             </li>
           </ul>
-        <section className={`${brandStyles.panel} ${brandStyles.content} ${brandStyles.contentWide}`}>
           <div className="dividend-alert" role="status" aria-live="polite" aria-atomic="false">
             {upcomingAlerts.filter(a => !dismissedAlerts.includes(`${a.stock_id}-${a.type}-${a.date}`)).map(a => {
               const key = `${a.stock_id}-${a.type}-${a.date}`;
@@ -1022,19 +1033,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
             </div>
           </div>
         )}
-        </section>
         <Suspense><NLHelper /></Suspense>
-        <div className={brandStyles.footer}>
-          <Footer
-            theme={theme}
-            setTheme={setTheme}
-            lang={lang}
-            setLang={setLang}
-            t={t}
-            translations={translations}
-          />
-        </div>
-      </main>
+      </PageContainer>
     </LanguageContext.Provider>
     </ToastProvider>
   );
