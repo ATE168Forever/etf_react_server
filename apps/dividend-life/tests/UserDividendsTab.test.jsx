@@ -138,7 +138,7 @@ test('allows switching between TWD and USD dividend summaries', async () => {
 
   render(<UserDividendsTab allDividendData={data} />);
 
-  const dividendTable = await screen.findByRole('table', { name: '現金流月份表' });
+  const dividendTable = await screen.findByRole('table', { name: '我的配息月份表' });
 
   const toTwdButtonInitial = screen.getByRole('button', { name: /^(台股|NT\$|NT dividends)$/i });
   fireEvent.click(toTwdButtonInitial);
