@@ -1085,7 +1085,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
             )}
 
             <div className="table-responsive" ref={tableContainerRef}>
-            <table className="table table-bordered table-striped" ref={tableElementRef} aria-label={lang === 'en' ? 'My dividends by month' : '我的配息月份表'}>
+            <table className="table table-bordered table-striped" ref={tableElementRef} aria-label={lang === 'en' ? 'Cash flow by month' : '現金流月份表'}>
                 <thead>
                     <tr>
                         <th scope="col" className="stock-col" rowSpan={activeCurrencies.length > 1 ? 2 : 1}

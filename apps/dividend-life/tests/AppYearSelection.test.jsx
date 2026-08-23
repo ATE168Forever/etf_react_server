@@ -83,7 +83,7 @@ test('keeps current year selected even when current year has no data', async () 
     );
   });
 
-  const dividendTab = await screen.findByRole('tab', { name: 'ETF 配息查詢' });
+  const dividendTab = await screen.findByRole('tab', { name: '探索 ETF' });
 
   await act(async () => {
     fireEvent.click(dividendTab);
