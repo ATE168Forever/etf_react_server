@@ -2,6 +2,8 @@ import { createContext, useContext } from 'react';
 
 export const translations = {
   zh: {
+    demo_mode_banner_text: '目前顯示示範資料',
+    demo_mode_banner_exit: '結束示範／回到我的資料',
     empty_portfolio_title: '還沒有任何持股紀錄',
     empty_portfolio_description: '新增你的第一筆交易，開始追蹤配息現金流。',
     empty_portfolio_cta: '前往新增持股',
@@ -142,6 +144,8 @@ export const translations = {
     dividend_date: '配息日期'
   },
   en: {
+    demo_mode_banner_text: 'Showing demo data',
+    demo_mode_banner_exit: 'Exit demo / back to my data',
     empty_portfolio_title: 'No holdings yet',
     empty_portfolio_description: 'Add your first transaction to start tracking dividend cashflow.',
     empty_portfolio_cta: 'Go add a holding',
