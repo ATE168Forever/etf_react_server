@@ -32,3 +32,4 @@ dist-ssr
 .env.development
 apps/*/.env
 apps/*/.env.production
+.worktrees/
