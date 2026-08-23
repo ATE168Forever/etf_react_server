@@ -2,6 +2,11 @@ import { createContext, useContext } from 'react';
 
 export const translations = {
   zh: {
+    monthly_income_card_title: '本月配息',
+    monthly_income_scheduled_label: '本月預計',
+    monthly_income_received_label: '已入帳',
+    monthly_income_pending_label: '未入帳',
+    us_dividend_pretax_disclaimer: '美股股息為稅前估算，實際入帳金額會扣除預扣稅。',
     home_greeting_headline: '{month}的配息生活很平穩 ☀️',
     home_greeting_detail: '本月預計收到 {amount}，約可負擔 {percent}% 的基本生活費。',
     home_greeting_detail_no_coverage: '本月預計收到 {amount}。設定每月生活費，即可看到覆蓋率。',
@@ -118,6 +123,11 @@ export const translations = {
     dividend_date: '配息日期'
   },
   en: {
+    monthly_income_card_title: 'This Month\'s Dividends',
+    monthly_income_scheduled_label: 'Scheduled',
+    monthly_income_received_label: 'Received',
+    monthly_income_pending_label: 'Pending',
+    us_dividend_pretax_disclaimer: 'US dividends are pre-tax estimates; actual payouts will have withholding tax deducted.',
     home_greeting_headline: 'Your dividend life in {month} looks steady ☀️',
     home_greeting_detail: 'You are set to receive {amount} this month, covering about {percent}% of your basic living costs.',
     home_greeting_detail_no_coverage: 'You are set to receive {amount} this month. Set a monthly living cost to see your coverage.',
