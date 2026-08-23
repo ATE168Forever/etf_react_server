@@ -36,7 +36,7 @@
   --color-input-bg: var(--surface);
   --color-error: #be6a4c;
   --color-link: var(--sage);
-  --color-text-on-accent: #ffffff;
+  --color-text-on-accent: var(--ink);
   --color-primary: var(--sage);
   --accent-gold: var(--gold);
   --accent-gold-hover: var(--sage-hover);

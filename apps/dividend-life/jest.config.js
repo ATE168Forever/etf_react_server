@@ -8,6 +8,8 @@ export default {
   },
   moduleNameMapper: {
     '^@shared/(.*)\\.(css|scss)$': '<rootDir>/test-style-mock.js',
+    '^@shared/assets/dividend-life-light\\.svg$': '<rootDir>/test-file-mock-light.js',
+    '^@shared/assets/dividend-life\\.svg$': '<rootDir>/test-file-mock-dark.js',
     '^@shared/(.*)\\.(svg|png|jpe?g|gif)$': '<rootDir>/test-file-mock.js',
     '^@shared/(.*)$': '<rootDir>/../shared/$1',
     '^@dividend-life/(.*)\\.(svg|png|jpe?g|gif)$': '<rootDir>/test-file-mock.js',
