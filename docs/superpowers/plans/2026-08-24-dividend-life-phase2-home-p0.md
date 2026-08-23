@@ -33,7 +33,7 @@
 - Test: `apps/dividend-life/tests/homeCurrencyFormat.test.js`
 
 **Interfaces:**
-- Produces: `formatTwd(value, lang = 'zh')` → string，例如 `formatTwd(18620, 'zh')` → `'NT$18,620'`；`formatTwd(18620.4, 'en')` → `'NT$18,620'`（四捨五入、無小數）。非有限數字回傳 `'—'`。
+- Produces: `formatTwd(value)` → string，例如 `formatTwd(18620)` → `'NT$18,620'`；`formatTwd(18620.6)` → `'NT$18,621'`（四捨五入、無小數）。非有限數字回傳 `'—'`。
 - Produces: `formatMissingValue()` → `'—'`（給呼叫端在缺值情境直接使用，維持格式一致）。
 
 - [ ] **Step 1: Write the failing test**
