@@ -124,3 +124,32 @@ test('fetches stats with en flag true for en', async () => {
     expect.any(Number)
   );
 });
+
+test('shows the empty portfolio state when there are no holdings', async () => {
+  renderWithLang();
+  expect(await screen.findByText(translations.zh.empty_portfolio_title)).toBeInTheDocument();
+});
+
+test('shows the coverage setup CTA when living cost is not set', async () => {
+  localStorage.setItem(
+    'my_transaction_history',
+    JSON.stringify([{ stock_id: '0050', date: '2023-01-01', type: 'buy', quantity: 1000 }])
+  );
+  renderWithLang();
+  expect(await screen.findByText(translations.zh.coverage_living_cost_cta)).toBeInTheDocument();
+});
+
+test('shows the next payment empty message when no payment is announced', async () => {
+  localStorage.setItem(
+    'my_transaction_history',
+    JSON.stringify([{ stock_id: '0050', date: '2023-01-01', type: 'buy', quantity: 1000 }])
+  );
+  renderWithLang();
+  expect(await screen.findByText(translations.zh.next_payment_empty)).toBeInTheDocument();
+});
+
+test('still renders the existing investment goals card below the new Phase 2 content', async () => {
+  renderWithLang();
+  await screen.findByText(translations.zh.empty_portfolio_title);
+  expect(await screen.findByText(translations.zh.investment_goals)).toBeInTheDocument();
+});

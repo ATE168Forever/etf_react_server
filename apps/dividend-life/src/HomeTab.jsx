@@ -18,6 +18,17 @@ import {
 } from './utils/dividendExclusions';
 import { getFeatureUpdates } from './featureUpdates';
 import useStorageListener from './hooks/useStorageListener';
+import { loadLivingCost } from './utils/livingCostStorage';
+import { calculateCoverage } from './utils/coverageUtils';
+import { getNextAnnouncedPayment } from './utils/nextPaymentUtils';
+import { calculateFutureCashflow } from './utils/futureCashflowUtils';
+import SummaryHero from './components/SummaryHero';
+import MonthlyIncomeCard from './components/MonthlyIncomeCard';
+import CoverageProgress from './components/CoverageProgress';
+import NextPaymentCard from './components/NextPaymentCard';
+import CashflowChart from './components/CashflowChart';
+import InsightCard from './components/InsightCard';
+import EmptyPortfolioState from './components/EmptyPortfolioState';
 
 const VIEWBOX_WIDTH = 720;
 const VIEWBOX_HEIGHT = 280;
@@ -234,6 +245,7 @@ export default function HomeTab({ dividendData: dividendDataProp = null, dividen
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(null);
   const [dividendExclusions, setDividendExclusions] = useState(() => loadDividendExclusions());
   const [isSharingChart, setIsSharingChart] = useState(false);
+  const [monthlyLivingCost, setMonthlyLivingCost] = useState(() => loadLivingCost());
   const { t, lang } = useLanguage();
   const chartRef = useRef(null);
   const featureUpdates = useMemo(() => getFeatureUpdates(lang), [lang]);
@@ -319,6 +331,36 @@ export default function HomeTab({ dividendData: dividendDataProp = null, dividen
     [goalSummary.inventoryList, dividendData, transactionHistory, dividendExclusions]
   );
 
+  const coverage = useMemo(
+    () => calculateCoverage({
+      dividendData,
+      inventoryList: goalSummary.inventoryList,
+      monthlyLivingCost
+    }),
+    [dividendData, goalSummary.inventoryList, monthlyLivingCost]
+  );
+
+  const nextPayment = useMemo(
+    () => getNextAnnouncedPayment(dividendData, transactionHistory),
+    [dividendData, transactionHistory]
+  );
+
+  const futureCashflow = useMemo(
+    () => calculateFutureCashflow({
+      dividendData,
+      inventoryList: goalSummary.inventoryList,
+      baseCurrency: dividendSummary.baseCurrency,
+      monthlyLivingCost
+    }),
+    [dividendData, goalSummary.inventoryList, dividendSummary.baseCurrency, monthlyLivingCost]
+  );
+
+  const hasHoldings = goalSummary.inventoryList.length > 0;
+  const currentMonthLabel = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'zh-TW', { month: 'long' });
+    return formatter.format(new Date());
+  }, [lang]);
+
   const goalMessages = useMemo(() => ({
     annualGoal: t('annual_goal'),
     monthlyGoal: t('monthly_goal'),
@@ -356,6 +398,10 @@ export default function HomeTab({ dividendData: dividendDataProp = null, dividen
     }),
     [dividendSummary, goalSummary.goals, goalMessages]
   );
+
+  const achievementMetric = Array.isArray(goalMetrics)
+    ? goalMetrics.find((metric) => metric.id === 'achievement')
+    : null;
 
   const goalTitle = goalSummary.goals.goalName?.trim() || t('investment_goals');
 
@@ -633,6 +679,48 @@ export default function HomeTab({ dividendData: dividendDataProp = null, dividen
 
   return (
     <div className="dashboard-container">
+
+      {/* ═══ PHASE 2 P0: TOTAL OVERVIEW ═══ */}
+      {!hasHoldings ? (
+        <EmptyPortfolioState lang={lang} t={t} />
+      ) : (
+        <>
+          <SummaryHero
+            monthLabel={currentMonthLabel}
+            twScheduled={coverage.twScheduled}
+            coveragePercent={coverage.coveragePercent}
+            lang={lang}
+            t={t}
+          />
+          <MonthlyIncomeCard
+            twScheduled={coverage.twScheduled}
+            twReceived={coverage.twReceived}
+            twPending={coverage.twPending}
+            hasUsAmount={coverage.hasUsAmount}
+            usScheduled={coverage.usScheduled}
+            lang={lang}
+            t={t}
+          />
+          <CoverageProgress
+            monthlyLivingCost={monthlyLivingCost}
+            isLivingCostSet={coverage.isLivingCostSet}
+            coveragePercent={coverage.coveragePercent}
+            twScheduled={coverage.twScheduled}
+            hasUsAmount={coverage.hasUsAmount}
+            lang={lang}
+            t={t}
+            onLivingCostSaved={setMonthlyLivingCost}
+          />
+          <NextPaymentCard nextPayment={nextPayment} lang={lang} t={t} />
+          <CashflowChart months={futureCashflow.months} lang={lang} t={t} />
+          <InsightCard
+            achievementLabel={achievementMetric ? achievementMetric.value : null}
+            lowIncomeMonthMessage={null}
+            lang={lang}
+            t={t}
+          />
+        </>
+      )}
 
       {/* ═══ TIER 1: INCOME HERO ═══ */}
       {heroMetrics && (
