@@ -11,7 +11,7 @@ export default function SummaryHero({ monthLabel, twScheduled, coveragePercent, 
         .replace('{percent}', String(coveragePercent));
 
   return (
-    <section className={styles.hero} aria-label={lang === 'en' ? 'Summary' : '生活化摘要'}>
+    <section className={styles.hero} aria-label={t('home_greeting_aria_label')}>
       <p className={styles.headline}>{headline}</p>
       <p className={styles.detail}>{detail}</p>
     </section>
