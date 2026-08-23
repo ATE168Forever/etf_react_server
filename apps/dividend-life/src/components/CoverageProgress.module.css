@@ -1,0 +1,54 @@
+.card {
+  padding: 20px 24px;
+  border-radius: var(--radius-card, 18px);
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e4dcc8);
+}
+
+.title {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.ctaButton {
+  background: var(--sage, #6e8062);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-control, 10px);
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.editRow {
+  display: flex;
+  gap: 8px;
+}
+
+.progressBar {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--sage-soft, #dce6d5);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--sage, #6e8062);
+}
+
+.percentLabel {
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+  margin: 8px 0 0;
+}
+
+.livingCostLine {
+  color: var(--muted, #948a72);
+  margin: 4px 0 0;
+}
+
+.disclaimer {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--terracotta, #be6a4c);
+}

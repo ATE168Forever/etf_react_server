@@ -2,6 +2,11 @@ import { createContext, useContext } from 'react';
 
 export const translations = {
   zh: {
+    coverage_card_title: '本月生活覆蓋率',
+    coverage_living_cost_label: '每月生活費',
+    coverage_living_cost_cta: '設定每月生活費',
+    coverage_living_cost_save: '儲存',
+    coverage_living_cost_placeholder: '輸入每月生活費金額',
     monthly_income_card_title: '本月配息',
     monthly_income_scheduled_label: '本月預計',
     monthly_income_received_label: '已入帳',
@@ -123,6 +128,11 @@ export const translations = {
     dividend_date: '配息日期'
   },
   en: {
+    coverage_card_title: 'This Month\'s Living Cost Coverage',
+    coverage_living_cost_label: 'Monthly living cost',
+    coverage_living_cost_cta: 'Set monthly living cost',
+    coverage_living_cost_save: 'Save',
+    coverage_living_cost_placeholder: 'Enter your monthly living cost',
     monthly_income_card_title: 'This Month\'s Dividends',
     monthly_income_scheduled_label: 'Scheduled',
     monthly_income_received_label: 'Received',
