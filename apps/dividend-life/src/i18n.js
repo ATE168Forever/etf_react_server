@@ -2,6 +2,9 @@ import { createContext, useContext } from 'react';
 
 export const translations = {
   zh: {
+    cashflow_chart_title: '未來現金流',
+    cashflow_month_no_data: '尚無公告資料',
+    cashflow_below_living_cost: '低於生活費目標',
     next_payment_card_title: '下一筆入帳',
     next_payment_empty: '目前沒有已公告的入帳資料',
     next_payment_days_today: '今天',
@@ -134,6 +137,9 @@ export const translations = {
     dividend_date: '配息日期'
   },
   en: {
+    cashflow_chart_title: 'Future Cashflow',
+    cashflow_month_no_data: 'No announced data yet',
+    cashflow_below_living_cost: 'Below living cost target',
     next_payment_card_title: 'Next Payment',
     next_payment_empty: 'No announced payment yet',
     next_payment_days_today: 'today',
