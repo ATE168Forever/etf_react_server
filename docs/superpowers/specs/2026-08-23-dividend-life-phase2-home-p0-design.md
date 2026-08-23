@@ -44,11 +44,11 @@
 本月生活覆蓋率 = 本月預估發放金額（預設僅台股／使用者主要生活幣別）/ 每月生活費 × 100%
 ```
 
-- 輸入：`dividendSummary`（既有 `calculateDividendSummary` 輸出）、`monthlyLivingCost`、使用者是否選擇併入美股的旗標。
-- 輸出：`{ twAmount, usAmount, includedAmount, coveragePercent, isUsIncluded, fxRate, fxAsOf }`。
-- 預設不將美股併入分子；使用者手動選擇併入時，需要匯率與換算時間點（重用 `HomeTab.jsx` 既有的 `chartCurrency` 相關換算來源，不新增匯率服務）。
-- `isUsIncluded === true` 時，UI 必須顯示「美股股息為稅前估算，實際入帳金額會扣除預扣稅。」（主規格書 §6.1.B 原文案）。
-- 生活費未設定（`monthlyLivingCost === 0`）時不計算百分比，回傳需要顯示設定 CTA 的狀態。
+- 輸入：`dividendSummary`（既有 `calculateDividendSummary` 輸出）、`monthlyLivingCost`。
+- 輸出：`{ twAmount, usAmount, coveragePercent, hasUsAmount, isLivingCostSet }`。
+- **範圍修正（規劃階段發現）**：codebase 裡沒有任何真正的匯率換算功能可重用——`hooks/useCurrencyView.js` 只是「切換顯示哪個幣別」的 UI 篩選，不做換算；後端也沒有匯率 endpoint（見根目錄 `CLAUDE.md` 端點列表）。因此「使用者選擇把美股配息併入覆蓋率」（需顯示匯率與換算時間點）**延後到 P1**，需要新的匯率資料來源，不在本次範圍內。Phase 2 P0 只實作預設行為：覆蓋率分子固定僅計台股金額，`usAmount` 只作為單獨顯示用途，不併入分母計算的分子。
+- `hasUsAmount === true`（即 `usAmount > 0`）時，UI（`CoverageProgress` 與 `MonthlyIncomeCard`）必須顯示「美股股息為稅前估算，實際入帳金額會扣除預扣稅。」（主規格書 §6.1.B 原文案）。這個提醒的觸發條件是「畫面上有顯示美股金額」，跟有沒有做貨幣合併換算無關，因此不受上述範圍修正影響。
+- 生活費未設定（`monthlyLivingCost === 0`）時 `isLivingCostSet` 為 `false`、不計算百分比，回傳需要顯示設定 CTA 的狀態。
 
 ### `nextPaymentUtils.js`（新建，包裝既有邏輯）
 
@@ -68,7 +68,7 @@
 |---|---|---|
 | `SummaryHero` | `coverageUtils` 結果組字串 | 文案由正式資料生成，不隨機變化 |
 | `MonthlyIncomeCard` | 既有 `dividendSummary` 拆出預計／已入帳／未入帳 | |
-| `CoverageProgress` | `coverageUtils` | 生活費設定 CTA、progress bar、稅前免責文案、幣別揭露 |
+| `CoverageProgress` | `coverageUtils` | 生活費設定 CTA、progress bar、僅台股計入的覆蓋率、有美股金額時顯示稅前免責文案（併入美股換算為 P1，不在本次範圍） |
 | `NextPaymentCard` | `nextPaymentUtils` | `AddToCalendarButton` 掛載點先留 prop，不實作（P1） |
 | `CashflowChart` | `futureCashflowUtils` | 6／12 月切換，低於生活費目標月份用 terracotta |
 | `InsightCard` | 既有 `buildDividendGoalViewModel`（年度進度） | |
@@ -96,7 +96,7 @@
 ## 驗收對應（主規格書 §16 節錄）
 
 - [ ] 首頁 5 秒內可找到本月預計配息、下一筆入帳及生活費覆蓋率。
-- [ ] 生活覆蓋率幣別政策（預設僅計台股／併入美股需揭露匯率與換算標示）已寫入計算規則測試。
+- [ ] 生活覆蓋率幣別政策（預設僅計台股）已寫入計算規則測試；併入美股換算標示延後至 P1，本次不實作。
 - [ ] 覆蓋率或本月配息卡片顯示美股金額時，附帶「稅前估算」提醒文案。
 - [ ] 缺失資料顯示「資料不足」，不顯示 `null` 或誤導性 `0%`。
 - [ ] Lint、test、typecheck、production build 通過。
