@@ -17,7 +17,8 @@ export default function CoverageProgress({
     onLivingCostSaved(safeValue);
   };
 
-  const clampedPercent = coveragePercent === null ? 0 : Math.max(0, Math.min(100, coveragePercent));
+  const displayPercent = coveragePercent === null ? 0 : coveragePercent;
+  const clampedPercent = Math.max(0, Math.min(100, displayPercent));
 
   return (
     <section className={styles.card} aria-label={t('coverage_card_title')}>
@@ -47,14 +48,14 @@ export default function CoverageProgress({
           <div
             className={styles.progressBar}
             role="progressbar"
-            aria-valuenow={clampedPercent}
+            aria-valuenow={displayPercent}
             aria-valuemin={0}
-            aria-valuemax={100}
+            aria-valuemax={Math.max(100, displayPercent)}
             aria-label={t('coverage_card_title')}
           >
             <div className={styles.progressFill} style={{ width: `${clampedPercent}%` }} />
           </div>
-          <p className={styles.percentLabel}>{coveragePercent}%</p>
+          <p className={styles.percentLabel}>{displayPercent}%</p>
           <p className={styles.livingCostLine}>
             {t('coverage_living_cost_label')}: {formatTwd(monthlyLivingCost)}
           </p>
