@@ -2,6 +2,8 @@ import { createContext, useContext } from 'react';
 
 export const translations = {
   zh: {
+    insight_card_title: '年度進度',
+    insight_card_no_goal: '尚未設定年度目標',
     cashflow_chart_title: '未來現金流',
     cashflow_month_no_data: '尚無公告資料',
     cashflow_below_living_cost: '低於生活費目標',
@@ -137,6 +139,8 @@ export const translations = {
     dividend_date: '配息日期'
   },
   en: {
+    insight_card_title: 'Annual Progress',
+    insight_card_no_goal: 'No annual goal set yet',
     cashflow_chart_title: 'Future Cashflow',
     cashflow_month_no_data: 'No announced data yet',
     cashflow_below_living_cost: 'Below living cost target',

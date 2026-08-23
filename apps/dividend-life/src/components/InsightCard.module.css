@@ -1,0 +1,29 @@
+.card {
+  padding: 20px 24px;
+  border-radius: var(--radius-card, 18px);
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e4dcc8);
+}
+
+.title {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.achievement {
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+  color: var(--gold, #a9813b);
+}
+
+.empty {
+  color: var(--muted, #948a72);
+  margin: 0;
+}
+
+.lowIncome {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--terracotta, #be6a4c);
+}
