@@ -1,0 +1,19 @@
+.hero {
+  padding: 20px 24px;
+  border-radius: var(--radius-card, 18px);
+  background: var(--surface, #fff);
+}
+
+.headline {
+  font-family: var(--font-display, serif);
+  font-size: 22px;
+  margin: 0 0 6px;
+  color: var(--ink, #2d2a22);
+}
+
+.detail {
+  font-size: 16px;
+  margin: 0;
+  color: var(--ink-soft, #55503f);
+  font-variant-numeric: tabular-nums;
+}

@@ -2,6 +2,9 @@ import { createContext, useContext } from 'react';
 
 export const translations = {
   zh: {
+    home_greeting_headline: '{month}的配息生活很平穩 ☀️',
+    home_greeting_detail: '本月預計收到 {amount}，約可負擔 {percent}% 的基本生活費。',
+    home_greeting_detail_no_coverage: '本月預計收到 {amount}。設定每月生活費，即可看到覆蓋率。',
     theme: '主題',
     light: '亮',
     dark: '暗',
@@ -114,6 +117,9 @@ export const translations = {
     dividend_date: '配息日期'
   },
   en: {
+    home_greeting_headline: 'Your dividend life in {month} looks steady ☀️',
+    home_greeting_detail: 'You are set to receive {amount} this month, covering about {percent}% of your basic living costs.',
+    home_greeting_detail_no_coverage: 'You are set to receive {amount} this month. Set a monthly living cost to see your coverage.',
     theme: 'Theme',
     light: 'Light',
     dark: 'Dark',
