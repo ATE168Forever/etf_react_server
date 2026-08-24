@@ -347,8 +347,10 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
     };
 
     // 1. 取得持有股票清單（包含年末持股與當年度已領息後賣出的持股）
-    const stockIdSet = new Set(history.map(h => h.stock_id));
-    const holdingIds = Array.from(stockIdSet).filter(id => getHolding(id, `${selectedYear}-12-31`) > 0);
+    const holdingIds = useMemo(() => {
+        const stockIdSet = new Set(history.map(h => h.stock_id));
+        return Array.from(stockIdSet).filter(id => getHolding(id, `${selectedYear}-12-31`) > 0);
+    }, [history, getHolding, selectedYear]);
 
     // 2. 只取有配息紀錄的資料（除息日或發放日在選定年份內皆會顯示）
     const dividendData = useMemo(() => (allDividendData || []).filter(item => {
@@ -412,16 +414,28 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
 
     const baseCurrency = availableCurrencies[0] || DEFAULT_CURRENCY;
 
-    const dividendStockIds = Array.from(new Set(dividendData.map(item => item.stock_id)));
-    const allRelevantStockIds = Array.from(new Set([...holdingIds, ...dividendStockIds]));
+    const dividendStockIds = useMemo(
+        () => Array.from(new Set(dividendData.map(item => item.stock_id))),
+        [dividendData]
+    );
+    const allRelevantStockIds = useMemo(
+        () => Array.from(new Set([...holdingIds, ...dividendStockIds])),
+        [holdingIds, dividendStockIds]
+    );
 
     // 建立股票代號到名稱的對應（名稱由股息資料提供）
-    const stockMap = {};
-    allRelevantStockIds.forEach(id => {
-        const info = (allDividendData || []).find(d => d.stock_id === id);
-        stockMap[id] = stockNameMap[id] || info?.stock_name || '';
-    });
-    const myStocks = allRelevantStockIds.map(id => ({ stock_id: id, stock_name: stockMap[id] }));
+    const stockMap = useMemo(() => {
+        const map = {};
+        allRelevantStockIds.forEach(id => {
+            const info = (allDividendData || []).find(d => d.stock_id === id);
+            map[id] = stockNameMap[id] || info?.stock_name || '';
+        });
+        return map;
+    }, [allRelevantStockIds, allDividendData, stockNameMap]);
+    const myStocks = useMemo(
+        () => allRelevantStockIds.map(id => ({ stock_id: id, stock_name: stockMap[id] })),
+        [allRelevantStockIds, stockMap]
+    );
 
     const activeCurrencyKey = useMemo(() => activeCurrencies.join('|'), [activeCurrencies]);
 
