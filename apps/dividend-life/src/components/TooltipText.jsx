@@ -176,7 +176,7 @@ export default function TooltipText({
       style={combinedStyle}
       title={isMobile ? undefined : tooltip}
       role={isMobile ? 'button' : undefined}
-      tabIndex={isMobile ? 0 : undefined}
+      tabIndex={0}
       aria-expanded={isMobile ? open : undefined}
       onClick={toggle}
       onKeyDown={handleKeyDown}

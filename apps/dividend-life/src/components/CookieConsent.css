@@ -2,7 +2,10 @@
   position: fixed;
   bottom: 1.5rem;
   left: 1.5rem;
-  max-width: min(380px, calc(100vw - 3rem));
+  /* Reserve room on the right for the fixed ETF-assistant toggle
+     (.nl-helper-toggle, 48px wide, up to right:20px) so the two
+     fixed-position elements never overlap on narrow viewports. */
+  max-width: min(380px, calc(100vw - 3rem - 76px));
   background-color: var(--color-card-bg);
   color: var(--color-text);
   border: 1px solid var(--color-border);
