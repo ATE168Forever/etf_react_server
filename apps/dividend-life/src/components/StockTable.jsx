@@ -723,7 +723,7 @@ const StockRow = memo(function StockRow({
           </TooltipText>
         </a>
       </td>
-      <td style={{ width: NUM_COL_WIDTH }}>{price ?? ''}</td>
+      <td style={{ width: NUM_COL_WIDTH }}>{price ?? '—'}</td>
       {months.map((_, idx) =>
         !visibleMonthIndices.includes(idx) ? null : activeCurrencies.map((currency, currencyIdx) => {
           const monthCurrencyCells = safeMonthCells[idx] || [];
@@ -747,16 +747,20 @@ const StockRow = memo(function StockRow({
           const pendingText = lang === 'zh' ? '待確認' : 'Pending';
           const isDividendValid = hasValidDividend && Number.isFinite(rawDividend);
           const isYieldValid = hasValidYield && Number.isFinite(rawYield);
+          // Spec calls for '—' or '資料不足' for missing data — using the dash
+          // here (as StockTable already does for the price column) to avoid
+          // "Insufficient data" overflowing this narrow, per-month cell.
+          const missingText = '—';
           const displayDividend = isDividendValid
             ? rawDividend.toFixed(3)
             : hasPendingDividend
               ? pendingText
-              : '';
+              : missingText;
           const displayYield = isYieldValid
             ? `${rawYield.toFixed(1)}%`
             : (hasPendingYield || hasPendingDividend)
               ? pendingText
-              : '';
+              : missingText;
           const displayPerYield = perYield > 0 ? `${perYield.toFixed(2)}%` : '';
           const displayVal = showPerYield
             ? displayPerYield
