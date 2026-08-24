@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import useClickOutside from './useClickOutside';
+import useReturnFocusOnUnmount from '../hooks/useReturnFocusOnUnmount';
 import styles from '../InventoryTab.module.css';
 import { useLanguage } from '../i18n';
 
@@ -17,6 +18,7 @@ export default function DataDropdown({
 }) {
   const ref = useRef();
   useClickOutside(ref, onClose);
+  useReturnFocusOnUnmount();
   const { lang } = useLanguage();
 
   const text = {

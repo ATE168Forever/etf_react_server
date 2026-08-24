@@ -159,9 +159,18 @@ function CalcChart({ rows, rowsB, lang, svgRef, hoveredIdx, onHover, onHoverEnd 
         const x = toX(i) - barW / 2;
         const barH = Math.max(0, (r.monthlyIncome / maxIncome) * CHART_H);
         const barY = PAD.top + CHART_H - barH;
+        const barLabel = lang === 'zh'
+          ? `${r.year} 年，月股息 NT$${r.monthlyIncome.toLocaleString()}，目標 NT$${r.adjustedTarget.toLocaleString()}`
+          : `${r.year}: income NT$${r.monthlyIncome.toLocaleString()}, target NT$${r.adjustedTarget.toLocaleString()}`;
         return (
           <rect key={i} x={x} y={barY} width={barW} height={barH}
-            fill={r.achieved ? C.barAchieved : C.barNormal} rx="1" />
+            fill={r.achieved ? C.barAchieved : C.barNormal} rx="1"
+            role="button"
+            tabIndex={0}
+            aria-label={barLabel}
+            onFocus={() => onHover(i)}
+            onBlur={onHoverEnd}
+          />
         );
       })}
 
@@ -279,7 +288,8 @@ function ParamPanel({ params, setParam, activePreset, applyPreset, lang, prefix 
         {Object.keys(PRESETS).map(key => (
           <button key={key} type="button"
             className={`${styles.presetBtn}${activePreset === key ? ' ' + styles.active : ''}`}
-            onClick={() => applyPreset(key)}>
+            onClick={() => applyPreset(key)}
+            aria-pressed={activePreset === key}>
             {presetLabels[key]}
           </button>
         ))}
@@ -479,7 +489,8 @@ function CalculatorContent() {
                 {Object.keys(PRESETS).map(key => (
                   <button key={key} type="button"
                     className={`${styles.presetBtn}${activePreset === key ? ' ' + styles.active : ''}`}
-                    onClick={() => applyPreset(key)}>
+                    onClick={() => applyPreset(key)}
+                    aria-pressed={activePreset === key}>
                     {(PRESET_LABELS[lang] ?? PRESET_LABELS.zh)[key]}
                   </button>
                 ))}

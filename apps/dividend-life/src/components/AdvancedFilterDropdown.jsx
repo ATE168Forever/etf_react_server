@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react';
 import useClickOutside from './useClickOutside';
+import useReturnFocusOnUnmount from '../hooks/useReturnFocusOnUnmount';
 import { useLanguage } from '../i18n';
 
 export default function AdvancedFilterDropdown({ filters, setFilters, onClose, availableCurrencies = ['TWD', 'USD'] }) {
   const ref = useRef();
   useClickOutside(ref, onClose);
+  useReturnFocusOnUnmount();
   const { lang } = useLanguage();
 
   const [temp, setTemp] = useState({

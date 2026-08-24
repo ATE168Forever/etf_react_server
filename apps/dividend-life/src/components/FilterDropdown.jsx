@@ -1,11 +1,13 @@
 import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import useClickOutside from './useClickOutside';
+import useReturnFocusOnUnmount from '../hooks/useReturnFocusOnUnmount';
 import { useLanguage } from '../i18n';
 
 export default function FilterDropdown({ options, selected, setSelected, onClose, position }) {
   const ref = useRef();
   useClickOutside(ref, onClose);
+  useReturnFocusOnUnmount();
   const { lang } = useLanguage();
 
   const [tempSelected, setTempSelected] = useState(selected);

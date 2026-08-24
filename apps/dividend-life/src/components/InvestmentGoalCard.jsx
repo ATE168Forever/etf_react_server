@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import useFocusTrap from '../hooks/useFocusTrap';
 import styles from './InvestmentGoalCard.module.css';
 
 export default function InvestmentGoalCard({
@@ -45,8 +46,17 @@ export default function InvestmentGoalCard({
   const [shareDraft, setShareDraft] = useState(shareMessage);
   const statusResetRef = useRef(null);
   const shareDialogTriggerRef = useRef(null);
+  const shareModalRef = useRef(null);
+  const shareCloseButtonRef = useRef(null);
   const shareMessageFieldId = useId();
   const shareDialogLabelId = shareConfig?.previewLabel ? `${shareMessageFieldId}-label` : undefined;
+
+  useFocusTrap(shareModalRef, isShareDialogOpen);
+
+  useEffect(() => {
+    if (!isShareDialogOpen) return;
+    shareCloseButtonRef.current?.focus();
+  }, [isShareDialogOpen]);
 
   useEffect(() => {
     if (!hasShareContent) {
@@ -370,6 +380,7 @@ export default function InvestmentGoalCard({
           onClick={closeShareDialog}
         >
           <div
+            ref={shareModalRef}
             className={styles.shareModal}
             role="dialog"
             aria-modal="true"
@@ -386,6 +397,7 @@ export default function InvestmentGoalCard({
                 ) : null}
               </div>
               <button
+                ref={shareCloseButtonRef}
                 type="button"
                 className={styles.shareModalClose}
                 onClick={closeShareDialog}
