@@ -210,8 +210,8 @@ function DividendDonut({
                             </div>
                             <div className="detail-meta">
                                 {lang === 'en'
-                                    ? `Yield: ${formatter.format(detailSlice.total/detailSlice.investment*100)}%`
-                                    : `殖利率：${formatter.format(detailSlice.total/detailSlice.investment*100)}%`}
+                                    ? `Yield: ${formatter.format(detailSlice.investment > 0 ? (detailSlice.total / detailSlice.investment) * 100 : 0)}%`
+                                    : `殖利率：${formatter.format(detailSlice.investment > 0 ? (detailSlice.total / detailSlice.investment) * 100 : 0)}%`}
                             </div>
                         </div>
                     </div>
@@ -924,24 +924,31 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
     const [donutSelectedIndex, setDonutSelectedIndex] = useState(null);
 
     useEffect(() => {
+        // `donutCurrencies` is derived from several render-body arrays upstream
+        // (myStocks/holdingIds/etc.) that aren't memoized, so it gets a new
+        // array reference on every render — including the render triggered by
+        // clicking a donut segment. Without the `target !== donutCurrency`
+        // guard below, this effect re-fires on every render and immediately
+        // wipes out `donutSelectedIndex`, making the detail panel unopenable.
         if (donutCurrencies.length === 0) {
-            setDonutCurrency(null);
-            setDonutSelectedIndex(null);
+            if (donutCurrency !== null) {
+                setDonutCurrency(null);
+                setDonutSelectedIndex(null);
+            }
             return;
         }
-        // Sync donutCurrency with viewMode
+        let target;
         if (viewMode === 'TWD' && donutCurrencies.includes('TWD')) {
-            setDonutCurrency('TWD');
-            setDonutSelectedIndex(null);
-            return;
+            target = 'TWD';
+        } else if (viewMode === 'USD' && donutCurrencies.includes('USD')) {
+            target = 'USD';
+        } else if (!donutCurrency || !donutCurrencies.includes(donutCurrency)) {
+            target = donutCurrencies[0];
+        } else {
+            target = donutCurrency;
         }
-        if (viewMode === 'USD' && donutCurrencies.includes('USD')) {
-            setDonutCurrency('USD');
-            setDonutSelectedIndex(null);
-            return;
-        }
-        if (!donutCurrency || !donutCurrencies.includes(donutCurrency)) {
-            setDonutCurrency(donutCurrencies[0]);
+        if (target !== donutCurrency) {
+            setDonutCurrency(target);
             setDonutSelectedIndex(null);
         }
     }, [donutCurrencies, donutCurrency, viewMode]);

@@ -158,3 +158,33 @@ test('allows switching between TWD and USD dividend summaries', async () => {
   expect(within(dividendTable).getAllByText('0050').length).toBeGreaterThan(0);
   expect(within(dividendTable).queryByText('VUSD')).not.toBeInTheDocument();
 });
+
+test('donut detail shows 0% yield instead of Infinity/NaN when cost data is missing', async () => {
+  const year = new Date().getFullYear();
+  // No `price` on the buy entry: getAverageCostBeforeDate resolves to 0,
+  // so investment is 0 while dividend total is > 0 — a real reachable
+  // data-quality gap (e.g. an imported/manual holding without cost basis).
+  readTransactionHistory.mockReturnValue([
+    { stock_id: '0050', date: `${year}-01-01`, quantity: 1000, type: 'buy' }
+  ]);
+
+  const data = [
+    {
+      stock_id: '0050',
+      stock_name: 'Test ETF',
+      dividend: '1',
+      dividend_date: `${year}-03-15`,
+      payment_date: `${year}-04-15`,
+      last_close_price: '100'
+    }
+  ];
+
+  render(<UserDividendsTab allDividendData={data} selectedYear={year} />);
+
+  const donutList = await screen.findByRole('list', { name: '配息貢獻佔比' });
+  const segmentButton = within(donutList).getByRole('button', { name: /0050/ });
+  fireEvent.click(segmentButton);
+
+  const yieldText = await screen.findByText(/殖利率：/);
+  expect(yieldText.textContent).toBe('殖利率：0%');
+});
