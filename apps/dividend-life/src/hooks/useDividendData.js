@@ -17,7 +17,13 @@ const REQUIRED_DIVIDEND_FIELDS = [
   'last_close_price',
 ];
 
-export default function useDividendData({ dividendScope, setDividendScope, transactionHistory, transactionHistoryLoaded }) {
+export default function useDividendData({
+  dividendScope,
+  setDividendScope,
+  transactionHistory,
+  transactionHistoryLoaded,
+  enabled = true,
+}) {
   const [data, setData] = useState([]);
   const [years, setYears] = useState(DIVIDEND_YEARS);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -50,6 +56,9 @@ export default function useDividendData({ dividendScope, setDividendScope, trans
   }, [dividendScope, purchasedStockIds.length, transactionHistoryLoaded, transactionHistory.length, setDividendScope]);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     if (!transactionHistoryLoaded) {
       return;
     }
@@ -157,7 +166,7 @@ export default function useDividendData({ dividendScope, setDividendScope, trans
       cancelled = true;
       skipMap.set(signature, false);
     };
-  }, [dividendScope, purchasedStockIds, transactionHistoryLoaded, refreshTrigger]);
+  }, [enabled, dividendScope, purchasedStockIds, transactionHistoryLoaded, refreshTrigger]);
 
   const loadStockList = useCallback(() => {
     const freqMapRaw = { '年配': 1, '半年配': 2, '季配': 4, '雙月配': 6, '月配': 12, '週配': 52 };
