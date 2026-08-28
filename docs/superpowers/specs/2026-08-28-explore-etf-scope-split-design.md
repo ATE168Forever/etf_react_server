@@ -116,6 +116,8 @@ const {
 
 `custodianMap` 不動（只有第 665 行的頂部提醒橫幅在用，不屬於 Explore ETFs 分頁）。`selectedStockIds`／`extraFilters`／`calendarEvents`／`watchGroups`／觀察組合 Modal 等既有邏輯完全不動，只是它們讀取的來源（`filteredData`、`dividendTable` 等）換成 explore 版本。
 
+另外，`dividendScope` 這個 state 本身（不是 hook 輸出物件的欄位，是 `DividendLifePage.jsx:70` 宣告的獨立變數）在 `filteredStocks` 內部判斷式（第 300、380 行：`dividendScope === 'purchased'`）與範圍切換按鈕的 active／`aria-pressed` 狀態（第 750-763 行）裡也直接被引用——這幾處都屬於 Explore ETFs 分頁邏輯，要一併換成 `exploreScope`。
+
 還有兩個容易漏掉、但只被 Explore ETFs 分頁使用的既有邏輯，也要一併換成 explore 版本：
 
 - `useCurrencyView({ availableCurrencies, lang })`（`DividendLifePage.jsx:282-289`）：檢查過 `viewMode`／`hasTwd`／`hasUsd`／`activeCurrencies`／`viewDescriptionContent` 這幾個輸出全部只在 Explore ETFs 分頁的篩選邏輯與 JSX（`CurrencyViewToggle`）裡用到，沒有被其他分頁引用——這個 hook 呼叫的輸入要改成 `exploreAvailableCurrencies`。
