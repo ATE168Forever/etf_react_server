@@ -8,12 +8,17 @@
 
 `DividendLifePage.jsx` 只呼叫一次 `useDividendData({ dividendScope, setDividendScope, transactionHistory, transactionHistoryLoaded })`（單一 hook 實例），其輸出的 `data`／`filteredData`／`years` 等被四個分頁共用：
 
+逐一追蹤每個輸出欄位在檔案裡的實際用法後（不能只看名稱像不像，`stockListPriceMap`／`dividendCacheInfo` 兩個欄位同時被 Holdings 與 Explore ETFs 兩邊引用，需求範圍卻不同），完整的欄位對照表如下：
+
 | 分頁 | 用到的欄位 | 用途 |
 |---|---|---|
 | Overview（`HomeTab`） | `data`、`loading` | 首頁摘要卡片 |
 | Cash Flow（`UserDividendsTab`） | `data`、`years` | 現金流表格 |
-| Holdings（`InventoryTab`） | `data` | 持股清單比對 |
-| Explore ETFs（`dividend` tab，目前直接寫在 `DividendLifePage.jsx` 內） | `filteredData`、`stocks`、`stockOptions`、`dividendTable`、`years`、`selectedYear`、`stockCurrencyMap`、`availableCurrencies`、`freqMap`、`stockListPriceMap`、`custodianMap` | 篩選表格、月曆、觀察組合 |
+| Holdings（`InventoryTab`） | `data`、`dividendCacheInfo`、`stockListPriceMap` | 持股清單比對 |
+| 頂部「明天配息提醒」橫幅（不分頁籤常駐） | `data`（經 `getTomorrowDividendAlerts`）、`custodianMap` | 提醒文字含保管銀行 |
+| Explore ETFs（`dividend` tab，目前直接寫在 `DividendLifePage.jsx` 內） | `loading`、`error`、`filteredData`、`stocks`、`stockOptions`、`dividendTable`、`years`、`selectedYear`、`setSelectedYear`、`stockCurrencyMap`、`availableCurrencies`、`freqMap`、`stockListPriceMap`、`dividendCacheInfo` | 篩選表格、月曆、觀察組合 |
+
+`stockListPriceMap` 與 `dividendCacheInfo` 同時出現在 Holdings 與 Explore ETFs 兩列——這兩個欄位不是「單純搬去 explore」，而是兩邊都要各自保留一份（見下方方案第 2 節）。`custodianMap` 則只被頂部橫幅使用，Explore ETFs 分頁完全沒用到，維持只留在主要 hook。
 
 `dividendScope` 預設 `'purchased'`，並在使用者沒有任何持股時自動退回 `'all'`（`useDividendData.js:44-50`）。這是刻意的效能設計：多數使用者只關心自己持有的 3–10 檔 ETF，沒必要每次載入都抓全市場資料。
 
@@ -79,9 +84,9 @@ useEffect(() => {
 
 ```js
 const {
-  data: exploreData,
   loading: exploreLoading,
   error: exploreError,
+  dividendCacheInfo: exploreDividendCacheInfo,
   years: exploreYears,
   selectedYear: exploreSelectedYear,
   setSelectedYear: setExploreSelectedYear,
@@ -93,7 +98,6 @@ const {
   availableCurrencies: exploreAvailableCurrencies,
   freqMap: exploreFreqMap,
   stockListPriceMap: exploreStockListPriceMap,
-  custodianMap: exploreCustodianMap,
 } = useDividendData({
   dividendScope: exploreScope,
   setDividendScope: setExploreScope,
@@ -103,7 +107,14 @@ const {
 });
 ```
 
-`tab === 'dividend'` 區塊（`DividendLifePage.jsx:690-950`）目前引用第一份 hook 輸出的地方（`years`、`selectedYear`、`setSelectedYear`、`filteredData`、`stocks`、`stockCurrencyMap`、`stockOptions`、`dividendTable`、`availableCurrencies`、`freqMap`、`stockListPriceMap`、`custodianMap`、`loading`、`error`），全部改成對應的 `explore*` 變數。`selectedStockIds`／`extraFilters`／`calendarEvents`／`watchGroups`／觀察組合 Modal 等既有邏輯完全不動，只是它們讀取的來源（`filteredData`、`dividendTable` 等）換成 explore 版本。
+（不解構 `data`／`custodianMap`：`data` 在 Explore ETFs 分頁裡從未被直接引用，分頁邏輯一律走 `filteredData`；`custodianMap` 完全不被 Explore ETFs 使用，見上方欄位對照表。）
+
+`tab === 'dividend'` 區塊（`DividendLifePage.jsx:690-949`）目前引用第一份 hook 輸出的地方全部改成對應的 `explore*` 變數，依用途分兩類：
+
+- **單純改名**（原變數只被 Explore ETFs 分頁用到）：`years`、`selectedYear`、`setSelectedYear`、`filteredData`、`stocks`、`stockCurrencyMap`、`stockOptions`、`dividendTable`、`availableCurrencies`、`freqMap`。
+- **不是改名、是「該行程式碼改讀 explore 版本，主要 hook 的版本留給別的分頁」**：`loading`／`error`（第 853、902、914-917 行的 Explore ETFs 骨架畫面與錯誤訊息，改讀 `exploreLoading`／`exploreError`；第 687 行 `HomeTab dividendLoading={loading}` 不動）、`stockListPriceMap`（第 481、509 行的 Explore ETFs 總計算式，改讀 `exploreStockListPriceMap`；第 957 行 `InventoryTab stockListPriceMap={stockListPriceMap}` 不動）、`dividendCacheInfo`（第 831-839 行 Explore ETFs 的資料新鮮度標示，改讀 `exploreDividendCacheInfo`；第 956 行 `InventoryTab dividendCacheInfo={dividendCacheInfo}` 不動）。
+
+`custodianMap` 不動（只有第 665 行的頂部提醒橫幅在用，不屬於 Explore ETFs 分頁）。`selectedStockIds`／`extraFilters`／`calendarEvents`／`watchGroups`／觀察組合 Modal 等既有邏輯完全不動，只是它們讀取的來源（`filteredData`、`dividendTable` 等）換成 explore 版本。
 
 還有兩個容易漏掉、但只被 Explore ETFs 分頁使用的既有邏輯，也要一併換成 explore 版本：
 
@@ -134,7 +145,7 @@ transactionHistory ──┬── useDividendData(dividendScope='purchased'預�
 
 ## 副作用評估
 
-- `fetchStockList()` 會被呼叫兩次（一次來自主要 hook，一次來自 explore hook，且只有在 `hasVisitedExploreTab` 為 `true` 後才會真的發生）。`stockApi.js` 底層走 `fetchWithCache`（`api.js`），只要 TTL 未過期，第二次呼叫會直接吃快取，不會真的打兩次網路。程式碼層面會多一份 `freqMap`／`stockListPriceMap`／`custodianMap` 存在記憶體中，兩份分頁分開持有，可接受。
+- `fetchStockList()` 會被呼叫兩次（一次來自主要 hook，一次來自 explore hook，且只有在 `hasVisitedExploreTab` 為 `true` 後才會真的發生）。`stockApi.js` 底層走 `fetchWithCache`（`api.js`），只要 TTL 未過期，第二次呼叫會直接吃快取，不會真的打兩次網路。程式碼層面會多一份 `freqMap`／`stockListPriceMap`／`dividendCacheInfo` 存在記憶體中，兩份分頁分開持有，可接受。
 - `exploreYears`／`exploreSelectedYear` 與 Cash Flow 分頁的 `years` 不再共用同一份清單——這其實修正了既有的小瑕疵（原本兩個語意不同的「哪些年份有資料」被迫共用同一份，只是恰好因為 scope 通常一致所以沒被注意到），不算行為劣化。
 - `dividendScope`（主要 hook）與 `exploreScope`（explore hook）現在是兩個獨立 state，若未來要在 Explore ETFs 頁「切回只看我持有」，操作的是 `exploreScope`，不會影響 Home／Cash Flow／Holdings 的 `dividendScope`——這正是本次要達成的效果。
 
