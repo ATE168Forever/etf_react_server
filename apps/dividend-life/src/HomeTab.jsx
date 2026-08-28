@@ -29,6 +29,8 @@ import NextPaymentCard from './components/NextPaymentCard';
 import CashflowChart from './components/CashflowChart';
 import InsightCard from './components/InsightCard';
 import EmptyPortfolioState from './components/EmptyPortfolioState';
+import DemoModeBanner from './components/DemoModeBanner';
+import { DEMO_TRANSACTIONS } from './utils/demoData';
 
 const VIEWBOX_WIDTH = 720;
 const VIEWBOX_HEIGHT = 280;
@@ -228,7 +230,11 @@ function DividendChart({
   );
 }
 
-export default function HomeTab({ dividendData: dividendDataProp = null, dividendLoading: dividendLoadingProp = null }) {
+export default function HomeTab({
+  dividendData: dividendDataProp = null,
+  dividendLoading: dividendLoadingProp = null,
+  onNavigateToInventory = null,
+}) {
   const [stats, setStats] = useState({ milestones: [], latest: [], tip: '' });
   const [goalSummary, setGoalSummary] = useState(() => {
     const goals = loadInvestmentGoals();
@@ -238,6 +244,7 @@ export default function HomeTab({ dividendData: dividendDataProp = null, dividen
     };
   });
   const [transactionHistory, setTransactionHistory] = useState([]);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [dividendData, setDividendData] = useState([]);
   const [dividendLoading, setDividendLoading] = useState(true);
   const [inventoryLoaded, setInventoryLoaded] = useState(false);
@@ -282,6 +289,21 @@ export default function HomeTab({ dividendData: dividendDataProp = null, dividen
     const goals = loadInvestmentGoals();
     setGoalSummary({ goals, inventoryList });
     setInventoryLoaded(true);
+  }, []);
+
+  const handleEnterDemo = useCallback(() => {
+    const { inventoryList } = summarizeInventory(DEMO_TRANSACTIONS);
+    setTransactionHistory(DEMO_TRANSACTIONS);
+    setGoalSummary(prev => ({ ...prev, inventoryList }));
+    setIsDemoMode(true);
+  }, []);
+
+  const handleExitDemo = useCallback(() => {
+    const history = readTransactionHistory();
+    const { inventoryList } = summarizeInventory(history);
+    setTransactionHistory(history);
+    setGoalSummary(prev => ({ ...prev, inventoryList }));
+    setIsDemoMode(false);
   }, []);
 
   const refreshExclusions = useCallback(() => {
@@ -679,10 +701,16 @@ export default function HomeTab({ dividendData: dividendDataProp = null, dividen
 
   return (
     <div className="dashboard-container">
+      <DemoModeBanner isVisible={isDemoMode} onExit={handleExitDemo} t={t} />
 
       {/* ═══ PHASE 2 P0: TOTAL OVERVIEW ═══ */}
       {!hasHoldings ? (
-        <EmptyPortfolioState lang={lang} t={t} />
+        <EmptyPortfolioState
+          lang={lang}
+          t={t}
+          onCtaClick={onNavigateToInventory}
+          onDemoClick={handleEnterDemo}
+        />
       ) : (
         <>
           <SummaryHero

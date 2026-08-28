@@ -1,5 +1,5 @@
 /* eslint-env jest */
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, fireEvent } from '@testing-library/react';
 import HomeTab from '../src/HomeTab';
 import { fetchWithCache } from '../src/api';
 import { LanguageContext, translations } from '../src/i18n';
@@ -152,6 +152,29 @@ test('still renders the existing investment goals card below the new Phase 2 con
   renderWithLang();
   await screen.findByText(translations.zh.empty_portfolio_title);
   expect(await screen.findByText(translations.zh.investment_goals)).toBeInTheDocument();
+});
+
+test('entering demo mode shows the demo banner and dashboard content instead of the empty state', async () => {
+  renderWithLang();
+  const demoButton = await screen.findByText(translations.zh.empty_portfolio_demo_cta);
+  fireEvent.click(demoButton);
+  expect(await screen.findByText(translations.zh.demo_mode_banner_text)).toBeInTheDocument();
+  expect(screen.queryByText(translations.zh.empty_portfolio_title)).not.toBeInTheDocument();
+});
+
+test('exiting demo mode restores the real (empty) portfolio state', async () => {
+  renderWithLang();
+  fireEvent.click(await screen.findByText(translations.zh.empty_portfolio_demo_cta));
+  fireEvent.click(await screen.findByText(translations.zh.demo_mode_banner_exit));
+  expect(await screen.findByText(translations.zh.empty_portfolio_title)).toBeInTheDocument();
+  expect(screen.queryByText(translations.zh.demo_mode_banner_text)).not.toBeInTheDocument();
+});
+
+test('does not persist demo holdings to localStorage', async () => {
+  renderWithLang();
+  fireEvent.click(await screen.findByText(translations.zh.empty_portfolio_demo_cta));
+  await screen.findByText(translations.zh.demo_mode_banner_text);
+  expect(localStorage.getItem('my_transaction_history')).toBeNull();
 });
 
 test('shows the InsightCard no-goal message (not "0%") for holdings with no configured goal', async () => {

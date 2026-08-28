@@ -684,7 +684,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           <div id="tab-content">
           {tab === 'home' && (
             <div id="panel-home" role="tabpanel" aria-labelledby="tab-home">
-              <ErrorBoundary lang={lang}><Suspense><HomeTab dividendData={data} dividendLoading={loading} /></Suspense></ErrorBoundary>
+              <ErrorBoundary lang={lang}><Suspense><HomeTab dividendData={data} dividendLoading={loading} onNavigateToInventory={() => setTab('inventory')} /></Suspense></ErrorBoundary>
             </div>
           )}
           {tab === 'dividend' && (

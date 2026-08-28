@@ -23,3 +23,15 @@ test('renders the CTA text as non-interactive when onCtaClick is not provided', 
   expect(screen.queryByRole('button', { name: t('empty_portfolio_cta') })).not.toBeInTheDocument();
   expect(screen.getByText(t('empty_portfolio_cta'))).toBeInTheDocument();
 });
+
+test('does not render a demo CTA when onDemoClick is not provided', () => {
+  render(<EmptyPortfolioState lang="zh" t={t} />);
+  expect(screen.queryByText(t('empty_portfolio_demo_cta'))).not.toBeInTheDocument();
+});
+
+test('renders a clickable demo CTA when onDemoClick is provided', () => {
+  const onDemoClick = jest.fn();
+  render(<EmptyPortfolioState onDemoClick={onDemoClick} lang="zh" t={t} />);
+  fireEvent.click(screen.getByText(t('empty_portfolio_demo_cta')));
+  expect(onDemoClick).toHaveBeenCalled();
+});
