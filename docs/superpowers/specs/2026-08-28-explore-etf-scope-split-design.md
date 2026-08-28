@@ -147,7 +147,7 @@ transactionHistory ──┬── useDividendData(dividendScope='purchased'預�
 
 ## 副作用評估
 
-- `fetchStockList()` 會在**每次載入時**都被呼叫兩次（一次來自主要 hook，一次來自 explore hook，兩者的 `loadStockList()` 都不受 `enabled` 短路，見上方原因說明），不像 `fetchDividendsByYears` 的大型全市場配息查詢那樣要等使用者造訪 Explore ETFs 分頁才觸發。`stockApi.js` 底層走 `fetchWithCache`（`api.js`），只要 TTL 未過期，第二次呼叫會直接吃快取，不會真的打兩次網路。程式碼層面會多一份 `freqMap`／`stockListPriceMap`／`dividendCacheInfo` 存在記憶體中，兩份分頁分開持有，可接受。
+- `fetchStockList()` 會在**每次載入時**都被呼叫兩次（一次來自主要 hook，一次來自 explore hook，兩者的 `loadStockList()` 都不受 `enabled` 短路，見上方原因說明），不像 `fetchDividendsByYears` 的大型全市場配息查詢那樣要等使用者造訪 Explore ETFs 分頁才觸發。`stockApi.js` 底層走 `fetchWithCache`（`api.js`）——**修正（最終審查發現原先這句話的假設是錯的）**：`fetchWithCache`（`api.js:35`）每次呼叫都會 `await fetch(url, ...)`，並不會因為 TTL 未過期就整個跳過網路請求；它只是在有新鮮快取時附加 `If-None-Match`／`If-Modified-Since` 條件式標頭，讓伺服器有機會回 304，但仍然是一次真實的網路請求，且 `api.js`／`dividendApi.js` 目前沒有任何「同時發生的重複請求合併成一個」的機制。兩個 hook 實例的 `loadStockList()` 在同一個 render pass 內幾乎同時觸發，所以實際代價是：**每次頁面載入都會多一次 `GET /get_stock_list` 條件式請求**（在冷快取時是完整下載兩次），不是零網路成本。緩解因素：`InventoryTab.jsx`／`UserDividendsTab.jsx`／`StockDetail.jsx` 本來就各自獨立呼叫 `fetchStockList()`，重複的股票清單流量已經是既有模式，這只是多加一次，不是本次引入全新問題；真正的修法（幫 `fetchWithCache` 加同時請求去重）屬於 `api.js` 這個被多處呼叫端共用的工具模組，改動範圍超出本次 Explore ETFs 分頁拆分的授權範圍，留給獨立的後續小改動處理。程式碼層面另外會多一份 `freqMap`／`stockListPriceMap`／`dividendCacheInfo` 存在記憶體中，兩份分頁分開持有，這點依然可接受。
 - `exploreYears`／`exploreSelectedYear` 與 Cash Flow 分頁的 `years` 不再共用同一份清單——這其實修正了既有的小瑕疵（原本兩個語意不同的「哪些年份有資料」被迫共用同一份，只是恰好因為 scope 通常一致所以沒被注意到），不算行為劣化。
 - `dividendScope`（主要 hook）與 `exploreScope`（explore hook）現在是兩個獨立 state，若未來要在 Explore ETFs 頁「切回只看我持有」，操作的是 `exploreScope`，不會影響 Home／Cash Flow／Holdings 的 `dividendScope`——這正是本次要達成的效果。
 
