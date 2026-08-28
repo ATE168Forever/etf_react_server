@@ -92,22 +92,42 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const {
     data,
     loading,
-    error,
     dividendCacheInfo,
     years,
-    selectedYear,
-    setSelectedYear,
     purchasedStockIds,
-    filteredData,
-    stocks,
-    stockCurrencyMap,
-    stockOptions,
-    dividendTable,
-    availableCurrencies,
-    freqMap,
     stockListPriceMap,
     custodianMap,
   } = useDividendData({ dividendScope, setDividendScope, transactionHistory, transactionHistoryLoaded });
+
+  const [exploreScope, setExploreScope] = useState('all');
+  const [hasVisitedExploreTab, setHasVisitedExploreTab] = useState(tab === 'dividend');
+
+  useEffect(() => {
+    if (tab === 'dividend') setHasVisitedExploreTab(true);
+  }, [tab]);
+
+  const {
+    loading: exploreLoading,
+    error: exploreError,
+    dividendCacheInfo: exploreDividendCacheInfo,
+    years: exploreYears,
+    selectedYear: exploreSelectedYear,
+    setSelectedYear: setExploreSelectedYear,
+    filteredData: exploreFilteredData,
+    stocks: exploreStocks,
+    stockCurrencyMap: exploreStockCurrencyMap,
+    stockOptions: exploreStockOptions,
+    dividendTable: exploreDividendTable,
+    availableCurrencies: exploreAvailableCurrencies,
+    freqMap: exploreFreqMap,
+    stockListPriceMap: exploreStockListPriceMap,
+  } = useDividendData({
+    dividendScope: exploreScope,
+    setDividendScope: setExploreScope,
+    transactionHistory,
+    transactionHistoryLoaded,
+    enabled: hasVisitedExploreTab,
+  });
 
   // Calendar state
   const {
@@ -265,7 +285,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   }, [showGroupModal, setShowGroupModal]);
 
   const handleDividendScopeChange = (scope) => {
-    setDividendScope(scope);
+    setExploreScope(scope);
     setShowAllStocks(false);
   };
 
@@ -286,19 +306,19 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     activeCurrencies,
     viewDescriptionContent,
     handleViewModeChange,
-  } = useCurrencyView({ availableCurrencies, lang });
+  } = useCurrencyView({ availableCurrencies: exploreAvailableCurrencies, lang });
 
   const viewLabelPrefix = lang === 'en' ? 'Showing:' : '顯示：';
   const purchasedScopeLabel = lang === 'en' ? 'Purchased ETFs' : '已購買 ETF';
   const allScopeLabel = lang === 'en' ? 'All ETFs' : '全部 ETF';
   const canSelectPurchased = purchasedStockIds.length > 0;
 
-  const filteredStocks = useMemo(() => stocks.filter(stock => {
+  const filteredStocks = useMemo(() => exploreStocks.filter(stock => {
     if (selectedStockIds.length && !selectedStockIds.includes(stock.stock_id)) return false;
 
     // Check if this is a purchased stock with no dividend data
-    const isPurchasedStock = dividendScope === 'purchased' && purchasedStockIds.includes(stock.stock_id);
-    const hasDividendData = Boolean(dividendTable[stock.stock_id]);
+    const isPurchasedStock = exploreScope === 'purchased' && purchasedStockIds.includes(stock.stock_id);
+    const hasDividendData = Boolean(exploreDividendTable[stock.stock_id]);
 
     // Check if any month filter is active
     const hasMonthFilter = monthHasValue.some(v => v);
@@ -309,18 +329,18 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     }
 
     if (viewMode !== 'BOTH') {
-      const stockCurrencies = stockCurrencyMap[stock.stock_id] || [];
+      const stockCurrencies = exploreStockCurrencyMap[stock.stock_id] || [];
       if (!stockCurrencies.includes(viewMode)) return false;
     }
 
     if (extraFilters.currencies.length) {
-      const stockCurrencies = stockCurrencyMap[stock.stock_id] || [];
+      const stockCurrencies = exploreStockCurrencyMap[stock.stock_id] || [];
       if (!extraFilters.currencies.some(currency => stockCurrencies.includes(currency))) return false;
     }
 
     for (let m = 0; m < 12; ++m) {
       if (!monthHasValue[m]) continue;
-      const monthEntry = dividendTable[stock.stock_id]?.[m];
+      const monthEntry = exploreDividendTable[stock.stock_id]?.[m];
       if (!monthEntry) return false;
       const currenciesToCheck = (extraFilters.currencies.length ? extraFilters.currencies : activeCurrencies);
       const hasMatch = currenciesToCheck.some(currency => Boolean(monthEntry?.[currency]));
@@ -329,13 +349,13 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
 
     if (extraFilters.freq.length || extraFilters.minYield || extraFilters.upcomingWithin) {
       const { freq: freqFilters, minYield, upcomingWithin } = extraFilters;
-      if (freqFilters.length && !freqFilters.includes(freqMap[stock.stock_id])) return false;
+      if (freqFilters.length && !freqFilters.includes(exploreFreqMap[stock.stock_id])) return false;
       const currenciesToCheck = (extraFilters.currencies.length ? extraFilters.currencies : activeCurrencies);
       if (minYield) {
         let total = 0;
         let count = 0;
         for (let i = 0; i < 12; i++) {
-          const monthEntry = dividendTable[stock.stock_id]?.[i];
+          const monthEntry = exploreDividendTable[stock.stock_id]?.[i];
           if (!monthEntry) continue;
           currenciesToCheck.forEach(currency => {
             const cell = monthEntry?.[currency];
@@ -347,7 +367,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           });
         }
         const countForFreq = count;
-        const freq = [1, 2, 4, 6, 12, 52].includes(freqMap[stock.stock_id]) ? freqMap[stock.stock_id] : countForFreq;
+        const freq = [1, 2, 4, 6, 12, 52].includes(exploreFreqMap[stock.stock_id]) ? exploreFreqMap[stock.stock_id] : countForFreq;
         const avg = count > 0 ? total / count : 0;
         if (avg * freq < Number(minYield)) return false;
       }
@@ -359,7 +379,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           future.setDate(now.getDate() + days);
           let hasUpcoming = false;
           for (let i = 0; i < 12; i++) {
-            const monthEntry = dividendTable[stock.stock_id]?.[i];
+            const monthEntry = exploreDividendTable[stock.stock_id]?.[i];
             if (!monthEntry) continue;
             if (currenciesToCheck.some(currency => {
               const cell = monthEntry?.[currency];
@@ -377,17 +397,17 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       }
     }
     return true;
-  }), [stocks, selectedStockIds, dividendScope, purchasedStockIds, dividendTable, monthHasValue, viewMode, stockCurrencyMap, extraFilters, activeCurrencies, freqMap]);
+  }), [exploreStocks, selectedStockIds, exploreScope, purchasedStockIds, exploreDividendTable, monthHasValue, viewMode, exploreStockCurrencyMap, extraFilters, activeCurrencies, exploreFreqMap]);
 
   const maxYieldPerMonth = useMemo(() => {
-    const currenciesForMax = availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
+    const currenciesForMax = exploreAvailableCurrencies.length > 0 ? exploreAvailableCurrencies : [DEFAULT_CURRENCY];
     const result = currenciesForMax.reduce((acc, currency) => {
       acc[currency] = Array(12).fill(0);
       return acc;
     }, {});
     filteredStocks.forEach(stock => {
       for (let m = 0; m < 12; m++) {
-        const monthEntry = dividendTable[stock.stock_id]?.[m];
+        const monthEntry = exploreDividendTable[stock.stock_id]?.[m];
         if (!monthEntry) continue;
         currenciesForMax.forEach(currency => {
           const cell = monthEntry?.[currency];
@@ -399,12 +419,12 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       }
     });
     return result;
-  }, [filteredStocks, dividendTable, availableCurrencies]);
+  }, [filteredStocks, exploreDividendTable, exploreAvailableCurrencies]);
 
   const displayStocks = useMemo(() => extraFilters.diamond
     ? filteredStocks.filter(stock => {
         for (let m = 0; m < 12; m++) {
-          const monthEntry = dividendTable[stock.stock_id]?.[m];
+          const monthEntry = exploreDividendTable[stock.stock_id]?.[m];
           if (!monthEntry) continue;
           const currenciesToCheck = (extraFilters.currencies.length ? extraFilters.currencies : activeCurrencies);
           const hasDiamond = currenciesToCheck.some(currency => {
@@ -419,7 +439,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         return false;
       })
     : filteredStocks,
-  [extraFilters.diamond, extraFilters.currencies, filteredStocks, dividendTable, activeCurrencies, maxYieldPerMonth]);
+  [extraFilters.diamond, extraFilters.currencies, filteredStocks, exploreDividendTable, activeCurrencies, maxYieldPerMonth]);
 
   const {
     totalPerStock,
@@ -430,7 +450,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     estAnnualYield,
     maxAnnualYield,
   } = useMemo(() => {
-    const currenciesForTotals = availableCurrencies.length > 0 ? availableCurrencies : [DEFAULT_CURRENCY];
+    const currenciesForTotals = exploreAvailableCurrencies.length > 0 ? exploreAvailableCurrencies : [DEFAULT_CURRENCY];
     const totalPerStock = {};
     const yieldSum = {};
     const yieldCount = {};
@@ -443,7 +463,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       latestPrice[stock.stock_id] = { price: null, date: null };
       latestYield[stock.stock_id] = { yield: null, date: null };
       // Only process data from dividendTable (which is already year-filtered)
-      const stockTable = dividendTable[stock.stock_id];
+      const stockTable = exploreDividendTable[stock.stock_id];
       if (!stockTable) return; // No dividend data for this stock in selected year
       for (let m = 0; m < 12; m++) {
         const monthEntry = stockTable[m];
@@ -478,7 +498,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
 
     // Override latestPrice with up-to-date close price from stock list API when available
     displayStocks.forEach(stock => {
-      const stockListPrice = stockListPriceMap[stock.stock_id];
+      const stockListPrice = exploreStockListPriceMap[stock.stock_id];
       if (stockListPrice != null) {
         latestPrice[stock.stock_id] = { ...latestPrice[stock.stock_id], price: stockListPrice };
       }
@@ -496,7 +516,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         const count = yieldCount[id][currency] || 0;
         if (count === 0) return;
         const avgYield = sum / count;
-        const freq = [1, 2, 4, 6, 12, 52].includes(freqMap[id]) ? freqMap[id] : count;
+        const freq = [1, 2, 4, 6, 12, 52].includes(exploreFreqMap[id]) ? exploreFreqMap[id] : count;
         const est = avgYield * freq;
         estAnnualYield[id][currency] = est;
         if (est > (maxAnnualYield[currency] || 0)) {
@@ -506,10 +526,10 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     });
 
     return { totalPerStock, yieldSum, yieldCount, latestPrice, latestYield, estAnnualYield, maxAnnualYield };
-  }, [displayStocks, dividendTable, availableCurrencies, stockListPriceMap, freqMap]);
+  }, [displayStocks, exploreDividendTable, exploreAvailableCurrencies, exploreStockListPriceMap, exploreFreqMap]);
 
   // Prepare events for calendar view
-  const calendarEvents = useMemo(() => filteredData
+  const calendarEvents = useMemo(() => exploreFilteredData
     .filter(item => {
       if (selectedStockIds.length && !selectedStockIds.includes(item.stock_id)) return false;
       const currency = item.currency || DEFAULT_CURRENCY;
@@ -552,7 +572,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       }
       return arr;
     }),
-  [filteredData, selectedStockIds, extraFilters.currencies, activeCurrencies]);
+  [exploreFilteredData, selectedStockIds, extraFilters.currencies, activeCurrencies]);
 
   const filteredCalendarEvents = useMemo(() => calendarEvents.filter(ev =>
     calendarFilter === 'both' || ev.type === calendarFilter
@@ -702,10 +722,10 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                     <select
                       id="filter-year"
                       className="filter-bar__select"
-                      value={selectedYear}
-                      onChange={e => setSelectedYear(Number(e.target.value))}
+                      value={exploreSelectedYear}
+                      onChange={e => setExploreSelectedYear(Number(e.target.value))}
                     >
-                      {years.map(year => (
+                      {exploreYears.map(year => (
                         <option value={year} key={year}>{year}</option>
                       ))}
                     </select>
@@ -747,18 +767,18 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                     <div className="filter-bar__pill-group" role="group" aria-label={lang === 'en' ? 'Scope' : '範圍'}>
                       <button
                         type="button"
-                        className={`filter-bar__pill${dividendScope === 'purchased' ? ' filter-bar__pill--active' : ''}`}
+                        className={`filter-bar__pill${exploreScope === 'purchased' ? ' filter-bar__pill--active' : ''}`}
                         onClick={() => handleDividendScopeChange('purchased')}
                         disabled={!canSelectPurchased}
-                        aria-pressed={dividendScope === 'purchased'}
+                        aria-pressed={exploreScope === 'purchased'}
                       >
                         {purchasedScopeLabel}
                       </button>
                       <button
                         type="button"
-                        className={`filter-bar__pill${dividendScope === 'all' ? ' filter-bar__pill--active' : ''}`}
+                        className={`filter-bar__pill${exploreScope === 'all' ? ' filter-bar__pill--active' : ''}`}
                         onClick={() => handleDividendScopeChange('all')}
-                        aria-pressed={dividendScope === 'all'}
+                        aria-pressed={exploreScope === 'all'}
                       >
                         {allScopeLabel}
                       </button>
@@ -815,7 +835,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                         filters={extraFilters}
                         setFilters={setExtraFilters}
                         onClose={() => setShowAdvancedFilters(false)}
-                        availableCurrencies={availableCurrencies}
+                        availableCurrencies={exploreAvailableCurrencies}
                       />
                     )}
                   </div>
@@ -828,15 +848,15 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                     {lang === 'en' ? '↺ Reset' : '↺ 重置'}
                   </button>
 
-                  {dividendCacheInfo && (() => {
-                    const ts = dividendCacheInfo.timestamp ? new Date(dividendCacheInfo.timestamp) : null;
+                  {exploreDividendCacheInfo && (() => {
+                    const ts = exploreDividendCacheInfo.timestamp ? new Date(exploreDividendCacheInfo.timestamp) : null;
                     const minutesAgo = ts ? Math.floor((Date.now() - ts.getTime()) / 60000) : null;
                     const freshness = minutesAgo === null ? null
                       : minutesAgo < 60 ? 'fresh'
                       : minutesAgo < 360 ? 'stale'
                       : 'old';
                     const freshnessIcon = freshness === 'fresh' ? '🟢' : freshness === 'stale' ? '🟡' : '🔴';
-                    const timeLabel = minutesAgo === null ? dividendCacheInfo.cacheStatus
+                    const timeLabel = minutesAgo === null ? exploreDividendCacheInfo.cacheStatus
                       : minutesAgo < 1 ? (lang === 'en' ? 'just now' : '剛剛更新')
                       : minutesAgo < 60 ? (lang === 'en' ? `${minutesAgo}m ago` : `${minutesAgo} 分鐘前更新`)
                       : (lang === 'en' ? `${Math.floor(minutesAgo / 60)}h ago` : `${Math.floor(minutesAgo / 60)} 小時前更新`);
@@ -850,7 +870,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
               </div>
 
               {/* ── CALENDAR PANEL ── */}
-              {showCalendar && !loading && !error && (
+              {showCalendar && !exploreLoading && !exploreError && (
                 <div className="calendar-panel">
                   <div className="calendar-panel__filter" role="group" aria-label={lang === 'en' ? 'Calendar filter' : '月曆篩選'}>
                     {[
@@ -870,12 +890,12 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                     ))}
                   </div>
                   <DividendCalendar
-                    year={selectedYear}
+                    year={exploreSelectedYear}
                     events={filteredCalendarEvents}
                     showTotals={false}
                     receivableAsPerShare
-                    availableYears={years}
-                    onYearChange={setSelectedYear}
+                    availableYears={exploreYears}
+                    onYearChange={setExploreSelectedYear}
                     month={calendarMonth}
                     onMonthChange={setCalendarMonth}
                   />
@@ -899,7 +919,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
               )}
 
               {/* ── TABLE ── */}
-              {loading ? (
+              {exploreLoading ? (
                 <div className="table-skeleton" role="status" aria-live="polite" aria-label={lang === 'en' ? 'Loading…' : '載入中…'}>
                   {Array.from({ length: 7 }, (_, i) => (
                     <div key={i} className="table-skeleton__row">
@@ -911,14 +931,14 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                     </div>
                   ))}
                 </div>
-              ) : error ? (
+              ) : exploreError ? (
                 <p className="dividend-tab__status dividend-tab__status--error" role="alert">
-                  {lang === 'en' ? 'Error: ' : '錯誤：'}{error.message}
+                  {lang === 'en' ? 'Error: ' : '錯誤：'}{exploreError.message}
                 </p>
               ) : (
                 <StockTable
                   stocks={displayStocks}
-                  dividendTable={dividendTable}
+                  dividendTable={exploreDividendTable}
                   totalPerStock={totalPerStock}
                   yieldSum={yieldSum}
                   yieldCount={yieldCount}
@@ -927,7 +947,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                   estAnnualYield={estAnnualYield}
                   maxAnnualYield={maxAnnualYield}
                   maxYieldPerMonth={maxYieldPerMonth}
-                  stockOptions={stockOptions}
+                  stockOptions={exploreStockOptions}
                   selectedStockIds={selectedStockIds}
                   setSelectedStockIds={setSelectedStockIds}
                   monthHasValue={monthHasValue}
@@ -940,7 +960,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                   setShowAllStocks={setShowAllStocks}
                   showInfoAxis={showInfoAxis}
                   getIncomeGoalInfo={getIncomeGoalInfo}
-                  freqMap={freqMap}
+                  freqMap={exploreFreqMap}
                   activeCurrencies={activeCurrencies}
                 />
               )}
