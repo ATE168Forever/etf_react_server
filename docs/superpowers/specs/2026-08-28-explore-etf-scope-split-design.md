@@ -65,7 +65,7 @@ useEffect(() => {
 }, [enabled, dividendScope, purchasedStockIds, transactionHistoryLoaded, refreshTrigger]);
 ```
 
-`loadStockList()`（`useEffectOnce`，`useDividendData.js:199-209`）與 visibility 監聽（`useDividendData.js:184-197`）也同樣用 `enabled` 短路，避免第二個實例在還沒被使用者需要時就先跑掉。`enabled=false` 時 `data`/`years` 等維持初始值（`[]`／`DIVIDEND_YEARS`），不會讓消費端拿到 `undefined`。
+`loadStockList()`（`useEffectOnce`，`useDividendData.js:199-209`）與 visibility 監聽（`useDividendData.js:184-197`）**刻意不**加 `enabled` 短路，維持原樣不動。原因：`useEffectOnce` 的 callback 只在 mount 當下執行一次（`hasRunRef` 鎖住，`useEffect(..., [])` 之後不會再重跑），若在 callback 內判斷 `enabled`，等到使用者真的切到 Explore ETFs 分頁、`enabled` 變成 `true` 時，這個「只執行一次」的視窗早已在 mount 當下、`enabled` 還是 `false` 時關閉，`loadStockList()` 會被永久跳過，`freqMap`／`stockListPriceMap` 永遠是空物件——這是靜默的資料遺失，不是效能問題。visibility 監聽的 `handleVisibility` 閉包有相同的「只在 mount 時註冊一次」特性，同樣不適合閉包內判斷 `enabled`。這兩個副作用改成不論 `enabled` 為何都照常執行，代價是 explore hook 實例掛載當下就會呼叫一次 `fetchStockList()`（見下方副作用評估——這個 API 走 `fetchWithCache`，是相對輕量、有快取的請求，不是本次要避免的「全市場配息歷史」大型 fetch，可以接受）。真正需要惰性、且需要 `enabled` 短路的只有負責發送 `fetchDividendsByYears` 那個 `useEffect`——因為它的依賴陣列本來就包含會變動的值，每次 `enabled` 改變都會重新執行，沒有「只執行一次」的陷阱。`enabled=false` 時 `data`/`years` 等維持初始值（`[]`／`DIVIDEND_YEARS`），不會讓消費端拿到 `undefined`。
 
 ### 2. `DividendLifePage.jsx` 改動
 
@@ -145,7 +145,7 @@ transactionHistory ──┬── useDividendData(dividendScope='purchased'預�
 
 ## 副作用評估
 
-- `fetchStockList()` 會被呼叫兩次（一次來自主要 hook，一次來自 explore hook，且只有在 `hasVisitedExploreTab` 為 `true` 後才會真的發生）。`stockApi.js` 底層走 `fetchWithCache`（`api.js`），只要 TTL 未過期，第二次呼叫會直接吃快取，不會真的打兩次網路。程式碼層面會多一份 `freqMap`／`stockListPriceMap`／`dividendCacheInfo` 存在記憶體中，兩份分頁分開持有，可接受。
+- `fetchStockList()` 會在**每次載入時**都被呼叫兩次（一次來自主要 hook，一次來自 explore hook，兩者的 `loadStockList()` 都不受 `enabled` 短路，見上方原因說明），不像 `fetchDividendsByYears` 的大型全市場配息查詢那樣要等使用者造訪 Explore ETFs 分頁才觸發。`stockApi.js` 底層走 `fetchWithCache`（`api.js`），只要 TTL 未過期，第二次呼叫會直接吃快取，不會真的打兩次網路。程式碼層面會多一份 `freqMap`／`stockListPriceMap`／`dividendCacheInfo` 存在記憶體中，兩份分頁分開持有，可接受。
 - `exploreYears`／`exploreSelectedYear` 與 Cash Flow 分頁的 `years` 不再共用同一份清單——這其實修正了既有的小瑕疵（原本兩個語意不同的「哪些年份有資料」被迫共用同一份，只是恰好因為 scope 通常一致所以沒被注意到），不算行為劣化。
 - `dividendScope`（主要 hook）與 `exploreScope`（explore hook）現在是兩個獨立 state，若未來要在 Explore ETFs 頁「切回只看我持有」，操作的是 `exploreScope`，不會影響 Home／Cash Flow／Holdings 的 `dividendScope`——這正是本次要達成的效果。
 
@@ -156,7 +156,7 @@ transactionHistory ──┬── useDividendData(dividendScope='purchased'預�
 1. **預設不惰性抓全市場**：首次載入（未切到 Explore ETFs 分頁）時，斷言 `mockFetchDividendsByYears` 沒有被以 `stockIds: 'all'`（explore 專用）呼叫超過一次（即維持既有「無持股才退回 all」的呼叫次數，不因新增第二個 hook 實例而多一次全市場 fetch）。
 2. **切到 Explore ETFs 分頁才觸發全市場抓取**：切換到 `dividend` 分頁後，斷言額外觸發了一次 `stockIds: 'all'` 的抓取（或等效地檢查分頁內容渲染出非持股限定的股票數）。
 3. **範圍互不干擾**：使用者已有持股（`transactionHistory` 非空、`dividendScope` 為 `'purchased'`）時，切到 Explore ETFs 分頁預設仍是 `'all'`；在 Explore ETFs 頁把範圍切成「只看我持有」後，切回 Overview 分頁，`HomeTab` 顯示的資料不受影響（仍是 `'purchased'` 範圍）。
-4. **`useDividendData` 單元測試（新建 `tests/useDividendData.test.js`，目前沒有這個 hook 的獨立測試檔）**：`enabled: false` 時不呼叫 `fetchDividendsByYears`／`fetchStockList`，且不進入 loading 狀態；`enabled` 從 `false` 變 `true` 後才觸發抓取一次。
+4. **`useDividendData` 單元測試（新建 `tests/useDividendData.test.js`，目前沒有這個 hook 的獨立測試檔）**：`enabled: false` 時不呼叫 `fetchDividendsByYears`、且不進入 loading 狀態（`fetchStockList` 不受 `enabled` 影響，仍會被呼叫，見上方原因說明，測試不斷言它不被呼叫）；`enabled` 從 `false` 變 `true` 後才觸發 `fetchDividendsByYears` 一次；`enabled` 預設為 `true`（不傳這個參數時行為與改動前一致，既有呼叫端不用改）。
 5. 既有 `AppYearSelection.test.jsx`／`AppCalendarFilter.test.jsx`／`AppCalendarVisibility.test.jsx` 全數維持綠燈（回歸測試，計算 Explore ETFs 分頁行為的測試多半落在這幾個檔案裡）。
 
 ## 風險與已知限制
