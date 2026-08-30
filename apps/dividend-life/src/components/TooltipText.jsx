@@ -10,6 +10,58 @@ const getMatches = (query) => {
   return window.matchMedia(query).matches;
 };
 
+// Shared native matchMedia subscription, one per distinct query string.
+//
+// Root cause of React error #185 ("Maximum update depth exceeded") at
+// narrow viewports: a table can mount dozens/hundreds of <TooltipText>
+// cells at once, and each one used to create its own MediaQueryList and
+// register its own 'change' listener for the same query. When the
+// viewport crossed the breakpoint, the browser dispatched that many
+// separate native 'change' events -- each as its own task, not batched
+// together -- so React committed once per cell in rapid succession
+// (confirmed live: ~86 unbatched commits within ~55ms). That exceeds
+// React's internal nested-update guard and throws #185, even though
+// there is no real infinite loop.
+//
+// Fix: register exactly one native listener per query and fan out to
+// every subscribed component synchronously, from within that single
+// callback invocation. All resulting setState calls then happen inside
+// one JS turn, so React's automatic batching folds them into a single
+// commit no matter how many <TooltipText> cells are mounted.
+const mediaQuerySubscriptions = new Map();
+
+function subscribeToBreakpoint(breakpoint, callback) {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return () => {};
+  }
+
+  const query = `(max-width: ${breakpoint}px)`;
+  let entry = mediaQuerySubscriptions.get(query);
+
+  if (!entry) {
+    const mediaQuery = window.matchMedia(query);
+    const subscribers = new Set();
+    const handleChange = (event) => {
+      entry.matches = event.matches;
+      subscribers.forEach((subscriber) => subscriber(entry.matches));
+    };
+    entry = { mediaQuery, subscribers, handleChange, matches: mediaQuery.matches };
+    mediaQuery.addEventListener('change', handleChange);
+    mediaQuerySubscriptions.set(query, entry);
+  }
+
+  entry.subscribers.add(callback);
+  callback(entry.matches);
+
+  return () => {
+    entry.subscribers.delete(callback);
+    if (entry.subscribers.size === 0) {
+      entry.mediaQuery.removeEventListener('change', entry.handleChange);
+      mediaQuerySubscriptions.delete(query);
+    }
+  };
+}
+
 export default function TooltipText({
   tooltip,
   children,
@@ -23,24 +75,7 @@ export default function TooltipText({
   const triggerRef = useRef(null);
   const tooltipRef = useRef(null);
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return () => {};
-    }
-
-    const mediaQuery = window.matchMedia(`(max-width: ${breakpoint}px)`);
-
-    const handleChange = (event) => {
-      setIsMobile(event.matches);
-    };
-
-    handleChange(mediaQuery);
-    mediaQuery.addEventListener('change', handleChange);
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange);
-    };
-  }, [breakpoint]);
+  useEffect(() => subscribeToBreakpoint(breakpoint, setIsMobile), [breakpoint]);
 
   useEffect(() => {
     if (!isMobile && open) {
