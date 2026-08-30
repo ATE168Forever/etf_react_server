@@ -188,3 +188,42 @@ test('donut detail shows 0% yield instead of Infinity/NaN when cost data is miss
   const yieldText = await screen.findByText(/殖利率：/);
   expect(yieldText.textContent).toBe('殖利率：0%');
 });
+
+test('single-entry calendar cell tooltip shows localized unavailable text, never "undefined" or a bare 0', async () => {
+  const year = new Date().getFullYear();
+  // Missing (not zero) price/yield, matching what the API returns when it
+  // omits last_close_price / dividend_yield for a given dividend record.
+  readTransactionHistory.mockReturnValue([
+    { stock_id: 'MISS', date: `${year}-01-01`, quantity: 1000, type: 'buy' }
+  ]);
+
+  const data = [
+    {
+      stock_id: 'MISS',
+      stock_name: 'Missing Data ETF',
+      dividend: '5',
+      dividend_date: `${year}-03-10`,
+      payment_date: `${year}-04-10`,
+      dividend_yield: null,
+      last_close_price: null,
+      currency: 'TWD'
+    }
+  ];
+
+  const { container } = render(<UserDividendsTab allDividendData={data} selectedYear={year} />);
+
+  await screen.findAllByText('MISS');
+
+  // Several cells in this table share the `.tooltip-dotted` class (cost
+  // row, monthly total, per-stock/per-month cell); the per-month cell is
+  // the only one whose tooltip includes the close-price label, so use that
+  // to disambiguate.
+  const tooltipTriggers = Array.from(container.querySelectorAll('.tooltip-dotted'));
+  const cellTrigger = tooltipTriggers.find(el => (el.title || '').includes('除息前一天收盤價'));
+  expect(cellTrigger).toBeTruthy();
+
+  expect(cellTrigger.title).not.toMatch(/undefined/);
+  expect(cellTrigger.title).toMatch(/資料不足/); // close price
+  expect(cellTrigger.title).toMatch(/無法計算/); // yield
+  expect(cellTrigger.title).not.toMatch(/當次殖利率: 0(?!\d)/); // never a bare "0"
+});

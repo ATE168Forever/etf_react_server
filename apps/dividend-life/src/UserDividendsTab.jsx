@@ -5,6 +5,7 @@ import { HOST_URL } from '../config';
 import { useLanguage } from './i18n';
 import usePreserveScroll from './hooks/usePreserveScroll';
 import TooltipText from './components/TooltipText';
+import { getDividendCellDisplay } from './utils/dividendCellFormat';
 import CurrencyViewToggle from './components/CurrencyViewToggle';
 import { fetchStockList } from './stockApi';
 import useEffectOnce from './hooks/useEffectOnce';
@@ -642,6 +643,12 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                 const costBasis = avgCost > 0 && quantity > 0 ? avgCost * quantity : 0;
                 const existingCell = dividendTable[stockId][month];
                 const entryAmount = Number.isFinite(dividend) && quantity > 0 ? dividend * quantity : 0;
+                // hasValid*/hasPending* flags mirror useDividendData.js's semantics
+                // (getDividendCellDisplay reads them to distinguish "genuinely 0" from
+                // "missing" instead of treating an absent value as 0 via Number(null)).
+                const yieldValue = parseFloat(item.dividend_yield);
+                const hasRawDividend = item.dividend !== undefined && item.dividend !== null && `${item.dividend}`.trim() !== '';
+                const hasRawYield = item.dividend_yield !== undefined && item.dividend_yield !== null && `${item.dividend_yield}`.trim() !== '';
                 dividendTable[stockId][month] = {
                     entries: [...(existingCell?.entries || []), {
                         dividend: Number.isFinite(dividend) ? dividend : null,
@@ -660,6 +667,10 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                     payment_date: item.payment_date,
                     last_close_price: item.last_close_price,
                     dividend_yield: item.dividend_yield,
+                    hasValidDividend: Number.isFinite(dividend),
+                    hasPendingDividend: !Number.isFinite(dividend) && hasRawDividend,
+                    hasValidYield: Number.isFinite(yieldValue),
+                    hasPendingYield: !Number.isFinite(yieldValue) && hasRawYield,
                     avg_cost: avgCost,
                     cost_basis: costBasis,
                     currency: item.currency,
@@ -1401,9 +1412,10 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                                                         : `持有數量: ${cell.quantity} 股 (${lotText} 張)`;
                                                     const dividendPerShareEn = `Dividend per share: ${currencySymbol}${formatDividendAmount(cell.dividend)}`;
                                                     const dividendPerShareZh = `每股配息: ${formatDividendAmount(cell.dividend)} ${currencyUnitZh(currency)}`;
+                                                    const { closePriceText, yieldText } = getDividendCellDisplay(cell, { lang, verbose: true });
                                                     tooltipContent = lang === 'en'
-                                                        ? `${quantityLineEn}\n${dividendPerShareEn}\nClose before ex-date: ${cell.last_close_price}\nYield this time: ${cell.dividend_yield}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
-                                                        : `${quantityLineZh}\n${dividendPerShareZh}\n除息前一天收盤價: ${cell.last_close_price}\n當次殖利率: ${cell.dividend_yield}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`;
+                                                        ? `${quantityLineEn}\n${dividendPerShareEn}\n${t('prev_close')}: ${closePriceText}\n${t('current_yield')}: ${yieldText}\nEx-dividend date: ${cell.dividend_date || '-'}\nPayment date: ${cell.payment_date || '-'}`
+                                                        : `${quantityLineZh}\n${dividendPerShareZh}\n${t('prev_close')}: ${closePriceText}\n${t('current_yield')}: ${yieldText}\n配息日期: ${cell.dividend_date || '-'}\n發放日期: ${cell.payment_date || '-'}`;
                                                 }
 
                                                 // const paymentDate = cell.payment_date ? formatShortDate(cell.payment_date) : null;
