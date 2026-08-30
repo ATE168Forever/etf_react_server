@@ -34,6 +34,38 @@ test('displays USD totals with three decimal places', () => {
   ).toBeInTheDocument();
 });
 
+test('event tooltip shows localized unavailable text for missing price/yield, never "null" or a bare 0%', () => {
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const [year, month] = nowStr.split('-');
+  const eventWithMissingData = {
+    date: `${year}-${month}-07`,
+    type: 'ex',
+    stock_id: 'SEMY',
+    stock_name: 'GraniteShares YieldBOOST Semiconductor ETF',
+    amount: 1.835,
+    dividend: 0.18346,
+    quantity: 10,
+    dividend_yield: null,
+    hasValidYield: false,
+    hasPendingYield: false,
+    last_close_price: null,
+    dividend_date: `${year}-${month}-07`,
+    payment_date: `${year}-${month}-14`,
+    currency: 'USD',
+  };
+
+  const { container } = render(<DividendCalendar year={Number(year)} events={[eventWithMissingData]} />);
+
+  const tooltipTrigger = Array.from(container.querySelectorAll('.tooltip-text'))
+    .find(el => (el.title || '').includes('除息前一天收盤價'));
+
+  expect(tooltipTrigger).toBeTruthy();
+  expect(tooltipTrigger.title).not.toMatch(/null/);
+  expect(tooltipTrigger.title).toMatch(/資料不足/); // missing close price
+  expect(tooltipTrigger.title).toMatch(/無法計算/); // missing/uncalculable yield
+  expect(tooltipTrigger.title).not.toMatch(/當次殖利率: 0%/); // never a bare "0%"
+});
+
 test('hides monthly totals when showTotals is false', () => {
   const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
   const [year, month] = nowStr.split('-');

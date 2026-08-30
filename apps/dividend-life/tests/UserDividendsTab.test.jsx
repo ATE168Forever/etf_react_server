@@ -227,3 +227,41 @@ test('single-entry calendar cell tooltip shows localized unavailable text, never
   expect(cellTrigger.title).toMatch(/無法計算/); // yield
   expect(cellTrigger.title).not.toMatch(/當次殖利率: 0(?!\d)/); // never a bare "0"
 });
+
+test('calendar widget event tooltip never coerces missing dividend_yield/last_close_price to 0/null (calendarEvents builder)', async () => {
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const [year, month] = nowStr.split('-');
+  readTransactionHistory.mockReturnValue([
+    { stock_id: 'SEMY', date: `${year}-01-01`, quantity: 10, type: 'buy' }
+  ]);
+
+  const data = [
+    {
+      stock_id: 'SEMY',
+      stock_name: 'GraniteShares YieldBOOST Semiconductor ETF',
+      dividend: '0.18346',
+      dividend_date: `${year}-${month}-07`,
+      payment_date: `${year}-${month}-14`,
+      dividend_yield: null,
+      last_close_price: null,
+      currency: 'USD'
+    }
+  ];
+
+  const { container } = render(<UserDividendsTab allDividendData={data} />);
+
+  await screen.findAllByText('SEMY');
+
+  // The calendar widget's per-event tooltip trigger uses the plain
+  // "tooltip-text" class (no extra className), unlike the monthly summary
+  // table's cells which use "tooltip-dotted" — this disambiguates the two
+  // "missing data" tooltips that share the same underlying bug class.
+  const eventTrigger = Array.from(container.querySelectorAll('.tooltip-text'))
+    .find(el => (el.title || '').includes('除息前一天收盤價'));
+
+  expect(eventTrigger).toBeTruthy();
+  expect(eventTrigger.title).not.toMatch(/null/);
+  expect(eventTrigger.title).toMatch(/資料不足/); // close price
+  expect(eventTrigger.title).toMatch(/無法計算/); // yield
+  expect(eventTrigger.title).not.toMatch(/當次殖利率: 0%/); // never a bare "0%"
+});

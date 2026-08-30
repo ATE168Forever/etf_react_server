@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLanguage } from '../i18n';
 import TooltipText from './TooltipText';
+import { getDividendCellDisplay } from '../utils/dividendCellFormat';
 
 const DEFAULT_CURRENCY = 'TWD';
 
@@ -238,9 +239,10 @@ export default function DividendCalendar({
                         if (!receivableAsPerShare) {
                           tooltipParts.push(`${t('dividend_receivable')}: ${amountText}`);
                         }
+                        const { closePriceText, yieldText } = getDividendCellDisplay(ev, { lang, verbose: true });
                         tooltipParts.push(
-                          `${t('prev_close')}: ${ev.last_close_price}`,
-                          `${t('current_yield')}: ${ev.dividend_yield}%`,
+                          `${t('prev_close')}: ${closePriceText}`,
+                          `${t('current_yield')}: ${yieldText}`,
                           `${t('dividend_date')}: ${ev.dividend_date || '-'}`,
                           `${t('payment_date')}: ${ev.payment_date || '-'}`
                         );

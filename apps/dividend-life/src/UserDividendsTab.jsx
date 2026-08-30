@@ -525,7 +525,14 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
         const qty = getHolding(item.stock_id, holdingDate);
         const dividend = parseFloat(item.dividend);
         const amount = dividend * qty;
-        const dividend_yield = parseFloat(item.dividend_yield) || 0;
+        // parseFloat (not Number) — Number(null) is 0, which would make a
+        // genuinely missing yield look "valid" here. Mirrors the dividendTable
+        // builder above (line ~649), the proven-correct sibling pattern.
+        const yieldValueRaw = parseFloat(item.dividend_yield);
+        const hasRawYield = item.dividend_yield !== undefined && item.dividend_yield !== null && `${item.dividend_yield}`.trim() !== '';
+        const hasValidYield = Number.isFinite(yieldValueRaw);
+        const hasPendingYield = !hasValidYield && hasRawYield;
+        const dividend_yield = hasValidYield ? yieldValueRaw : null;
         const normalizedCurrency = normalizeCurrency(item.currency);
         const arr = [];
         if (item.dividend_date) {
@@ -538,6 +545,8 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                 dividend,
                 quantity: qty,
                 dividend_yield,
+                hasValidYield,
+                hasPendingYield,
                 last_close_price: item.last_close_price,
                 dividend_date: item.dividend_date,
                 payment_date: item.payment_date,
@@ -554,6 +563,8 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                 dividend,
                 quantity: qty,
                 dividend_yield,
+                hasValidYield,
+                hasPendingYield,
                 last_close_price: item.last_close_price,
                 dividend_date: item.dividend_date,
                 payment_date: item.payment_date,
