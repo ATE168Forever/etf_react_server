@@ -5,6 +5,7 @@ import TooltipText from './TooltipText';
 import { HOST_URL } from '../../config';
 import { useLanguage } from '../i18n';
 import usePreserveScroll from '../hooks/usePreserveScroll';
+import { getDividendCellDisplay } from '../utils/dividendCellFormat';
 
 const NUM_COL_WIDTH = 90;
 const DEFAULT_VISIBLE_COUNT = 20;
@@ -738,29 +739,12 @@ const StockRow = memo(function StockRow({
             );
           }
           const perYield = cell.perYield || 0;
+          const {
+            isDividendValid,
+            dividendText: displayDividend,
+            yieldText: displayYield,
+          } = getDividendCellDisplay(cell, { lang });
           const rawDividend = Number(cell.dividend);
-          const rawYield = Number(cell.dividend_yield);
-          const hasValidDividend = Boolean(cell.hasValidDividend);
-          const hasValidYield = Boolean(cell.hasValidYield);
-          const hasPendingDividend = Boolean(cell.hasPendingDividend);
-          const hasPendingYield = Boolean(cell.hasPendingYield);
-          const pendingText = lang === 'zh' ? '待確認' : 'Pending';
-          const isDividendValid = hasValidDividend && Number.isFinite(rawDividend);
-          const isYieldValid = hasValidYield && Number.isFinite(rawYield);
-          // Spec calls for '—' or '資料不足' for missing data — using the dash
-          // here (as StockTable already does for the price column) to avoid
-          // "Insufficient data" overflowing this narrow, per-month cell.
-          const missingText = '—';
-          const displayDividend = isDividendValid
-            ? rawDividend.toFixed(3)
-            : hasPendingDividend
-              ? pendingText
-              : missingText;
-          const displayYield = isYieldValid
-            ? `${rawYield.toFixed(1)}%`
-            : (hasPendingYield || hasPendingDividend)
-              ? pendingText
-              : missingText;
           const displayPerYield = perYield > 0 ? `${perYield.toFixed(2)}%` : '';
           const displayVal = showPerYield
             ? displayPerYield
@@ -771,6 +755,7 @@ const StockRow = memo(function StockRow({
           const isMulti = entries.length > 1;
           const shortDate = (d) => d ? d.slice(5).replace('-', '/') : '-';
           const tooltipLines = [];
+          const { closePriceText, yieldText: tooltipYield } = getDividendCellDisplay(cell, { lang, verbose: true });
           if (isMulti) {
             const sorted = [...entries].sort((a, b) => (a.dividend_date || '') < (b.dividend_date || '') ? -1 : 1);
             sorted.forEach((entry, i) => {
@@ -796,13 +781,8 @@ const StockRow = memo(function StockRow({
                   : `Dividend per share: ${currencyLabelFor(currency)}${rawDividend.toFixed(3)}`
               );
             }
-            tooltipLines.push(`${t('prev_close')}: ${cell.last_close_price ?? '-'}`);
+            tooltipLines.push(`${t('prev_close')}: ${closePriceText}`);
           }
-          const tooltipYield = isYieldValid
-            ? `${rawYield.toFixed(1)}%`
-            : (hasPendingYield || hasPendingDividend)
-              ? pendingText
-              : '';
           tooltipLines.push(
             `${t('current_yield')}: ${tooltipYield}`,
             `${t('avg_month_yield')}: ${perYield.toFixed(2)}%`,
