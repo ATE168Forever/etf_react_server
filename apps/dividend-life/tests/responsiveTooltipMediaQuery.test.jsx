@@ -46,6 +46,21 @@ import TooltipText from '../src/components/TooltipText';
 // native listener per instance, `listenerCount()` jumps from 1 back up
 // to the cell count and these tests fail.
 
+// Tracks the active render's unmount fn so afterEach can always tear it
+// down -- if an assertion earlier in a test throws, the test body's own
+// unmount()/delete window.matchMedia calls never run, leaving a stale
+// entry in TooltipText.jsx's module-level mediaQuerySubscriptions map
+// that can confuse a later, unrelated test's listenerCount() result.
+let activeUnmount = null;
+
+afterEach(() => {
+  if (activeUnmount) {
+    activeUnmount();
+    activeUnmount = null;
+  }
+  delete window.matchMedia;
+});
+
 function installMatchMediaMock(initialMatches = false) {
   const listeners = new Set();
   let matches = initialMatches;
@@ -92,6 +107,7 @@ test('many TooltipText cells mounted together survive StrictMode and repeated br
       </table>
     </StrictMode>
   );
+  activeUnmount = unmount;
 
   // All 60 cells share the same breakpoint query, so they share a single
   // native MediaQueryList + listener (see the module-level comment
@@ -112,11 +128,11 @@ test('many TooltipText cells mounted together survive StrictMode and repeated br
   expect(media.listenerCount()).toBe(1);
 
   unmount();
+  activeUnmount = null;
   // Every subscriber unmounted -> the shared listener is torn down too.
   expect(media.listenerCount()).toBe(0);
 
   consoleError.mockRestore();
-  delete window.matchMedia;
 });
 
 test('a large number of TooltipText cells (production-scale table) mount and unmount cleanly with a single shared listener', () => {
@@ -142,6 +158,7 @@ test('a large number of TooltipText cells (production-scale table) mount and unm
       </table>
     </StrictMode>
   );
+  activeUnmount = unmount;
 
   expect(media.listenerCount()).toBe(1);
 
@@ -156,8 +173,8 @@ test('a large number of TooltipText cells (production-scale table) mount and unm
   expect(maxUpdateDepthLogged).toBe(false);
 
   unmount();
+  activeUnmount = null;
   expect(media.listenerCount()).toBe(0);
 
   consoleError.mockRestore();
-  delete window.matchMedia;
 });

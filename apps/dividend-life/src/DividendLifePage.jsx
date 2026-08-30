@@ -539,7 +539,14 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     })
     .flatMap(item => {
       const amount = parseFloat(item.dividend);
-      const dividend_yield = parseFloat(item.dividend_yield) || 0;
+      // parseFloat (not Number) — Number(null) is 0, which would make a
+      // genuinely missing yield look "valid" here. Mirrors the
+      // proven-correct sibling pattern in UserDividendsTab.jsx.
+      const yieldValueRaw = parseFloat(item.dividend_yield);
+      const hasRawYield = item.dividend_yield !== undefined && item.dividend_yield !== null && `${item.dividend_yield}`.trim() !== '';
+      const hasValidYield = Number.isFinite(yieldValueRaw);
+      const hasPendingYield = !hasValidYield && hasRawYield;
+      const dividend_yield = hasValidYield ? yieldValueRaw : null;
       const currency = item.currency || DEFAULT_CURRENCY;
       const arr = [];
       if (item.dividend_date) {
@@ -550,6 +557,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           stock_name: item.stock_name,
           amount,
           dividend_yield,
+          hasValidYield,
+          hasPendingYield,
           last_close_price: item.last_close_price,
           dividend_date: item.dividend_date,
           payment_date: item.payment_date,
@@ -564,6 +573,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           stock_name: item.stock_name,
           amount,
           dividend_yield,
+          hasValidYield,
+          hasPendingYield,
           last_close_price: item.last_close_price,
           dividend_date: item.dividend_date,
           payment_date: item.payment_date,

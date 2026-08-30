@@ -55,7 +55,11 @@ function subscribeToBreakpoint(breakpoint, callback) {
 
   return () => {
     entry.subscribers.delete(callback);
-    if (entry.subscribers.size === 0) {
+    // Only tear down the shared listener if the map's current entry for this
+    // query is still the exact object this closure was registered against --
+    // guards against a double-cleanup silently orphaning a live listener
+    // registration that a newer entry replaced in the meantime.
+    if (entry.subscribers.size === 0 && mediaQuerySubscriptions.get(query) === entry) {
       entry.mediaQuery.removeEventListener('change', entry.handleChange);
       mediaQuerySubscriptions.delete(query);
     }

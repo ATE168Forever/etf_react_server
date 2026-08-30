@@ -21,13 +21,17 @@ function missingDividendText(lang, verbose) {
   return lang === 'zh' ? '資料不足' : 'Data unavailable';
 }
 
+// Callers MUST set hasValidDividend/hasPendingDividend/hasValidYield/hasPendingYield
+// on `cell` — an absent flag reads as invalid (not "unknown"), same as an
+// explicitly-false one. See useDividendData.js's cell-building code for the
+// reference semantics of what these flags mean.
 export function getDividendCellDisplay(cell, { lang = 'zh', verbose = false } = {}) {
   const pendingText = lang === 'zh' ? '待確認' : 'Pending';
 
-  const rawDividend = Number(cell?.dividend);
-  const rawYield = Number(cell?.dividend_yield);
-  const isDividendValid = Boolean(cell?.hasValidDividend) && isFiniteNumber(rawDividend);
-  const isYieldValid = Boolean(cell?.hasValidYield) && isFiniteNumber(rawYield);
+  const isDividendValid = Boolean(cell?.hasValidDividend) && isFiniteNumber(cell?.dividend);
+  const isYieldValid = Boolean(cell?.hasValidYield) && isFiniteNumber(cell?.dividend_yield);
+  const rawDividend = isDividendValid ? Number(cell?.dividend) : NaN;
+  const rawYield = isYieldValid ? Number(cell?.dividend_yield) : NaN;
   const hasPendingDividend = Boolean(cell?.hasPendingDividend);
   const hasPendingYield = Boolean(cell?.hasPendingYield);
 
