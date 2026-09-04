@@ -33,3 +33,4 @@ dist-ssr
 apps/*/.env
 apps/*/.env.production
 .worktrees/
+.superpowers/
