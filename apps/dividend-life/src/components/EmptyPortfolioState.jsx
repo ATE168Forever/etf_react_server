@@ -1,17 +1,30 @@
+import EmptyState from './EmptyState';
 import styles from './EmptyPortfolioState.module.css';
 
-export default function EmptyPortfolioState({ onCtaClick, onDemoClick, t }) {
+export default function EmptyPortfolioState({ onCtaClick, onImportClick, onDemoClick, t }) {
+  const actions = [];
+  if (onCtaClick) {
+    actions.push({ label: t('empty_cta_add_first'), onClick: onCtaClick, variant: 'primary' });
+  }
+  if (onImportClick) {
+    actions.push({ label: t('empty_cta_import'), onClick: onImportClick, variant: 'secondary' });
+  }
   return (
-    <section className={styles.card}>
-      <h3 className={styles.title}>{t('empty_portfolio_title')}</h3>
-      <p className={styles.description}>{t('empty_portfolio_description')}</p>
-      <div className={styles.actions}>
-        {onCtaClick ? (
-          <button type="button" className={styles.ctaButton} onClick={onCtaClick}>
-            {t('empty_portfolio_cta')}
-          </button>
+    <EmptyState title={t('empty_portfolio_title')} description={t('empty_portfolio_description')}>
+      <div className={styles.actionsRow}>
+        {actions.length > 0 ? (
+          actions.map(action => (
+            <button
+              key={action.label}
+              type="button"
+              className={action.variant === 'primary' ? styles.ctaButton : styles.importButton}
+              onClick={action.onClick}
+            >
+              {action.label}
+            </button>
+          ))
         ) : (
-          <p className={styles.ctaText}>{t('empty_portfolio_cta')}</p>
+          <p className={styles.ctaText}>{t('empty_cta_add_first')}</p>
         )}
         {onDemoClick && (
           <button type="button" className={styles.demoButton} onClick={onDemoClick}>
@@ -19,6 +32,7 @@ export default function EmptyPortfolioState({ onCtaClick, onDemoClick, t }) {
           </button>
         )}
       </div>
-    </section>
+      {onDemoClick && <p className={styles.disclaimer}>{t('empty_demo_disclaimer')}</p>}
+    </EmptyState>
   );
 }
