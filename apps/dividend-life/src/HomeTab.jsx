@@ -234,6 +234,7 @@ export default function HomeTab({
   dividendData: dividendDataProp = null,
   dividendLoading: dividendLoadingProp = null,
   onNavigateToInventory = null,
+  onImportClick = null,
 }) {
   const [stats, setStats] = useState({ milestones: [], latest: [], tip: '' });
   const [goalSummary, setGoalSummary] = useState(() => {
@@ -699,6 +700,8 @@ export default function HomeTab({
     cards[nextIdx].focus();
   };
 
+  const hasDividendData = Boolean(chartCurrency);
+
   return (
     <div className="dashboard-container">
       <DemoModeBanner isVisible={isDemoMode} onExit={handleExitDemo} t={t} />
@@ -709,8 +712,18 @@ export default function HomeTab({
           lang={lang}
           t={t}
           onCtaClick={onNavigateToInventory}
+          onImportClick={onImportClick}
           onDemoClick={handleEnterDemo}
         />
+      ) : !hasDividendData ? (
+        <section className="asset-summary-card">
+          <p className="asset-summary-card__count">
+            {lang === 'en'
+              ? `${goalSummary.inventoryList.length} holdings tracked`
+              : `已追蹤 ${goalSummary.inventoryList.length} 檔持股`}
+          </p>
+          <p className="asset-summary-card__hint">{t('home_no_dividend_data_hint')}</p>
+        </section>
       ) : (
         <>
           <SummaryHero
@@ -826,10 +839,10 @@ export default function HomeTab({
         <section className="goal-section">
           <InvestmentGoalCard
             title={goalTitle}
-            metrics={goalMetrics}
-            rows={goalRows}
-            emptyState={goalEmptyState}
-            share={goalShareConfig}
+            metrics={hasHoldings && !hasDividendData ? [] : goalMetrics}
+            rows={hasHoldings && !hasDividendData ? [] : goalRows}
+            emptyState={hasHoldings && !hasDividendData ? t('home_no_dividend_data_hint') : goalEmptyState}
+            share={hasHoldings && !hasDividendData ? null : goalShareConfig}
           />
         </section>
       )}
@@ -992,8 +1005,8 @@ export default function HomeTab({
 
       </section>
 
-      {/* Render empty-state goal card so user knows they can set up goals */}
-      {goalEmptyState && (
+      {/* Render empty-state goal card so user knows they can set up goals (only once they have holdings — State A/B already show EmptyPortfolioState) */}
+      {hasHoldings && goalEmptyState && (
         <InvestmentGoalCard
           title={goalTitle}
           metrics={goalMetrics}
