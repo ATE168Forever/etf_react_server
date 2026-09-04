@@ -23,7 +23,7 @@
   gap: 12px;
 }
 
-.action_primary {
+.actionPrimary {
   background: var(--sage, #6e8062);
   color: #fff;
   border: none;
@@ -32,7 +32,7 @@
   cursor: pointer;
 }
 
-.action_secondary {
+.actionSecondary {
   background: transparent;
   color: var(--sage, #6e8062);
   border: 1px solid var(--sage, #6e8062);
@@ -41,7 +41,7 @@
   cursor: pointer;
 }
 
-.action_ghost {
+.actionGhost {
   background: transparent;
   color: var(--ink-soft, #55503f);
   border: none;

@@ -36,7 +36,7 @@ test('renders actions in order and fires their onClick handlers', () => {
 test('defaults action variant to secondary', () => {
   render(<EmptyState title="No data" actions={[{ label: 'Go', onClick: () => {} }]} />);
   const button = screen.getByRole('button', { name: 'Go' });
-  expect(button.className).toMatch(/secondary/);
+  expect(button.className).toMatch(/secondary/i);
 });
 
 test('renders children slot below actions', () => {

@@ -1,9 +1,9 @@
 import styles from './EmptyState.module.css';
 
 const VARIANT_CLASS = {
-  primary: styles.action_primary,
-  secondary: styles.action_secondary,
-  ghost: styles.action_ghost,
+  primary: styles.actionPrimary,
+  secondary: styles.actionSecondary,
+  ghost: styles.actionGhost,
 };
 
 export default function EmptyState({ title, description, actions = [], children }) {
@@ -17,7 +17,7 @@ export default function EmptyState({ title, description, actions = [], children 
             <button
               key={`${action.label}-${idx}`}
               type="button"
-              className={VARIANT_CLASS[action.variant] || styles.action_secondary}
+              className={VARIANT_CLASS[action.variant] || styles.actionSecondary}
               onClick={action.onClick}
             >
               {action.label}
