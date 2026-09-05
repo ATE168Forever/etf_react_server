@@ -657,6 +657,24 @@ export default function InventoryTab({
   }, [dividendData, stockListPriceMap]);
 
   useEffect(() => {
+    // Never persist an override-driven display value (e.g. demo-mode data) back to
+    // localStorage — it isn't the user's real portfolio. This covers both a live
+    // transactionsOverride change (entering/exiting demo while mounted) and the
+    // initial mount, where transactionHistory's lazy initializer already seeds it
+    // from the override, so this effect's first run would otherwise write it too.
+    //
+    // Deliberately NOT depending on transactionsOverride here (only transactionHistory):
+    // the sibling sync effect below reacts to transactionsOverride changes and updates
+    // transactionHistory to match it one render later. If this effect also depended on
+    // transactionsOverride, it would fire one render too early — while transactionHistory
+    // still held the *previous* value — see the two values as mismatched, and fall through
+    // to a real saveTransactionHistory() write of stale (e.g. demo) data before the sync
+    // effect had a chance to catch up. Keying only on transactionHistory guarantees this
+    // effect only ever observes the post-sync, already-consistent pair.
+    if (transactionsOverride !== null && transactionHistory === transactionsOverride) {
+      skipTimestampRef.current = false;
+      return;
+    }
     if (skipTimestampRef.current) {
       // System-triggered change (initial mount or stockList enrichment) — save data only, no timestamp update
       skipTimestampRef.current = false;
@@ -664,6 +682,7 @@ export default function InventoryTab({
       return;
     }
     saveTransactionHistory(transactionHistory);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactionHistory]);
 
   useEffect(() => {

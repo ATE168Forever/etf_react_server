@@ -235,6 +235,10 @@ export default function HomeTab({
   dividendLoading: dividendLoadingProp = null,
   onNavigateToInventory = null,
   onImportClick = null,
+  transactionsOverride = null,
+  isDemoMode: isDemoModeProp = null,
+  onEnterDemo: onEnterDemoProp = null,
+  onExitDemo: onExitDemoProp = null,
 }) {
   const [stats, setStats] = useState({ milestones: [], latest: [], tip: '' });
   const [goalSummary, setGoalSummary] = useState(() => {
@@ -245,7 +249,8 @@ export default function HomeTab({
     };
   });
   const [transactionHistory, setTransactionHistory] = useState([]);
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [localDemoMode, setLocalDemoMode] = useState(false);
+  const isDemoMode = isDemoModeProp !== null ? isDemoModeProp : localDemoMode;
   const [dividendData, setDividendData] = useState([]);
   const [dividendLoading, setDividendLoading] = useState(true);
   const [inventoryLoaded, setInventoryLoaded] = useState(false);
@@ -284,28 +289,36 @@ export default function HomeTab({
   }, [lang]);
 
   useEffect(() => {
-    const history = readTransactionHistory();
+    const history = transactionsOverride !== null ? transactionsOverride : readTransactionHistory();
     setTransactionHistory(history);
     const { inventoryList } = summarizeInventory(history);
     const goals = loadInvestmentGoals();
     setGoalSummary({ goals, inventoryList });
     setInventoryLoaded(true);
-  }, []);
+  }, [transactionsOverride]);
 
   const handleEnterDemo = useCallback(() => {
+    if (onEnterDemoProp) {
+      onEnterDemoProp();
+      return;
+    }
     const { inventoryList } = summarizeInventory(DEMO_TRANSACTIONS);
     setTransactionHistory(DEMO_TRANSACTIONS);
     setGoalSummary(prev => ({ ...prev, inventoryList }));
-    setIsDemoMode(true);
-  }, []);
+    setLocalDemoMode(true);
+  }, [onEnterDemoProp]);
 
   const handleExitDemo = useCallback(() => {
+    if (onExitDemoProp) {
+      onExitDemoProp();
+      return;
+    }
     const history = readTransactionHistory();
     const { inventoryList } = summarizeInventory(history);
     setTransactionHistory(history);
     setGoalSummary(prev => ({ ...prev, inventoryList }));
-    setIsDemoMode(false);
-  }, []);
+    setLocalDemoMode(false);
+  }, [onExitDemoProp]);
 
   const refreshExclusions = useCallback(() => {
     setDividendExclusions(loadDividendExclusions());
@@ -704,7 +717,13 @@ export default function HomeTab({
 
   return (
     <div className="dashboard-container">
-      <DemoModeBanner isVisible={isDemoMode} onExit={handleExitDemo} t={t} />
+      {/* When a page-level demo controller is supplied (isDemoModeProp !== null), that
+          page (DividendLifePage) renders DemoModeBanner once above #tab-content so it
+          survives tab switches — skip the local instance to avoid a duplicate banner.
+          Standalone/test usage (no page props) keeps rendering its own banner here. */}
+      {isDemoModeProp === null && (
+        <DemoModeBanner isVisible={isDemoMode} onExit={handleExitDemo} t={t} />
+      )}
 
       {/* ═══ PHASE 2 P0: TOTAL OVERVIEW ═══ */}
       {!hasHoldings ? (

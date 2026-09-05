@@ -12,6 +12,8 @@ import AdvancedFilterDropdown from './components/AdvancedFilterDropdown';
 import CurrencyViewToggle from './components/CurrencyViewToggle';
 import TooltipText from './components/TooltipText';
 import ErrorBoundary from './components/ErrorBoundary';
+import DemoModeBanner from './components/DemoModeBanner';
+import { DEMO_TRANSACTIONS } from './utils/demoData';
 import useFocusTrap from './hooks/useFocusTrap';
 
 const InventoryTab = lazy(() => import('./InventoryTab'));
@@ -67,6 +69,29 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   // All your existing states for dividend page...
   const [transactionHistory, setTransactionHistory] = useState([]);
   const [transactionHistoryLoaded, setTransactionHistoryLoaded] = useState(false);
+
+  const [demoMode, setDemoMode] = useState(false);
+  const [importFocusRequested, setImportFocusRequested] = useState(false);
+
+  const handleEnterDemo = useCallback(() => {
+    setDemoMode(true);
+  }, []);
+
+  const handleExitDemo = useCallback(() => {
+    setDemoMode(false);
+  }, []);
+
+  const handleRequestImport = useCallback(() => {
+    setImportFocusRequested(true);
+    setTab('inventory');
+  }, []);
+
+  const handleImportFocusHandled = useCallback(() => {
+    setImportFocusRequested(false);
+  }, []);
+
+  const effectiveTransactions = demoMode ? DEMO_TRANSACTIONS : transactionHistory;
+
   const [dividendScope, setDividendScope] = useState('purchased');
   const [upcomingAlerts, setUpcomingAlerts] = useState([]);
   const [dismissedAlerts, setDismissedAlerts] = useState(() => {
@@ -97,7 +122,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     purchasedStockIds,
     stockListPriceMap,
     custodianMap,
-  } = useDividendData({ dividendScope, setDividendScope, transactionHistory, transactionHistoryLoaded });
+  } = useDividendData({ dividendScope, setDividendScope, transactionHistory: effectiveTransactions, transactionHistoryLoaded });
 
   const [exploreScope, setExploreScope] = useState('all');
   const [hasVisitedExploreTab, setHasVisitedExploreTab] = useState(tab === 'dividend');
@@ -712,10 +737,20 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
               );
             })}
           </div>
+          <DemoModeBanner isVisible={demoMode} onExit={handleExitDemo} t={t} />
           <div id="tab-content">
           {tab === 'home' && (
             <div id="panel-home" role="tabpanel" aria-labelledby="tab-home">
-              <ErrorBoundary lang={lang}><Suspense><HomeTab dividendData={data} dividendLoading={loading} onNavigateToInventory={() => setTab('inventory')} /></Suspense></ErrorBoundary>
+              <ErrorBoundary lang={lang}><Suspense><HomeTab
+                dividendData={data}
+                dividendLoading={loading}
+                onNavigateToInventory={() => setTab('inventory')}
+                onImportClick={handleRequestImport}
+                transactionsOverride={effectiveTransactions}
+                isDemoMode={demoMode}
+                onEnterDemo={handleEnterDemo}
+                onExitDemo={handleExitDemo}
+              /></Suspense></ErrorBoundary>
             </div>
           )}
           {tab === 'dividend' && (
@@ -986,6 +1021,9 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                   allDividendData={data}
                   dividendCacheInfo={dividendCacheInfo}
                   stockListPriceMap={stockListPriceMap}
+                  transactionsOverride={effectiveTransactions}
+                  focusImportControl={importFocusRequested}
+                  onImportFocusHandled={handleImportFocusHandled}
                 />
               </Suspense>
             </ErrorBoundary>
@@ -998,6 +1036,9 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                 <UserDividendsTab
                   allDividendData={data}
                   availableYears={years}
+                  transactionsOverride={effectiveTransactions}
+                  onAddFirstClick={() => setTab('inventory')}
+                  onImportClick={handleRequestImport}
                 />
               </Suspense>
             </ErrorBoundary>
