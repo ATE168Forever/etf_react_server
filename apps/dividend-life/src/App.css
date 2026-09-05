@@ -71,9 +71,9 @@
 }
 
 /* Bootstrap's CDN stylesheet (index.html) supplies .nav-tabs/.nav-link's default
-   colors; the ul.*/*.nav-link* selector qualifier below is a deliberate specificity
-   bump (adds a type selector) so this always wins regardless of CSS load order,
-   without needing !important. */
+   colors; the ul.nav-tabs .nav-link selector qualifier below is a deliberate
+   specificity bump (adds a type selector) so this always wins regardless of CSS
+   load order, without needing !important. */
 ul.nav-tabs .nav-link {
   color: var(--ink-soft);
 }
