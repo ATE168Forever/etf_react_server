@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import ExperienceNavigation from '@shared/components/ExperienceNavigation/ExperienceNavigation.jsx';
 
 // SVG imports are discriminated by jest.config.js's moduleNameMapper
@@ -34,5 +34,60 @@ describe('ExperienceNavigation lang prop', () => {
 
     expect(screen.getByText('Home')).toBeInTheDocument();
     expect(screen.queryByText('首頁')).not.toBeInTheDocument();
+  });
+});
+
+describe('ExperienceNavigation mobile switcher', () => {
+  test('renders both the desktop icon row and the mobile switcher badge unconditionally (CSS handles which is visible)', () => {
+    const { container } = render(<ExperienceNavigation current="dividend-life" theme="light" lang="zh" />);
+    expect(container.querySelector('.nav')).toBeInTheDocument();
+    expect(container.querySelector('.mobileSwitcher')).toBeInTheDocument();
+  });
+
+  test('mobile toggle shows the current experience label and is closed by default', () => {
+    render(<ExperienceNavigation current="dividend-life" theme="light" lang="zh" />);
+    const toggle = screen.getByRole('button', { name: /Dividend Life/i });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  test('clicking the toggle opens a listbox with all 5 experiences, current one marked selected', () => {
+    render(<ExperienceNavigation current="balance-life" theme="light" lang="zh" />);
+    fireEvent.click(screen.getByRole('button', { name: /Balance Life/i }));
+
+    const listbox = screen.getByRole('listbox');
+    const options = within(listbox).getAllByRole('option');
+    expect(options).toHaveLength(5);
+
+    const selected = options.find((option) => option.getAttribute('aria-selected') === 'true');
+    expect(selected).toHaveTextContent('Balance Life');
+  });
+
+  test('clicking outside the switcher closes the open dropdown', () => {
+    render(<ExperienceNavigation current="dividend-life" theme="light" lang="zh" />);
+    fireEvent.click(screen.getByRole('button', { name: /Dividend Life/i }));
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  test('pressing Escape closes the dropdown and returns focus to the toggle button', () => {
+    render(<ExperienceNavigation current="dividend-life" theme="light" lang="zh" />);
+    const toggle = screen.getByRole('button', { name: /Dividend Life/i });
+    fireEvent.click(toggle);
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(toggle).toHaveFocus();
+  });
+
+  test('selecting an item in the dropdown closes it', () => {
+    render(<ExperienceNavigation current="dividend-life" theme="light" lang="zh" />);
+    fireEvent.click(screen.getByRole('button', { name: /Dividend Life/i }));
+    const listbox = screen.getByRole('listbox');
+    fireEvent.click(within(listbox).getByRole('option', { name: /Health Life/i }));
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 });

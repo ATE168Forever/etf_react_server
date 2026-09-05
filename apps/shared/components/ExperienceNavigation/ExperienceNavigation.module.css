@@ -117,20 +117,90 @@
   box-shadow: 0 14px 32px rgba(120, 152, 255, 0.4);
 }
 
+.mobileSwitcher {
+  display: none;
+  position: relative;
+  width: min(960px, 100%);
+  margin-bottom: 24px;
+}
+
+.mobileToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  border: none;
+  background: var(--surface-2, rgba(255, 255, 255, 0.08));
+  color: var(--ink, inherit);
+  cursor: pointer;
+}
+
+.mobileToggleLogo {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  object-fit: contain;
+  display: block;
+}
+
+.mobileToggleLabel {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.mobileToggleChevron {
+  font-size: 0.7rem;
+  color: var(--muted, currentColor);
+}
+
+.mobileDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  min-width: 200px;
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+  box-shadow: var(--shadow-card, 0 8px 28px rgba(0, 0, 0, 0.18));
+}
+
+.mobileDropdownItem {
+  border-radius: 8px;
+}
+
+.mobileDropdownItemActive {
+  background: var(--sage-soft, rgba(110, 128, 98, 0.2));
+}
+
+.mobileDropdownLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  text-decoration: none;
+  color: var(--ink, inherit);
+  font-size: 0.8rem;
+}
+
+.mobileDropdownLogo {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  object-fit: contain;
+  display: block;
+}
+
 @media (max-width: 640px) {
   .nav {
-    justify-content: flex-start;
-    gap: 14px;
+    display: none;
   }
 
-  .link {
-    width: 96px;
-    border-radius: 18px;
-  }
-
-  .link::after {
-    left: 4.5px;
-    right: 4.5px;
-    border-radius: 24px; /* 18px + 6px */
+  .mobileSwitcher {
+    display: block;
   }
 }
