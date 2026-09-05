@@ -21,6 +21,7 @@ describe('InventoryTab interactions', () => {
   beforeEach(() => {
     localStorage.clear();
     Cookies.remove('my_transaction_history');
+    Cookies.remove('inventory_last_backup');
     // jsdom does not implement scrollIntoView; InventoryTab's focus-import effect calls it.
     window.HTMLElement.prototype.scrollIntoView = jest.fn();
     fetchStockList.mockReset();
@@ -357,6 +358,81 @@ describe('InventoryTab interactions', () => {
     const dataBtn = await screen.findByRole('button', { name: '存取資料' });
     await waitFor(() => expect(dataBtn).toHaveFocus());
     expect(onImportFocusHandled).toHaveBeenCalledTimes(1);
+  });
+
+  describe('Finding 1: demo mode must not leak into the real backup-reminder cookie/export', () => {
+    // jsdom does not implement Blob URL creation; stub it so a would-be CSV export
+    // (which the fix should prevent from ever running in these tests) can't crash
+    // the test with an unrelated "not implemented" error instead of failing on the
+    // actual assertion below.
+    beforeEach(() => {
+      if (!URL.createObjectURL) URL.createObjectURL = jest.fn(() => 'blob:mock');
+      if (!URL.revokeObjectURL) URL.revokeObjectURL = jest.fn();
+    });
+
+    test('does not silently arm the 365-day backup cookie for a first-time user in demo mode', async () => {
+      const demoRow = [
+        { stock_id: '0050', stock_name: '元大台灣50', date: '2025-02-10', type: 'buy', quantity: 1000, price: 130 }
+      ];
+      expect(Cookies.get('inventory_last_backup')).toBeUndefined();
+      render(<InventoryTab transactionsOverride={demoRow} isDemoMode />);
+      await waitFor(() => screen.getByText('顯示：交易歷史'));
+      // Give the (buggy, pre-fix) effect a chance to run and write the cookie.
+      await new Promise(resolve => setTimeout(resolve, 0));
+      expect(Cookies.get('inventory_last_backup')).toBeUndefined();
+    });
+
+    test('does not trigger the 30-day backup reminder confirm/export while in demo mode', async () => {
+      const oldTimestamp = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
+      Cookies.set('inventory_last_backup', oldTimestamp, { expires: 365 });
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+      const demoRow = [
+        { stock_id: '0050', stock_name: '元大台灣50', date: '2025-02-10', type: 'buy', quantity: 1000, price: 130 }
+      ];
+      render(<InventoryTab transactionsOverride={demoRow} isDemoMode />);
+      await waitFor(() => screen.getByText('顯示：交易歷史'));
+      await new Promise(resolve => setTimeout(resolve, 0));
+      expect(confirmSpy).not.toHaveBeenCalled();
+      // Cookie must remain exactly as seeded — never reset as if a real backup happened.
+      expect(Cookies.get('inventory_last_backup')).toBe(oldTimestamp);
+      confirmSpy.mockRestore();
+    });
+
+    test('blocks a direct CSV export click during demo mode instead of exporting fabricated rows', async () => {
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+      const demoRow = [
+        { stock_id: '0050', stock_name: '元大台灣50', date: '2025-02-10', type: 'buy', quantity: 1000, price: 130 }
+      ];
+      render(<InventoryTab transactionsOverride={demoRow} isDemoMode />);
+      await waitFor(() => screen.getByText('顯示：交易歷史'));
+      fireEvent.click(screen.getByRole('button', { name: '存取資料' }));
+      fireEvent.click(screen.getByText('匯出 CSV'));
+      expect(Cookies.get('inventory_last_backup')).toBeUndefined();
+      confirmSpy.mockRestore();
+    });
+  });
+
+  test('Finding 5: connectAndSyncDrive does not get stuck on "connecting" when clicked during demo mode', async () => {
+    localStorage.setItem('inventory_data_source', 'googleDrive');
+    const demoRow = [
+      { stock_id: '0050', stock_name: '元大台灣50', date: '2025-02-10', type: 'buy', quantity: 1000, price: 130 }
+    ];
+    render(<InventoryTab transactionsOverride={demoRow} isDemoMode />);
+    await waitFor(() => screen.getByText('顯示：交易歷史'));
+    fireEvent.click(screen.getByRole('button', { name: '存取資料' }));
+    // On-mount silent Drive auth resolves (isDemoMode blocks it) and settles the
+    // dropdown into its "not connected" state, showing the Connect button.
+    const connectButton = await screen.findByText('連接 Google Drive');
+    fireEvent.click(connectButton);
+    // DataDropdown's handleAction closes the menu right after firing the action, so
+    // reopen it to inspect the resulting (post-click) Drive status state.
+    fireEvent.click(screen.getByRole('button', { name: '存取資料' }));
+    // Must never show the permanent "connecting…" spinner with no way out — the
+    // Connect button should be reachable again instead.
+    await waitFor(() => {
+      expect(screen.queryByText('連接中…')).not.toBeInTheDocument();
+      expect(screen.getByText('連接 Google Drive')).toBeInTheDocument();
+    });
   });
 
 });

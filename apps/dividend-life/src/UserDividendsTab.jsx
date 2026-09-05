@@ -245,7 +245,13 @@ export default function UserDividendsTab({
     const MONTHS = lang === 'en'
         ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         : ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-    const [history, setHistory] = useState([]);
+    // Lazy initializer (mirrors InventoryTab.jsx's transactionHistory init) avoids a
+    // first-paint flash of the empty state for users with real history: without it,
+    // history starts as [] until the effect below runs, so the very first render
+    // always satisfies the `history.length === 0` early-return gate further down.
+    const [history, setHistory] = useState(() =>
+        transactionsOverride !== null ? transactionsOverride : getTransactionHistory()
+    );
     const [showCalendar, setShowCalendar] = useState(() => {
         const stored = localStorage.getItem('userDividendsShowCalendar');
         return stored === null ? true : stored === 'true';
@@ -433,12 +439,16 @@ export default function UserDividendsTab({
         [holdingIds, dividendStockIds]
     );
 
-    // hasHoldings covers both currently-held stocks (holdingIds) and stocks
+    // allRelevantStockIds covers both currently-held stocks (holdingIds) and stocks
     // sold before year end that still have matching dividend records for the
     // selected year (dividendStockIds) — using holdingIds alone would hide
-    // legitimate dividend history for fully-sold positions behind the
-    // top-level empty state.
-    const hasHoldings = allRelevantStockIds.length > 0;
+    // legitimate dividend history for fully-sold positions. Feeds stockMap/myStocks
+    // and everything derived from them below (table body, State-C detection, etc).
+    // NOTE: the top-level empty-state gate further down intentionally does NOT use
+    // this (see the `history.length === 0` gate) — allRelevantStockIds is year-scoped
+    // via selectedYear, and the year picker itself lives inside the JSX that gate
+    // replaces, so gating on it would strand a user who fully exited a position
+    // mid-year with no way to ever reach the year picker.
 
     // 建立股票代號到名稱的對應（名稱由股息資料提供）
     const stockMap = useMemo(() => {
@@ -1028,7 +1038,14 @@ export default function UserDividendsTab({
         setMonthFilters(Array(12).fill(false));
     };
 
-    if (!hasHoldings) {
+    // Gated on raw history, not allRelevantStockIds: the latter is filtered by the
+    // tab-local selectedYear, and the year picker itself lives inside the JSX this
+    // early return replaces. Gating on the year-scoped value would strand a user who
+    // fully exited a position mid-year — e.g. sold everything in 2023 — with no way
+    // to ever reach the year picker and see their real 2023 dividend history, even
+    // though history.length > 0. allRelevantStockIds is unchanged and still used
+    // everywhere else in this component (table body, State-C detection, etc).
+    if (history.length === 0) {
         return (
             <EmptyState
                 title={t('cashflow_empty_title')}

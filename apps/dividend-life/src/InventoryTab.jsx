@@ -453,13 +453,19 @@ export default function InventoryTab({
 
   const connectAndSyncDrive = useCallback(
     async () => {
+      // Block up front, like the other direct-user-action handlers in this file
+      // (handleQuickSubmit, handleImport, etc.): fetchFromDriveIfNewer silently
+      // no-ops and returns false while isDemoMode is true, but without this guard
+      // driveStatus would already be set to 'connecting' by the time that happens,
+      // leaving the UI stuck on a permanent spinner with no explanation.
+      if (blockMutationInDemoMode()) return;
       setDriveStatus({ status: 'connecting' });
       const ok = await fetchFromDriveIfNewer({ silent: false, force: false });
       if (!ok) {
         setDriveConnected(false);
       }
     },
-    [fetchFromDriveIfNewer]
+    [blockMutationInDemoMode, fetchFromDriveIfNewer]
   );
 
   const handleViewDriveData = useCallback(async () => {
@@ -503,6 +509,11 @@ export default function InventoryTab({
   );
 
   const handleExport = useCallback(() => {
+    // Guards a direct click on the Export CSV button (in DataDropdown) during demo
+    // mode: without this, transactionHistory is DEMO_TRANSACTIONS while demo is
+    // active, so a click would download fabricated rows as the user's "real" backup
+    // and stamp BACKUP_COOKIE_KEY as if a genuine backup had just happened.
+    if (blockMutationInDemoMode()) return;
     const csv = transactionsToCsv(transactionHistory);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -513,7 +524,7 @@ export default function InventoryTab({
     URL.revokeObjectURL(url);
     Cookies.set(BACKUP_COOKIE_KEY, new Date().toISOString(), { expires: 365 });
     showToast(lang === 'en' ? '✓ CSV exported' : '✓ 已匯出交易記錄 CSV');
-  }, [transactionHistory, showToast, lang]);
+  }, [blockMutationInDemoMode, transactionHistory, showToast, lang]);
 
   const handleImport = e => {
     if (blockMutationInDemoMode()) {
@@ -559,6 +570,12 @@ export default function InventoryTab({
   const backupPrompt = msg.backupPrompt;
 
   useEffect(() => {
+    // Demo mode must never touch the real backup-reminder cookie or export fabricated
+    // demo rows as a "backup": while active, transactionHistory is DEMO_TRANSACTIONS,
+    // not the user's real data, so both branches below (silently arming the 365-day
+    // cookie for a first-time user, and the 30-day reminder's confirm+export) would
+    // leak demo state into real localStorage/CSV. Bail out before touching anything.
+    if (isDemoMode) return;
     if (transactionHistory.length === 0) return;
     const last = Cookies.get(BACKUP_COOKIE_KEY);
     const now = new Date();
@@ -570,7 +587,7 @@ export default function InventoryTab({
       }
       Cookies.set(BACKUP_COOKIE_KEY, now.toISOString(), { expires: 365 });
     }
-  }, [transactionHistory, handleExport, backupPrompt]);
+  }, [isDemoMode, transactionHistory, handleExport, backupPrompt]);
 
   // Periodic Drive timestamp poll: every 5 min, compare timestamps and sync in the right direction
   const fetchFromDriveIfNewerRef = useRef(fetchFromDriveIfNewer);

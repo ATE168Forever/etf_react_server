@@ -2,11 +2,21 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import UserDividendsTab from '../src/UserDividendsTab';
 import { readTransactionHistory } from '../src/utils/transactionStorage';
+import EmptyState from '../src/components/EmptyState';
 
 jest.mock('../src/utils/transactionStorage');
 jest.mock('../config', () => ({ API_HOST: '' }));
 jest.mock('../src/stockApi', () => ({ fetchStockList: jest.fn(() => Promise.resolve({ list: [], meta: null })) }));
 jest.mock('../src/hooks/useStorageListener', () => jest.fn());
+// Wraps (not replaces) the real EmptyState so existing tests asserting on its
+// rendered text still pass, while letting the flash-regression test below inspect
+// every render pass EmptyState was invoked on — including one that gets discarded
+// by a same-tick re-render before `render()` returns, which a final-DOM-only
+// assertion (getByText/queryByText) can't see.
+jest.mock('../src/components/EmptyState', () => {
+  const actual = jest.requireActual('../src/components/EmptyState').default;
+  return { __esModule: true, default: jest.fn((props) => actual(props)) };
+});
 
 test('displays stock id and dynamic name from dividend data', async () => {
   const year = new Date().getFullYear();
@@ -287,4 +297,38 @@ test('calendar widget event tooltip never coerces missing dividend_yield/last_cl
   expect(eventTrigger.title).toMatch(/資料不足/); // close price
   expect(eventTrigger.title).toMatch(/無法計算/); // yield
   expect(eventTrigger.title).not.toMatch(/當次殖利率: 0%/); // never a bare "0%"
+});
+
+test('Finding 2: a user who fully exited a position in a prior year is not stranded behind the empty state', async () => {
+  // Fully bought and sold in 2022 — for the default (current-year) selectedYear,
+  // holdingIds is empty and there's no dividend data at all, so allRelevantStockIds
+  // (year-scoped) is also empty. Before the fix, the early-return gated on
+  // `!hasHoldings` (derived from allRelevantStockIds), which would show the generic
+  // empty state here with no way to reach the year picker inside it and see this
+  // user's real 2022 history. The fix gates on raw `history.length` instead.
+  readTransactionHistory.mockReturnValue([
+    { stock_id: '0056', date: '2022-01-01', quantity: 1000, type: 'buy' },
+    { stock_id: '0056', date: '2022-06-01', quantity: 1000, type: 'sell' },
+  ]);
+  render(<UserDividendsTab allDividendData={[]} availableYears={[2022, 2023]} />);
+  expect(await screen.findByRole('table', { name: '我的配息月份表' })).toBeInTheDocument();
+  expect(screen.queryByText('還沒有配息現金流')).not.toBeInTheDocument();
+  // The year picker (inside the calendar panel) must be reachable so the user can
+  // navigate back to 2022 to see their real history.
+  expect(screen.getByRole('button', { name: /隱藏月曆|顯示月曆/ })).toBeInTheDocument();
+});
+
+test('Finding 3: no first-paint flash of EmptyState for a user with real holdings', async () => {
+  // history used to start as useState([]) and only get populated by a useEffect
+  // after mount, so the very first render always satisfied the (post-fix-#2)
+  // `history.length === 0` gate and rendered EmptyState — even for users who go
+  // on to see the real table a tick later. Checking the EmptyState mock's call
+  // log (not just the final DOM) catches that first, later-discarded render.
+  EmptyState.mockClear();
+  readTransactionHistory.mockReturnValue([
+    { stock_id: '0050', date: '2024-01-01', quantity: 1000, type: 'buy' }
+  ]);
+  render(<UserDividendsTab allDividendData={[]} availableYears={[2024]} />);
+  await screen.findByRole('table', { name: '我的配息月份表' });
+  expect(EmptyState).not.toHaveBeenCalled();
 });
