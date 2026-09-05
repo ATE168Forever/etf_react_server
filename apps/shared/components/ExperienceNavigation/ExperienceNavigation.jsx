@@ -130,7 +130,7 @@ export default function ExperienceNavigation({
           ref={mobileToggleRef}
           className={styles.mobileToggle}
           aria-expanded={isMobileMenuOpen}
-          aria-haspopup="listbox"
+          aria-haspopup="true"
           onClick={() => setIsMobileMenuOpen((open) => !open)}
         >
           <img
@@ -148,7 +148,6 @@ export default function ExperienceNavigation({
         {isMobileMenuOpen && (
           <ul
             className={styles.mobileDropdown}
-            role="listbox"
             aria-label={lang === 'en' ? 'Switch product' : '切換產品'}
           >
             {experiences.map((experience) => {
@@ -156,14 +155,13 @@ export default function ExperienceNavigation({
               return (
                 <li
                   key={experience.key}
-                  role="option"
-                  aria-selected={isActive}
                   className={isActive ? `${styles.mobileDropdownItem} ${styles.mobileDropdownItemActive}` : styles.mobileDropdownItem}
                   onClick={closeMobileMenu}
                 >
                   <Link
                     to={experience.to}
                     className={styles.mobileDropdownLink}
+                    aria-current={isActive ? 'page' : undefined}
                     reloadDocument={experience.key === 'home' ? shouldReloadHome : false}
                     onClick={closeMobileMenu}
                   >

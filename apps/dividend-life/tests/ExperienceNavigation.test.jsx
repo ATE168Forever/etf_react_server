@@ -45,49 +45,51 @@ describe('ExperienceNavigation mobile switcher', () => {
   });
 
   test('mobile toggle shows the current experience label and is closed by default', () => {
-    render(<ExperienceNavigation current="dividend-life" theme="light" lang="zh" />);
+    const { container } = render(<ExperienceNavigation current="dividend-life" theme="light" lang="zh" />);
     const toggle = screen.getByRole('button', { name: /Dividend Life/i });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(toggle).toHaveAttribute('aria-haspopup', 'true');
+    expect(container.querySelector('.mobileDropdown')).not.toBeInTheDocument();
   });
 
-  test('clicking the toggle opens a listbox with all 5 experiences, current one marked selected', () => {
-    render(<ExperienceNavigation current="balance-life" theme="light" lang="zh" />);
+  test('clicking the toggle opens a dropdown menu with all 5 experiences, current one marked via aria-current', () => {
+    const { container } = render(<ExperienceNavigation current="balance-life" theme="light" lang="zh" />);
     fireEvent.click(screen.getByRole('button', { name: /Balance Life/i }));
 
-    const listbox = screen.getByRole('listbox');
-    const options = within(listbox).getAllByRole('option');
-    expect(options).toHaveLength(5);
+    const dropdown = container.querySelector('.mobileDropdown');
+    expect(dropdown).toBeInTheDocument();
+    const links = within(dropdown).getAllByRole('link');
+    expect(links).toHaveLength(5);
 
-    const selected = options.find((option) => option.getAttribute('aria-selected') === 'true');
-    expect(selected).toHaveTextContent('Balance Life');
+    const active = links.find((link) => link.getAttribute('aria-current') === 'page');
+    expect(active).toHaveTextContent('Balance Life');
   });
 
   test('clicking outside the switcher closes the open dropdown', () => {
-    render(<ExperienceNavigation current="dividend-life" theme="light" lang="zh" />);
+    const { container } = render(<ExperienceNavigation current="dividend-life" theme="light" lang="zh" />);
     fireEvent.click(screen.getByRole('button', { name: /Dividend Life/i }));
-    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    expect(container.querySelector('.mobileDropdown')).toBeInTheDocument();
 
     fireEvent.mouseDown(document.body);
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(container.querySelector('.mobileDropdown')).not.toBeInTheDocument();
   });
 
   test('pressing Escape closes the dropdown and returns focus to the toggle button', () => {
-    render(<ExperienceNavigation current="dividend-life" theme="light" lang="zh" />);
+    const { container } = render(<ExperienceNavigation current="dividend-life" theme="light" lang="zh" />);
     const toggle = screen.getByRole('button', { name: /Dividend Life/i });
     fireEvent.click(toggle);
-    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    expect(container.querySelector('.mobileDropdown')).toBeInTheDocument();
 
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(container.querySelector('.mobileDropdown')).not.toBeInTheDocument();
     expect(toggle).toHaveFocus();
   });
 
   test('selecting an item in the dropdown closes it', () => {
-    render(<ExperienceNavigation current="dividend-life" theme="light" lang="zh" />);
+    const { container } = render(<ExperienceNavigation current="dividend-life" theme="light" lang="zh" />);
     fireEvent.click(screen.getByRole('button', { name: /Dividend Life/i }));
-    const listbox = screen.getByRole('listbox');
-    fireEvent.click(within(listbox).getByRole('option', { name: /Health Life/i }));
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    const dropdown = container.querySelector('.mobileDropdown');
+    fireEvent.click(within(dropdown).getByRole('link', { name: /Health Life/i }));
+    expect(container.querySelector('.mobileDropdown')).not.toBeInTheDocument();
   });
 });
