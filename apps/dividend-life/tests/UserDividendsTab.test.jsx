@@ -9,8 +9,9 @@ jest.mock('../src/stockApi', () => ({ fetchStockList: jest.fn(() => Promise.reso
 jest.mock('../src/hooks/useStorageListener', () => jest.fn());
 
 test('displays stock id and dynamic name from dividend data', async () => {
+  const year = new Date().getFullYear();
   readTransactionHistory.mockReturnValue([
-    { stock_id: '0050', date: '2024-01-01', quantity: 1000, type: 'buy' }
+    { stock_id: '0050', date: `${year}-01-01`, quantity: 1000, type: 'buy' }
   ]);
 
   const allDividendData = [
@@ -18,15 +19,15 @@ test('displays stock id and dynamic name from dividend data', async () => {
       stock_id: '0050',
       stock_name: 'Test ETF',
       dividend: '1',
-      dividend_date: '2024-03-15',
-      payment_date: '2024-04-15',
+      dividend_date: `${year}-03-15`,
+      payment_date: `${year}-04-15`,
       dividend_yield: '5',
       last_close_price: '100',
       currency: 'TWD'
     }
   ];
 
-  render(<UserDividendsTab allDividendData={allDividendData} selectedYear={2024} />);
+  render(<UserDividendsTab allDividendData={allDividendData} />);
   const elements = await screen.findAllByText('0050');
   expect(elements.length).toBeGreaterThan(0);
 });
@@ -226,6 +227,28 @@ test('single-entry calendar cell tooltip shows localized unavailable text, never
   expect(cellTrigger.title).toMatch(/資料不足/); // close price
   expect(cellTrigger.title).toMatch(/無法計算/); // yield
   expect(cellTrigger.title).not.toMatch(/當次殖利率: 0(?!\d)/); // never a bare "0"
+});
+
+test('State A/B: no holdings shows cashflow empty state, no table, no calendar toggle', async () => {
+  readTransactionHistory.mockReturnValue([]);
+  render(<UserDividendsTab allDividendData={[]} availableYears={[2025]} />);
+  expect(await screen.findByText('還沒有配息現金流')).toBeInTheDocument();
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /隱藏月曆|顯示月曆/ })).not.toBeInTheDocument();
+});
+
+test('State C: holdings but no matching dividend rows shows single insufficient-data row, not one row per holding', async () => {
+  readTransactionHistory.mockReturnValue([
+    { stock_id: '0050', date: '2025-01-01', quantity: 1000, type: 'buy' },
+    { stock_id: '0056', date: '2025-01-01', quantity: 1000, type: 'buy' },
+  ]);
+  render(<UserDividendsTab allDividendData={[]} availableYears={[2025]} />);
+  // Disambiguate from the calendar panel's own <table> (month-grid, shown by
+  // default alongside the cashflow table) via its accessible name.
+  const table = await screen.findByRole('table', { name: '我的配息月份表' });
+  const dataRows = within(table).getAllByRole('row').slice(1); // drop header row
+  expect(dataRows.length).toBe(1);
+  expect(within(table).getByText('尚無庫存，請先新增交易紀錄')).toBeInTheDocument();
 });
 
 test('calendar widget event tooltip never coerces missing dividend_yield/last_close_price to 0/null (calendarEvents builder)', async () => {

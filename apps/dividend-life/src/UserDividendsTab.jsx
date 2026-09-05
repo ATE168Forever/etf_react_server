@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import DividendCalendar from './components/DividendCalendar';
+import EmptyState from './components/EmptyState';
 import { readTransactionHistory } from './utils/transactionStorage';
 import { HOST_URL } from '../config';
 import { useLanguage } from './i18n';
@@ -233,7 +234,13 @@ function getTransactionHistory() {
     }));
 }
 
-export default function UserDividendsTab({ allDividendData, availableYears = [] }) {
+export default function UserDividendsTab({
+    allDividendData,
+    availableYears = [],
+    transactionsOverride = null,
+    onAddFirstClick = null,
+    onImportClick = null,
+}) {
     const { lang, t } = useLanguage();
     const MONTHS = lang === 'en'
         ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -283,8 +290,8 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
         return map;
     }, [history]);
     useEffect(() => {
-        setHistory(getTransactionHistory());
-    }, []);
+        setHistory(transactionsOverride !== null ? transactionsOverride : getTransactionHistory());
+    }, [transactionsOverride]);
 
     useEffect(() => {
         localStorage.setItem('userDividendsShowCalendar', showCalendar);
@@ -374,6 +381,8 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
         return getHolding(item.stock_id, checkDate) > 0;
     }), [allDividendData, getHolding, isStockExcluded, selectedYear]);
 
+    const hasDividendData = dividendData.length > 0;
+
     const normalizedDividendData = useMemo(() => dividendData.map(item => ({
         ...item,
         currency: normalizeCurrency(item.currency)
@@ -423,6 +432,13 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
         () => Array.from(new Set([...holdingIds, ...dividendStockIds])),
         [holdingIds, dividendStockIds]
     );
+
+    // hasHoldings covers both currently-held stocks (holdingIds) and stocks
+    // sold before year end that still have matching dividend records for the
+    // selected year (dividendStockIds) — using holdingIds alone would hide
+    // legitimate dividend history for fully-sold positions behind the
+    // top-level empty state.
+    const hasHoldings = allRelevantStockIds.length > 0;
 
     // 建立股票代號到名稱的對應（名稱由股息資料提供）
     const stockMap = useMemo(() => {
@@ -1012,6 +1028,19 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
         setMonthFilters(Array(12).fill(false));
     };
 
+    if (!hasHoldings) {
+        return (
+            <EmptyState
+                title={t('cashflow_empty_title')}
+                description={t('cashflow_empty_description')}
+                actions={[
+                    ...(onAddFirstClick ? [{ label: t('empty_cta_add_first'), onClick: onAddFirstClick, variant: 'primary' }] : []),
+                    ...(onImportClick ? [{ label: t('empty_cta_import'), onClick: onImportClick, variant: 'secondary' }] : []),
+                ]}
+            />
+        );
+    }
+
     return (
         <div className="mydividend-tab">
 
@@ -1201,7 +1230,7 @@ export default function UserDividendsTab({ allDividendData, availableYears = [] 
                     )}
                 </thead>
                 <tbody>
-                    {filteredStocks.length === 0 ? (
+                    {(filteredStocks.length === 0 || !hasDividendData) ? (
                         <tr>
                             <td className="row-label-cell" colSpan={totalColumns}>
                                 {hasActiveMonthFilters
