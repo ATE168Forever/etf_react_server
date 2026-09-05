@@ -66,9 +66,18 @@ const createInitialFormState = () => ({
 const EMPTY_PRICE_MAP = {};
 const EMPTY_ARRAY = [];
 
-export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCacheInfo: incomingDividendCacheInfo = null, stockListPriceMap = EMPTY_PRICE_MAP }) {
+export default function InventoryTab({
+  allDividendData = EMPTY_ARRAY,
+  dividendCacheInfo: incomingDividendCacheInfo = null,
+  stockListPriceMap = EMPTY_PRICE_MAP,
+  transactionsOverride = null,
+  focusImportControl = false,
+  onImportFocusHandled = null,
+}) {
   const [stockList, setStockList] = useState([]);
-  const [transactionHistory, setTransactionHistory] = useState(() => migrateTransactionHistory());
+  const [transactionHistory, setTransactionHistory] = useState(() =>
+    transactionsOverride !== null ? transactionsOverride : migrateTransactionHistory()
+  );
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(createInitialFormState);
   const [showInventory, setShowInventory] = useState(true);
@@ -78,6 +87,7 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
   const [showQuickModal, setShowQuickModal] = useState(false);
   const [quickForm, setQuickForm] = useState([]);
   const fileInputRef = useRef(null);
+  const dataButtonRef = useRef(null);
   const driveSaveRequestRef = useRef(0);
   const modalTriggerRef = useRef(null);
   const skipTimestampRef = useRef(true); // true = skip initial mount timestamp write
@@ -104,7 +114,7 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
   const [showInvIdDropdown, setShowInvIdDropdown] = useState(false);
   const [invIdDropdownPosition, setInvIdDropdownPosition] = useState(null);
   const invIdFilterButtonRef = useRef(null);
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const showToast = useToast();
   const [dividendExclusions, setDividendExclusions] = useState(() => loadDividendExclusions());
   const initialGoals = useMemo(() => loadInvestmentGoals(), []);
@@ -655,6 +665,29 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
     }
     saveTransactionHistory(transactionHistory);
   }, [transactionHistory]);
+
+  useEffect(() => {
+    if (transactionsOverride === null) return;
+    skipTimestampRef.current = true;
+    setTransactionHistory(prev => {
+      if (prev === transactionsOverride) {
+        // No actual change (e.g. initial mount already seeded from the override) →
+        // the persistence effect above won't re-fire to reset skipTimestampRef,
+        // so reset it here to avoid stalling a later genuine user edit's timestamp.
+        skipTimestampRef.current = false;
+        return prev;
+      }
+      return transactionsOverride;
+    });
+  }, [transactionsOverride]);
+
+  useEffect(() => {
+    if (!focusImportControl) return;
+    dataButtonRef.current?.scrollIntoView({ block: 'center' });
+    dataButtonRef.current?.focus();
+    setShowDataMenu(true);
+    onImportFocusHandled?.();
+  }, [focusImportControl, onImportFocusHandled]);
 
   useEffect(() => {
     if (!goalSaved) return undefined;
@@ -1766,6 +1799,7 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
         <div className="more-item">
           <button
             type="button"
+            ref={dataButtonRef}
             className={styles.button}
             onClick={() => setShowDataMenu(v => !v)}
             aria-expanded={showDataMenu}
@@ -1873,37 +1907,39 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
               );
             })()}
 
-            <div className={styles.totalInvestment}>
-              {hasTwd || hasUsd ? (
-                <>
-                  {hasTwd && (
+            {inventoryList.length > 0 && (
+              <div className={styles.totalInvestment}>
+                {hasTwd || hasUsd ? (
+                  <>
+                    {hasTwd && (
+                      <div>
+                        <span className={styles.currencyTag}>TWD</span>
+                        {msg.totalInvestment}{twdInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <span className={styles.totalValueInline}>{msg.totalValue}{twdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    )}
+                    {hasUsd && (
+                      <div>
+                        <span className={styles.currencyTag}>USD</span>
+                        {msg.totalInvestment}{usdInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <span className={styles.totalValueInline}>{msg.totalValue}{usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
                     <div>
-                      <span className={styles.currencyTag}>TWD</span>
-                      {msg.totalInvestment}{twdInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      <span className={styles.totalValueInline}>{msg.totalValue}{twdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      {msg.totalInvestment}
+                      {totalInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
-                  )}
-                  {hasUsd && (
-                    <div>
-                      <span className={styles.currencyTag}>USD</span>
-                      {msg.totalInvestment}{usdInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      <span className={styles.totalValueInline}>{msg.totalValue}{usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div>
-                    {msg.totalInvestment}
-                    {totalInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
-                  <span>
-                    {msg.totalValue}
-                    {totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </>
-              )}
-            </div>
+                    <span>
+                      {msg.totalValue}
+                      {totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
 
             {inventoryList.length > 0 && (() => {
               const fmt = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2196,7 +2232,7 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
                 {msg.showInventory}
               </button>
             </div>
-            {transactionHistory.length === 0 && (
+            {transactionHistory.length === 0 ? (
               <div className={styles.emptyGuide} role="region" aria-label={msg.emptyGuideTitle}>
                 <p className={styles.emptyGuideTitle}>{msg.emptyGuideTitle}</p>
                 <ol className={styles.emptyGuideSteps}>
@@ -2204,18 +2240,22 @@ export default function InventoryTab({ allDividendData = EMPTY_ARRAY, dividendCa
                   <li>{msg.emptyGuideStep2}</li>
                   <li>{msg.emptyGuideStep3}</li>
                 </ol>
+                <button type="button" className={styles.button} onClick={handleImportClick}>
+                  {t('empty_cta_import')}
+                </button>
               </div>
+            ) : (
+              <TransactionHistoryTable
+                transactionHistory={transactionHistory}
+                stockList={stockList}
+                editingIdx={editingIdx}
+                editForm={editForm}
+                setEditForm={setEditForm}
+                setEditingIdx={setEditingIdx}
+                handleEditSave={handleEditSave}
+                handleDelete={handleDelete}
+              />
             )}
-            <TransactionHistoryTable
-              transactionHistory={transactionHistory}
-              stockList={stockList}
-              editingIdx={editingIdx}
-              editForm={editForm}
-              setEditForm={setEditForm}
-              setEditingIdx={setEditingIdx}
-              handleEditSave={handleEditSave}
-              handleDelete={handleDelete}
-            />
           </>
         )}
       </div>

@@ -4,6 +4,7 @@ import Cookies from 'js-cookie';
 import InventoryTab from '../src/InventoryTab';
 import { fetchWithCache } from '../src/api';
 import { fetchStockList } from '../src/stockApi';
+import { getTransactionHistoryUpdatedAt } from '../src/utils/transactionStorage';
 
 jest.mock('../src/api');
 jest.mock('../src/stockApi', () => ({
@@ -20,6 +21,8 @@ describe('InventoryTab interactions', () => {
   beforeEach(() => {
     localStorage.clear();
     Cookies.remove('my_transaction_history');
+    // jsdom does not implement scrollIntoView; InventoryTab's focus-import effect calls it.
+    window.HTMLElement.prototype.scrollIntoView = jest.fn();
     fetchStockList.mockReset();
     fetchWithCache.mockImplementation((url) => {
       if (url.includes('/get_dividend')) {
@@ -237,6 +240,48 @@ describe('InventoryTab interactions', () => {
     }));
     render(<InventoryTab />);
     expect(await screen.findByText('退休旅遊基金')).toBeInTheDocument();
+  });
+
+  test('empty state: TransactionHistoryTable is absent, emptyGuide is present', async () => {
+    render(<InventoryTab />);
+    // InventoryTab defaults to the inventory-list view (showInventory=true); the
+    // TransactionHistoryTable lives behind the "顯示：交易歷史" (msg.showHistory) toggle.
+    const showHistoryBtn = await screen.findByRole('button', { name: '顯示：交易歷史' });
+    fireEvent.click(showHistoryBtn);
+    expect(await screen.findByRole('region', { name: '開始記錄你的投資組合' })).toBeInTheDocument();
+    expect(screen.queryByRole('table', { name: /目前庫存|交易紀錄/ })).not.toBeInTheDocument();
+  });
+
+  test('a genuine edit after mounting with transactionsOverride still stamps updatedAt (skipTimestampRef must not stick)', async () => {
+    // Keep stockList empty so the unrelated name-enrichment effect (keyed off
+    // stockList) never runs its own body and can't incidentally reset
+    // skipTimestampRef on our behalf — isolating the transactionsOverride-sync
+    // effect's own responsibility for correctly releasing the ref.
+    fetchStockList.mockResolvedValue({ list: [], meta: null });
+    const override = [
+      { stock_id: '0050', stock_name: 'Test ETF', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 }
+    ];
+    render(<InventoryTab transactionsOverride={override} />);
+    await waitFor(() => screen.getByText('顯示：交易歷史'));
+    fireEvent.click(screen.getByText('顯示：交易歷史'));
+    await screen.findByText(/0050/);
+    fireEvent.click(screen.getByText('修改'));
+    const qtyInput = screen.getByDisplayValue('1000');
+    fireEvent.change(qtyInput, { target: { value: '2000' } });
+    fireEvent.click(screen.getByText('儲存'));
+    await screen.findByText(/2000/);
+    // If the transactionsOverride-sync effect left skipTimestampRef stuck at `true`,
+    // this genuine edit would be silently treated as a system change and the
+    // updated-at timestamp would never be written (corrupting Drive sync comparisons).
+    expect(getTransactionHistoryUpdatedAt()).toEqual(expect.any(Number));
+  });
+
+  test('focusImportControl scrolls to and focuses the data-access button', async () => {
+    const onImportFocusHandled = jest.fn();
+    render(<InventoryTab focusImportControl onImportFocusHandled={onImportFocusHandled} />);
+    const dataBtn = await screen.findByRole('button', { name: '存取資料' });
+    await waitFor(() => expect(dataBtn).toHaveFocus());
+    expect(onImportFocusHandled).toHaveBeenCalledTimes(1);
   });
 
 });
