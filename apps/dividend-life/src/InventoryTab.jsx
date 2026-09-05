@@ -71,6 +71,7 @@ export default function InventoryTab({
   dividendCacheInfo: incomingDividendCacheInfo = null,
   stockListPriceMap = EMPTY_PRICE_MAP,
   transactionsOverride = null,
+  isDemoMode = false,
   focusImportControl = false,
   onImportFocusHandled = null,
 }) {
@@ -91,6 +92,14 @@ export default function InventoryTab({
   const driveSaveRequestRef = useRef(0);
   const modalTriggerRef = useRef(null);
   const skipTimestampRef = useRef(true); // true = skip initial mount timestamp write
+  // true = the next transactionHistory change is a pure re-hydration from an external
+  // source (re-syncing from real storage after exiting demo) and must not touch
+  // localStorage at all — not even the raw, no-timestamp write skipTimestampRef allows.
+  // Without this, a brand-new user (nothing in localStorage yet) who exits demo mode
+  // would have 'my_transaction_history' seeded to "[]" purely as a side effect of the
+  // demo transition, which the localStorage-invariant test correctly treats as a write
+  // demo mode caused, even though the content itself is harmless.
+  const skipPersistRef = useRef(false);
   const [cacheInfo, setCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [selectedDataSource, setSelectedDataSource] = useState(
@@ -265,7 +274,20 @@ export default function InventoryTab({
     });
   }, []);
 
+  // Blocks any mutation of transactionHistory (add/edit/delete/sell/quick-add/CSV import)
+  // while demo mode is active. Without this, a handler would build a new array from the
+  // demo rows (e.g. [...DEMO_TRANSACTIONS, newEntry]) — a reference the persistence
+  // effect's guards above cannot distinguish from a genuine edit, so it would reach
+  // saveTransactionHistory()/syncToDrive() and permanently mix fabricated demo holdings
+  // into the user's real localStorage and Google Drive backup. Returns true if blocked.
+  const blockMutationInDemoMode = useCallback(() => {
+    if (!isDemoMode) return false;
+    showToast(t('demo_mode_edit_blocked'), 'error');
+    return true;
+  }, [isDemoMode, showToast, t]);
+
   const handleQuickSubmit = () => {
+    if (blockMutationInDemoMode()) return;
     const validEntries = (Array.isArray(quickForm) ? quickForm : []).filter(entry => entry?.enabled);
     if (validEntries.length === 0) {
       alert(msg.inputRequired);
@@ -326,6 +348,10 @@ export default function InventoryTab({
 
   const syncToDrive = useCallback(
     async (list) => {
+      // Belt-and-suspenders: block every current and future call site (add/edit/delete/sell,
+      // quick-add, the periodic poll, the "no backup file yet" upload-on-connect path) from
+      // ever pushing demo holdings into the user's real Google Drive backup.
+      if (isDemoMode) return;
       const data = Array.isArray(list) ? list : transactionHistory;
       if (!Array.isArray(data) || data.length === 0) return; // never overwrite Drive with empty data
       const requestId = Date.now();
@@ -347,11 +373,15 @@ export default function InventoryTab({
         }
       }
     },
-    [transactionHistory, showToast, lang]
+    [transactionHistory, showToast, lang, isDemoMode]
   );
 
   const fetchFromDriveIfNewer = useCallback(
     async ({ silent = false, force = false } = {}) => {
+      // Never let a Drive round-trip (manual "connect", the on-mount silent auth, or the
+      // periodic poll) read real remote data into the demo view or, worse, push demo
+      // holdings up as the "no backup yet" initial upload a few lines below.
+      if (isDemoMode) return false;
       const localUpdatedAt = getTransactionHistoryUpdatedAt() ?? 0;
       try {
         const result = await importTransactionsFromDrive({ includeMetadata: true, silent });
@@ -418,7 +448,7 @@ export default function InventoryTab({
         return false;
       }
     },
-    [mapTransactionsWithStockNames, syncToDrive, transactionHistory]
+    [mapTransactionsWithStockNames, syncToDrive, transactionHistory, isDemoMode]
   );
 
   const connectAndSyncDrive = useCallback(
@@ -486,6 +516,10 @@ export default function InventoryTab({
   }, [transactionHistory, showToast, lang]);
 
   const handleImport = e => {
+    if (blockMutationInDemoMode()) {
+      e.target.value = '';
+      return;
+    }
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -548,6 +582,12 @@ export default function InventoryTab({
   const dividendBankOverridesRef = useRef(dividendBankOverrides);
   useEffect(() => { dividendBankOverridesRef.current = dividendBankOverrides; }, [dividendBankOverrides]);
   useEffect(() => {
+    // Without this, a Drive-connected user who simply idles on the Inventory tab in demo
+    // mode would have transactionHistoryRef.current (== DEMO_TRANSACTIONS while demo is
+    // active) silently pushed to their real Drive backup by the "local is newer" branch
+    // below — localUpdatedAt reflects the last REAL edit's timestamp (demo never touches
+    // it), so it can easily be newer than the remote's, with no click required.
+    if (isDemoMode) return;
     if (selectedDataSource !== 'googleDrive' || !driveConnected) return;
     const INTERVAL_MS = 5 * 60 * 1000;
     const poll = async () => {
@@ -566,7 +606,7 @@ export default function InventoryTab({
     };
     const id = setInterval(poll, INTERVAL_MS);
     return () => clearInterval(id);
-  }, [selectedDataSource, driveConnected]);
+  }, [selectedDataSource, driveConnected, isDemoMode]);
 
   // On mount: if Google Drive was previously selected, try silent auth + sync
   useEffect(() => {
@@ -610,6 +650,12 @@ export default function InventoryTab({
   });
 
   useEffect(() => {
+    // Demo holdings never need stock-list enrichment (utils/demoData.js already carries
+    // stock_name for every row), and even if a future demo row lacked one, this effect
+    // must not mutate transactionHistory away from the DEMO_TRANSACTIONS reference while
+    // demo mode is active — skip it outright rather than relying on the persistence
+    // effect's isDemoMode gate alone.
+    if (isDemoMode) return;
     if (stockList.length === 0) return;
     skipTimestampRef.current = true; // name enrichment is not a user change
     setTransactionHistory(prev => {
@@ -629,7 +675,7 @@ export default function InventoryTab({
       }
       return updated;
     });
-  }, [stockList]);
+  }, [stockList, isDemoMode]);
 
   useEffect(() => {
     const priceMap = {};
@@ -671,6 +717,21 @@ export default function InventoryTab({
     // to a real saveTransactionHistory() write of stale (e.g. demo) data before the sync
     // effect had a chance to catch up. Keying only on transactionHistory guarantees this
     // effect only ever observes the post-sync, already-consistent pair.
+    //
+    // isDemoMode is checked explicitly (not just referential equality against
+    // transactionsOverride) so that ANY divergence introduced while demo mode is active —
+    // a future demo dataset that needs enrichment (see the stockList effect above), or any
+    // other code path that ever builds a new array from demo data — still can never reach
+    // localStorage, not just the exact instant the two references match.
+    if (skipPersistRef.current) {
+      skipPersistRef.current = false;
+      skipTimestampRef.current = false;
+      return;
+    }
+    if (isDemoMode) {
+      skipTimestampRef.current = false;
+      return;
+    }
     if (transactionsOverride !== null && transactionHistory === transactionsOverride) {
       skipTimestampRef.current = false;
       return;
@@ -685,19 +746,52 @@ export default function InventoryTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactionHistory]);
 
+  // Tracks the previous transactionsOverride value across renders so the effect below can
+  // tell "was in demo, now exiting" (non-null → null) apart from "always non-demo"
+  // (null → null, e.g. standalone/test usage) — only the former needs to re-sync from
+  // real storage; the latter must stay a no-op exactly as it always has been.
+  const prevTransactionsOverrideRef = useRef(transactionsOverride);
   useEffect(() => {
-    if (transactionsOverride === null) return;
-    skipTimestampRef.current = true;
-    setTransactionHistory(prev => {
-      if (prev === transactionsOverride) {
-        // No actual change (e.g. initial mount already seeded from the override) →
-        // the persistence effect above won't re-fire to reset skipTimestampRef,
-        // so reset it here to avoid stalling a later genuine user edit's timestamp.
-        skipTimestampRef.current = false;
-        return prev;
-      }
-      return transactionsOverride;
-    });
+    const prevOverride = prevTransactionsOverrideRef.current;
+    prevTransactionsOverrideRef.current = transactionsOverride;
+
+    if (transactionsOverride !== null) {
+      skipTimestampRef.current = true;
+      setTransactionHistory(prev => {
+        if (prev === transactionsOverride) {
+          // No actual change (e.g. initial mount already seeded from the override) →
+          // the persistence effect above won't re-fire to reset skipTimestampRef,
+          // so reset it here to avoid stalling a later genuine user edit's timestamp.
+          skipTimestampRef.current = false;
+          return prev;
+        }
+        return transactionsOverride;
+      });
+      return;
+    }
+
+    if (prevOverride !== null) {
+      // Exiting demo (or any override) while this tab is still mounted: transactionsOverride
+      // just went from non-null back to null. Re-sync from the user's real, persisted data —
+      // otherwise the demo rows would stay stuck in local state indefinitely (this component
+      // isn't unmounted just because the page stopped passing an override). This is a pure
+      // re-hydration, not a data change, so skipPersistRef blocks the persistence effect from
+      // writing anything at all for it (see its declaration for why skipTimestampRef alone
+      // isn't enough here).
+      skipPersistRef.current = true;
+      skipTimestampRef.current = true;
+      const real = migrateTransactionHistory();
+      setTransactionHistory(prev => {
+        if (prev === real) {
+          skipPersistRef.current = false;
+          skipTimestampRef.current = false;
+          return prev;
+        }
+        return real;
+      });
+    }
+    // else: transactionsOverride has always been null (standalone usage, or mounted outside
+    // demo mode) — nothing to do; the lazy initializer already seeded real data once.
   }, [transactionsOverride]);
 
   useEffect(() => {
@@ -1688,6 +1782,7 @@ export default function InventoryTab({
   };
 
   const handleAdd = () => {
+    if (blockMutationInDemoMode()) return;
     const date = form?.date;
     const entries = Array.isArray(form?.entries) ? form.entries : [];
     if (!date) {
@@ -1745,6 +1840,7 @@ export default function InventoryTab({
   };
 
   const handleEditSave = idx => {
+    if (blockMutationInDemoMode()) return;
     const original = transactionHistory[idx];
     if (!editForm.quantity || !editForm.date || (original.type === 'buy' && !editForm.price)) {
       alert(msg.invalidNumbers);
@@ -1765,6 +1861,7 @@ export default function InventoryTab({
   };
 
   const handleDelete = idx => {
+    if (blockMutationInDemoMode()) return;
     if (window.confirm(msg.confirmDeleteRecord)) {
       const updated = transactionHistory.filter((_, i) => i !== idx);
       setTransactionHistory(updated);
@@ -1773,6 +1870,7 @@ export default function InventoryTab({
   };
 
   const handleSell = (stock_id, qty) => {
+    if (blockMutationInDemoMode()) return;
     const stock = inventoryList.find(s => s.stock_id === stock_id);
     if (!stock || qty > stock.total_quantity) {
       alert(msg.sellExceeds);
@@ -1800,6 +1898,8 @@ export default function InventoryTab({
         <button
           type="button"
           className={styles.button}
+          disabled={isDemoMode}
+          title={isDemoMode ? t('demo_mode_edit_blocked') : undefined}
           onClick={() => {
             modalTriggerRef.current = document.activeElement;
             setForm(createInitialFormState());
@@ -1811,6 +1911,8 @@ export default function InventoryTab({
         <button
           type="button"
           className={styles.button}
+          disabled={isDemoMode}
+          title={isDemoMode ? t('demo_mode_edit_blocked') : undefined}
           onClick={handleOpenQuickModal}
         >
           {msg.quickAdd}

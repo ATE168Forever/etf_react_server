@@ -20,6 +20,12 @@ beforeEach(() => {
   fetchWithCache.mockResolvedValue({ data: [] });
   // jsdom doesn't implement scrollIntoView; InventoryTab's focusImportControl effect calls it.
   Element.prototype.scrollIntoView = jest.fn();
+  // DividendLifePage persists the active tab to window.location.hash via history.replaceState
+  // (for shareability/back-nav), and jsdom's window/history is shared across every test in
+  // this file — without resetting it, a test that ends on a non-home tab (e.g. clicking
+  // "持有標的" last) leaks its hash into the next test's initial render, silently starting it
+  // on the wrong tab.
+  window.history.replaceState(null, '', '#');
 });
 
 // Note: the dividendApi/stockApi mocks above always resolve empty data/lists, so no
@@ -60,6 +66,34 @@ test('demo mode survives a tab switch and never writes my_transaction_history', 
   fireEvent.click(screen.getByRole('tab', { name: '現金流' }));
   expect(await screen.findByText('還沒有配息現金流')).toBeInTheDocument();
   expect(localStorage.getItem('my_transaction_history')).toBeNull();
+});
+
+test('a real edit made in InventoryTab survives switching away and back to the tab (C2: outside demo mode, the page must not shadow live localStorage with a stale mount-time snapshot)', async () => {
+  localStorage.setItem('my_transaction_history', JSON.stringify([
+    { stock_id: '0050', stock_name: '元大台灣50', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 }
+  ]));
+  render(<DividendLifePage />);
+
+  fireEvent.click(screen.getByRole('tab', { name: '持有標的' }));
+  fireEvent.click(await screen.findByText('顯示：交易歷史'));
+  await screen.findByText(/0050/);
+  fireEvent.click(screen.getByText('修改'));
+  const qtyInput = screen.getByDisplayValue('1000');
+  fireEvent.change(qtyInput, { target: { value: '2000' } });
+  fireEvent.click(screen.getByText('儲存'));
+  await screen.findByText(/2000/);
+  expect(JSON.parse(localStorage.getItem('my_transaction_history'))[0].quantity).toBe(2000);
+
+  // Switch away and back — InventoryTab is behind a tab conditional, so it fully
+  // unmounts/remounts. Before the C2 fix, transactionsOverride was the page's own
+  // mount-time transactionHistory snapshot (still quantity 1000) for every tab, so
+  // remounting here would have silently reverted the just-made edit in the UI.
+  fireEvent.click(screen.getByRole('tab', { name: '總覽' }));
+  fireEvent.click(screen.getByRole('tab', { name: '持有標的' }));
+  fireEvent.click(await screen.findByText('顯示：交易歷史'));
+
+  expect(await screen.findByText(/2000/)).toBeInTheDocument();
+  expect(JSON.parse(localStorage.getItem('my_transaction_history'))[0].quantity).toBe(2000);
 });
 
 test('empty_cta_add_first renders the same wording across all three tabs', async () => {

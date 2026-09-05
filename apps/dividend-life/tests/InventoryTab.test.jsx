@@ -276,6 +276,81 @@ describe('InventoryTab interactions', () => {
     expect(getTransactionHistoryUpdatedAt()).toEqual(expect.any(Number));
   });
 
+  test('demo mode blocks an edit from ever reaching saveTransactionHistory/localStorage (C1)', async () => {
+    // Reviewer-flagged Critical finding: an edit handler builds a NEW array from the
+    // override (e.g. an updated copy of the demo row), which the persistence effect's
+    // referential-equality guard alone cannot catch — isDemoMode must block the handler
+    // itself, before any setTransactionHistory/saveTransactionHistory call happens.
+    fetchStockList.mockResolvedValue({ list: [], meta: null });
+    const demoRow = [
+      { stock_id: '0050', stock_name: '元大台灣50', date: '2025-02-10', type: 'buy', quantity: 1000, price: 130 }
+    ];
+    render(<InventoryTab transactionsOverride={demoRow} isDemoMode />);
+    await waitFor(() => screen.getByText('顯示：交易歷史'));
+    // Confirm nothing was written just from mounting with a demo override active.
+    expect(localStorage.getItem('my_transaction_history')).toBeNull();
+
+    fireEvent.click(screen.getByText('顯示：交易歷史'));
+    await screen.findByText(/0050/);
+    fireEvent.click(screen.getByText('修改'));
+    const qtyInput = screen.getByDisplayValue('1000');
+    fireEvent.change(qtyInput, { target: { value: '2000' } });
+    fireEvent.click(screen.getByText('儲存'));
+
+    // The edit must be rejected outright: the demo row is unchanged, and nothing was
+    // ever written to localStorage or timestamped.
+    expect(screen.queryByText(/2000/)).not.toBeInTheDocument();
+    expect(localStorage.getItem('my_transaction_history')).toBeNull();
+    expect(getTransactionHistoryUpdatedAt()).toBeNull();
+  });
+
+  test('the top-level add/quick-add controls are disabled while isDemoMode is true', async () => {
+    const demoRow = [
+      { stock_id: '0050', stock_name: '元大台灣50', date: '2025-02-10', type: 'buy', quantity: 1000, price: 130 }
+    ];
+    render(<InventoryTab transactionsOverride={demoRow} isDemoMode />);
+    expect(await screen.findByRole('button', { name: '新增購買' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '快速購買' })).toBeDisabled();
+  });
+
+  test('exiting demo mode while InventoryTab stays mounted re-syncs real data without writing to localStorage (C1/C2 exit transition)', async () => {
+    // Regression for the fix's own intermediate bug: re-hydrating transactionHistory from
+    // real storage after transactionsOverride goes from non-null back to null must be a
+    // pure re-hydration, not a write — even when the user has zero real transactions (a
+    // brand-new user), which would otherwise seed 'my_transaction_history' to "[]" purely
+    // as a side effect of having glanced at demo mode.
+    fetchStockList.mockResolvedValue({ list: [], meta: null });
+    const demoData = [
+      { stock_id: '0050', stock_name: '元大台灣50', date: '2025-02-10', type: 'buy', quantity: 1000, price: 130 }
+    ];
+    const { rerender } = render(<InventoryTab transactionsOverride={demoData} isDemoMode />);
+    await waitFor(() => screen.getByText('顯示：交易歷史'));
+    expect(localStorage.getItem('my_transaction_history')).toBeNull();
+
+    // Exit demo: the page passes transactionsOverride=null and isDemoMode=false once
+    // demoMode flips off, exactly as DividendLifePage does.
+    rerender(<InventoryTab transactionsOverride={null} isDemoMode={false} />);
+    fireEvent.click(screen.getByText('顯示：交易歷史'));
+    expect(await screen.findByRole('region', { name: '開始記錄你的投資組合' })).toBeInTheDocument();
+    expect(localStorage.getItem('my_transaction_history')).toBeNull();
+  });
+
+  test('mounting without a transactionsOverride still migrates a legacy cookie-based history (I1)', async () => {
+    // Task 6 originally made transactionsOverride non-null for every page-mounted render,
+    // which silently made this cookie-migration path (InventoryTab's own
+    // migrateTransactionHistory() call in its lazy initializer) unreachable. Confirms it's
+    // reachable again now that the page only injects an override during demo mode.
+    Cookies.set('my_transaction_history', JSON.stringify([
+      { stock_id: '0050', date: '2024-01-01', quantity: 1000, type: 'buy', price: 10 }
+    ]));
+    render(<InventoryTab />);
+    await waitFor(() => screen.getByText('顯示：交易歷史'));
+    fireEvent.click(screen.getByText('顯示：交易歷史'));
+    await screen.findByText(/0050/);
+    const migrated = JSON.parse(localStorage.getItem('my_transaction_history'));
+    expect(migrated[0].stock_id).toBe('0050');
+  });
+
   test('focusImportControl scrolls to and focuses the data-access button', async () => {
     const onImportFocusHandled = jest.fn();
     render(<InventoryTab focusImportControl onImportFocusHandled={onImportFocusHandled} />);

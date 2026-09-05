@@ -90,7 +90,18 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     setImportFocusRequested(false);
   }, []);
 
+  // effectiveTransactions feeds the dividend-data pipeline only (useDividendData below) —
+  // it's fine there being demo-derived-or-real by design, and was already the page's own
+  // (mount-time-snapshot) copy of transactionHistory pre-dating this feature either way.
   const effectiveTransactions = demoMode ? DEMO_TRANSACTIONS : transactionHistory;
+  // transactionsOverride passed down to the three tabs is intentionally NOT the same value:
+  // it's null outside demo mode, so each tab keeps reading/writing localStorage itself
+  // exactly as it did before demo mode existed (this page's own transactionHistory is only
+  // ever set once on mount and never updated again as tabs independently mutate storage, so
+  // treating it as a permanent live mirror for display purposes would let tabs silently show
+  // stale data and, worse, overwrite real localStorage with a stale snapshot on the next
+  // edit). Only inject the fabricated DEMO_TRANSACTIONS while demoMode is actually on.
+  const demoTransactionsOverride = demoMode ? DEMO_TRANSACTIONS : null;
 
   const [dividendScope, setDividendScope] = useState('purchased');
   const [upcomingAlerts, setUpcomingAlerts] = useState([]);
@@ -746,7 +757,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                 dividendLoading={loading}
                 onNavigateToInventory={() => setTab('inventory')}
                 onImportClick={handleRequestImport}
-                transactionsOverride={effectiveTransactions}
+                transactionsOverride={demoTransactionsOverride}
                 isDemoMode={demoMode}
                 onEnterDemo={handleEnterDemo}
                 onExitDemo={handleExitDemo}
@@ -1021,7 +1032,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                   allDividendData={data}
                   dividendCacheInfo={dividendCacheInfo}
                   stockListPriceMap={stockListPriceMap}
-                  transactionsOverride={effectiveTransactions}
+                  transactionsOverride={demoTransactionsOverride}
+                  isDemoMode={demoMode}
                   focusImportControl={importFocusRequested}
                   onImportFocusHandled={handleImportFocusHandled}
                 />
@@ -1036,7 +1048,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                 <UserDividendsTab
                   allDividendData={data}
                   availableYears={years}
-                  transactionsOverride={effectiveTransactions}
+                  transactionsOverride={demoTransactionsOverride}
                   onAddFirstClick={() => setTab('inventory')}
                   onImportClick={handleRequestImport}
                 />
