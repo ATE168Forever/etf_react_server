@@ -133,8 +133,8 @@
   padding: 6px 12px 6px 6px;
   border-radius: 999px;
   border: none;
-  background: var(--surface-2, rgba(255, 255, 255, 0.08));
-  color: var(--ink, inherit);
+  background: var(--surface-2, var(--color-card-bg, rgba(255, 255, 255, 0.08)));
+  color: var(--ink, var(--color-text, inherit));
   cursor: pointer;
 }
 
@@ -166,8 +166,8 @@
   list-style: none;
   min-width: 200px;
   border-radius: 12px;
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+  background: var(--surface, var(--color-card-bg, #fff));
+  border: 1px solid var(--border, var(--color-border, rgba(0, 0, 0, 0.1)));
   box-shadow: var(--shadow-card, 0 8px 28px rgba(0, 0, 0, 0.18));
 }
 
@@ -185,7 +185,7 @@
   gap: 8px;
   padding: 8px;
   text-decoration: none;
-  color: var(--ink, inherit);
+  color: var(--ink, var(--color-text, inherit));
   font-size: 0.8rem;
 }
 
