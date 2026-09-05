@@ -29,6 +29,47 @@
   color: var(--color-text-on-accent);
 }
 
+.tab-scroll-wrapper {
+  position: relative;
+}
+
+.tab-scroll-fade {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .tab-scroll-wrapper .nav-tabs {
+    flex-wrap: nowrap;
+    justify-content: flex-start !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-scroll-wrapper .nav-tabs .nav-item {
+    flex: none;
+  }
+
+  .tab-scroll-wrapper .nav-tabs .nav-link {
+    white-space: nowrap;
+  }
+
+  .tab-scroll-fade {
+    display: block;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 24px;
+    background: linear-gradient(to right, transparent, var(--bg));
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+
+  .tab-scroll-fade-hidden {
+    opacity: 0;
+  }
+}
+
 #root {
   max-width: 1280px;
   margin: 0 auto;

@@ -66,6 +66,21 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     history.replaceState(null, '', `#${newTab}`);
   };
 
+  const [tabsScrolledToEnd, setTabsScrolledToEnd] = useState(true);
+  const tabListRef = useRef(null);
+
+  const updateTabsScrollState = useCallback(() => {
+    const el = tabListRef.current;
+    if (!el) return;
+    setTabsScrolledToEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    updateTabsScrollState();
+    window.addEventListener('resize', updateTabsScrollState);
+    return () => window.removeEventListener('resize', updateTabsScrollState);
+  }, [updateTabsScrollState]);
+
   // All your existing states for dividend page...
   const [transactionHistory, setTransactionHistory] = useState([]);
   const [transactionHistoryLoaded, setTransactionHistoryLoaded] = useState(false);
@@ -656,7 +671,14 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         )}
         overlay={<Suspense><NLHelper /></Suspense>}
       >
-        <ul className="nav nav-tabs mb-1 justify-content-center" role="tablist" aria-label={lang === 'en' ? 'Main navigation' : '主導覽'}>
+        <div className="tab-scroll-wrapper">
+        <ul
+          ref={tabListRef}
+          onScroll={updateTabsScrollState}
+          className="nav nav-tabs mb-1 justify-content-center"
+          role="tablist"
+          aria-label={lang === 'en' ? 'Main navigation' : '主導覽'}
+        >
             <li className="nav-item" role="presentation">
               <button
                 type="button"
@@ -723,6 +745,11 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
               </button>
             </li>
           </ul>
+          <div
+            className={`tab-scroll-fade${tabsScrolledToEnd ? ' tab-scroll-fade-hidden' : ''}`}
+            aria-hidden="true"
+          />
+        </div>
           <div className="dividend-alert" role="status" aria-live="polite" aria-atomic="false">
             {upcomingAlerts.filter(a => !dismissedAlerts.includes(`${a.stock_id}-${a.type}-${a.date}`)).map(a => {
               const key = `${a.stock_id}-${a.type}-${a.date}`;
