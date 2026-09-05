@@ -410,6 +410,32 @@ describe('InventoryTab interactions', () => {
       expect(Cookies.get('inventory_last_backup')).toBeUndefined();
       confirmSpy.mockRestore();
     });
+
+    test('exiting demo mode while InventoryTab stays mounted does not leak demo data into the backup-reminder cookie/export', async () => {
+      // Regression for a narrower leak the fix above missed: isDemoMode and
+      // transactionsOverride both flip to false/null in the SAME render when
+      // DividendLifePage exits demo mode, so a guard keyed only on isDemoMode still
+      // sees isDemoMode===false on that exact commit while transactionHistory state
+      // hasn't been re-hydrated from real storage yet (that happens in a separate
+      // effect, declared later, whose setState schedules a *subsequent* render).
+      const oldTimestamp = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
+      Cookies.set('inventory_last_backup', oldTimestamp, { expires: 365 });
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+      fetchStockList.mockResolvedValue({ list: [], meta: null });
+      const demoRow = [
+        { stock_id: '0050', stock_name: '元大台灣50', date: '2025-02-10', type: 'buy', quantity: 1000, price: 130 }
+      ];
+      const { rerender } = render(<InventoryTab transactionsOverride={demoRow} isDemoMode />);
+      await waitFor(() => screen.getByText('顯示：交易歷史'));
+
+      // Exit demo exactly as DividendLifePage does: both props flip in one update.
+      rerender(<InventoryTab transactionsOverride={null} isDemoMode={false} />);
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(Cookies.get('inventory_last_backup')).toBe(oldTimestamp);
+      confirmSpy.mockRestore();
+    });
   });
 
   test('Finding 5: connectAndSyncDrive does not get stuck on "connecting" when clicked during demo mode', async () => {
@@ -433,6 +459,37 @@ describe('InventoryTab interactions', () => {
       expect(screen.queryByText('連接中…')).not.toBeInTheDocument();
       expect(screen.getByText('連接 Google Drive')).toBeInTheDocument();
     });
+  });
+
+  test('handleDataSourceChange does not get stuck on "connecting" when switching to Google Drive during demo mode', async () => {
+    const demoRow = [
+      { stock_id: '0050', stock_name: '元大台灣50', date: '2025-02-10', type: 'buy', quantity: 1000, price: 130 }
+    ];
+    render(<InventoryTab transactionsOverride={demoRow} isDemoMode />);
+    await waitFor(() => screen.getByText('顯示：交易歷史'));
+    fireEvent.click(screen.getByRole('button', { name: '存取資料' }));
+    const select = screen.getByLabelText('存取方式');
+    // Selecting from the <select> never closes the dropdown (only button actions do,
+    // via DataDropdown's handleAction/onClose) — the menu stays open, so the stuck
+    // spinner (if the bug is present) is directly observable without reopening anything.
+    fireEvent.change(select, { target: { value: 'googleDrive' } });
+    await waitFor(() => {
+      expect(screen.queryByText('連接中…')).not.toBeInTheDocument();
+      expect(screen.getByText('連接 Google Drive')).toBeInTheDocument();
+    });
+  });
+
+  test('the backup reminder still fires normally for real data outside demo mode', async () => {
+    const oldTimestamp = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
+    Cookies.set('inventory_last_backup', oldTimestamp, { expires: 365 });
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    Cookies.set('my_transaction_history', JSON.stringify([
+      { stock_id: '0050', date: `${currentYear}-01-01`, quantity: 1000, type: 'buy' }
+    ]));
+    render(<InventoryTab />);
+    await waitFor(() => screen.getByText('顯示：交易歷史'));
+    await waitFor(() => expect(confirmSpy).toHaveBeenCalledWith(expect.any(String)));
+    confirmSpy.mockRestore();
   });
 
 });

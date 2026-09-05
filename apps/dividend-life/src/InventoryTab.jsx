@@ -100,6 +100,13 @@ export default function InventoryTab({
   // demo transition, which the localStorage-invariant test correctly treats as a write
   // demo mode caused, even though the content itself is harmless.
   const skipPersistRef = useRef(false);
+  // Tracks the previous transactionsOverride value across renders. Declared here
+  // (rather than next to the effect that owns its steady-state usage further below)
+  // so that OTHER effects declared earlier in this component — specifically the
+  // backup-reminder effect — can also read its pre-commit value to detect "we are
+  // exiting demo mode on this exact render" even before the override-sync effect
+  // (which updates this ref) has run. See the backup-reminder effect's guard for why.
+  const prevTransactionsOverrideRef = useRef(transactionsOverride);
   const [cacheInfo, setCacheInfo] = useState(null);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [selectedDataSource, setSelectedDataSource] = useState(
@@ -496,6 +503,10 @@ export default function InventoryTab({
       setSelectedDataSource(value);
       localStorage.setItem('inventory_data_source', value);
       if (value === 'googleDrive') {
+        // Same stuck-spinner shape as connectAndSyncDrive above: block up front,
+        // before driveStatus is ever set to 'connecting', so switching to Google
+        // Drive during demo mode doesn't leave a permanent spinner with no way out.
+        if (blockMutationInDemoMode()) return;
         setDriveStatus({ status: 'connecting' });
         fetchFromDriveIfNewer({ silent: false, force: false }).then(ok => {
           if (!ok) setDriveConnected(false);
@@ -505,7 +516,7 @@ export default function InventoryTab({
         setDriveStatus({ status: 'idle' });
       }
     },
-    [fetchFromDriveIfNewer]
+    [blockMutationInDemoMode, fetchFromDriveIfNewer]
   );
 
   const handleExport = useCallback(() => {
@@ -576,6 +587,16 @@ export default function InventoryTab({
     // cookie for a first-time user, and the 30-day reminder's confirm+export) would
     // leak demo state into real localStorage/CSV. Bail out before touching anything.
     if (isDemoMode) return;
+    // On the exact render where demo mode exits, isDemoMode and transactionsOverride
+    // both flip to false/null in the same commit — but transactionHistory state hasn't
+    // been re-hydrated from real storage yet (that happens in the separate override-sync
+    // effect declared later, whose setState schedules a *subsequent* render). This effect
+    // still runs this commit (isDemoMode is one of its deps) with a stale, closed-over
+    // transactionHistory that's still the demo data. prevTransactionsOverrideRef.current
+    // still holds its PRE-commit value here (this effect is declared, and therefore runs,
+    // before the effect that updates the ref), so a non-null value is exactly the signal
+    // "we were in demo/override mode as of last render" — bail out on that commit too.
+    if (prevTransactionsOverrideRef.current !== null) return;
     if (transactionHistory.length === 0) return;
     const last = Cookies.get(BACKUP_COOKIE_KEY);
     const now = new Date();
@@ -763,11 +784,11 @@ export default function InventoryTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactionHistory]);
 
-  // Tracks the previous transactionsOverride value across renders so the effect below can
-  // tell "was in demo, now exiting" (non-null → null) apart from "always non-demo"
+  // prevTransactionsOverrideRef is declared earlier in this component (see its
+  // declaration for why). This effect is what actually maintains it steady-state:
+  // it tells "was in demo, now exiting" (non-null → null) apart from "always non-demo"
   // (null → null, e.g. standalone/test usage) — only the former needs to re-sync from
   // real storage; the latter must stay a no-op exactly as it always has been.
-  const prevTransactionsOverrideRef = useRef(transactionsOverride);
   useEffect(() => {
     const prevOverride = prevTransactionsOverrideRef.current;
     prevTransactionsOverrideRef.current = transactionsOverride;
