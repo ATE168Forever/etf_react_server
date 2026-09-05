@@ -23,3 +23,16 @@ describe('ExperienceNavigation theme prop', () => {
     expect(lightImg.src).not.toEqual(darkImg.src);
   });
 });
+
+describe('ExperienceNavigation lang prop', () => {
+  test('uses the lang prop for labels when provided, ignoring its own hook state', () => {
+    // The 'home' experience's labels differ between zh/en ({ zh: '首頁', en: 'Home' }); 'dividend-life'
+    // itself does not ({ zh: 'Dividend Life', en: 'Dividend Life' }), so it can't discriminate this test.
+    localStorage.setItem('lang', 'zh'); // hook's own fallback state would read this and render Chinese labels
+
+    render(<ExperienceNavigation current="dividend-life" theme="light" lang="en" />);
+
+    expect(screen.getByText('Home')).toBeInTheDocument();
+    expect(screen.queryByText('首頁')).not.toBeInTheDocument();
+  });
+});

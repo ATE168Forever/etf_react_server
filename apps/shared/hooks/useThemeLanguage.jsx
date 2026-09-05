@@ -5,7 +5,7 @@ const ThemeLanguageContext = createContext(null);
 const isChineseLanguage = (lang) => typeof lang === 'string' && lang.toLowerCase().startsWith('zh');
 
 const getPreferredTheme = () => {
-  return 'dark';
+  return 'light';
 };
 
 const getInitialTheme = () => {
