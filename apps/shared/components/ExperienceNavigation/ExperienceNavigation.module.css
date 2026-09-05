@@ -96,25 +96,27 @@
 }
 
 :global([data-theme='light']) .logo {
-  box-shadow: 0 12px 26px rgba(126, 152, 255, 0.35);
+  /* rgba triplet is --sage (#6e8062) — CSS custom properties can't be interpolated
+     inside rgba() without a separate --sage-rgb token, which is out of scope here. */
+  box-shadow: 0 12px 26px rgba(110, 128, 98, 0.35);
 }
 
 :global([data-theme='light']) .link:hover .logo,
 :global([data-theme='light']) .link:focus-visible .logo {
-  box-shadow: 0 18px 34px rgba(120, 152, 255, 0.45);
+  box-shadow: 0 18px 34px rgba(110, 128, 98, 0.45);
 }
 
 :global([data-theme='light']) .active .logo {
-  box-shadow: 0 22px 38px rgba(120, 152, 255, 0.5);
+  box-shadow: 0 22px 38px rgba(110, 128, 98, 0.5);
 }
 
 :global([data-theme='light']) .link::after {
-  border-color: rgba(103, 136, 255, 0.15);
+  border-color: rgba(110, 128, 98, 0.15);
 }
 
 :global([data-theme='light']) .active::after {
-  border-color: rgba(120, 152, 255, 0.75);
-  box-shadow: 0 14px 32px rgba(120, 152, 255, 0.4);
+  border-color: rgba(110, 128, 98, 0.75);
+  box-shadow: 0 14px 32px rgba(110, 128, 98, 0.4);
 }
 
 .mobileSwitcher {

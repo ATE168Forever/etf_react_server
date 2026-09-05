@@ -756,7 +756,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
               const dateLabel = a.date.split('-').slice(1).map(Number).join('/');
               const countdownZh = a.daysUntil === 0 ? '今天' : a.daysUntil === 1 ? '明天' : `還有 ${a.daysUntil} 天`;
               const countdownEn = a.daysUntil === 0 ? 'today' : a.daysUntil === 1 ? 'tomorrow' : `in ${a.daysUntil} days`;
-              const keywordColor = a.type === 'ex' ? '#ff8fa3' : '#2f9e44';
+              const keywordColor = a.type === 'ex' ? 'var(--terracotta)' : 'var(--sage)';
               const bank = custodianMap[a.stock_id];
               return (
                 <div key={key} className="dividend-alert__item">

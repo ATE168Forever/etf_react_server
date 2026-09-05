@@ -70,6 +70,24 @@
   }
 }
 
+/* Bootstrap's CDN stylesheet (index.html) supplies .nav-tabs/.nav-link's default
+   colors; the ul.*/*.nav-link* selector qualifier below is a deliberate specificity
+   bump (adds a type selector) so this always wins regardless of CSS load order,
+   without needing !important. */
+ul.nav-tabs .nav-link {
+  color: var(--ink-soft);
+}
+
+ul.nav-tabs .nav-link:hover,
+ul.nav-tabs .nav-link:focus-visible {
+  color: var(--ink);
+}
+
+ul.nav-tabs .nav-link.active {
+  color: var(--ink);
+  background-color: var(--sage-soft);
+}
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -1055,7 +1073,7 @@ button:active {
   gap: 4px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(13, 110, 253, 0.12);
+  background: var(--sage-soft);
   color: var(--color-text);
   font-weight: 500;
   white-space: nowrap;
@@ -1077,14 +1095,13 @@ button:active {
 }
 
 :root[data-theme='dark'] .calendar-summary-value {
-  background: rgba(96, 165, 250, 0.28);
-  color: #dbeafe;
-  border: 1px solid rgba(96, 165, 250, 0.45);
-  box-shadow: inset 0 0 0 1px rgba(30, 64, 175, 0.2);
+  background: var(--sage-soft);
+  color: var(--ink);
+  border: 1px solid var(--sage);
 }
 
 :root[data-theme='dark'] .calendar-summary-currency {
-  color: #bfdbfe;
+  color: var(--ink-soft);
 }
 .calendar-legend {
   display: flex;
@@ -1102,10 +1119,10 @@ button:active {
   vertical-align: middle;
 }
 .legend-ex {
-  background: #ff8fa3;
+  background: var(--terracotta);
 }
 .legend-pay {
-  background: #2f9e44;
+  background: var(--sage);
 }
 .calendar-grid {
   width: 100%;
@@ -1164,10 +1181,10 @@ button:active {
   white-space: nowrap;
 }
 .event-ex {
-  background: #ff6b6b;
+  background: var(--terracotta);
 }
 .event-pay {
-  background: #2f9e44;
+  background: var(--sage);
 }
 .more-btn {
   margin-top: 4px;
