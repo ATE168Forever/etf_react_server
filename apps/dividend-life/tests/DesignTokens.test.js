@@ -9,6 +9,14 @@ const appCss = readFileSync(
   path.join(__dirname, '../src/App.css'),
   'utf8',
 );
+const experienceNavCss = readFileSync(
+  path.join(__dirname, '../../shared/components/ExperienceNavigation/ExperienceNavigation.module.css'),
+  'utf8',
+);
+const brandPageCss = readFileSync(
+  path.join(__dirname, '../../shared/components/BrandPage/BrandPage.module.css'),
+  'utf8',
+);
 
 describe('design tokens (spec §5.1)', () => {
   const newTokens = [
@@ -61,5 +69,17 @@ describe('PR 3 color sweep — no leftover pre-redesign hardcoded colors', () =>
   test('App.css defines an explicit .nav-tabs .nav-link color override using tokens', () => {
     expect(appCss).toMatch(/\.nav-tabs \.nav-link\s*{[^}]*color:\s*var\(--ink-soft\)/);
     expect(appCss).toMatch(/\.nav-tabs \.nav-link\.active\s*{[^}]*background-color:\s*var\(--sage-soft\)/);
+  });
+
+  test('ExperienceNavigation.module.css and BrandPage.module.css no longer contain the pre-redesign hardcoded blue icon-glow literals', () => {
+    const blueGlowLiterals = [
+      /rgba\(120,\s*152,\s*255/i,
+      /rgba\(126,\s*152,\s*255/i,
+      /rgba\(103,\s*136,\s*255/i,
+    ];
+    blueGlowLiterals.forEach((pattern) => {
+      expect(experienceNavCss).not.toMatch(pattern);
+      expect(brandPageCss).not.toMatch(pattern);
+    });
   });
 });
