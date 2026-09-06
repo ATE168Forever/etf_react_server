@@ -17,6 +17,65 @@ const VIRTUAL_MAX_HEIGHT = '70vh';
 const currencyLabelFor = (currency) => (currency === 'USD' ? 'US$' : 'NT$');
 const currencyUnitZhFor = (currency) => (currency === 'USD' ? '美元' : '元');
 
+function buildTotalsContent({
+  stock,
+  activeCurrencies,
+  totalPerStock,
+  yieldSum,
+  estAnnualYield,
+  maxAnnualYield,
+  showDividendYield,
+  lang,
+  t,
+}) {
+  return activeCurrencies
+    .map(currency => {
+      const total = totalPerStock[stock.stock_id]?.[currency] || 0;
+      const yieldAccumulated = yieldSum[stock.stock_id]?.[currency] || 0;
+      const annual = estAnnualYield[stock.stock_id]?.[currency] || 0;
+      if (showDividendYield) {
+        if (yieldAccumulated <= 0) return null;
+        return (
+          <div key={`${stock.stock_id}-total-${currency}`}>
+            {currencyLabelFor(currency)} {yieldAccumulated.toFixed(1)}%
+          </div>
+        );
+      }
+      if (total <= 0 && annual <= 0) return null;
+      const currencyAnnualMax = maxAnnualYield[currency] || 0;
+      const shouldShowCrown =
+        annual > 0 &&
+        (currencyAnnualMax > 0
+          ? Math.abs(annual - currencyAnnualMax) < 1e-6
+          : true);
+      const tooltipText = shouldShowCrown
+        ? (lang === 'zh'
+            ? `目前已累積殖利率: ${yieldAccumulated.toFixed(1)}%\n${t('high_yield_disclaimer')}`
+            : `Accumulated yield so far: ${yieldAccumulated.toFixed(1)}%\n${t('high_yield_disclaimer')}`)
+        : (lang === 'zh'
+            ? `目前已累積殖利率: ${yieldAccumulated.toFixed(1)}%`
+            : `Accumulated yield so far: ${yieldAccumulated.toFixed(1)}%`);
+      const annualContent = annual > 0 ? (
+        <TooltipText tooltip={tooltipText}>
+          {annual.toFixed(1)}%
+          {shouldShowCrown && (
+            <span className="high-yield-badge">{t('high_yield_badge')}</span>
+          )}
+        </TooltipText>
+      ) : null;
+      return (
+        <div
+          key={`${stock.stock_id}-total-${currency}`}
+          className="total-cell-row"
+        >
+          <span>{`${currencyLabelFor(currency)}${currency === 'USD' ? total.toFixed(2) : Math.round(total)}`}</span>
+          {annualContent && <span>/ {annualContent}</span>}
+        </div>
+      );
+    })
+    .filter(Boolean);
+}
+
 export default function StockTable({
   stocks,
   dividendTable,
@@ -424,7 +483,7 @@ export default function StockTable({
           </p>
         </div>
       ) : null}
-      <div className="table-responsive" ref={tableContainerRef} style={stocks.length === 0 ? { display: 'none' } : tableScrollStyle}>
+      <div className="table-responsive stock-table-scroll" ref={tableContainerRef} style={stocks.length === 0 ? { display: 'none' } : tableScrollStyle}>
         <table className="table table-bordered table-striped stock-table" aria-label={lang === 'en' ? 'ETF dividend calendar' : 'ETF 股息月曆'}>
         <thead>
           <tr>
@@ -644,6 +703,30 @@ export default function StockTable({
         </tbody>
         </table>
       </div>
+      {stocks.length > 0 && (
+        <ul className="stock-table-cards">
+          {limitedStocks.map(stock => (
+            <StockCard
+              key={stock.stock_id + stock.stock_name}
+              stock={stock}
+              months={MONTHS}
+              visibleMonthIndices={visibleMonthIndices}
+              currentMonth={currentMonth}
+              showPerYield={showPerYield}
+              showDividendYield={showDividendYield}
+              lang={lang}
+              latestPrice={latestPrice}
+              getMonthValue={getMonthValue}
+              activeCurrencies={activeCurrencies}
+              totalPerStock={totalPerStock}
+              yieldSum={yieldSum}
+              estAnnualYield={estAnnualYield}
+              maxAnnualYield={maxAnnualYield}
+              t={t}
+            />
+          ))}
+        </ul>
+      )}
       {hasExtraRows && (
         <div className="table-more-btn-wrapper">
           <button
@@ -691,52 +774,9 @@ const StockRow = memo(function StockRow({
       ? { 'data-index': dataIndex }
       : {};
 
-  const totalsContent = activeCurrencies
-    .map(currency => {
-      const total = totalPerStock[stock.stock_id]?.[currency] || 0;
-      const yieldAccumulated = yieldSum[stock.stock_id]?.[currency] || 0;
-      const annual = estAnnualYield[stock.stock_id]?.[currency] || 0;
-      if (showDividendYield) {
-        if (yieldAccumulated <= 0) return null;
-        return (
-          <div key={`${stock.stock_id}-total-${currency}`}>
-            {currencyLabelFor(currency)} {yieldAccumulated.toFixed(1)}%
-          </div>
-        );
-      }
-      if (total <= 0 && annual <= 0) return null;
-      const currencyAnnualMax = maxAnnualYield[currency] || 0;
-      const shouldShowCrown =
-        annual > 0 &&
-        (currencyAnnualMax > 0
-          ? Math.abs(annual - currencyAnnualMax) < 1e-6
-          : true);
-      const tooltipText = shouldShowCrown
-        ? (lang === 'zh'
-            ? `目前已累積殖利率: ${yieldAccumulated.toFixed(1)}%\n${t('high_yield_disclaimer')}`
-            : `Accumulated yield so far: ${yieldAccumulated.toFixed(1)}%\n${t('high_yield_disclaimer')}`)
-        : (lang === 'zh'
-            ? `目前已累積殖利率: ${yieldAccumulated.toFixed(1)}%`
-            : `Accumulated yield so far: ${yieldAccumulated.toFixed(1)}%`);
-      const annualContent = annual > 0 ? (
-        <TooltipText tooltip={tooltipText}>
-          {annual.toFixed(1)}%
-          {shouldShowCrown && (
-            <span className="high-yield-badge">{t('high_yield_badge')}</span>
-          )}
-        </TooltipText>
-      ) : null;
-      return (
-        <div
-          key={`${stock.stock_id}-total-${currency}`}
-          className="total-cell-row"
-        >
-          <span>{`${currencyLabelFor(currency)}${currency === 'USD' ? total.toFixed(2) : Math.round(total)}`}</span>
-          {annualContent && <span>/ {annualContent}</span>}
-        </div>
-      );
-    })
-    .filter(Boolean);
+  const totalsContent = buildTotalsContent({
+    stock, activeCurrencies, totalPerStock, yieldSum, estAnnualYield, maxAnnualYield, showDividendYield, lang, t,
+  });
 
   return (
     <tr ref={rowRef ?? null} {...rowProps}>
@@ -856,5 +896,61 @@ const StockRow = memo(function StockRow({
       )}
       <td>{totalsContent.length > 0 ? totalsContent : ''}</td>
     </tr>
+  );
+});
+
+const StockCard = memo(function StockCard({
+  stock,
+  months,
+  visibleMonthIndices,
+  currentMonth,
+  showPerYield,
+  showDividendYield,
+  lang,
+  latestPrice,
+  getMonthValue,
+  activeCurrencies,
+  totalPerStock,
+  yieldSum,
+  estAnnualYield,
+  maxAnnualYield,
+  t,
+}) {
+  const price = latestPrice[stock.stock_id]?.price;
+  const totalsContent = buildTotalsContent({
+    stock, activeCurrencies, totalPerStock, yieldSum, estAnnualYield, maxAnnualYield, showDividendYield, lang, t,
+  });
+  const formatMonthValue = (val) => {
+    if (!(val > 0)) return '—';
+    return (showPerYield || showDividendYield) ? `${val.toFixed(2)}%` : val.toFixed(3);
+  };
+
+  return (
+    <li className="stock-card">
+      <div className="stock-card__header">
+        <a href={`${HOST_URL}/stock/${stock.stock_id}`} target="_blank" rel="noreferrer"
+          aria-label={`${stock.stock_id} ${stock.stock_name} (${lang === 'en' ? 'opens in new tab' : '開啟新分頁'})`}>
+          <span className="stock-card__id">{stock.stock_id}</span>
+          <span className="stock-card__name">{stock.stock_name}</span>
+        </a>
+        <span className="stock-card__price">{price ?? '—'}</span>
+      </div>
+      <div className="stock-card__body">
+        {totalsContent.length > 0 ? totalsContent : null}
+      </div>
+      {visibleMonthIndices.length > 1 && (
+        <ul className="stock-card__months">
+          {visibleMonthIndices.map(idx => (
+            <li
+              key={idx}
+              className={idx === currentMonth ? 'stock-card__month stock-card__month--current' : 'stock-card__month'}
+            >
+              <span>{months[idx]}</span>
+              <span>{formatMonthValue(getMonthValue(stock.stock_id, idx))}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
   );
 });

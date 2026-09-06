@@ -102,7 +102,10 @@ test('the annual-max stock shows a neutral high-yield badge with a disclaimer, n
   // The removed emoji badges were the only elements in this component using
   // role="img"; the new text badge carries no such role.
   expect(screen.queryByRole('img')).not.toBeInTheDocument();
-  const badges = container.querySelectorAll('.high-yield-badge');
+  // Scope to the <table>: the mobile card list (added in Task 5) renders the
+  // same totals content — and thus the same crown badge markup — via the
+  // shared buildTotalsContent(), so an unscoped query would double-count.
+  const badges = container.querySelector('table').querySelectorAll('.high-yield-badge');
   expect(badges.length).toBe(1);
   expect(screen.getAllByText('殖利率偏高').length).toBeGreaterThan(0);
 
@@ -113,6 +116,30 @@ test('the annual-max stock shows a neutral high-yield badge with a disclaimer, n
     'title',
     expect.stringContaining(translations.zh.high_yield_disclaimer)
   );
+});
+
+test('renders both the table and a card list unconditionally; CSS decides which is visible', () => {
+  const { container } = renderWithLang();
+  expect(container.querySelector('.table-responsive.stock-table-scroll')).toBeInTheDocument();
+  expect(container.querySelector('.stock-table-cards')).toBeInTheDocument();
+});
+
+test('each card shows the stock code, name, latest price, and estimated-yield/total content', () => {
+  // Reuse the crown-badge fixture from the "annual-max stock" test above (one
+  // stock, known price and estAnnualYield) so the assertions below have a
+  // concrete value to check for.
+  const { container } = renderWithLang({
+    estAnnualYield: { [STOCK_ID]: { TWD: 8 } },
+    maxAnnualYield: { TWD: 8 },
+    maxYieldPerMonth: { TWD: Array(12).fill(0.9) },
+  });
+
+  const card = container.querySelector('.stock-card');
+  expect(card).toBeInTheDocument();
+  expect(card.querySelector('.stock-card__id')).toHaveTextContent(STOCK_ID);
+  expect(card.querySelector('.stock-card__name')).toHaveTextContent('元大台灣50');
+  expect(card.querySelector('.stock-card__price')).toHaveTextContent('35');
+  expect(card.querySelector('.stock-card__body').textContent.length).toBeGreaterThan(0);
 });
 
 test('the monthly-max stock shows a neutral high-yield badge, not the old emoji badge', () => {
