@@ -492,4 +492,18 @@ describe('InventoryTab interactions', () => {
     confirmSpy.mockRestore();
   });
 
+  test('shows a short trust-banner summary with an expandable full notice', () => {
+    render(<InventoryTab />);
+
+    expect(
+      screen.getByText('資料只保存在你的瀏覽器，不會上傳到本站伺服器。')
+    ).toBeInTheDocument();
+
+    const fullNotice = screen.getByText(/簡單說：資料只在這台電腦/);
+    expect(fullNotice).not.toBeVisible();
+
+    fireEvent.click(screen.getByText('更多說明'));
+    expect(fullNotice).toBeVisible();
+  });
+
 });

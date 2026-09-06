@@ -2490,6 +2490,75 @@ button.metric-card:focus-visible {
   outline-offset: -2px;
 }
 
+.accordion-item {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.accordion-item summary {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.accordion-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.accordion-item summary::before {
+  content: '▶';
+  font-size: 0.7rem;
+  transition: transform 0.2s;
+  color: var(--color-text-muted);
+}
+
+.accordion-item[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.accordion-item summary:hover {
+  color: var(--color-text);
+  background: var(--color-row-even);
+}
+
+.accordion-item summary:focus-visible {
+  color: var(--color-text);
+  background: var(--color-row-even);
+  outline: 2px solid var(--accent-gold, #d4af37);
+  outline-offset: -2px;
+}
+
+.accordion-item summary h2,
+.accordion-item summary h3 {
+  margin: 0;
+  font-weight: 500;
+}
+
+.accordion-item__content {
+  padding: 4px 16px 16px;
+}
+
+.accordion-item--nested {
+  margin: 8px 0 8px 0;
+}
+
+.accordion-item--nested summary {
+  padding: 8px 12px;
+  font-weight: 400;
+}
+
+.accordion-item--nested .accordion-item__content {
+  padding: 4px 12px 12px;
+}
+
 .footer-list {
   margin: 0;
   padding: 12px 16px 12px 32px;

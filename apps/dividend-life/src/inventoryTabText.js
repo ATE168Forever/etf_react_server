@@ -9,6 +9,8 @@ const inventoryTabText = {
     confirmDeleteRecord: '確定要刪除此筆紀錄？',
     sellExceeds: '賣出數量不得超過庫存',
     notice: '這是一個免費網站，我們不會把你的資料存到任何後台或伺服器。為確保使用者隱私，所有的紀錄（包含你的設定與操作歷程）都只會保存在你的瀏覽器本機。開啟自動儲存功能後，系統會在你的裝置上自動備份。簡單說：資料只在這台電腦，不會上傳，也不會被我們看到，請安心使用！',
+    noticeSummary: '資料只保存在你的瀏覽器，不會上傳到本站伺服器。',
+    noticeDetailToggle: '更多說明',
     addRecord: '新增購買',
     quickAdd: '快速購買',
     quickAddEmpty: '目前沒有最近購買的 ETF',
@@ -115,6 +117,8 @@ const inventoryTabText = {
     sellExceeds: 'Sell quantity cannot exceed inventory',
     notice:
       'This is a free website, and to safeguard your privacy we never store your data on any backend or server. Every record—including your settings and activity history—lives only in your browser. Turn on auto-save to create device-side backups automatically. In short: your data stays on this computer, never uploads, and we never see it.',
+    noticeSummary: 'Your data stays only in your browser and is never uploaded to our servers.',
+    noticeDetailToggle: 'More details',
     addRecord: 'Add Purchase',
     quickAdd: 'Quick Purchase',
     quickAddEmpty: 'No recent ETF purchases yet',

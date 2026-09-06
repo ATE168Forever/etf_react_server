@@ -1929,8 +1929,14 @@ export default function InventoryTab({
   return (
     <div className="inventory-tab">
       <p className={styles.notice}>
-        {msg.notice}
+        {msg.noticeSummary}
       </p>
+      <details className="accordion-item">
+        <summary>{msg.noticeDetailToggle}</summary>
+        <div className="accordion-item__content">
+          <p>{msg.notice}</p>
+        </div>
+      </details>
 
       <div className={styles.topControls}>
         <button
