@@ -151,6 +151,7 @@ export const translations = {
     dividend_receivable: '應收股息',
     prev_close: '除息前一天收盤價',
     avg_month_yield: '平均月殖利率',
+    annualized_yield: '年化殖利率',
     payout_frequency: '配息頻率',
     irregular: '不定期',
     dividend_date: '配息日期'
@@ -305,6 +306,7 @@ export const translations = {
     dividend_receivable: 'Dividend Receivable',
     prev_close: 'Prev Close Before Ex-date',
     avg_month_yield: 'Avg Monthly Yield',
+    annualized_yield: 'Annualized Yield',
     payout_frequency: 'Payout Frequency',
     irregular: 'Irregular',
     dividend_date: 'Dividend Date'

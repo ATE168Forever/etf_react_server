@@ -178,6 +178,38 @@ test('each card shows the stock code, name, latest price, and estimated-yield/to
   expect(card.querySelector('.stock-card__body').textContent.length).toBeGreaterThan(0);
 });
 
+test('each card shows the payout frequency next to the stock code', () => {
+  // Default fixture's freqMap sets STOCK_ID to 4 (quarterly).
+  const { container } = renderWithLang();
+
+  const card = container.querySelector('.stock-card');
+  expect(card.querySelector('.stock-card__freq')).toHaveTextContent('季配');
+});
+
+test('a stock missing from freqMap shows the irregular label instead of a blank frequency', () => {
+  const { container } = renderWithLang({ freqMap: {} });
+
+  const card = container.querySelector('.stock-card');
+  expect(card.querySelector('.stock-card__freq')).toHaveTextContent('不定期');
+});
+
+test('each visible month value shows its annualized yield', () => {
+  // buildDividendTable's fixture sets perYield to 0.2 for every month, so the
+  // annualized figure (perYield * 12) is 2.4%.
+  const { container } = renderWithLang();
+
+  const card = container.querySelector('.stock-card');
+  const monthYield = card.querySelector('.stock-card__month-yield');
+  expect(monthYield).toHaveTextContent('2.4%');
+});
+
+test('the annualized-yield hint is not duplicated when the per-yield display mode is already active', () => {
+  const { container } = renderWithLang({ showPerYield: true });
+
+  const card = container.querySelector('.stock-card');
+  expect(card.querySelector('.stock-card__month-yield')).not.toBeInTheDocument();
+});
+
 test('the monthly-max stock shows a neutral high-yield badge, not the old emoji badge', () => {
   // Every month cell's perYield (0.2, from buildDividendTable) equals
   // maxYieldPerMonth.TWD[idx], which is the monthly-max trigger condition

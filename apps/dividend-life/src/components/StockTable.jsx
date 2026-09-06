@@ -207,6 +207,14 @@ export default function StockTable({
     }, 0);
   }, [activeCurrencies, dividendTable, showDividendYield, showPerYield]);
 
+  // Always the per-month-normalized perYield, independent of the current
+  // display mode -- used by the mobile card to show this payment's
+  // annualized yield alongside whatever the main value is showing.
+  const getMonthPerYield = useCallback((stockId, idx, currencyKey) => {
+    const cell = dividendTable[stockId]?.[idx]?.[currencyKey];
+    return cell ? (parseFloat(cell.perYield) || 0) : 0;
+  }, [dividendTable]);
+
   const deferredStocks = useDeferredValue(stocks);
 
   const sortedStocks = useMemo(() => {
@@ -757,11 +765,14 @@ export default function StockTable({
               lang={lang}
               latestPrice={latestPrice}
               getMonthValue={getMonthValue}
+              getMonthPerYield={getMonthPerYield}
               activeCurrencies={activeCurrencies}
               totalPerStock={totalPerStock}
               yieldSum={yieldSum}
               estAnnualYield={estAnnualYield}
               maxAnnualYield={maxAnnualYield}
+              freqMap={freqMap}
+              freqNameMap={freqNameMap}
               t={t}
             />
           ))}
@@ -949,11 +960,14 @@ const StockCard = memo(function StockCard({
   lang,
   latestPrice,
   getMonthValue,
+  getMonthPerYield,
   activeCurrencies,
   totalPerStock,
   yieldSum,
   estAnnualYield,
   maxAnnualYield,
+  freqMap,
+  freqNameMap,
   t,
 }) {
   const price = latestPrice[stock.stock_id]?.price;
@@ -964,6 +978,8 @@ const StockCard = memo(function StockCard({
     if (!(val > 0)) return '—';
     return (showPerYield || showDividendYield) ? `${val.toFixed(2)}%` : val.toFixed(3);
   };
+  const freq = freqMap[stock.stock_id];
+  const freqLabel = freqNameMap[freq] || t('irregular');
 
   return (
     <li className="stock-card">
@@ -973,7 +989,10 @@ const StockCard = memo(function StockCard({
           <span className="stock-card__id">{stock.stock_id}</span>
           <span className="stock-card__name">{stock.stock_name}</span>
         </a>
-        <span className="stock-card__price">{price ?? '—'}</span>
+        <div className="stock-card__header-meta">
+          <span className="stock-card__freq">{freqLabel}</span>
+          <span className="stock-card__price">{price ?? '—'}</span>
+        </div>
       </div>
       <div className="stock-card__body">
         {totalsContent.length > 0 ? totalsContent : null}
@@ -987,11 +1006,19 @@ const StockCard = memo(function StockCard({
             >
               <span>{months[idx]}</span>
               <span className="stock-card__month-values">
-                {activeCurrencies.map(currency => (
-                  <span key={currency}>
-                    {currencyLabelFor(currency)}{formatMonthValue(getMonthValue(stock.stock_id, idx, currency))}
-                  </span>
-                ))}
+                {activeCurrencies.map(currency => {
+                  const annualizedYield = getMonthPerYield(stock.stock_id, idx, currency) * 12;
+                  return (
+                    <span key={currency}>
+                      {currencyLabelFor(currency)}{formatMonthValue(getMonthValue(stock.stock_id, idx, currency))}
+                      {!showPerYield && annualizedYield > 0 && (
+                        <span className="stock-card__month-yield">
+                          {' '}· {t('annualized_yield')} {annualizedYield.toFixed(1)}%
+                        </span>
+                      )}
+                    </span>
+                  );
+                })}
               </span>
             </li>
           ))}
