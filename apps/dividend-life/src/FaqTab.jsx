@@ -65,15 +65,11 @@ export default function FaqTab() {
         ]
       };
 
-  return (
-    <div className="container content-page">
-      <h2 className="h3 mt-4">{lang === 'en' ? 'FAQ' : '常見問題（FAQ）'}</h2>
-
-      <h3 className="h4">{lang === 'en' ? 'Data & Calculations' : '資料與計算'}</h3>
-      <ol>
-        <li>
-          <strong>{lang === 'en' ? 'How is dividend yield calculated?' : '殖利率是怎麼算的？'}</strong>
-          <br />
+  const dataQuestions = [
+    {
+      question: lang === 'en' ? 'How is dividend yield calculated?' : '殖利率是怎麼算的？',
+      answer: (
+        <>
           {lang === 'en' ? 'Common approaches include:' : '常見作法有：'}
           <ul>
             <li>{lang === 'en' ? 'TTM yield = total dividends over the past 12 months ÷ latest price' : 'TTM 殖利率＝過去 12 個月實際配息總額 ÷ 最新價格'}</li>
@@ -82,48 +78,69 @@ export default function FaqTab() {
           {lang === 'en'
             ? 'Each page notes which metric is used. ETF payout habits may differ, so official announcements take precedence.'
             : '每個頁面都會註明採用的指標，ETF 的配息習慣可能不同，最後還是以發行商公告為準。'}
-        </li>
-        <li>
-          <strong>{lang === 'en' ? "What's the difference between ex-dividend and payment dates?" : '除息日和發放日差在哪？'}</strong>
-          <br />
-          <ul>
-            <li>{lang === 'en' ? 'Ex-dividend date: buying on or after this date means you will not receive the dividend.' : '除息日：從這天（含）買進就不享有這次配息啦。'}</li>
-            <li>{lang === 'en' ? 'Payment date: when the funds are actually credited; different markets may have T+N differences.' : '發放日：實際匯到你帳上的時間，不同市場可能有 T+N 差異。'}</li>
-          </ul>
-        </li>
-        <li>
-          <strong>{lang === 'en' ? 'How is payout frequency defined?' : '配息頻率如何定義？'}</strong>
-          <br />
-          {lang === 'en'
-            ? 'We categorize based on past records into monthly, quarterly, semiannual and annual payouts; if issuers change schedules, classifications may temporarily lag.'
-            : '我們依過去紀錄大致分成月配、季配、半年配和年配；如果發行商突然調整，分類可能會暫時跟不上。'}
-        </li>
-        <li>
-          <strong>{lang === 'en' ? 'Are leveraged/inverse ETFs included?' : '槓桿／反向 ETF 有收錄嗎？'}</strong>
-          <br />
-          {lang === 'en'
-            ? 'Occasionally. When included, the page clearly labels them and provides risk warnings.'
-            : '偶爾會有，如果收錄會在標的頁明顯標註並附上風險提醒，請多加留意。'}
-        </li>
-        <li>
-          <strong>{lang === 'en' ? 'Are multiple markets and currencies supported?' : '是否支援多市場與多幣別？'}</strong>
-          <br />
-          {lang === 'en'
-            ? 'Supported range follows what is announced on the site; if multiple currencies exist, the system provides FX records or rate fields for you to log.'
-            : '支援範圍以網站公告為主；若有多幣別，系統會提供換匯紀錄或匯率欄位供你記錄。'}
-        </li>
-      </ol>
+        </>
+      ),
+    },
+    {
+      question: lang === 'en' ? "What's the difference between ex-dividend and payment dates?" : '除息日和發放日差在哪？',
+      answer: (
+        <ul>
+          <li>{lang === 'en' ? 'Ex-dividend date: buying on or after this date means you will not receive the dividend.' : '除息日：從這天（含）買進就不享有這次配息啦。'}</li>
+          <li>{lang === 'en' ? 'Payment date: when the funds are actually credited; different markets may have T+N differences.' : '發放日：實際匯到你帳上的時間，不同市場可能有 T+N 差異。'}</li>
+        </ul>
+      ),
+    },
+    {
+      question: lang === 'en' ? 'How is payout frequency defined?' : '配息頻率如何定義？',
+      answer: lang === 'en'
+        ? 'We categorize based on past records into monthly, quarterly, semiannual and annual payouts; if issuers change schedules, classifications may temporarily lag.'
+        : '我們依過去紀錄大致分成月配、季配、半年配和年配；如果發行商突然調整，分類可能會暫時跟不上。',
+    },
+    {
+      question: lang === 'en' ? 'Are leveraged/inverse ETFs included?' : '槓桿／反向 ETF 有收錄嗎？',
+      answer: lang === 'en'
+        ? 'Occasionally. When included, the page clearly labels them and provides risk warnings.'
+        : '偶爾會有，如果收錄會在標的頁明顯標註並附上風險提醒，請多加留意。',
+    },
+    {
+      question: lang === 'en' ? 'Are multiple markets and currencies supported?' : '是否支援多市場與多幣別？',
+      answer: lang === 'en'
+        ? 'Supported range follows what is announced on the site; if multiple currencies exist, the system provides FX records or rate fields for you to log.'
+        : '支援範圍以網站公告為主；若有多幣別，系統會提供換匯紀錄或匯率欄位供你記錄。',
+    },
+  ];
 
-      <h3 className="h4">{lang === 'en' ? 'Contact Us' : '聯絡我們'}</h3>
-      <ol start={7}>
-        <li>
-          <strong>{lang === 'en' ? 'How can I report errors or suggest features?' : '如何報告錯誤或建議新功能？'}</strong>
-          <br />
-          {lang === 'en'
-            ? <>Feel free to email <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a>; for data corrections, please include links or proof.</>
-            : <>歡迎寄信到 <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a>；若是資料更正，記得附上連結或佐證。</>}
-        </li>
-      </ol>
+  const contactQuestions = [
+    {
+      question: lang === 'en' ? 'How can I report errors or suggest features?' : '如何報告錯誤或建議新功能？',
+      answer: lang === 'en'
+        ? <>Feel free to email <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a>; for data corrections, please include links or proof.</>
+        : <>歡迎寄信到 <a href="mailto:giantbean2025@gmail.com">giantbean2025@gmail.com</a>；若是資料更正，記得附上連結或佐證。</>,
+    },
+  ];
+
+  return (
+    <div className="container content-page">
+      <details className="accordion-item">
+        <summary><h2 className="h3 mt-4">{lang === 'en' ? 'FAQ' : '常見問題（FAQ）'}</h2></summary>
+        <div className="accordion-item__content">
+          <h3 className="h4">{lang === 'en' ? 'Data & Calculations' : '資料與計算'}</h3>
+          {dataQuestions.map((item, idx) => (
+            <details className="accordion-item accordion-item--nested" key={`data-${idx}`}>
+              <summary>{item.question}</summary>
+              <div className="accordion-item__content">{item.answer}</div>
+            </details>
+          ))}
+
+          <h3 className="h4">{lang === 'en' ? 'Contact Us' : '聯絡我們'}</h3>
+          {contactQuestions.map((item, idx) => (
+            <details className="accordion-item accordion-item--nested" key={`contact-${idx}`}>
+              <summary>{item.question}</summary>
+              <div className="accordion-item__content">{item.answer}</div>
+            </details>
+          ))}
+        </div>
+      </details>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
@@ -131,4 +148,3 @@ export default function FaqTab() {
     </div>
   );
 }
-
