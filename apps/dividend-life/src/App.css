@@ -2552,7 +2552,7 @@ button.metric-card:focus-visible {
 
 .accordion-item--nested summary {
   padding: 8px 12px;
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .accordion-item--nested .accordion-item__content {

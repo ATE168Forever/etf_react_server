@@ -122,7 +122,7 @@ export default function FaqTab() {
   return (
     <div className="container content-page">
       <details className="accordion-item">
-        <summary><h2 className="h3 mt-4">{lang === 'en' ? 'FAQ' : '常見問題（FAQ）'}</h2></summary>
+        <summary><h2 className="h3">{lang === 'en' ? 'FAQ' : '常見問題（FAQ）'}</h2></summary>
         <div className="accordion-item__content">
           <h3 className="h4">{lang === 'en' ? 'Data & Calculations' : '資料與計算'}</h3>
           {dataQuestions.map((item, idx) => (

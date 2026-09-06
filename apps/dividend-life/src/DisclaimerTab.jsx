@@ -6,7 +6,7 @@ export default function DisclaimerTab() {
   return (
     <div className="container content-page">
       <details className="accordion-item">
-        <summary><h2 className="h3 mt-4">{lang === 'en' ? 'Disclaimer' : '免責聲明'}</h2></summary>
+        <summary><h2 className="h3">{lang === 'en' ? 'Disclaimer' : '免責聲明'}</h2></summary>
         <div className="accordion-item__content">
           <h3 className="h4">{lang === 'en' ? 'Information Only' : '資訊性質'}</h3>
           <p>

@@ -6,7 +6,7 @@ export default function TermsOfServiceTab() {
   return (
     <div className="container content-page">
       <details className="accordion-item">
-        <summary><h2 className="h3 mt-4">{lang === 'en' ? 'Terms of Service' : '服務條款'}</h2></summary>
+        <summary><h2 className="h3">{lang === 'en' ? 'Terms of Service' : '服務條款'}</h2></summary>
         <div className="accordion-item__content">
           <p>
             {lang === 'en'
