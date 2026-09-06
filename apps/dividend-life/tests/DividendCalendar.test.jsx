@@ -153,6 +153,21 @@ test('the selected date cell gets the gold selection class', () => {
   expect(selectedCell.textContent).toContain(String(Number(day)));
 });
 
+test('the dot tooltip includes the stock code and name', () => {
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const [year, month, day] = nowStr.split('-');
+  const dateStr = `${year}-${month}-${day}`;
+  const events = [
+    { date: dateStr, type: 'ex', stock_id: '00770', stock_name: '富邦特選高股息30', amount: 100, quantity: 1000 },
+  ];
+  const { container } = render(<DividendCalendar year={Number(year)} events={events} />);
+
+  const dot = container.querySelector('.calendar-dot');
+  const tooltipTrigger = dot.closest('.tooltip-text');
+  expect(tooltipTrigger.title).toMatch(/00770/);
+  expect(tooltipTrigger.title).toMatch(/富邦特選高股息30/);
+});
+
 test('each dot has a short accessible name identifying the stock and event type', () => {
   const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
   const [year, month, day] = nowStr.split('-');

@@ -160,6 +160,9 @@ export default function DividendCalendar({
         ? `${currencySymbol}${ev.dividend}`
         : `${ev.dividend} ${currencyUnitZh}`;
     const tooltipParts = [];
+    if (ev.stock_id || ev.stock_name) {
+      tooltipParts.push([ev.stock_id, ev.stock_name].filter(Boolean).join(' '));
+    }
     if (ev.quantity != null) {
       tooltipParts.push(`${t('quantity')}: ${ev.quantity} ${lang === 'en' ? 'shares' : '股'} (${lotText} ${lang === 'en' ? 'lots' : '張'})`);
     }
