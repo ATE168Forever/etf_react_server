@@ -255,6 +255,36 @@ td {
   white-space: nowrap;
 }
 
+.stock-card-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+}
+
+.stock-card-sort select {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+}
+
+.stock-card-sort-direction {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.stock-card-sort-direction:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 1px;
+}
+
 .stock-table-cards {
   display: none;
   list-style: none;

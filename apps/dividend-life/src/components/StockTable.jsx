@@ -717,6 +717,33 @@ export default function StockTable({
         </table>
       </div>
       {stocks.length > 0 && isCardViewport && (
+        <div className="stock-card-sort">
+          <label htmlFor="stock-card-sort-select">
+            {lang === 'zh' ? '排序：' : 'Sort by:'}
+          </label>
+          <select
+            id="stock-card-sort-select"
+            value={sortConfig.column}
+            onChange={(e) => handleSort(e.target.value)}
+          >
+            <option value="stock_id">{t('stock_code_name')}</option>
+            <option value="latest_price">{lang === 'zh' ? '最新股價' : 'Latest Price'}</option>
+            <option value={`month${currentMonth}`}>{MONTHS[currentMonth]}</option>
+            <option value="annual_yield">{t('estimated_yield')}</option>
+          </select>
+          <button
+            type="button"
+            className="stock-card-sort-direction"
+            onClick={() => handleSort(sortConfig.column)}
+            aria-label={sortConfig.direction === 'asc'
+              ? (lang === 'zh' ? '目前遞增排序，點擊改為遞減' : 'Currently ascending, click for descending')
+              : (lang === 'zh' ? '目前遞減排序，點擊改為遞增' : 'Currently descending, click for ascending')}
+          >
+            {sortConfig.direction === 'asc' ? '▲' : '▼'}
+          </button>
+        </div>
+      )}
+      {stocks.length > 0 && isCardViewport && (
         <ul className="stock-table-cards">
           {limitedStocks.map(stock => (
             <StockCard

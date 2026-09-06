@@ -209,3 +209,68 @@ test('the monthly-max stock shows a neutral high-yield badge, not the old emoji 
     expect.stringContaining(translations.zh.high_yield_disclaimer)
   );
 });
+
+describe('mobile card sort control', () => {
+  const STOCK_ID_2 = '00878';
+  const twoStockProps = {
+    stocks: [
+      { stock_id: STOCK_ID, stock_name: '元大台灣50' },
+      { stock_id: STOCK_ID_2, stock_name: '國泰永續高股息' },
+    ],
+    dividendTable: { ...buildDividendTable(), [STOCK_ID_2]: buildDividendTable()[STOCK_ID] },
+    totalPerStock: { [STOCK_ID]: { TWD: 10 }, [STOCK_ID_2]: { TWD: 10 } },
+    yieldSum: { [STOCK_ID]: { TWD: 5 }, [STOCK_ID_2]: { TWD: 5 } },
+    yieldCount: { [STOCK_ID]: { TWD: 4 }, [STOCK_ID_2]: { TWD: 4 } },
+    // Distinct prices so sorting by price actually reorders the two cards.
+    latestPrice: { [STOCK_ID]: { price: 35 }, [STOCK_ID_2]: { price: 20 } },
+    latestYield: { [STOCK_ID]: { yield: 5 }, [STOCK_ID_2]: { yield: 5 } },
+    estAnnualYield: { [STOCK_ID]: { TWD: 5 }, [STOCK_ID_2]: { TWD: 5 } },
+    freqMap: { [STOCK_ID]: 4, [STOCK_ID_2]: 4 },
+  };
+
+  const cardStockIds = (container) =>
+    Array.from(container.querySelectorAll('.stock-card__id')).map((el) => el.textContent);
+
+  test('the sort select and direction toggle render in the mobile card view', () => {
+    installMatchMediaMock(true);
+    const { container } = renderWithLang(twoStockProps);
+    expect(screen.getByLabelText('排序：')).toBeInTheDocument();
+    expect(container.querySelector('.stock-card-sort-direction')).toBeInTheDocument();
+  });
+
+  test('the sort select does not render in the desktop table view', () => {
+    // isCardViewport is set once from matchMedia at mount time (see the
+    // dedicated viewport-gate tests above for the table/card-list
+    // equivalent) — a fresh render with matches:false is the correct way
+    // to exercise the desktop branch, not a rerender of an already-mounted
+    // mobile instance (isCardViewport wouldn't retroactively flip without
+    // a real 'change' event, which this mock doesn't simulate).
+    installMatchMediaMock(false);
+    renderWithLang(twoStockProps);
+    expect(screen.queryByLabelText('排序：')).not.toBeInTheDocument();
+  });
+
+  test('changing the sort select reorders the cards, defaulting to ascending', () => {
+    const { container } = renderWithLang(twoStockProps);
+
+    // Default sort is by stock_id ascending: '0050' < '00878' lexicographically.
+    expect(cardStockIds(container)).toEqual([STOCK_ID, STOCK_ID_2]);
+
+    fireEvent.change(screen.getByLabelText('排序：'), { target: { value: 'latest_price' } });
+
+    // Ascending by price: 00878 (20) before 0050 (35) — a genuine reorder.
+    expect(cardStockIds(container)).toEqual([STOCK_ID_2, STOCK_ID]);
+  });
+
+  test('the direction toggle reverses the current sort', () => {
+    const { container } = renderWithLang(twoStockProps);
+
+    fireEvent.change(screen.getByLabelText('排序：'), { target: { value: 'latest_price' } });
+    expect(cardStockIds(container)).toEqual([STOCK_ID_2, STOCK_ID]);
+
+    fireEvent.click(container.querySelector('.stock-card-sort-direction'));
+
+    // Descending by price: 0050 (35) before 00878 (20).
+    expect(cardStockIds(container)).toEqual([STOCK_ID, STOCK_ID_2]);
+  });
+});
