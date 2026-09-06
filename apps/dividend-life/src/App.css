@@ -3078,7 +3078,8 @@ button.metric-card:focus-visible {
   }
 
   .filter-bar__item--scope,
-  .filter-bar__item--currency {
+  .filter-bar__item--currency,
+  .filter-bar__item--search {
     flex: none;
   }
 
