@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '../i18n';
 import TooltipText from './TooltipText';
 import { getDividendCellDisplay } from '../utils/dividendCellFormat';
 
 const DEFAULT_CURRENCY = 'TWD';
+const MAX_VISIBLE_DOTS = 3;
 
 const currencyLabel = (currency) => {
   return currency === 'USD' ? 'US$' : 'NT$';
@@ -59,25 +60,27 @@ export default function DividendCalendar({
   const timeZone = 'Asia/Taipei';
   const nowStr = new Date().toLocaleDateString('en-CA', { timeZone });
   const [internalMonth, setInternalMonth] = useState(Number(nowStr.slice(5, 7)) - 1);
-  const [expandedDates, setExpandedDates] = useState({});
+  const [selectedDate, setSelectedDate] = useState(null);
   const todayStr = nowStr;
 
   // Use controlled month if provided, otherwise use internal state
   const month = controlledMonth !== null ? controlledMonth : internalMonth;
   const setMonth = onMonthChange || setInternalMonth;
 
+  useEffect(() => {
+    setSelectedDate(null);
+  }, [month, year]);
+
   const { lang, t } = useLanguage();
-  const MONTH_NAMES = lang === 'zh'
+  const MONTH_NAMES = useMemo(() => (lang === 'zh'
     ? ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
-    : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']), [lang]);
   const DAY_NAMES = lang === 'zh'
     ? ['日','一','二','三','四','五','六']
     : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
   const monthStr = String(month + 1).padStart(2, '0');
   const monthEvents = events.filter(e => e.date.startsWith(`${year}-${monthStr}`));
-  const maxEventAmount = monthEvents.reduce((max, e) => Math.max(max, Number(e.amount) || 0), 0);
-  const hasAmountVariation = maxEventAmount > 0;
   const totalsByType = monthEvents.reduce((acc, event) => {
     const typeKey = event.type === 'ex' ? 'ex' : 'pay';
     const currency = event.currency || DEFAULT_CURRENCY;
@@ -122,6 +125,58 @@ export default function DividendCalendar({
     weeks.push(week);
   }
 
+  const selectedDayEvents = useMemo(() => {
+    if (!selectedDate) return [];
+    return monthEvents
+      .filter(e => e.date === selectedDate)
+      .sort((a, b) => (b.dividend_yield || 0) - (a.dividend_yield || 0));
+  }, [monthEvents, selectedDate]);
+
+  const selectedDateLabel = useMemo(() => {
+    if (!selectedDate) return '';
+    const [, selMonth, selDay] = selectedDate.split('-').map(Number);
+    return lang === 'zh'
+      ? `${selMonth} 月 ${selDay} 日`
+      : `${MONTH_NAMES[selMonth - 1]} ${selDay}`;
+  }, [selectedDate, lang, MONTH_NAMES]);
+
+  const buildEventTooltip = (ev) => {
+    const lotText = ev.quantity != null
+      ? (ev.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')
+      : '';
+    const currencyCode = ev.currency || DEFAULT_CURRENCY;
+    const currencySymbol = currencyCode === 'USD' ? 'US$' : 'NT$';
+    const currencyUnitZh = currencyCode === 'USD' ? '美元' : '元';
+    const amountValue = Number(ev.amount);
+    const amountFormatted = formatEventAmount(currencyCode, amountValue, {
+      hasQuantity: ev.quantity != null,
+    });
+    const amountText = lang === 'en'
+      ? `${amountFormatted} ${currencySymbol}`
+      : `${amountFormatted} ${currencyUnitZh}`;
+    const perShareText = receivableAsPerShare
+      ? amountText
+      : lang === 'en'
+        ? `${currencySymbol}${ev.dividend}`
+        : `${ev.dividend} ${currencyUnitZh}`;
+    const tooltipParts = [];
+    if (ev.quantity != null) {
+      tooltipParts.push(`${t('quantity')}: ${ev.quantity} ${lang === 'en' ? 'shares' : '股'} (${lotText} ${lang === 'en' ? 'lots' : '張'})`);
+    }
+    tooltipParts.push(`${t('per_share_dividend')}: ${perShareText}`);
+    if (!receivableAsPerShare) {
+      tooltipParts.push(`${t('dividend_receivable')}: ${amountText}`);
+    }
+    const { closePriceText, yieldText } = getDividendCellDisplay(ev, { lang, verbose: true });
+    tooltipParts.push(
+      `${t('prev_close')}: ${closePriceText}`,
+      `${t('current_yield')}: ${yieldText}`,
+      `${t('dividend_date')}: ${ev.dividend_date || '-'}`,
+      `${t('payment_date')}: ${ev.payment_date || '-'}`
+    );
+    return tooltipParts.join('\n');
+  };
+
   const prevMonth = () => {
     if (month === 0) {
       const prevYear = year - 1;
@@ -145,7 +200,6 @@ export default function DividendCalendar({
       setMonth(month + 1);
     }
   };
-
 
   return (
     <div className="calendar">
@@ -208,87 +262,43 @@ export default function DividendCalendar({
           {weeks.map((week, idx) => (
             <tr key={idx}>
               {week.map((d, i) => (
-                <td key={i} className={`calendar-cell${d && d.isToday ? ' calendar-today' : ''}`}>
+                <td
+                  key={i}
+                  className={`calendar-cell${d && d.isToday ? ' calendar-today' : ''}${d && d.dateStr === selectedDate ? ' calendar-cell--selected' : ''}`}
+                >
                   {d && (
                     <div>
-                      <div className={`date-num${d.isToday ? ' today' : ''}`}>{d.day}</div>
-                      {(expandedDates[d.dateStr] ? d.events : d.events.slice(0,1)).map((ev, j) => {
-                        const lotText = ev.quantity != null
-                          ? (ev.quantity / 1000).toFixed(3).replace(/\.?0+$/, '')
-                          : '';
-                        const currencyCode = ev.currency || DEFAULT_CURRENCY;
-                        const currencySymbol = currencyCode === 'USD' ? 'US$' : 'NT$';
-                        const currencyUnitZh = currencyCode === 'USD' ? '美元' : '元';
-                        const amountValue = Number(ev.amount);
-                        const amountFormatted = formatEventAmount(currencyCode, amountValue, {
-                          hasQuantity: ev.quantity != null,
-                        });
-                        const amountText = lang === 'en'
-                          ? `${amountFormatted} ${currencySymbol}`
-                          : `${amountFormatted} ${currencyUnitZh}`;
-                        const perShareText = receivableAsPerShare
-                          ? amountText
-                          : lang === 'en'
-                            ? `${currencySymbol}${ev.dividend}`
-                            : `${ev.dividend} ${currencyUnitZh}`;
-                        const tooltipParts = [];
-                        if (ev.quantity != null) {
-                          tooltipParts.push(`${t('quantity')}: ${ev.quantity} ${lang === 'en' ? 'shares' : '股'} (${lotText} ${lang === 'en' ? 'lots' : '張'})`);
-                        }
-                        tooltipParts.push(`${t('per_share_dividend')}: ${perShareText}`);
-                        if (!receivableAsPerShare) {
-                          tooltipParts.push(`${t('dividend_receivable')}: ${amountText}`);
-                        }
-                        const { closePriceText, yieldText } = getDividendCellDisplay(ev, { lang, verbose: true });
-                        tooltipParts.push(
-                          `${t('prev_close')}: ${closePriceText}`,
-                          `${t('current_yield')}: ${yieldText}`,
-                          `${t('dividend_date')}: ${ev.dividend_date || '-'}`,
-                          `${t('payment_date')}: ${ev.payment_date || '-'}`
-                        );
-                        const tooltip = tooltipParts.join('\n');
-                        const eventOpacity = hasAmountVariation
-                          ? 0.4 + 0.6 * Math.min(1, Math.max(0, amountValue) / maxEventAmount)
-                          : 1;
-                        return (
-                          <TooltipText key={j} tooltip={tooltip} style={{ display: 'block' }}>
-                            <div
-                              className={`event ${ev.type === 'ex' ? 'event-ex' : 'event-pay'}`}
-                              style={{ opacity: eventOpacity }}
-                            >
-                              {ev.stock_id}
-                            </div>
-                          </TooltipText>
-                        );
-                      })}
-                      {!expandedDates[d.dateStr] && d.events.length > 1 && (
+                      {d.events.length > 0 ? (
                         <button
                           type="button"
-                          className="more-btn"
-                          aria-expanded={false}
+                          className={`date-num${d.isToday ? ' today' : ''}`}
+                          aria-expanded={d.dateStr === selectedDate}
                           aria-label={lang === 'zh'
-                            ? `顯示 ${d.dateStr} 其餘 ${d.events.length - 1} 筆`
-                            : `Show ${d.events.length - 1} more events for ${d.dateStr}`}
-                          title={d.events.slice(1).map(ev => ev.stock_id).join(', ')}
-                          onClick={() => setExpandedDates(prev => ({ ...prev, [d.dateStr]: true }))}
+                            ? `${d.day} 日，${d.events.length} 筆股息事件，點擊查看明細`
+                            : `Day ${d.day}, ${d.events.length} dividend events, click for details`}
+                          onClick={() => setSelectedDate(prev => (prev === d.dateStr ? null : d.dateStr))}
                         >
-                          {lang === 'zh'
-                            ? `+${d.events.length - 1} 筆`
-                            : `+${d.events.length - 1} more`}
+                          {d.day}
                         </button>
+                      ) : (
+                        <span className={`date-num${d.isToday ? ' today' : ''}`}>{d.day}</span>
                       )}
-                      {expandedDates[d.dateStr] && d.events.length > 1 && (
-                        <button
-                          type="button"
-                          className="more-btn"
-                          aria-expanded={true}
-                          aria-label={lang === 'zh'
-                            ? `收合 ${d.dateStr} 其他項目`
-                            : `Hide additional events for ${d.dateStr}`}
-                          onClick={() => setExpandedDates(prev => ({ ...prev, [d.dateStr]: false }))}
-                        >
-                          {t('hide')}-
-                        </button>
+                      {d.events.length > 0 && (
+                        <div className="calendar-dots">
+                          {d.events.slice(0, MAX_VISIBLE_DOTS).map((ev, j) => (
+                            <TooltipText key={j} tooltip={buildEventTooltip(ev)}>
+                              <span
+                                className={`calendar-dot ${ev.type === 'ex' ? 'calendar-dot--ex' : 'calendar-dot--pay'}`}
+                                aria-hidden="true"
+                              />
+                            </TooltipText>
+                          ))}
+                          {d.events.length > MAX_VISIBLE_DOTS && (
+                            <span className="calendar-dot-more" aria-hidden="true">
+                              +{d.events.length - MAX_VISIBLE_DOTS}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
@@ -299,6 +309,64 @@ export default function DividendCalendar({
         </tbody>
       </table>
       </div>
+      {selectedDate && (
+        <div className="calendar-day-detail">
+          <div className="calendar-day-detail__header">
+            <strong>{selectedDateLabel}</strong>
+            <button
+              type="button"
+              className="calendar-day-detail__close"
+              onClick={() => setSelectedDate(null)}
+              aria-label={lang === 'zh' ? '關閉明細' : 'Close details'}
+            >
+              ✕
+            </button>
+          </div>
+          {selectedDayEvents.length === 0 ? (
+            <p className="calendar-day-detail__empty">
+              {lang === 'zh' ? '這天沒有股息事件' : 'No dividend events on this day'}
+            </p>
+          ) : (
+            <ul className="calendar-day-detail__list">
+              {selectedDayEvents.map((ev, idx) => {
+                const currencyCode = ev.currency || DEFAULT_CURRENCY;
+                const currencySymbol = currencyCode === 'USD' ? 'US$' : 'NT$';
+                const currencyUnitZh = currencyCode === 'USD' ? '美元' : '元';
+                const amountValue = Number(ev.amount);
+                const amountFormatted = formatEventAmount(currencyCode, amountValue, {
+                  hasQuantity: ev.quantity != null,
+                });
+                const amountText = lang === 'en'
+                  ? `${amountFormatted} ${currencySymbol}`
+                  : `${amountFormatted} ${currencyUnitZh}`;
+                const perShareText = receivableAsPerShare
+                  ? amountText
+                  : lang === 'en'
+                    ? `${currencySymbol}${ev.dividend}`
+                    : `${ev.dividend} ${currencyUnitZh}`;
+                return (
+                  <li
+                    key={`${ev.stock_id}-${ev.type}-${idx}`}
+                    className={`calendar-day-detail__item calendar-day-detail__item--${ev.type}`}
+                  >
+                    <span
+                      className={`calendar-dot ${ev.type === 'ex' ? 'calendar-dot--ex' : 'calendar-dot--pay'}`}
+                      aria-hidden="true"
+                    />
+                    <span className="calendar-day-detail__type">
+                      {ev.type === 'ex' ? t('ex_dividend_date') : t('payment_date')}
+                    </span>
+                    <span className="calendar-day-detail__stock">{ev.stock_id}</span>
+                    <span className="calendar-day-detail__amount">
+                      {receivableAsPerShare ? perShareText : amountText}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1168,33 +1168,91 @@ button:active {
   right: 4px;
   color: var(--color-text);
   font-size: 14px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
 }
-.event {
+button.date-num {
+  cursor: pointer;
+}
+button.date-num:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.calendar-cell--selected {
+  background: var(--gold-soft);
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+}
+.calendar-dots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
   margin-top: 18px;
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: var(--color-text-on-accent, #fff);
-  border-bottom: 1px dotted rgba(255, 255, 255, 0.5);
-  cursor: help;
-  overflow: hidden;
-  white-space: nowrap;
+  flex-wrap: wrap;
 }
-.event-ex {
+.calendar-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.calendar-dot--ex {
   background: var(--terracotta);
 }
-.event-pay {
+.calendar-dot--pay {
   background: var(--sage);
 }
-.more-btn {
-  margin-top: 4px;
-  font-size: 12px;
-  padding: 4px 8px;
-  background: var(--color-btn-secondary-bg, #f0f0f0);
-  border: 1px solid var(--color-border, #ddd);
-  border-radius: 4px;
-  color: #333;
+.calendar-dot-more {
+  font-size: 10px;
+  color: var(--color-text);
+}
+.calendar-day-detail {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-card-bg);
+}
+.calendar-day-detail__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.calendar-day-detail__close {
+  background: none;
+  border: none;
   cursor: pointer;
+  font-size: 14px;
+  color: var(--color-text);
+}
+.calendar-day-detail__empty {
+  font-size: 14px;
+  color: var(--color-text);
+  margin: 0;
+}
+.calendar-day-detail__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.calendar-day-detail__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.calendar-day-detail__type {
+  font-weight: 600;
+  min-width: 3.5em;
+}
+.calendar-day-detail__stock {
+  flex: 1;
 }
 /* .inventory-tables {
   display: flex;
@@ -1225,15 +1283,14 @@ button:active {
     height: 60px;
   }
 
-  .event {
-    padding: 4px 4px;
-    min-height: 24px;
-    font-size: 11px;
+  .calendar-dot {
+    width: 10px;
+    height: 10px;
   }
 
-  .more-btn {
-    padding: 6px 8px;
+  button.date-num {
     min-height: 32px;
+    min-width: 32px;
   }
 
   .inventory-tables {

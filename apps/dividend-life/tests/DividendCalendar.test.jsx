@@ -1,5 +1,5 @@
 /* eslint-env jest */
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import DividendCalendar from '../src/components/DividendCalendar';
 
 test('displays monthly ex and pay totals', () => {
@@ -80,4 +80,75 @@ test('hides monthly totals when showTotals is false', () => {
   expect(
     screen.queryByText((_, element) => element.textContent && element.textContent.replace(/\s/g, '') === '發放金額:NT$200')
   ).not.toBeInTheDocument();
+});
+
+test('day cells show colored dots instead of stock-code text, capped at 3 with a +N overflow indicator', () => {
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const [year, month, day] = nowStr.split('-');
+  const dateStr = `${year}-${month}-${day}`;
+  const events = [
+    { date: dateStr, type: 'ex', stock_id: 'AAA', amount: 10 },
+    { date: dateStr, type: 'pay', stock_id: 'BBB', amount: 20 },
+    { date: dateStr, type: 'ex', stock_id: 'CCC', amount: 30 },
+    { date: dateStr, type: 'pay', stock_id: 'DDD', amount: 40 },
+  ];
+  const { container } = render(<DividendCalendar year={Number(year)} events={events} />);
+
+  expect(screen.queryByText('AAA')).not.toBeInTheDocument();
+  expect(screen.queryByText('BBB')).not.toBeInTheDocument();
+  expect(container.querySelectorAll('.calendar-dot').length).toBe(3);
+  expect(screen.getByText('+1')).toBeInTheDocument();
+});
+
+test('clicking a day with events opens a detail panel below the grid, listing that day\'s events', () => {
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const [year, month, day] = nowStr.split('-');
+  const dateStr = `${year}-${month}-${day}`;
+  const events = [
+    { date: dateStr, type: 'ex', stock_id: 'AAA', amount: 10, dividend: 0.5 },
+  ];
+  render(<DividendCalendar year={Number(year)} events={events} />);
+
+  expect(screen.queryByText('AAA', { selector: '.calendar-day-detail__stock' })).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(`${Number(day)} 日`) }));
+
+  expect(screen.getByText('AAA', { selector: '.calendar-day-detail__stock' })).toBeInTheDocument();
+});
+
+test('clicking the selected day again closes the detail panel', () => {
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const [year, month, day] = nowStr.split('-');
+  const dateStr = `${year}-${month}-${day}`;
+  const events = [{ date: dateStr, type: 'pay', stock_id: 'AAA', amount: 10, dividend: 0.5 }];
+  render(<DividendCalendar year={Number(year)} events={events} />);
+
+  const dayButton = screen.getByRole('button', { name: new RegExp(`${Number(day)} 日`) });
+  fireEvent.click(dayButton);
+  expect(screen.getByText('AAA', { selector: '.calendar-day-detail__stock' })).toBeInTheDocument();
+
+  fireEvent.click(dayButton);
+  expect(screen.queryByText('AAA', { selector: '.calendar-day-detail__stock' })).not.toBeInTheDocument();
+});
+
+test('a day with no events is not rendered as a clickable button', () => {
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const [year] = nowStr.split('-');
+  render(<DividendCalendar year={Number(year)} events={[]} />);
+  // No events anywhere this month: no day-number buttons should exist at all.
+  expect(screen.queryAllByRole('button', { name: /日，\d+ 筆股息事件/ }).length).toBe(0);
+});
+
+test('the selected date cell gets the gold selection class', () => {
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const [year, month, day] = nowStr.split('-');
+  const dateStr = `${year}-${month}-${day}`;
+  const events = [{ date: dateStr, type: 'ex', stock_id: 'AAA', amount: 10 }];
+  const { container } = render(<DividendCalendar year={Number(year)} events={events} />);
+
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(`${Number(day)} 日`) }));
+
+  const selectedCell = container.querySelector('.calendar-cell--selected');
+  expect(selectedCell).toBeInTheDocument();
+  expect(selectedCell.textContent).toContain(String(Number(day)));
 });
