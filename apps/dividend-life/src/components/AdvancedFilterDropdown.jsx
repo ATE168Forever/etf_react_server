@@ -2,8 +2,9 @@ import { useState, useRef } from 'react';
 import useClickOutside from './useClickOutside';
 import useReturnFocusOnUnmount from '../hooks/useReturnFocusOnUnmount';
 import { useLanguage } from '../i18n';
+import DisplayDropdown from './DisplayDropdown';
 
-export default function AdvancedFilterDropdown({ filters, setFilters, onClose, availableCurrencies = ['TWD', 'USD'] }) {
+export default function AdvancedFilterDropdown({ filters, setFilters, onClose, displayMode, onDisplayModeChange }) {
   const ref = useRef();
   useClickOutside(ref, onClose);
   useReturnFocusOnUnmount();
@@ -13,8 +14,7 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose, a
     minYield: filters.minYield || '',
     freq: filters.freq || [],
     upcomingWithin: filters.upcomingWithin || '',
-    diamond: filters.diamond || false,
-    currencies: filters.currencies || []
+    diamond: filters.diamond || false
   });
 
   const toggleFreq = (val) => {
@@ -24,17 +24,8 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose, a
     }));
   };
 
-  const toggleCurrency = (val) => {
-    setTemp(t => ({
-      ...t,
-      currencies: t.currencies.includes(val)
-        ? t.currencies.filter(c => c !== val)
-        : [...t.currencies, val]
-    }));
-  };
-
   const handleClear = () => {
-    setTemp({ minYield: '', freq: [], upcomingWithin: '', diamond: false, currencies: [] });
+    setTemp({ minYield: '', freq: [], upcomingWithin: '', diamond: false });
   };
 
   const handleApply = () => {
@@ -51,15 +42,13 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose, a
     { v: 1, zh: '年配', en: 'Annual' }
   ];
 
-  const normalizedCurrencies = Array.from(new Set((availableCurrencies || []).map(c => c.toUpperCase())));
-  const currencyOptions = normalizedCurrencies.length > 0 ? normalizedCurrencies : ['TWD', 'USD'];
-  const currencyLabels = {
-    TWD: lang === 'en' ? 'TWD' : '台幣',
-    USD: lang === 'en' ? 'USD' : '美金'
-  };
-
   return (
     <div className="dropdown advanced-dropdown" ref={ref}>
+      <div className="dropdown-section advanced-dropdown__section">
+        <span className="advanced-dropdown__label">{lang === 'en' ? 'Display mode' : '顯示模式'}</span>
+        <DisplayDropdown displayMode={displayMode} onModeChange={onDisplayModeChange} />
+      </div>
+      <hr />
       <div className="dropdown-section advanced-dropdown__section">
         <span className="advanced-dropdown__label">{lang === 'en' ? 'Estimated yield ≥' : '預估殖利率 ≥'}</span>
         <div className="advanced-dropdown__input-row">
@@ -91,29 +80,13 @@ export default function AdvancedFilterDropdown({ filters, setFilters, onClose, a
       </div>
       <hr />
       <div className="dropdown-section advanced-dropdown__section">
-        <span className="advanced-dropdown__label">{lang === 'en' ? 'Currency' : '幣別'}</span>
-        <div className="advanced-dropdown__freq-grid">
-          {currencyOptions.map(code => (
-            <label key={code} className="dropdown-item advanced-dropdown__checkbox">
-              <input
-                type="checkbox"
-                checked={temp.currencies.includes(code)}
-                onChange={() => toggleCurrency(code)}
-              />
-              <span>{currencyLabels[code] || code}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-      <hr />
-      <div className="dropdown-section advanced-dropdown__section">
         <label className="dropdown-item advanced-dropdown__checkbox">
           <input
             type="checkbox"
             checked={temp.diamond}
             onChange={e => setTemp({ ...temp, diamond: e.target.checked })}
           />
-          <span>{lang === 'en' ? 'Show only diamonds' : '只顯示鑽石'}</span>
+          <span>{lang === 'en' ? 'Show high-yield only' : '只顯示殖利率偏高標的'}</span>
         </label>
       </div>
       <hr />

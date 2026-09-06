@@ -2492,6 +2492,11 @@ button.metric-card:focus-visible {
   width: 0; /* flex: 1 grows it to fill; override natural content width */
 }
 
+.filter-bar__item--search {
+  flex: 1 1 160px;
+  min-width: 140px;
+}
+
 .filter-bar__item--scope,
 .filter-bar__item--currency {
   flex: 1 1 0;
@@ -2564,6 +2569,22 @@ button.metric-card:focus-visible {
 }
 
 .filter-bar__select:focus {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 1px;
+}
+
+.filter-bar__search-input {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  min-width: 140px;
+  width: 100%;
+}
+
+.filter-bar__search-input:focus {
   outline: 2px solid var(--accent-gold);
   outline-offset: 1px;
 }

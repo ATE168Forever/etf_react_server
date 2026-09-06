@@ -3,7 +3,6 @@ import { LanguageContext, translations } from './i18n';
 import { ToastProvider } from './Toast';
 import { useToast } from './useToast';
 import HomeTab from './HomeTab';
-import DisplayDropdown from './components/DisplayDropdown';
 import DividendCalendar from './components/DividendCalendar';
 import StockTable from './components/StockTable';
 import Footer from '@shared/components/Footer/Footer.jsx';
@@ -151,6 +150,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   } = useDividendData({ dividendScope, setDividendScope, transactionHistory: effectiveTransactions, transactionHistoryLoaded });
 
   const [exploreScope, setExploreScope] = useState('all');
+  const [exploreSearchText, setExploreSearchText] = useState('');
   const [hasVisitedExploreTab, setHasVisitedExploreTab] = useState(tab === 'dividend');
 
   useEffect(() => {
@@ -201,7 +201,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
 
     // Multi-select filters
     const [selectedStockIds, setSelectedStockIds] = useState([]);
-    const [extraFilters, setExtraFilters] = useState({ minYield: '', freq: [], upcomingWithin: '', diamond: false, currencies: [] });
+    const [extraFilters, setExtraFilters] = useState({ minYield: '', freq: [], upcomingWithin: '', diamond: false });
 
   // Display toggles
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -290,7 +290,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       if (!keepIds) setSelectedStockIds([]);
       setMonthHasValue(Array(12).fill(false));
       setShowAllStocks(false);
-      setExtraFilters({ minYield: '', freq: [], upcomingWithin: '', diamond: false, currencies: [] });
+      setExtraFilters({ minYield: '', freq: [], upcomingWithin: '', diamond: false });
       setShowAdvancedFilters(false);
   }, []);
 
@@ -365,6 +365,12 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const canSelectPurchased = purchasedStockIds.length > 0;
 
   const filteredStocks = useMemo(() => exploreStocks.filter(stock => {
+    if (exploreSearchText.trim()) {
+      const query = exploreSearchText.trim().toLowerCase();
+      const matchesId = stock.stock_id.toLowerCase().includes(query);
+      const matchesName = (stock.stock_name || '').toLowerCase().includes(query);
+      if (!matchesId && !matchesName) return false;
+    }
     if (selectedStockIds.length && !selectedStockIds.includes(stock.stock_id)) return false;
 
     // Check if this is a purchased stock with no dividend data
@@ -384,16 +390,11 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       if (!stockCurrencies.includes(viewMode)) return false;
     }
 
-    if (extraFilters.currencies.length) {
-      const stockCurrencies = exploreStockCurrencyMap[stock.stock_id] || [];
-      if (!extraFilters.currencies.some(currency => stockCurrencies.includes(currency))) return false;
-    }
-
     for (let m = 0; m < 12; ++m) {
       if (!monthHasValue[m]) continue;
       const monthEntry = exploreDividendTable[stock.stock_id]?.[m];
       if (!monthEntry) return false;
-      const currenciesToCheck = (extraFilters.currencies.length ? extraFilters.currencies : activeCurrencies);
+      const currenciesToCheck = activeCurrencies;
       const hasMatch = currenciesToCheck.some(currency => Boolean(monthEntry?.[currency]));
       if (!hasMatch) return false;
     }
@@ -401,7 +402,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     if (extraFilters.freq.length || extraFilters.minYield || extraFilters.upcomingWithin) {
       const { freq: freqFilters, minYield, upcomingWithin } = extraFilters;
       if (freqFilters.length && !freqFilters.includes(exploreFreqMap[stock.stock_id])) return false;
-      const currenciesToCheck = (extraFilters.currencies.length ? extraFilters.currencies : activeCurrencies);
+      const currenciesToCheck = activeCurrencies;
       if (minYield) {
         let total = 0;
         let count = 0;
@@ -448,7 +449,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       }
     }
     return true;
-  }), [exploreStocks, selectedStockIds, exploreScope, purchasedStockIds, exploreDividendTable, monthHasValue, viewMode, exploreStockCurrencyMap, extraFilters, activeCurrencies, exploreFreqMap]);
+  }), [exploreStocks, selectedStockIds, exploreScope, purchasedStockIds, exploreDividendTable, monthHasValue, viewMode, exploreStockCurrencyMap, extraFilters, activeCurrencies, exploreFreqMap, exploreSearchText]);
 
   const maxYieldPerMonth = useMemo(() => {
     const currenciesForMax = exploreAvailableCurrencies.length > 0 ? exploreAvailableCurrencies : [DEFAULT_CURRENCY];
@@ -477,7 +478,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         for (let m = 0; m < 12; m++) {
           const monthEntry = exploreDividendTable[stock.stock_id]?.[m];
           if (!monthEntry) continue;
-          const currenciesToCheck = (extraFilters.currencies.length ? extraFilters.currencies : activeCurrencies);
+          const currenciesToCheck = activeCurrencies;
           const hasDiamond = currenciesToCheck.some(currency => {
             const cell = monthEntry?.[currency];
             if (!cell) return false;
@@ -490,7 +491,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
         return false;
       })
     : filteredStocks,
-  [extraFilters.diamond, extraFilters.currencies, filteredStocks, exploreDividendTable, activeCurrencies, maxYieldPerMonth]);
+  [extraFilters.diamond, filteredStocks, exploreDividendTable, activeCurrencies, maxYieldPerMonth]);
 
   const {
     totalPerStock,
@@ -584,7 +585,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     .filter(item => {
       if (selectedStockIds.length && !selectedStockIds.includes(item.stock_id)) return false;
       const currency = item.currency || DEFAULT_CURRENCY;
-      if (extraFilters.currencies.length && !extraFilters.currencies.includes(currency)) return false;
       if (!activeCurrencies.includes(currency)) return false;
       return true;
     })
@@ -634,7 +634,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       }
       return arr;
     }),
-  [exploreFilteredData, selectedStockIds, extraFilters.currencies, activeCurrencies]);
+  [exploreFilteredData, selectedStockIds, activeCurrencies]);
 
   const filteredCalendarEvents = useMemo(() => calendarEvents.filter(ev =>
     calendarFilter === 'both' || ev.type === calendarFilter
@@ -800,6 +800,19 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
 
                 {/* Row 1: primary selectors */}
                 <div className="filter-bar__row filter-bar__row--primary">
+                  <div className="filter-bar__item filter-bar__item--search">
+                    <label htmlFor="filter-search" className="filter-bar__label">
+                      {lang === 'en' ? 'Search' : '搜尋'}
+                    </label>
+                    <input
+                      id="filter-search"
+                      type="search"
+                      className="filter-bar__search-input"
+                      value={exploreSearchText}
+                      onChange={e => setExploreSearchText(e.target.value)}
+                      placeholder={lang === 'en' ? 'ETF code or name' : 'ETF 代號或名稱'}
+                    />
+                  </div>
                   <div className="filter-bar__item">
                     <label htmlFor="filter-year" className="filter-bar__label">
                       {lang === 'en' ? 'Year' : '年份'}
@@ -897,14 +910,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                       : (lang === 'en' ? 'Show Calendar' : '顯示月曆')}
                   </button>
 
-                  <label className="filter-bar__display-label">
-                    {lang === 'en' ? 'Display:' : '顯示：'}
-                    <DisplayDropdown
-                      displayMode={displayMode}
-                      onModeChange={handleDisplayModeChange}
-                    />
-                  </label>
-
                   <div className="filter-bar__action-wrap">
                     <button
                       type="button"
@@ -920,7 +925,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                         filters={extraFilters}
                         setFilters={setExtraFilters}
                         onClose={() => setShowAdvancedFilters(false)}
-                        availableCurrencies={exploreAvailableCurrencies}
+                        displayMode={displayMode}
+                        onDisplayModeChange={handleDisplayModeChange}
                       />
                     )}
                   </div>
