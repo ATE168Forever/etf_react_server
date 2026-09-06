@@ -26,6 +26,7 @@ import SummaryHero from './components/SummaryHero';
 import MonthlyIncomeCard from './components/MonthlyIncomeCard';
 import CoverageProgress from './components/CoverageProgress';
 import NextPaymentCard from './components/NextPaymentCard';
+import AddToCalendarButton from './components/AddToCalendarButton';
 import CashflowChart from './components/CashflowChart';
 import InsightCard from './components/InsightCard';
 import EmptyPortfolioState from './components/EmptyPortfolioState';
@@ -767,7 +768,11 @@ export default function HomeTab({
             t={t}
             onLivingCostSaved={setMonthlyLivingCost}
           />
-          <NextPaymentCard nextPayment={nextPayment} t={t} />
+          <NextPaymentCard
+            nextPayment={nextPayment}
+            t={t}
+            calendarAction={nextPayment ? <AddToCalendarButton nextPayment={nextPayment} lang={lang} t={t} /> : null}
+          />
           <CashflowChart months={futureCashflow.months} lang={lang} t={t} />
           <InsightCard
             achievementLabel={goalEmptyState ? null : (achievementMetric ? achievementMetric.value : null)}
