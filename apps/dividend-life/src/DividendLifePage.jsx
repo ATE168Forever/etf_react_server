@@ -207,6 +207,57 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showAllStocks, setShowAllStocks] = useState(false);
 
+  // Filter bar auto-collapse on scroll (mobile only): shrinks the sticky
+  // filter bar to a one-line summary once the page scrolls past a small
+  // threshold, so more of the stock list stays visible. Manually expanding
+  // it (tap) disables auto-collapse until the user scrolls back to the top
+  // or manually collapses it again.
+  const [filterBarCollapsed, setFilterBarCollapsed] = useState(false);
+  const filterBarAutoCollapseRef = useRef(true);
+  const [isMobileFilterBarViewport, setIsMobileFilterBarViewport] = useState(
+    () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(max-width: 600px)').matches
+      : false
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
+    const mq = window.matchMedia('(max-width: 600px)');
+    const handleChange = (event) => setIsMobileFilterBarViewport(event.matches);
+    mq.addEventListener('change', handleChange);
+    return () => mq.removeEventListener('change', handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (tab !== 'dividend' || !isMobileFilterBarViewport) {
+      setFilterBarCollapsed(false);
+      return undefined;
+    }
+    const COLLAPSE_SCROLL_THRESHOLD = 48;
+    const handleScroll = () => {
+      if (window.scrollY <= COLLAPSE_SCROLL_THRESHOLD) {
+        filterBarAutoCollapseRef.current = true;
+        setFilterBarCollapsed(false);
+        return;
+      }
+      if (filterBarAutoCollapseRef.current) {
+        setFilterBarCollapsed(true);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [tab, isMobileFilterBarViewport]);
+
+  const handleExpandFilterBar = () => {
+    filterBarAutoCollapseRef.current = false;
+    setFilterBarCollapsed(false);
+  };
+
+  const handleCollapseFilterBar = () => {
+    filterBarAutoCollapseRef.current = true;
+    setFilterBarCollapsed(true);
+  };
+
   // Theme
   const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem('theme');
@@ -798,6 +849,19 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
               <ErrorBoundary lang={lang}>
               {/* ── FILTER BAR ── */}
               <div className="filter-bar">
+              {filterBarCollapsed ? (
+                <button
+                  type="button"
+                  className="filter-bar__collapsed-summary"
+                  onClick={handleExpandFilterBar}
+                  aria-expanded={false}
+                >
+                  <span aria-hidden="true">⚙</span>
+                  {lang === 'en' ? `Filters (${exploreSelectedYear})` : `篩選（${exploreSelectedYear}）`}
+                  <span aria-hidden="true">▾</span>
+                </button>
+              ) : (
+                <>
 
                 {/* Row 1: primary selectors */}
                 <div className="filter-bar__row filter-bar__row--primary">
@@ -940,6 +1004,16 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                     {lang === 'en' ? '↺ Reset' : '↺ 重置'}
                   </button>
 
+                  {isMobileFilterBarViewport && (
+                    <button
+                      type="button"
+                      className="filter-bar__action-btn filter-bar__collapse-btn"
+                      onClick={handleCollapseFilterBar}
+                    >
+                      {lang === 'en' ? '▲ Collapse' : '▲ 收合'}
+                    </button>
+                  )}
+
                   {exploreDividendCacheInfo && (() => {
                     const ts = exploreDividendCacheInfo.timestamp ? new Date(exploreDividendCacheInfo.timestamp) : null;
                     const minutesAgo = ts ? Math.floor((Date.now() - ts.getTime()) / 60000) : null;
@@ -959,6 +1033,8 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                     );
                   })()}
                 </div>
+                </>
+              )}
               </div>
 
               {/* ── CALENDAR PANEL ── */}

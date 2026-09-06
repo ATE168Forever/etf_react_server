@@ -2697,6 +2697,30 @@ button.metric-card:focus-visible {
   border-radius: 12px;
 }
 
+.filter-bar__collapsed-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 4px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.filter-bar__collapsed-summary:hover,
+.filter-bar__collapsed-summary:focus-visible {
+  color: var(--color-text);
+}
+
+.filter-bar__collapsed-summary:focus-visible {
+  outline: 2px solid var(--accent-gold, #d4af37);
+  outline-offset: 2px;
+}
+
 /* Row 1: primary selectors */
 .filter-bar__row {
   display: flex;
