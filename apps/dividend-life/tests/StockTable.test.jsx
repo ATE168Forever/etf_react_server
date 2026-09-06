@@ -200,6 +200,23 @@ test('the card totals row labels the accumulated yield when the yield display mo
   expect(body).toHaveTextContent('已累積殖利率');
 });
 
+test('a month with no dividend shows a no-dividend hint next to the month label', () => {
+  const noData = buildDividendTable()[STOCK_ID].map((cell, idx) => (idx === 5 ? {} : cell));
+  const { container } = renderWithLang({
+    currentMonth: 5,
+    dividendTable: { [STOCK_ID]: noData },
+  });
+
+  const monthRow = container.querySelector('.stock-card .stock-card__month');
+  expect(monthRow).toHaveTextContent('無配息');
+});
+
+test('a month with dividend data does not show the no-dividend hint', () => {
+  const { container } = renderWithLang();
+  const monthRow = container.querySelector('.stock-card .stock-card__month');
+  expect(monthRow).not.toHaveTextContent('無配息');
+});
+
 test('the desktop table total cell is not labeled -- these labels are card-only', () => {
   const { container } = renderWithLang({
     estAnnualYield: { [STOCK_ID]: { TWD: 8 } },

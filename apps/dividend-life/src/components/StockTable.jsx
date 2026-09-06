@@ -1033,29 +1033,39 @@ const StockCard = memo(function StockCard({
       </div>
       {visibleMonthIndices.length > 0 && (
         <ul className="stock-card__months">
-          {visibleMonthIndices.map(idx => (
-            <li
-              key={idx}
-              className={idx === currentMonth ? 'stock-card__month stock-card__month--current' : 'stock-card__month'}
-            >
-              <span>{months[idx]}</span>
-              <span className="stock-card__month-values">
-                {activeCurrencies.map(currency => {
-                  const annualizedYield = getMonthPerYield(stock.stock_id, idx, currency) * 12;
-                  return (
-                    <span key={currency}>
-                      {currencyLabelFor(currency)}{formatMonthValue(getMonthValue(stock.stock_id, idx, currency))}
-                      {!showPerYield && annualizedYield > 0 && (
-                        <span className="stock-card__month-yield">
-                          {' '}· {t('annualized_yield')} {annualizedYield.toFixed(1)}%
-                        </span>
-                      )}
-                    </span>
-                  );
-                })}
-              </span>
-            </li>
-          ))}
+          {visibleMonthIndices.map(idx => {
+            const hasAnyValue = activeCurrencies.some(
+              currency => getMonthValue(stock.stock_id, idx, currency) > 0
+            );
+            return (
+              <li
+                key={idx}
+                className={idx === currentMonth ? 'stock-card__month stock-card__month--current' : 'stock-card__month'}
+              >
+                <span>
+                  {months[idx]}
+                  {!hasAnyValue && (
+                    <span className="stock-card__month-nodata"> · {t('no_dividend_this_month')}</span>
+                  )}
+                </span>
+                <span className="stock-card__month-values">
+                  {activeCurrencies.map(currency => {
+                    const annualizedYield = getMonthPerYield(stock.stock_id, idx, currency) * 12;
+                    return (
+                      <span key={currency}>
+                        {currencyLabelFor(currency)}{formatMonthValue(getMonthValue(stock.stock_id, idx, currency))}
+                        {!showPerYield && annualizedYield > 0 && (
+                          <span className="stock-card__month-yield">
+                            {' '}· {t('annualized_yield')} {annualizedYield.toFixed(1)}%
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
     </li>

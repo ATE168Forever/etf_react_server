@@ -390,6 +390,12 @@ td {
   font-weight: 400;
 }
 
+.stock-card__month-nodata {
+  color: var(--color-text-muted);
+  font-weight: 400;
+  font-size: 0.75rem;
+}
+
 .stock-card__month--current {
   font-weight: 700;
 }
