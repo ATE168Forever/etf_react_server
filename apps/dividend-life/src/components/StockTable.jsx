@@ -49,6 +49,7 @@ export default function StockTable({
   const [idDropdownPosition, setIdDropdownPosition] = useState(null);
   const [visibleCount, setVisibleCount] = useState(DEFAULT_VISIBLE_COUNT);
   const [expandMonths, setExpandMonths] = useState(false);
+  const [showRecentMonths, setShowRecentMonths] = useState(false);
   const tableContainerRef = useRef(null);
   const idFilterButtonRef = useRef(null);
   const { lang, t } = useLanguage();
@@ -66,15 +67,19 @@ export default function StockTable({
         : { 1: 'Annual', 2: 'Semi-annual', 4: 'Quarterly', 6: 'Bimonthly', 12: 'Monthly', 52: 'Weekly' },
     [lang]
   );
-  // Collapsed view: show 3 months around currentMonth
+  // Default: current month only. "Show recent 3 months" adds the prior 2.
+  // "Expand all months" (unchanged, pre-existing feature) shows the full year.
   const visibleMonthIndices = useMemo(() => {
     if (expandMonths) return Array.from({ length: 12 }, (_, i) => i);
-    const indices = [];
-    for (let offset = -2; offset <= 0; offset++) {
-      indices.push(((currentMonth + offset) + 12) % 12);
+    if (showRecentMonths) {
+      const indices = [];
+      for (let offset = -2; offset <= 0; offset++) {
+        indices.push(((currentMonth + offset) + 12) % 12);
+      }
+      return indices.sort((a, b) => a - b);
     }
-    return indices.sort((a, b) => a - b);
-  }, [expandMonths, currentMonth]);
+    return [currentMonth];
+  }, [expandMonths, showRecentMonths, currentMonth]);
 
   usePreserveScroll(tableContainerRef, 'stockTableScrollLeft', [showInfoAxis]);
 
@@ -379,6 +384,21 @@ export default function StockTable({
     <>
       <div className="display-mode-indicator">
         {lang === 'zh' ? '顯示模式' : 'Display Mode'}: <strong>{displayModeLabel}</strong>
+        {!expandMonths && (
+          <button
+            type="button"
+            className="month-expand-btn"
+            onClick={() => setShowRecentMonths(v => !v)}
+            aria-pressed={showRecentMonths}
+            aria-label={showRecentMonths
+              ? (lang === 'zh' ? '收合為本月' : 'Collapse to current month')
+              : (lang === 'zh' ? '顯示近3月比較' : 'Show recent 3 months')}
+          >
+            {showRecentMonths
+              ? (lang === 'zh' ? '收合為本月 ▲' : 'Collapse ▲')
+              : (lang === 'zh' ? '顯示近3月比較 ▼' : 'Show recent 3 months ▼')}
+          </button>
+        )}
         <button
           type="button"
           className="month-expand-btn"
