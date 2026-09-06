@@ -286,7 +286,11 @@ export default function DividendCalendar({
                       {d.events.length > 0 && (
                         <div className="calendar-dots">
                           {d.events.slice(0, MAX_VISIBLE_DOTS).map((ev, j) => (
-                            <TooltipText key={j} tooltip={buildEventTooltip(ev)}>
+                            <TooltipText
+                              key={j}
+                              tooltip={buildEventTooltip(ev)}
+                              ariaLabel={`${ev.stock_id} ${ev.type === 'ex' ? t('ex_dividend_date') : t('payment_date')}`}
+                            >
                               <span
                                 className={`calendar-dot ${ev.type === 'ex' ? 'calendar-dot--ex' : 'calendar-dot--pay'}`}
                                 aria-hidden="true"

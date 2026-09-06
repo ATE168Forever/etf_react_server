@@ -71,7 +71,8 @@ export default function TooltipText({
   children,
   className = '',
   style = {},
-  breakpoint = DEFAULT_BREAKPOINT
+  breakpoint = DEFAULT_BREAKPOINT,
+  ariaLabel
 }) {
   const [isMobile, setIsMobile] = useState(() => getMatches(`(max-width: ${breakpoint}px)`));
   const [open, setOpen] = useState(false);
@@ -216,6 +217,7 @@ export default function TooltipText({
       title={isMobile ? undefined : tooltip}
       role={isMobile ? 'button' : undefined}
       tabIndex={0}
+      aria-label={ariaLabel || undefined}
       aria-expanded={isMobile ? open : undefined}
       onClick={toggle}
       onKeyDown={handleKeyDown}

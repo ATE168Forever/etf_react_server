@@ -152,3 +152,19 @@ test('the selected date cell gets the gold selection class', () => {
   expect(selectedCell).toBeInTheDocument();
   expect(selectedCell.textContent).toContain(String(Number(day)));
 });
+
+test('each dot has a short accessible name identifying the stock and event type', () => {
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const [year, month, day] = nowStr.split('-');
+  const dateStr = `${year}-${month}-${day}`;
+  const events = [
+    { date: dateStr, type: 'ex', stock_id: 'AAA', amount: 10 },
+    { date: dateStr, type: 'pay', stock_id: 'BBB', amount: 20 },
+  ];
+  const { container } = render(<DividendCalendar year={Number(year)} events={events} />);
+
+  const dots = container.querySelectorAll('.calendar-dot');
+  expect(dots.length).toBe(2);
+  expect(dots[0].closest('.tooltip-text')).toHaveAttribute('aria-label', 'AAA 除息日');
+  expect(dots[1].closest('.tooltip-text')).toHaveAttribute('aria-label', 'BBB 發放日');
+});
