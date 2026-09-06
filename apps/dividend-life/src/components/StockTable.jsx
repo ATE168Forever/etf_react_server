@@ -938,7 +938,7 @@ const StockCard = memo(function StockCard({
       <div className="stock-card__body">
         {totalsContent.length > 0 ? totalsContent : null}
       </div>
-      {visibleMonthIndices.length > 1 && (
+      {visibleMonthIndices.length > 0 && (
         <ul className="stock-card__months">
           {visibleMonthIndices.map(idx => (
             <li
