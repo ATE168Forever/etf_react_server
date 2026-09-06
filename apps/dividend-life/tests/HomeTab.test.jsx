@@ -160,6 +160,33 @@ test('shows the next payment empty message when no payment is announced', async 
   expect(await screen.findByText(translations.zh.next_payment_empty)).toBeInTheDocument();
 });
 
+test('shows an "Add to calendar" button when a payment is announced', async () => {
+  readTransactionHistory.mockReturnValue([
+    { stock_id: '0050', date: '2023-01-01', type: 'buy', quantity: 1000 }
+  ]);
+  const futurePaymentDate = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 5);
+    return d.toISOString().slice(0, 10);
+  })();
+  fetchDividendsByYears.mockResolvedValue({
+    data: [
+      {
+        stock_id: '0050',
+        stock_name: '元大台灣50',
+        dividend_date: `${currentYear}-01-10`,
+        payment_date: futurePaymentDate,
+        dividend: 1,
+        last_close_price: 20,
+      },
+    ],
+  });
+  renderWithLang();
+  expect(
+    await screen.findByRole('button', { name: new RegExp(translations.zh.next_payment_add_to_calendar) })
+  ).toBeInTheDocument();
+});
+
 test('still renders the existing investment goals card below the new Phase 2 content', async () => {
   // Phase 2 "no holdings" content is EmptyPortfolioState, which already
   // covers the same message as the goal-empty invite card — so the invite
