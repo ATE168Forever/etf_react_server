@@ -292,6 +292,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       setShowAllStocks(false);
       setExtraFilters({ minYield: '', freq: [], upcomingWithin: '', diamond: false });
       setShowAdvancedFilters(false);
+      setExploreSearchText('');
   }, []);
 
   // Watch groups hook
