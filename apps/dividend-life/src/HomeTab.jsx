@@ -39,7 +39,7 @@ const VIEWBOX_WIDTH = 720;
 const VIEWBOX_HEIGHT = 280;
 const CHART_PADDING = { top: 24, right: 24, bottom: 38, left: 56 };
 const BAR_COLOR = 'var(--accent-gold, #d4af37)';
-const LINE_COLOR = 'var(--color-primary, #7c99ff)';
+const LINE_COLOR = 'var(--ink, #2d2a22)';
 const AXIS_COLOR = 'var(--color-border, rgba(160, 169, 199, 0.3))';
 const TEXT_COLOR = 'var(--color-text-muted, #a3aed0)';
 

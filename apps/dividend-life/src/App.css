@@ -968,7 +968,7 @@ td {
 .legend-line {
   width: 24px;
   height: 0;
-  border-top: 3px solid var(--color-primary, #7c99ff);
+  border-top: 3px solid var(--ink, #2d2a22);
   display: inline-block;
 }
 
