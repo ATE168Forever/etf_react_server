@@ -5,6 +5,7 @@ import { fetchDividendsByYears } from './dividendApi';
 import { useLanguage } from './i18n';
 import { readTransactionHistory } from './utils/transactionStorage';
 import { separateLabelYs } from './utils/chartLabelLayout';
+import { getVisibleMonthCount } from './utils/chartVisibleMonths';
 import { summarizeInventory, getPurchasedStockIds } from './utils/inventoryUtils';
 import { loadInvestmentGoals } from './utils/investmentGoalsStorage';
 import InvestmentGoalCard from './components/InvestmentGoalCard';
@@ -63,12 +64,16 @@ function DividendChart({
   );
   const formatValue = (value) => numberFormatter.format(value);
 
-  const totalsArray = Array.isArray(data?.totals)
+  const rawTotalsArray = Array.isArray(data?.totals)
     ? data.totals.slice(0, 12)
     : [];
-  if (!totalsArray.length) {
+  if (!rawTotalsArray.length) {
     return <p className="chart-empty-msg">{t('dividend_chart_empty')}</p>;
   }
+  // Months after "now" in the current year are always empty/carried-forward
+  // placeholders (see getVisibleMonthCount) -- don't render them at all.
+  const visibleMonthCount = getVisibleMonthCount(rawTotalsArray.length, data?.year);
+  const totalsArray = rawTotalsArray.slice(0, visibleMonthCount);
 
   const safeLabels = labels.slice(0, totalsArray.length);
   const monthCount = safeLabels.length;
