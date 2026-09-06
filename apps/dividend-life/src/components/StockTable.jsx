@@ -705,20 +705,24 @@ const StockRow = memo(function StockRow({
         );
       }
       if (total <= 0 && annual <= 0) return null;
-      const tooltipText = lang === 'zh'
-        ? `目前已累積殖利率: ${yieldAccumulated.toFixed(1)}%`
-        : `Accumulated yield so far: ${yieldAccumulated.toFixed(1)}%`;
       const currencyAnnualMax = maxAnnualYield[currency] || 0;
       const shouldShowCrown =
         annual > 0 &&
         (currencyAnnualMax > 0
           ? Math.abs(annual - currencyAnnualMax) < 1e-6
           : true);
+      const tooltipText = shouldShowCrown
+        ? (lang === 'zh'
+            ? `目前已累積殖利率: ${yieldAccumulated.toFixed(1)}%\n${t('high_yield_disclaimer')}`
+            : `Accumulated yield so far: ${yieldAccumulated.toFixed(1)}%\n${t('high_yield_disclaimer')}`)
+        : (lang === 'zh'
+            ? `目前已累積殖利率: ${yieldAccumulated.toFixed(1)}%`
+            : `Accumulated yield so far: ${yieldAccumulated.toFixed(1)}%`);
       const annualContent = annual > 0 ? (
         <TooltipText tooltip={tooltipText}>
           {annual.toFixed(1)}%
           {shouldShowCrown && (
-            <span className="crown-icon" role="img" aria-label={lang === 'en' ? 'Highest annual yield' : '最高年度殖利率'}>👑</span>
+            <span className="high-yield-badge">{t('high_yield_badge')}</span>
           )}
         </TooltipText>
       ) : null;
@@ -759,6 +763,12 @@ const StockRow = memo(function StockRow({
             );
           }
           const perYield = cell.perYield || 0;
+          const monthMaxArray = maxYieldPerMonth?.[currency];
+          const monthMax = Array.isArray(monthMaxArray) ? (monthMaxArray[idx] || 0) : 0;
+          const shouldShowDiamond =
+            perYield > 0 &&
+            monthMax > 0 &&
+            Math.abs(perYield - monthMax) < 1e-6;
           const {
             isDividendValid,
             dividendText: displayDividend,
@@ -814,6 +824,9 @@ const StockRow = memo(function StockRow({
               `${t('payment_date')}: ${cell.payment_date || '-'}`
             );
           }
+          if (shouldShowDiamond) {
+            tooltipLines.push(t('high_yield_disclaimer'));
+          }
           const extraInfo = getIncomeGoalInfo(
             isDividendValid ? rawDividend : 0,
             price,
@@ -821,12 +834,6 @@ const StockRow = memo(function StockRow({
             freq || 12
           );
           const tooltip = `${tooltipLines.join('\n')}${extraInfo}`;
-          const monthMaxArray = maxYieldPerMonth?.[currency];
-          const monthMax = Array.isArray(monthMaxArray) ? (monthMaxArray[idx] || 0) : 0;
-          const shouldShowDiamond =
-            perYield > 0 &&
-            monthMax > 0 &&
-            Math.abs(perYield - monthMax) < 1e-6;
           return (
             <td
               key={`${stock.stock_id}-${idx}-${currency}`}
@@ -838,7 +845,7 @@ const StockRow = memo(function StockRow({
                   <span>
                     {displayVal}
                     {shouldShowDiamond && (
-                      <span className="diamond-icon" role="img" aria-label={lang === 'en' ? 'Highest monthly yield' : '當月最高殖利率'}>💎</span>
+                      <span className="high-yield-badge">{t('high_yield_badge')}</span>
                     )}
                   </span>
                 </div>

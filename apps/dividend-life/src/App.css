@@ -244,12 +244,15 @@ td {
   color: var(--color-error, #d62828) !important;
 }
 
-.crown-icon {
+.high-yield-badge {
   margin-left: 4px;
-}
-
-.diamond-icon {
-  margin-left: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .sortable {

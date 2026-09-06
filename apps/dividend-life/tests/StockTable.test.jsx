@@ -78,3 +78,32 @@ test('defaults to showing only the current month column, expands to 3 then to 12
   fireEvent.click(screen.getByRole('button', { name: /展開全部月份/ }));
   expect(container.querySelectorAll('.month-th-inner').length).toBe(12);
 });
+
+test('the annual-max stock shows a neutral high-yield badge with a disclaimer, not the old emoji badge', () => {
+  // estAnnualYield[STOCK_ID].TWD equals maxAnnualYield.TWD, which is the
+  // annual-max trigger condition (see StockTable.jsx's shouldShowCrown) that
+  // used to render the crown emoji badge.
+  const { container } = renderWithLang({
+    estAnnualYield: { [STOCK_ID]: { TWD: 8 } },
+    maxAnnualYield: { TWD: 8 },
+  });
+
+  // The removed emoji badges were the only elements in this component using
+  // role="img"; the new text badge carries no such role.
+  expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  expect(container.querySelector('.high-yield-badge')).toBeInTheDocument();
+  expect(screen.getAllByText('殖利率偏高').length).toBeGreaterThan(0);
+});
+
+test('the monthly-max stock shows a neutral high-yield badge, not the old emoji badge', () => {
+  // Every month cell's perYield (0.2, from buildDividendTable) equals
+  // maxYieldPerMonth.TWD[idx], which is the monthly-max trigger condition
+  // (see StockTable.jsx's shouldShowDiamond) that used to render the diamond
+  // emoji badge.
+  const { container } = renderWithLang({
+    maxYieldPerMonth: { TWD: Array(12).fill(0.2) },
+  });
+
+  expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  expect(container.querySelector('.high-yield-badge')).toBeInTheDocument();
+});
