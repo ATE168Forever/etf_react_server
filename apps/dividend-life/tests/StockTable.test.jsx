@@ -270,6 +270,19 @@ describe('mobile card sort control', () => {
     expect(container.querySelector('.stock-card-sort-direction')).toBeInTheDocument();
   });
 
+  test('the sort options use unambiguous labels, including the month for month-specific metrics', () => {
+    // buildDefaultProps sets currentMonth: 3, i.e. '4月'.
+    const { container } = renderWithLang(twoStockProps);
+    const options = Array.from(container.querySelector('#stock-card-sort-select').options)
+      .map(o => o.textContent);
+
+    expect(options).toContain('4月配息金額');
+    expect(options).toContain('全年預估殖利率');
+    expect(options).toContain('年化殖利率（4月）');
+    // The old bare-month-name label was the ambiguous one being fixed.
+    expect(options).not.toContain('4月');
+  });
+
   test('the sort select does not render in the desktop table view', () => {
     // isCardViewport is set once from matchMedia at mount time (see the
     // dedicated viewport-gate tests above for the table/card-list
