@@ -83,16 +83,36 @@ test('the annual-max stock shows a neutral high-yield badge with a disclaimer, n
   // estAnnualYield[STOCK_ID].TWD equals maxAnnualYield.TWD, which is the
   // annual-max trigger condition (see StockTable.jsx's shouldShowCrown) that
   // used to render the crown emoji badge.
+  //
+  // The default fixture's maxYieldPerMonth (0.2 for every month) happens to
+  // equal buildDividendTable's per-cell perYield (also 0.2), which would
+  // independently satisfy the *monthly*-max ("diamond") condition too. Since
+  // both conditions render the identical .high-yield-badge markup, this test
+  // must neutralize that condition explicitly — otherwise it would still
+  // pass even if the crown-specific code path were completely broken.
+  // Overriding maxYieldPerMonth to a value that does NOT match 0.2 makes
+  // shouldShowDiamond false, so any badge found here can only have come
+  // from the annual-max ("crown") path.
   const { container } = renderWithLang({
     estAnnualYield: { [STOCK_ID]: { TWD: 8 } },
     maxAnnualYield: { TWD: 8 },
+    maxYieldPerMonth: { TWD: Array(12).fill(0.9) },
   });
 
   // The removed emoji badges were the only elements in this component using
   // role="img"; the new text badge carries no such role.
   expect(screen.queryByRole('img')).not.toBeInTheDocument();
-  expect(container.querySelector('.high-yield-badge')).toBeInTheDocument();
+  const badges = container.querySelectorAll('.high-yield-badge');
+  expect(badges.length).toBe(1);
   expect(screen.getAllByText('殖利率偏高').length).toBeGreaterThan(0);
+
+  // The disclaimer text must land in the badge's tooltip, not just the
+  // badge label itself.
+  const tooltipTrigger = badges[0].closest('.tooltip-text');
+  expect(tooltipTrigger).toHaveAttribute(
+    'title',
+    expect.stringContaining(translations.zh.high_yield_disclaimer)
+  );
 });
 
 test('the monthly-max stock shows a neutral high-yield badge, not the old emoji badge', () => {
@@ -100,10 +120,29 @@ test('the monthly-max stock shows a neutral high-yield badge, not the old emoji 
   // maxYieldPerMonth.TWD[idx], which is the monthly-max trigger condition
   // (see StockTable.jsx's shouldShowDiamond) that used to render the diamond
   // emoji badge.
+  //
+  // The default fixture's estAnnualYield.TWD (5) also happens to equal
+  // maxAnnualYield.TWD (5), which would independently satisfy the *annual*-
+  // max ("crown") condition too. This test must neutralize that condition
+  // explicitly — otherwise it would still pass even if the diamond-specific
+  // code path were completely broken. Overriding maxAnnualYield to a value
+  // that does NOT match estAnnualYield.TWD makes shouldShowCrown false, so
+  // any badge found here can only have come from the monthly-max ("diamond")
+  // path.
   const { container } = renderWithLang({
-    maxYieldPerMonth: { TWD: Array(12).fill(0.2) },
+    estAnnualYield: { [STOCK_ID]: { TWD: 5 } },
+    maxAnnualYield: { TWD: 9 },
   });
 
   expect(screen.queryByRole('img')).not.toBeInTheDocument();
-  expect(container.querySelector('.high-yield-badge')).toBeInTheDocument();
+  const badges = container.querySelectorAll('.high-yield-badge');
+  expect(badges.length).toBe(1);
+
+  // The disclaimer text must land in the badge's tooltip, not just the
+  // badge label itself.
+  const tooltipTrigger = badges[0].closest('.tooltip-text');
+  expect(tooltipTrigger).toHaveAttribute(
+    'title',
+    expect.stringContaining(translations.zh.high_yield_disclaimer)
+  );
 });
