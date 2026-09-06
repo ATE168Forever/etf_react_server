@@ -4,6 +4,7 @@ import { fetchWithCache } from './api';
 import { fetchDividendsByYears } from './dividendApi';
 import { useLanguage } from './i18n';
 import { readTransactionHistory } from './utils/transactionStorage';
+import { separateLabelYs } from './utils/chartLabelLayout';
 import { summarizeInventory, getPurchasedStockIds } from './utils/inventoryUtils';
 import { loadInvestmentGoals } from './utils/investmentGoalsStorage';
 import InvestmentGoalCard from './components/InvestmentGoalCard';
@@ -112,6 +113,23 @@ function DividendChart({
     .map((point, idx) => `${idx === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
     .join(' ');
 
+  // The bar's value label and the line's cumulative-value label share the
+  // same x-position (both centered on the month column), so they collide
+  // whenever the two values land close together vertically. Resolve that
+  // per-column before rendering rather than positioning each independently.
+  const MIN_LABEL_GAP = 14;
+  const labelPositions = normalizedTotals.map((value, idx) => {
+    const barHeight = (value / monthlyMax) * chartHeight;
+    const barTopY = axisY - barHeight;
+    const rawBarLabelY = value > 0 ? Math.max(barTopY - 6, 14) : null;
+    const cumulativeValue = cumulativeSource[idx];
+    const rawCumulativeLabelY = cumulativeValue > 0 ? Math.max(points[idx].y - 10, 12) : null;
+    const { yA: barLabelY, yB: cumulativeLabelY } = separateLabelYs(
+      rawBarLabelY, rawCumulativeLabelY, MIN_LABEL_GAP, 12
+    );
+    return { barLabelY, cumulativeLabelY };
+  });
+
   return (
     <div className="dividend-chart-wrapper">
       <div
@@ -156,10 +174,10 @@ function DividendChart({
                   aria-label={`${t('dividend_chart_monthly_label')} ${safeLabels[idx]} ${formatValue(value)}`}
                   data-active={selectedIndex === idx}
                 />
-                {value > 0 && (
+                {labelPositions[idx].barLabelY !== null && (
                   <text
                     x={x + barWidth / 2}
-                    y={Math.max(y - 6, 14)}
+                    y={labelPositions[idx].barLabelY}
                     textAnchor="middle"
                     fontSize="11"
                     fill={TEXT_COLOR}
@@ -190,10 +208,10 @@ function DividendChart({
                 stroke="var(--color-card-bg, #111319)"
                 strokeWidth="1.5"
               />
-              {cumulativeSource[idx] > 0 && (
+              {labelPositions[idx].cumulativeLabelY !== null && (
                 <text
                   x={point.x}
-                  y={Math.max(point.y - 10, 12)}
+                  y={labelPositions[idx].cumulativeLabelY}
                   textAnchor="middle"
                   fontSize="11"
                   fill={LINE_COLOR}
