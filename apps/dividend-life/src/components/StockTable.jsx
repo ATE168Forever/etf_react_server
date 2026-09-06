@@ -27,6 +27,7 @@ function buildTotalsContent({
   showDividendYield,
   lang,
   t,
+  labeled = false,
 }) {
   return activeCurrencies
     .map(currency => {
@@ -37,6 +38,7 @@ function buildTotalsContent({
         if (yieldAccumulated <= 0) return null;
         return (
           <div key={`${stock.stock_id}-total-${currency}`}>
+            {labeled && <span className="total-cell-label">{t('accumulated_yield')}: </span>}
             {currencyLabelFor(currency)} {yieldAccumulated.toFixed(1)}%
           </div>
         );
@@ -68,8 +70,16 @@ function buildTotalsContent({
           key={`${stock.stock_id}-total-${currency}`}
           className="total-cell-row"
         >
-          <span>{`${currencyLabelFor(currency)}${currency === 'USD' ? total.toFixed(2) : Math.round(total)}`}</span>
-          {annualContent && <span>/ {annualContent}</span>}
+          <span>
+            {labeled && <span className="total-cell-label">{t('total_received')}: </span>}
+            {`${currencyLabelFor(currency)}${currency === 'USD' ? total.toFixed(2) : Math.round(total)}`}
+          </span>
+          {annualContent && (
+            <span>
+              / {labeled && <span className="total-cell-label">{t('full_year_estimated_yield')}: </span>}
+              {annualContent}
+            </span>
+          )}
         </div>
       );
     })
@@ -993,6 +1003,7 @@ const StockCard = memo(function StockCard({
   const price = latestPrice[stock.stock_id]?.price;
   const totalsContent = buildTotalsContent({
     stock, activeCurrencies, totalPerStock, yieldSum, estAnnualYield, maxAnnualYield, showDividendYield, lang, t,
+    labeled: true,
   });
   const formatMonthValue = (val) => {
     if (!(val > 0)) return '—';
@@ -1011,7 +1022,10 @@ const StockCard = memo(function StockCard({
         </a>
         <div className="stock-card__header-meta">
           <span className="stock-card__freq">{freqLabel}</span>
-          <span className="stock-card__price">{price ?? '—'}</span>
+          <span className="stock-card__price">
+            <span className="stock-card__price-label">{t('latest_price_label')}</span>
+            {price ?? '—'}
+          </span>
         </div>
       </div>
       <div className="stock-card__body">

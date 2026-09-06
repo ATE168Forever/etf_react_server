@@ -178,6 +178,38 @@ test('each card shows the stock code, name, latest price, and estimated-yield/to
   expect(card.querySelector('.stock-card__body').textContent.length).toBeGreaterThan(0);
 });
 
+test('the latest price is labeled on mobile cards', () => {
+  const { container } = renderWithLang();
+  const card = container.querySelector('.stock-card');
+  expect(card.querySelector('.stock-card__price')).toHaveTextContent('股價');
+});
+
+test('the card totals row labels the total received and the full-year estimated yield', () => {
+  const { container } = renderWithLang({
+    estAnnualYield: { [STOCK_ID]: { TWD: 8 } },
+    maxAnnualYield: { TWD: 9 },
+  });
+  const body = container.querySelector('.stock-card .stock-card__body');
+  expect(body).toHaveTextContent('累計已收');
+  expect(body).toHaveTextContent('全年預估殖利率');
+});
+
+test('the card totals row labels the accumulated yield when the yield display mode is active', () => {
+  const { container } = renderWithLang({ showDividendYield: true });
+  const body = container.querySelector('.stock-card .stock-card__body');
+  expect(body).toHaveTextContent('已累積殖利率');
+});
+
+test('the desktop table total cell is not labeled -- these labels are card-only', () => {
+  const { container } = renderWithLang({
+    estAnnualYield: { [STOCK_ID]: { TWD: 8 } },
+    maxAnnualYield: { TWD: 9 },
+  });
+  const tableCell = container.querySelector('table tbody td:last-child');
+  expect(tableCell).not.toHaveTextContent('全年預估殖利率');
+  expect(tableCell).not.toHaveTextContent('累計已收');
+});
+
 test('each card shows the payout frequency next to the stock code', () => {
   // Default fixture's freqMap sets STOCK_ID to 4 (quarterly).
   const { container } = renderWithLang();

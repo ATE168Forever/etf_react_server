@@ -346,6 +346,19 @@ td {
   font-weight: 600;
 }
 
+.stock-card__price-label {
+  font-size: 0.65rem;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  margin-right: 3px;
+}
+
+.total-cell-label {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
 .stock-card__body {
   margin-top: 8px;
   font-size: 0.85rem;
