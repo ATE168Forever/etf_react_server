@@ -38,4 +38,10 @@ describe('buildIcsEvent', () => {
     const uidB = icsB.match(/UID:(.+)\r\n/)[1];
     expect(uidA).not.toBe(uidB);
   });
+
+  test('escapes commas in the formatted amount inside DESCRIPTION', () => {
+    const ics = buildIcsEvent(nextPayment, 'zh');
+    expect(ics).toContain('DESCRIPTION:元大台灣50：預估配息入帳 NT$1\\,000');
+    expect(ics).not.toMatch(/DESCRIPTION:[^\r\n]*[^\\],/);
+  });
 });

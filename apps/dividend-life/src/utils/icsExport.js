@@ -1,5 +1,13 @@
 import { formatTwd } from './homeCurrencyFormat';
 
+function escapeIcsText(text) {
+  return String(text)
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\n/g, '\\n');
+}
+
 function toIcsDate(dateStr) {
   return dateStr.replace(/-/g, '');
 }
@@ -19,12 +27,12 @@ export function buildIcsEvent(nextPayment, lang = 'zh') {
   const dtstamp = toIcsTimestamp(new Date());
   const dtstart = toIcsDate(nextPayment.date);
   const amount = formatTwd(nextPayment.total);
-  const summary = lang === 'en'
+  const summary = escapeIcsText(lang === 'en'
     ? `${nextPayment.stock_id} dividend payment`
-    : `${nextPayment.stock_id} 配息入帳`;
-  const description = lang === 'en'
+    : `${nextPayment.stock_id} 配息入帳`);
+  const description = escapeIcsText(lang === 'en'
     ? `${nextPayment.stock_name}: estimated ${amount} dividend payment`
-    : `${nextPayment.stock_name}：預估配息入帳 ${amount}`;
+    : `${nextPayment.stock_name}：預估配息入帳 ${amount}`);
 
   const lines = [
     'BEGIN:VCALENDAR',
