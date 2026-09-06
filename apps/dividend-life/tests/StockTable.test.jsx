@@ -305,4 +305,29 @@ describe('mobile card sort control', () => {
     // Descending by price: 0050 (35) before 00878 (20).
     expect(cardStockIds(container)).toEqual([STOCK_ID, STOCK_ID_2]);
   });
+
+  test('sorting by annualized yield uses this month\'s per-payment yield, not the aggregate estimate', () => {
+    // Both stocks share the same estAnnualYield (5), so a genuine reorder
+    // here can only come from the new per-cell metric (perYield * 12) at
+    // the current month (idx 3), not the pre-existing aggregate. The
+    // fixture's own stocks array is already [STOCK_ID, STOCK_ID_2] (its
+    // natural/no-op order), so STOCK_ID gets the *higher* perYield here --
+    // a comparator that silently falls through to a no-op (leaving the
+    // original array order untouched) would fail this assertion, unlike a
+    // same-order expectation that a no-op could pass by accident.
+    const customDividendTable = {
+      [STOCK_ID]: buildDividendTable()[STOCK_ID].map((cell, idx) =>
+        idx === 3 ? { TWD: { ...cell.TWD, perYield: 0.5 } } : cell
+      ),
+      [STOCK_ID_2]: buildDividendTable()[STOCK_ID].map((cell, idx) =>
+        idx === 3 ? { TWD: { ...cell.TWD, perYield: 0.1 } } : cell
+      ),
+    };
+    const { container } = renderWithLang({ ...twoStockProps, dividendTable: customDividendTable });
+
+    fireEvent.change(screen.getByLabelText('排序：'), { target: { value: 'annualized_yield' } });
+
+    // Ascending: STOCK_ID_2 (perYield 0.1 -> 1.2%) before STOCK_ID (perYield 0.5 -> 6%).
+    expect(cardStockIds(container)).toEqual([STOCK_ID_2, STOCK_ID]);
+  });
 });

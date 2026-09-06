@@ -209,11 +209,19 @@ export default function StockTable({
 
   // Always the per-month-normalized perYield, independent of the current
   // display mode -- used by the mobile card to show this payment's
-  // annualized yield alongside whatever the main value is showing.
-  const getMonthPerYield = useCallback((stockId, idx, currencyKey) => {
-    const cell = dividendTable[stockId]?.[idx]?.[currencyKey];
-    return cell ? (parseFloat(cell.perYield) || 0) : 0;
-  }, [dividendTable]);
+  // annualized yield alongside whatever the main value is showing, and by
+  // the annualized-yield sort option. With no currencyKey, sums across
+  // activeCurrencies (mirrors getMonthValue's no-currencyKey behavior).
+  const getMonthPerYield = useCallback((stockId, idx, currencyKey = null) => {
+    if (currencyKey) {
+      const cell = dividendTable[stockId]?.[idx]?.[currencyKey];
+      return cell ? (parseFloat(cell.perYield) || 0) : 0;
+    }
+    return activeCurrencies.reduce((sum, currency) => {
+      const cell = dividendTable[stockId]?.[idx]?.[currency];
+      return sum + (cell ? (parseFloat(cell.perYield) || 0) : 0);
+    }, 0);
+  }, [activeCurrencies, dividendTable]);
 
   const deferredStocks = useDeferredValue(stocks);
 
@@ -241,6 +249,11 @@ export default function StockTable({
           const bYield = getAnnualYieldForStock(b.stock_id);
           return (aYield - bYield) * dir;
         }
+        case 'annualized_yield': {
+          const aYield = getMonthPerYield(a.stock_id, currentMonth) * 12;
+          const bYield = getMonthPerYield(b.stock_id, currentMonth) * 12;
+          return (aYield - bYield) * dir;
+        }
         default: {
           if (sortConfig.column?.startsWith('month')) {
             const [monthPart, currencyPart] = sortConfig.column.split(':');
@@ -254,7 +267,7 @@ export default function StockTable({
         }
       }
     });
-  }, [deferredStocks, sortConfig, showDividendYield, latestPrice, getYieldSumForStock, getTotalForStock, getAnnualYieldForStock, getMonthValue]);
+  }, [deferredStocks, sortConfig, showDividendYield, latestPrice, getYieldSumForStock, getTotalForStock, getAnnualYieldForStock, getMonthValue, getMonthPerYield, currentMonth]);
 
   const totalStocksCount = sortedStocks.length;
   const visibleLimit = showAllStocks
@@ -738,6 +751,7 @@ export default function StockTable({
             <option value="latest_price">{lang === 'zh' ? '最新股價' : 'Latest Price'}</option>
             <option value={`month${currentMonth}`}>{MONTHS[currentMonth]}</option>
             <option value="annual_yield">{t('estimated_yield')}</option>
+            <option value="annualized_yield">{t('annualized_yield')}</option>
           </select>
           <button
             type="button"
