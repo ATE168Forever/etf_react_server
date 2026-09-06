@@ -319,6 +319,11 @@ td {
   justify-content: space-between;
 }
 
+.stock-card__month-values {
+  display: flex;
+  gap: 6px;
+}
+
 .stock-card__month--current {
   font-weight: 700;
 }

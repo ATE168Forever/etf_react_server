@@ -946,7 +946,13 @@ const StockCard = memo(function StockCard({
               className={idx === currentMonth ? 'stock-card__month stock-card__month--current' : 'stock-card__month'}
             >
               <span>{months[idx]}</span>
-              <span>{formatMonthValue(getMonthValue(stock.stock_id, idx))}</span>
+              <span className="stock-card__month-values">
+                {activeCurrencies.map(currency => (
+                  <span key={currency}>
+                    {currencyLabelFor(currency)}{formatMonthValue(getMonthValue(stock.stock_id, idx, currency))}
+                  </span>
+                ))}
+              </span>
             </li>
           ))}
         </ul>
