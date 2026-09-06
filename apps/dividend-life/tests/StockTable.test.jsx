@@ -8,6 +8,35 @@ jest.mock('../config', () => ({
   HOST_URL: 'http://localhost',
 }));
 
+// jsdom has no native matchMedia implementation. StockTable gates its mobile
+// card list behind a `window.matchMedia('(max-width: 720px)')` subscription
+// (see StockTable.jsx's `isCardViewport` state), so tests that assert on
+// card markup need a mock that reports a match for that specific query.
+// TooltipText (rendered inside both the table and the cards) independently
+// checks its own `(max-width: 768px)` query to pick desktop vs. mobile
+// tooltip behavior — this mock must leave that query reporting "no match"
+// (its jsdom-less default, which the existing tooltip assertions below
+// depend on) or every tooltip's title attribute silently disappears.
+// Default to "mobile" for the card-list query here so existing card-content
+// assertions keep exercising that markup; the dedicated viewport-gate test
+// overrides this to prove the desktop branch.
+function installMatchMediaMock(cardViewportMatches) {
+  window.matchMedia = jest.fn().mockImplementation((query) => ({
+    media: query,
+    matches: query === '(max-width: 720px)' ? cardViewportMatches : false,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  }));
+}
+
+beforeEach(() => {
+  installMatchMediaMock(true);
+});
+
+afterEach(() => {
+  delete window.matchMedia;
+});
+
 // Minimal single-stock fixture with dividend data present in every month
 // (0-11) so month columns are distinguishable regardless of which subset
 // is currently visible. Values themselves are arbitrary — these tests only
@@ -118,10 +147,17 @@ test('the annual-max stock shows a neutral high-yield badge with a disclaimer, n
   );
 });
 
-test('renders both the table and a card list unconditionally; CSS decides which is visible', () => {
+test('renders the card list when matchMedia reports a mobile viewport', () => {
   const { container } = renderWithLang();
   expect(container.querySelector('.table-responsive.stock-table-scroll')).toBeInTheDocument();
   expect(container.querySelector('.stock-table-cards')).toBeInTheDocument();
+});
+
+test('does not mount the card list when matchMedia reports a desktop viewport', () => {
+  installMatchMediaMock(false);
+  const { container } = renderWithLang();
+  expect(container.querySelector('.table-responsive.stock-table-scroll')).toBeInTheDocument();
+  expect(container.querySelector('.stock-table-cards')).not.toBeInTheDocument();
 });
 
 test('each card shows the stock code, name, latest price, and estimated-yield/total content', () => {

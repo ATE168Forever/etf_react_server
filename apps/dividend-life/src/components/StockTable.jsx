@@ -109,6 +109,19 @@ export default function StockTable({
   const [visibleCount, setVisibleCount] = useState(DEFAULT_VISIBLE_COUNT);
   const [expandMonths, setExpandMonths] = useState(false);
   const [showRecentMonths, setShowRecentMonths] = useState(false);
+  const [isCardViewport, setIsCardViewport] = useState(
+    () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(max-width: 720px)').matches
+      : false
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
+    const mq = window.matchMedia('(max-width: 720px)');
+    const handleChange = (event) => setIsCardViewport(event.matches);
+    mq.addEventListener('change', handleChange);
+    return () => mq.removeEventListener('change', handleChange);
+  }, []);
   const tableContainerRef = useRef(null);
   const idFilterButtonRef = useRef(null);
   const { lang, t } = useLanguage();
@@ -703,7 +716,7 @@ export default function StockTable({
         </tbody>
         </table>
       </div>
-      {stocks.length > 0 && (
+      {stocks.length > 0 && isCardViewport && (
         <ul className="stock-table-cards">
           {limitedStocks.map(stock => (
             <StockCard
