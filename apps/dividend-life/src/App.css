@@ -3445,6 +3445,12 @@ button.metric-card:focus-visible {
 .filter-bar {
   position: sticky;
   top: 0;
-  z-index: 10;
+  /* Must clear the stock table's sticky first-column/header (z-index up to
+     101, see .table-responsive td/th:first-child) -- filter-bar establishes
+     its own stacking context (position + z-index), so its descendants
+     (including .advanced-dropdown at z-index 9999) are otherwise capped at
+     whatever value is set here when compared against siblings elsewhere on
+     the page. Stays below modal/toast layers (1000+). */
+  z-index: 150;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
