@@ -534,7 +534,11 @@ export default function StockTable({
           </p>
         </div>
       ) : null}
-      <div className="table-responsive stock-table-scroll" ref={tableContainerRef} style={stocks.length === 0 ? { display: 'none' } : tableScrollStyle}>
+      <div
+        className={`table-responsive stock-table-scroll${shouldVirtualizeMain ? ' stock-table-scroll--virtualized' : ''}`}
+        ref={tableContainerRef}
+        style={stocks.length === 0 ? { display: 'none' } : tableScrollStyle}
+      >
         <table className="table table-bordered table-striped stock-table" aria-label={lang === 'en' ? 'ETF dividend calendar' : 'ETF 股息月曆'}>
         <thead>
           <tr>

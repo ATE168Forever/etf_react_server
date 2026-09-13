@@ -1486,21 +1486,24 @@ button.date-num:focus-visible {
   display: inline-block;
 }
 
+/* Not sticky by default: `.table-responsive` sets `overflow-x: auto` for
+   mobile horizontal scrolling, and per the CSS overflow spec that silently
+   forces `overflow-y` to compute as `auto` too, turning it into its own
+   scroll container. `position: sticky` on a descendant then sticks relative
+   to THAT container's edge, not the page viewport, and the container's own
+   edge keeps moving as the page scrolls -- there is no `top` value that
+   stays correctly pinned to the visible viewport here. Only the bounded,
+   internally-scrolling "show all" view (.stock-table-scroll--virtualized,
+   below) is a container sticky can correctly anchor to. */
 .table-responsive thead th {
-  position: sticky;
-  /* Set on .dividend-tab (see DividendLifePage.jsx's filter-bar height
-     measurement) so this sticks just below the sticky filter bar instead
-     of at the same top:0 -- otherwise the two sticky layers physically
-     overlap on scroll and this header ends up permanently hidden behind
-     the filter bar. Falls back to 0px on tabs with no filter bar. */
-  top: var(--filter-bar-height, 0px);
   background: var(--color-card-bg);
   z-index: 1;
 }
 
-/* .table-responsive thead tr:nth-child(2) th {
-  top: var(--secondary-header-top, 0);
-} */
+.stock-table-scroll--virtualized thead th {
+  position: sticky;
+  top: 0;
+}
 
 .table-responsive table th:first-child,
 .table-responsive table td:first-child {

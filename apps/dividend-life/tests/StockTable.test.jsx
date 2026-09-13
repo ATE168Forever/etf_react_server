@@ -160,6 +160,26 @@ test('does not mount the card list when matchMedia reports a desktop viewport', 
   expect(container.querySelector('.stock-table-cards')).not.toBeInTheDocument();
 });
 
+test('the table header is only marked sticky in the bounded-height "show all" view, not the default page-scrolled view', () => {
+  // App.css only gives `.stock-table-scroll--virtualized thead th` a sticky
+  // position -- it relies on that view's own bounded maxHeight/overflow-y
+  // scroll box as the sticky containing block. The default (page-scrolled)
+  // view has no such box, so a sticky header there would stick relative to
+  // `.table-responsive`'s own (Bootstrap-forced) scroll context instead of
+  // the real viewport, producing a header that floats to the wrong place
+  // as the page scrolls -- this modifier class is what keeps it off there.
+  installMatchMediaMock(false);
+  const { container: defaultView } = renderWithLang({ showAllStocks: false });
+  expect(hasVirtualizedClass(defaultView)).toBe(false);
+
+  const { container: showAllView } = renderWithLang({ showAllStocks: true, showInfoAxis: false });
+  expect(hasVirtualizedClass(showAllView)).toBe(true);
+});
+
+function hasVirtualizedClass(container) {
+  return !!container.querySelector('.stock-table-scroll--virtualized');
+}
+
 test('each card shows the stock code, name, latest price, and estimated-yield/total content', () => {
   // Reuse the crown-badge fixture from the "annual-max stock" test above (one
   // stock, known price and estAnnualYield) so the assertions below have a

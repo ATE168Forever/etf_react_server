@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { LanguageContext, translations } from './i18n';
 import { ToastProvider } from './Toast';
 import { useToast } from './useToast';
@@ -257,30 +257,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     filterBarAutoCollapseRef.current = true;
     setFilterBarCollapsed(true);
   };
-
-  // The desktop stock table's sticky thead/first-column also sticks to
-  // `top: 0`, same as the filter bar above it -- without an offset they
-  // physically overlap when scrolled, permanently hiding the table's
-  // sticky header behind the filter bar. Measure the filter bar's real
-  // rendered height and expose it as --filter-bar-height on the dividend
-  // tab panel; App.css's `.table-responsive thead th` reads it back so the
-  // table's sticky header sticks just below the filter bar instead.
-  const dividendTabRef = useRef(null);
-  const filterBarRef = useRef(null);
-
-  useLayoutEffect(() => {
-    if (tab !== 'dividend') return undefined;
-    const filterBarEl = filterBarRef.current;
-    const containerEl = dividendTabRef.current;
-    if (!filterBarEl || !containerEl || typeof ResizeObserver === 'undefined') return undefined;
-    const updateHeight = () => {
-      containerEl.style.setProperty('--filter-bar-height', `${filterBarEl.offsetHeight}px`);
-    };
-    updateHeight();
-    const observer = new ResizeObserver(updateHeight);
-    observer.observe(filterBarEl);
-    return () => observer.disconnect();
-  }, [tab]);
 
   // Theme
   const [theme, setTheme] = useState(() => {
@@ -869,10 +845,10 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
             </div>
           )}
           {tab === 'dividend' && (
-            <div id="panel-dividend" role="tabpanel" aria-labelledby="tab-dividend" className="dividend-tab" ref={dividendTabRef}>
+            <div id="panel-dividend" role="tabpanel" aria-labelledby="tab-dividend" className="dividend-tab">
               <ErrorBoundary lang={lang}>
               {/* ── FILTER BAR ── */}
-              <div className="filter-bar" ref={filterBarRef}>
+              <div className="filter-bar">
               {filterBarCollapsed ? (
                 <button
                   type="button"
