@@ -1488,7 +1488,12 @@ button.date-num:focus-visible {
 
 .table-responsive thead th {
   position: sticky;
-  top: 0;
+  /* Set on .dividend-tab (see DividendLifePage.jsx's filter-bar height
+     measurement) so this sticks just below the sticky filter bar instead
+     of at the same top:0 -- otherwise the two sticky layers physically
+     overlap on scroll and this header ends up permanently hidden behind
+     the filter bar. Falls back to 0px on tabs with no filter bar. */
+  top: var(--filter-bar-height, 0px);
   background: var(--color-card-bg);
   z-index: 1;
 }
