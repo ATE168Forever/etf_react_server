@@ -766,9 +766,15 @@ export default function StockTable({
           >
             <option value="stock_id">{t('stock_code_name')}</option>
             <option value="latest_price">{lang === 'zh' ? '最新股價' : 'Latest Price'}</option>
-            <option value="latest_amount">{t('latest_dividend_amount')}</option>
+            <option value="latest_amount">
+              {lang === 'zh' ? `${MONTHS[currentMonth]}配息金額` : `${MONTHS[currentMonth]} Dividend`}
+            </option>
             <option value="annual_yield">{t('full_year_estimated_yield')}</option>
-            <option value="latest_annualized_yield">{t('latest_annualized_yield')}</option>
+            <option value="latest_annualized_yield">
+              {lang === 'zh'
+                ? `${t('annualized_yield')}（${MONTHS[currentMonth]}）`
+                : `${t('annualized_yield')} (${MONTHS[currentMonth]})`}
+            </option>
           </select>
           <button
             type="button"

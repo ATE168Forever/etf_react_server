@@ -159,9 +159,7 @@ export const translations = {
     annualized_yield: '年化殖利率',
     payout_frequency: '配息頻率',
     irregular: '不定期',
-    dividend_date: '配息日期',
-    latest_dividend_amount: '最新配息金額',
-    latest_annualized_yield: '最新年化殖利率'
+    dividend_date: '配息日期'
   },
   en: {
     monthly_income_us_label: "This Month's US Dividends",
@@ -321,9 +319,7 @@ export const translations = {
     annualized_yield: 'Annualized Yield',
     payout_frequency: 'Payout Frequency',
     irregular: 'Irregular',
-    dividend_date: 'Dividend Date',
-    latest_dividend_amount: 'Latest Dividend',
-    latest_annualized_yield: 'Latest Annualized Yield'
+    dividend_date: 'Dividend Date'
   }
 };
 

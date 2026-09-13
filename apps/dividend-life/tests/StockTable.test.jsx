@@ -319,18 +319,21 @@ describe('mobile card sort control', () => {
     expect(container.querySelector('.stock-card-sort-direction')).toBeInTheDocument();
   });
 
-  test('the sort options use unambiguous labels, describing latest (this-or-next-month) metrics', () => {
+  test('the sort options keep their original month-labeled text, even though the underlying metric now also looks at next month', () => {
+    // buildDefaultProps sets currentMonth: 3, i.e. '4月'. Only the sort
+    // *logic* changed (max of this month and next month); the option
+    // labels stay exactly as before -- still naming the current month.
     const { container } = renderWithLang(twoStockProps);
     const options = Array.from(container.querySelector('#stock-card-sort-select').options)
       .map(o => o.textContent);
 
-    expect(options).toContain('最新配息金額');
+    expect(options).toContain('4月配息金額');
     expect(options).toContain('全年預估殖利率');
-    expect(options).toContain('最新年化殖利率');
-    // The old bare-month-name / single-month labels were the ambiguous ones being fixed.
+    expect(options).toContain('年化殖利率（4月）');
+    expect(options).not.toContain('最新配息金額');
+    expect(options).not.toContain('最新年化殖利率');
+    // The old bare-month-name label was the ambiguous one fixed earlier.
     expect(options).not.toContain('4月');
-    expect(options).not.toContain('4月配息金額');
-    expect(options).not.toContain('年化殖利率（4月）');
   });
 
   test('sorting by latest dividend amount takes the larger of this month and next month, not this month alone', () => {
