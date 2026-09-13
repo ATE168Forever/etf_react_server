@@ -259,9 +259,16 @@ export default function StockTable({
           const bYield = getAnnualYieldForStock(b.stock_id);
           return (aYield - bYield) * dir;
         }
-        case 'annualized_yield': {
-          const aYield = getMonthPerYield(a.stock_id, currentMonth) * 12;
-          const bYield = getMonthPerYield(b.stock_id, currentMonth) * 12;
+        case 'latest_amount': {
+          const nextMonth = (currentMonth + 1) % 12;
+          const aVal = Math.max(getMonthValue(a.stock_id, currentMonth), getMonthValue(a.stock_id, nextMonth));
+          const bVal = Math.max(getMonthValue(b.stock_id, currentMonth), getMonthValue(b.stock_id, nextMonth));
+          return (aVal - bVal) * dir;
+        }
+        case 'latest_annualized_yield': {
+          const nextMonth = (currentMonth + 1) % 12;
+          const aYield = Math.max(getMonthPerYield(a.stock_id, currentMonth), getMonthPerYield(a.stock_id, nextMonth)) * 12;
+          const bYield = Math.max(getMonthPerYield(b.stock_id, currentMonth), getMonthPerYield(b.stock_id, nextMonth)) * 12;
           return (aYield - bYield) * dir;
         }
         default: {
@@ -759,15 +766,9 @@ export default function StockTable({
           >
             <option value="stock_id">{t('stock_code_name')}</option>
             <option value="latest_price">{lang === 'zh' ? '最新股價' : 'Latest Price'}</option>
-            <option value={`month${currentMonth}`}>
-              {lang === 'zh' ? `${MONTHS[currentMonth]}配息金額` : `${MONTHS[currentMonth]} Dividend`}
-            </option>
+            <option value="latest_amount">{t('latest_dividend_amount')}</option>
             <option value="annual_yield">{t('full_year_estimated_yield')}</option>
-            <option value="annualized_yield">
-              {lang === 'zh'
-                ? `${t('annualized_yield')}（${MONTHS[currentMonth]}）`
-                : `${t('annualized_yield')} (${MONTHS[currentMonth]})`}
-            </option>
+            <option value="latest_annualized_yield">{t('latest_annualized_yield')}</option>
           </select>
           <button
             type="button"

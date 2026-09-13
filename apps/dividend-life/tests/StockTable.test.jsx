@@ -319,17 +319,64 @@ describe('mobile card sort control', () => {
     expect(container.querySelector('.stock-card-sort-direction')).toBeInTheDocument();
   });
 
-  test('the sort options use unambiguous labels, including the month for month-specific metrics', () => {
-    // buildDefaultProps sets currentMonth: 3, i.e. '4月'.
+  test('the sort options use unambiguous labels, describing latest (this-or-next-month) metrics', () => {
     const { container } = renderWithLang(twoStockProps);
     const options = Array.from(container.querySelector('#stock-card-sort-select').options)
       .map(o => o.textContent);
 
-    expect(options).toContain('4月配息金額');
+    expect(options).toContain('最新配息金額');
     expect(options).toContain('全年預估殖利率');
-    expect(options).toContain('年化殖利率（4月）');
-    // The old bare-month-name label was the ambiguous one being fixed.
+    expect(options).toContain('最新年化殖利率');
+    // The old bare-month-name / single-month labels were the ambiguous ones being fixed.
     expect(options).not.toContain('4月');
+    expect(options).not.toContain('4月配息金額');
+    expect(options).not.toContain('年化殖利率（4月）');
+  });
+
+  test('sorting by latest dividend amount takes the larger of this month and next month, not this month alone', () => {
+    // buildDefaultProps sets currentMonth: 3 (4月); next month is idx 4 (5月).
+    // STOCK_ID pays more next month (idx 4); STOCK_ID_2 pays more this month (idx 3).
+    // A comparator that only looked at currentMonth would rank STOCK_ID_2 > STOCK_ID;
+    // taking max(this, next) must flip that, since STOCK_ID's next-month value wins.
+    const customDividendTable = {
+      [STOCK_ID]: buildDividendTable()[STOCK_ID].map((cell, idx) => {
+        if (idx === 3) return { TWD: { ...cell.TWD, dividend: 0.1 } };
+        if (idx === 4) return { TWD: { ...cell.TWD, dividend: 9 } };
+        return cell;
+      }),
+      [STOCK_ID_2]: buildDividendTable()[STOCK_ID].map((cell, idx) => {
+        if (idx === 3) return { TWD: { ...cell.TWD, dividend: 5 } };
+        if (idx === 4) return { TWD: { ...cell.TWD, dividend: 0.1 } };
+        return cell;
+      }),
+    };
+    const { container } = renderWithLang({ ...twoStockProps, dividendTable: customDividendTable });
+
+    fireEvent.change(screen.getByLabelText('排序：'), { target: { value: 'latest_amount' } });
+
+    // Ascending: STOCK_ID_2 (max(5, 0.1) = 5) before STOCK_ID (max(0.1, 9) = 9).
+    expect(cardStockIds(container)).toEqual([STOCK_ID_2, STOCK_ID]);
+  });
+
+  test('sorting by latest annualized yield takes the larger of this month and next month, not this month alone', () => {
+    const customDividendTable = {
+      [STOCK_ID]: buildDividendTable()[STOCK_ID].map((cell, idx) => {
+        if (idx === 3) return { TWD: { ...cell.TWD, perYield: 0.1 } };
+        if (idx === 4) return { TWD: { ...cell.TWD, perYield: 0.5 } };
+        return cell;
+      }),
+      [STOCK_ID_2]: buildDividendTable()[STOCK_ID].map((cell, idx) => {
+        if (idx === 3) return { TWD: { ...cell.TWD, perYield: 0.3 } };
+        if (idx === 4) return { TWD: { ...cell.TWD, perYield: 0.05 } };
+        return cell;
+      }),
+    };
+    const { container } = renderWithLang({ ...twoStockProps, dividendTable: customDividendTable });
+
+    fireEvent.change(screen.getByLabelText('排序：'), { target: { value: 'latest_annualized_yield' } });
+
+    // Ascending: STOCK_ID_2 (max(0.3, 0.05)=0.3 -> 3.6%) before STOCK_ID (max(0.1, 0.5)=0.5 -> 6%).
+    expect(cardStockIds(container)).toEqual([STOCK_ID_2, STOCK_ID]);
   });
 
   test('the sort select does not render in the desktop table view', () => {
@@ -368,15 +415,15 @@ describe('mobile card sort control', () => {
     expect(cardStockIds(container)).toEqual([STOCK_ID, STOCK_ID_2]);
   });
 
-  test('sorting by annualized yield uses this month\'s per-payment yield, not the aggregate estimate', () => {
+  test('sorting by latest annualized yield uses per-payment yield, not the aggregate estimate', () => {
     // Both stocks share the same estAnnualYield (5), so a genuine reorder
-    // here can only come from the new per-cell metric (perYield * 12) at
-    // the current month (idx 3), not the pre-existing aggregate. The
-    // fixture's own stocks array is already [STOCK_ID, STOCK_ID_2] (its
-    // natural/no-op order), so STOCK_ID gets the *higher* perYield here --
-    // a comparator that silently falls through to a no-op (leaving the
-    // original array order untouched) would fail this assertion, unlike a
-    // same-order expectation that a no-op could pass by accident.
+    // here can only come from the new per-cell metric (perYield * 12), not
+    // the pre-existing aggregate. The fixture's own stocks array is already
+    // [STOCK_ID, STOCK_ID_2] (its natural/no-op order), so STOCK_ID gets the
+    // *higher* perYield here -- a comparator that silently falls through to
+    // a no-op (leaving the original array order untouched) would fail this
+    // assertion, unlike a same-order expectation that a no-op could pass by
+    // accident.
     const customDividendTable = {
       [STOCK_ID]: buildDividendTable()[STOCK_ID].map((cell, idx) =>
         idx === 3 ? { TWD: { ...cell.TWD, perYield: 0.5 } } : cell
@@ -387,7 +434,7 @@ describe('mobile card sort control', () => {
     };
     const { container } = renderWithLang({ ...twoStockProps, dividendTable: customDividendTable });
 
-    fireEvent.change(screen.getByLabelText('排序：'), { target: { value: 'annualized_yield' } });
+    fireEvent.change(screen.getByLabelText('排序：'), { target: { value: 'latest_annualized_yield' } });
 
     // Ascending: STOCK_ID_2 (perYield 0.1 -> 1.2%) before STOCK_ID (perYield 0.5 -> 6%).
     expect(cardStockIds(container)).toEqual([STOCK_ID_2, STOCK_ID]);
