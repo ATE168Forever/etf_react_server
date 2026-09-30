@@ -123,3 +123,41 @@ test('a genuinely missing yield still shows "無法計算" in the Explore tab ca
   expect(tooltipTrigger.title).toMatch(/當次殖利率: 無法計算/);
   expect(tooltipTrigger.title).not.toMatch(/當次殖利率: 0%/);
 });
+
+test('the day-detail list shows an annualized yield for an Explore tab event', async () => {
+  mockFetchDividendsByYears.mockResolvedValue({
+    data: [buildDividendItem({ dividend_yield: 4.2 })],
+    meta: null,
+  });
+
+  render(
+    <RouterProvider>
+      <App />
+    </RouterProvider>
+  );
+  await waitFor(() => expect(mockFetchDividendsByYears).toHaveBeenCalled());
+
+  const dividendTab = await screen.findByRole('tab', { name: '探索 ETF' });
+  await act(async () => {
+    fireEvent.click(dividendTab);
+  });
+  await waitFor(() => expect(mockFetchDividendsByYears).toHaveBeenCalledTimes(2));
+
+  // buildDividendItem's stock ('0050') is absent from the mocked (empty)
+  // stock list, so freqMap falls back to annual (freq 1) -- perYield's span
+  // is then 12/1 = 12 months, making annualizedYield (perYield * 12) come
+  // back out exactly equal to the raw dividend_yield (4.2%) unchanged.
+  const dayNum = Number(dividendDateStr.slice(-2));
+  const dayButton = await screen.findByRole('button', { name: new RegExp(`${dayNum} 日`) });
+  await act(async () => {
+    fireEvent.click(dayButton);
+  });
+
+  // dividend_date === payment_date in this fixture, so both an 'ex' and a
+  // 'pay' event land on the same day -- check the first (either carries the
+  // same computed annualizedYield).
+  const [stockCell] = await screen.findAllByText('0050', { selector: '.calendar-day-detail__stock' });
+  const item = stockCell.closest('li');
+  expect(item).toHaveTextContent('年化殖利率');
+  expect(item).toHaveTextContent('4.2%');
+});

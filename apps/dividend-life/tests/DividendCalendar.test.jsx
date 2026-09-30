@@ -131,6 +131,37 @@ test('clicking the selected day again closes the detail panel', () => {
   expect(screen.queryByText('AAA', { selector: '.calendar-day-detail__stock' })).not.toBeInTheDocument();
 });
 
+test('the day-detail list shows the annualized yield for an event that has one', () => {
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const [year, month, day] = nowStr.split('-');
+  const dateStr = `${year}-${month}-${day}`;
+  const events = [
+    { date: dateStr, type: 'ex', stock_id: 'AAA', amount: 10, dividend: 0.5, annualizedYield: 9.6 },
+  ];
+  render(<DividendCalendar year={Number(year)} events={events} />);
+
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(`${Number(day)} 日`) }));
+
+  const item = screen.getByText('AAA', { selector: '.calendar-day-detail__stock' }).closest('li');
+  expect(item).toHaveTextContent('年化殖利率');
+  expect(item).toHaveTextContent('9.6%');
+});
+
+test('the day-detail list omits the annualized yield when an event has none', () => {
+  const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+  const [year, month, day] = nowStr.split('-');
+  const dateStr = `${year}-${month}-${day}`;
+  const events = [
+    { date: dateStr, type: 'ex', stock_id: 'AAA', amount: 10, dividend: 0.5, annualizedYield: null },
+  ];
+  render(<DividendCalendar year={Number(year)} events={events} />);
+
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(`${Number(day)} 日`) }));
+
+  const item = screen.getByText('AAA', { selector: '.calendar-day-detail__stock' }).closest('li');
+  expect(item).not.toHaveTextContent('年化殖利率');
+});
+
 test('a day with no events is not rendered as a clickable button', () => {
   const nowStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
   const [year] = nowStr.split('-');

@@ -367,6 +367,11 @@ export default function DividendCalendar({
                     <span className="calendar-day-detail__amount">
                       {receivableAsPerShare ? perShareText : amountText}
                     </span>
+                    {Number.isFinite(ev.annualizedYield) && (
+                      <span className="calendar-day-detail__yield">
+                        {t('annualized_yield')} {ev.annualizedYield.toFixed(1)}%
+                      </span>
+                    )}
                   </li>
                 );
               })}

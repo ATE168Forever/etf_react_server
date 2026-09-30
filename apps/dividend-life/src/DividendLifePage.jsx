@@ -651,6 +651,24 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       const hasPendingYield = !hasValidYield && hasRawYield;
       const dividend_yield = hasValidYield ? yieldValueRaw : null;
       const currency = item.currency || DEFAULT_CURRENCY;
+
+      // Mirrors useDividendData.js's own reference-date logic (prefer
+      // dividend_date, fall back to payment_date) so this looks up the same
+      // table cell exploreDividendTable was built with -- perYield is
+      // already normalized to a single month there (accounting for the
+      // stock's real payout gaps), so *12 annualizes it consistently with
+      // the same metric used elsewhere (e.g. the mobile card's annualized
+      // yield hint).
+      const divDate = item.dividend_date ? new Date(item.dividend_date) : null;
+      const payDate = item.payment_date ? new Date(item.payment_date) : null;
+      const referenceDate = (divDate && !Number.isNaN(divDate.getTime()))
+        ? divDate
+        : (payDate && !Number.isNaN(payDate.getTime()) ? payDate : null);
+      const perYield = referenceDate
+        ? exploreDividendTable[item.stock_id]?.[referenceDate.getMonth()]?.[currency]?.perYield
+        : null;
+      const annualizedYield = Number.isFinite(perYield) ? perYield * 12 : null;
+
       const arr = [];
       if (item.dividend_date) {
         arr.push({
@@ -662,6 +680,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           dividend_yield,
           hasValidYield,
           hasPendingYield,
+          annualizedYield,
           last_close_price: item.last_close_price,
           dividend_date: item.dividend_date,
           payment_date: item.payment_date,
@@ -678,6 +697,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
           dividend_yield,
           hasValidYield,
           hasPendingYield,
+          annualizedYield,
           last_close_price: item.last_close_price,
           dividend_date: item.dividend_date,
           payment_date: item.payment_date,
@@ -686,7 +706,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       }
       return arr;
     }),
-  [exploreFilteredData, selectedStockIds, activeCurrencies]);
+  [exploreFilteredData, selectedStockIds, activeCurrencies, exploreDividendTable]);
 
   const filteredCalendarEvents = useMemo(() => calendarEvents.filter(ev =>
     calendarFilter === 'both' || ev.type === calendarFilter
