@@ -485,11 +485,22 @@ describe('mobile cards: current-month ex-dividend date and already-passed filter
   const YESTERDAY = isoDateOffset(-1);
   const TOMORROW = isoDateOffset(1);
 
-  // buildDefaultProps sets currentMonth: 3.
-  function withCurrentMonthCell(stockId, overrides) {
-    return buildDividendTable()[STOCK_ID].map((cell, idx) =>
-      idx === 3 ? { TWD: { ...cell.TWD, ...overrides } } : cell
+  // buildDefaultProps sets currentMonth: 3; next month is idx 4.
+  function withMonthCell(idx, overrides) {
+    return buildDividendTable()[STOCK_ID].map((cell, i) =>
+      i === idx ? { TWD: { ...cell.TWD, ...overrides } } : cell
     );
+  }
+  // A table where every month (including the idx-4 fallback the new
+  // current-or-next logic checks) has no dividend, then overridden at
+  // specific indices by the caller -- keeps each test's intent to only the
+  // months it names, instead of every test having to also silence idx 4.
+  function buildTable(overridesByIdx) {
+    return buildDividendTable()[STOCK_ID].map((cell, idx) => {
+      if (overridesByIdx[idx] === undefined) return cell;
+      const o = overridesByIdx[idx];
+      return o === null ? { TWD: { ...cell.TWD, dividend: 0, dividend_date: null } } : { TWD: { ...cell.TWD, ...o } };
+    });
   }
 
   const cardStockIds = (container) =>
@@ -497,7 +508,7 @@ describe('mobile cards: current-month ex-dividend date and already-passed filter
 
   test('shows the current month\'s ex-dividend date on the card', () => {
     const dividendTable = {
-      [STOCK_ID]: withCurrentMonthCell(STOCK_ID, { dividend_date: TOMORROW }),
+      [STOCK_ID]: buildTable({ 3: { dividend_date: TOMORROW } }),
     };
     const { container } = renderWithLang({ dividendTable });
 
@@ -505,10 +516,10 @@ describe('mobile cards: current-month ex-dividend date and already-passed filter
     expect(currentMonthLi.textContent).toContain(TOMORROW);
   });
 
-  test('hides a stock\'s card entirely when its current-month ex-dividend date has already passed', () => {
+  test('hides a stock\'s card entirely when both current and next month\'s dividends have already passed or don\'t exist', () => {
     const dividendTable = {
-      [STOCK_ID]: withCurrentMonthCell(STOCK_ID, { dividend_date: YESTERDAY }),
-      [STOCK_ID_2]: withCurrentMonthCell(STOCK_ID, { dividend_date: TOMORROW }),
+      [STOCK_ID]: buildTable({ 3: { dividend_date: YESTERDAY }, 4: null }),
+      [STOCK_ID_2]: buildTable({ 3: { dividend_date: TOMORROW }, 4: null }),
     };
     const { container } = renderWithLang({
       stocks: [
@@ -522,13 +533,10 @@ describe('mobile cards: current-month ex-dividend date and already-passed filter
     expect(cardStockIds(container)).toEqual([STOCK_ID_2]);
   });
 
-  test('hides a stock with no dividend this month too -- the collapsed view only shows upcoming payouts', () => {
-    const noDividendTable = buildDividendTable()[STOCK_ID].map((cell, idx) =>
-      idx === 3 ? { TWD: { ...cell.TWD, dividend: 0, dividend_date: null } } : cell
-    );
+  test('hides a stock with no dividend in either current or next month -- the collapsed view only shows upcoming payouts', () => {
     const dividendTable = {
-      [STOCK_ID]: noDividendTable,
-      [STOCK_ID_2]: withCurrentMonthCell(STOCK_ID, { dividend_date: TOMORROW }),
+      [STOCK_ID]: buildTable({ 3: null, 4: null }),
+      [STOCK_ID_2]: buildTable({ 3: { dividend_date: TOMORROW }, 4: null }),
     };
     const { container } = renderWithLang({
       stocks: [
@@ -543,10 +551,42 @@ describe('mobile cards: current-month ex-dividend date and already-passed filter
     expect(container.querySelector('.stock-card__month-nodata')).not.toBeInTheDocument();
   });
 
+  test('falls back to next month\'s data when the current month\'s ex-dividend date has already passed', () => {
+    // buildDefaultProps' MONTHS: idx 3 = '4月', idx 4 = '5月'.
+    const dividendTable = {
+      [STOCK_ID]: buildTable({
+        3: { dividend_date: YESTERDAY },
+        4: { dividend: 2.5, dividend_date: TOMORROW },
+      }),
+    };
+    const { container } = renderWithLang({ dividendTable });
+
+    expect(cardStockIds(container)).toEqual([STOCK_ID]);
+    const shownMonthLi = container.querySelector('.stock-card__month--current');
+    expect(shownMonthLi.textContent).toContain('5月');
+    expect(shownMonthLi.textContent).toContain(TOMORROW);
+    expect(shownMonthLi.textContent).not.toContain('4月');
+  });
+
+  test('falls back to next month\'s data when the current month has no dividend at all', () => {
+    const dividendTable = {
+      [STOCK_ID]: buildTable({
+        3: null,
+        4: { dividend: 2.5, dividend_date: TOMORROW },
+      }),
+    };
+    const { container } = renderWithLang({ dividendTable });
+
+    expect(cardStockIds(container)).toEqual([STOCK_ID]);
+    const shownMonthLi = container.querySelector('.stock-card__month--current');
+    expect(shownMonthLi.textContent).toContain('5月');
+    expect(shownMonthLi.textContent).toContain(TOMORROW);
+  });
+
   test('does not apply the past-ex-dividend filter once the month list is expanded beyond the current month alone', () => {
     const dividendTable = {
-      [STOCK_ID]: withCurrentMonthCell(STOCK_ID, { dividend_date: YESTERDAY }),
-      [STOCK_ID_2]: withCurrentMonthCell(STOCK_ID, { dividend_date: TOMORROW }),
+      [STOCK_ID]: buildTable({ 3: { dividend_date: YESTERDAY }, 4: null }),
+      [STOCK_ID_2]: buildTable({ 3: { dividend_date: TOMORROW }, 4: null }),
     };
     const { container } = renderWithLang({
       stocks: [

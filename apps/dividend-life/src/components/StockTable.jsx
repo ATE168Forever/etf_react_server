@@ -313,26 +313,39 @@ export default function StockTable({
   const hasExtraRows = totalStocksCount > DEFAULT_VISIBLE_COUNT;
   const shouldVirtualizeMain = showAllStocks && !showInfoAxis;
 
-  // Mobile card list only: the collapsed (current-month-only) view now only
-  // shows stocks with an upcoming current-month payout -- a stock with no
-  // dividend this month, or one whose ex-dividend date has already passed,
-  // is dropped entirely rather than shown with a "no dividend" hint or a
-  // stale already-past date. Scoped to the collapsed view -- once the month
-  // list is expanded, every stock's full history is relevant again.
+  // Mobile card list only: the collapsed (current-month-only) view shows
+  // each stock's nearest upcoming payout -- current month if it still has
+  // one, otherwise next month (mirrors the "latest" sort option's
+  // current-or-next logic). A stock with no upcoming dividend in either
+  // month is dropped entirely rather than shown with a "no dividend" hint
+  // or a stale already-past date. Scoped to the collapsed view -- once the
+  // month list is expanded, every stock's full history is relevant again.
   const isCollapsedMonthView = visibleMonthIndices.length === 1 && visibleMonthIndices[0] === currentMonth;
-  const cardStocks = useMemo(() => {
-    if (!isCollapsedMonthView) return limitedStocks;
-    return limitedStocks.filter(stock => {
-      const currenciesWithValue = activeCurrencies.filter(
-        currency => getMonthValue(stock.stock_id, currentMonth, currency) > 0
-      );
-      if (currenciesWithValue.length === 0) return false;
-      const allPast = currenciesWithValue.every(currency =>
-        isExDividendPast(getMonthDividendDate(stock.stock_id, currentMonth, currency))
-      );
-      return !allPast;
-    });
-  }, [limitedStocks, isCollapsedMonthView, activeCurrencies, getMonthValue, getMonthDividendDate, currentMonth]);
+  const nextMonth = (currentMonth + 1) % 12;
+  const monthHasUpcomingDividend = useCallback((stockId, idx) => {
+    const currenciesWithValue = activeCurrencies.filter(
+      currency => getMonthValue(stockId, idx, currency) > 0
+    );
+    if (currenciesWithValue.length === 0) return false;
+    return currenciesWithValue.some(
+      currency => !isExDividendPast(getMonthDividendDate(stockId, idx, currency))
+    );
+  }, [activeCurrencies, getMonthValue, getMonthDividendDate]);
+  const cardStockEntries = useMemo(() => {
+    if (!isCollapsedMonthView) {
+      return limitedStocks.map(stock => ({ stock, effectiveMonthIdx: currentMonth }));
+    }
+    return limitedStocks
+      .map(stock => {
+        const effectiveMonthIdx = monthHasUpcomingDividend(stock.stock_id, currentMonth)
+          ? currentMonth
+          : monthHasUpcomingDividend(stock.stock_id, nextMonth)
+            ? nextMonth
+            : null;
+        return { stock, effectiveMonthIdx };
+      })
+      .filter(entry => entry.effectiveMonthIdx !== null);
+  }, [limitedStocks, isCollapsedMonthView, monthHasUpcomingDividend, currentMonth, nextMonth]);
 
   const monthCellCache = useMemo(() => {
     const cache = new Map();
@@ -825,13 +838,13 @@ export default function StockTable({
       )}
       {stocks.length > 0 && isCardViewport && (
         <ul className="stock-table-cards">
-          {cardStocks.map(stock => (
+          {cardStockEntries.map(({ stock, effectiveMonthIdx }) => (
             <StockCard
               key={stock.stock_id + stock.stock_name}
               stock={stock}
               months={MONTHS}
-              visibleMonthIndices={visibleMonthIndices}
-              currentMonth={currentMonth}
+              visibleMonthIndices={isCollapsedMonthView ? [effectiveMonthIdx] : visibleMonthIndices}
+              currentMonth={effectiveMonthIdx}
               showPerYield={showPerYield}
               showDividendYield={showDividendYield}
               lang={lang}
