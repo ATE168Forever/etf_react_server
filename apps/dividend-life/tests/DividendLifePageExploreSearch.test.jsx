@@ -5,6 +5,11 @@
 // Reset button restoring a filtered-out stock, had a test before this file
 // -- both were previously covered only indirectly by "the full suite still
 // passes". Mocking pattern copied from AppExploreCalendarYield.test.jsx.
+//
+// The search box was later replaced with a multi-select checkbox dropdown
+// (the same FilterDropdown the desktop table's "依代號篩選" column-header
+// button uses) driven by selectedStockIds, instead of free-text matching --
+// these tests were updated to drive that flow instead.
 import { render, screen, act, waitFor, fireEvent } from '@testing-library/react';
 
 jest.mock('@shared/assets/dividend-life.svg', () => 'data:image/svg+xml;base64,PHN2Zy8+');
@@ -98,23 +103,38 @@ test('both stocks render in the Explore tab before any search text is entered', 
   expect(screen.getAllByText('00878').length).toBeGreaterThan(0);
 });
 
-test('typing a query into the search box filters out the non-matching stock', async () => {
+function openSearchDropdownAndSelect(stockId) {
+  const trigger = document.getElementById('filter-search');
+  fireEvent.click(trigger);
+
+  // FilterDropdown renders via a portal directly onto document.body, so it
+  // lives outside the render container -- query the whole document instead.
+  const checkbox = Array.from(document.querySelectorAll('.dropdown-item'))
+    .find(label => label.textContent.trim() === stockId)
+    .querySelector('input[type="checkbox"]');
+  fireEvent.click(checkbox);
+
+  const applyButton = screen.getByRole('button', { name: '確定' });
+  fireEvent.click(applyButton);
+}
+
+test('checking one stock in the search dropdown filters out the other', async () => {
   await renderOnExploreTab();
 
-  const searchInput = document.getElementById('filter-search');
-  expect(searchInput).toBeTruthy();
+  const trigger = document.getElementById('filter-search');
+  expect(trigger).toBeTruthy();
 
-  fireEvent.change(searchInput, { target: { value: '0050' } });
+  openSearchDropdownAndSelect('0050');
 
   await waitFor(() => expect(screen.queryAllByText('00878').length).toBe(0));
   expect(screen.getAllByText('0050').length).toBeGreaterThan(0);
+  expect(trigger).toHaveTextContent('已選 1 檔');
 });
 
-test('Reset restores both stocks after a search has filtered one out', async () => {
+test('Reset restores both stocks after the search dropdown has filtered one out', async () => {
   await renderOnExploreTab();
 
-  const searchInput = document.getElementById('filter-search');
-  fireEvent.change(searchInput, { target: { value: '0050' } });
+  openSearchDropdownAndSelect('0050');
   await waitFor(() => expect(screen.queryAllByText('00878').length).toBe(0));
 
   const resetButton = screen.getByRole('button', { name: /重置/ });
@@ -122,5 +142,5 @@ test('Reset restores both stocks after a search has filtered one out', async () 
 
   await waitFor(() => expect(screen.getAllByText('00878').length).toBeGreaterThan(0));
   expect(screen.getAllByText('0050').length).toBeGreaterThan(0);
-  expect(searchInput.value).toBe('');
+  expect(document.getElementById('filter-search')).toHaveTextContent('ETF 代號或名稱');
 });

@@ -2918,6 +2918,16 @@ button.metric-card:focus-visible {
   outline-offset: 1px;
 }
 
+.filter-bar__search-trigger {
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.filter-bar__search-trigger:hover {
+  border-color: var(--accent-gold);
+}
+
 .filter-bar__group-row {
   display: flex;
   align-items: center;

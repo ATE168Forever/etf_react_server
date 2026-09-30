@@ -8,6 +8,7 @@ import StockTable from './components/StockTable';
 import Footer from '@shared/components/Footer/Footer.jsx';
 import ExperienceNavigation from '@shared/components/ExperienceNavigation/ExperienceNavigation.jsx';
 import AdvancedFilterDropdown from './components/AdvancedFilterDropdown';
+import FilterDropdown from './components/FilterDropdown';
 import CurrencyViewToggle from './components/CurrencyViewToggle';
 import TooltipText from './components/TooltipText';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -150,7 +151,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   } = useDividendData({ dividendScope, setDividendScope, transactionHistory: effectiveTransactions, transactionHistoryLoaded });
 
   const [exploreScope, setExploreScope] = useState('all');
-  const [exploreSearchText, setExploreSearchText] = useState('');
   const [hasVisitedExploreTab, setHasVisitedExploreTab] = useState(tab === 'dividend');
 
   useEffect(() => {
@@ -258,6 +258,54 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
     setFilterBarCollapsed(true);
   };
 
+  // Explore ETF search: a multi-select checkbox dropdown (same FilterDropdown
+  // used by the desktop table's "依代號篩選" column-header button) instead of
+  // free-text search, so both entry points drive the same selectedStockIds.
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [searchDropdownPosition, setSearchDropdownPosition] = useState(null);
+  const searchTriggerRef = useRef(null);
+
+  const updateSearchDropdownPosition = useCallback(() => {
+    if (!showSearchDropdown) return;
+    if (!searchTriggerRef.current) return;
+    if (typeof window === 'undefined') return;
+
+    const rect = searchTriggerRef.current.getBoundingClientRect();
+    const scrollX = window.scrollX ?? window.pageXOffset ?? 0;
+    const scrollY = window.scrollY ?? window.pageYOffset ?? 0;
+    const dropdownWidth = 260;
+    const viewportRight = scrollX + window.innerWidth;
+    const horizontalPadding = 16;
+
+    let left = rect.left + scrollX;
+    if (left + dropdownWidth > viewportRight - horizontalPadding) {
+      left = Math.max(scrollX + horizontalPadding, viewportRight - dropdownWidth - horizontalPadding);
+    }
+
+    const verticalOffset = 8;
+    const top = rect.bottom + scrollY + verticalOffset;
+
+    setSearchDropdownPosition({ top, left });
+  }, [showSearchDropdown]);
+
+  useEffect(() => {
+    if (!showSearchDropdown) {
+      setSearchDropdownPosition(null);
+      return undefined;
+    }
+    if (typeof window === 'undefined') return undefined;
+
+    const handleReposition = () => updateSearchDropdownPosition();
+    updateSearchDropdownPosition();
+
+    window.addEventListener('scroll', handleReposition, true);
+    window.addEventListener('resize', handleReposition);
+    return () => {
+      window.removeEventListener('scroll', handleReposition, true);
+      window.removeEventListener('resize', handleReposition);
+    };
+  }, [showSearchDropdown, updateSearchDropdownPosition]);
+
   // Theme
   const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem('theme');
@@ -343,7 +391,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       setShowAllStocks(false);
       setExtraFilters({ minYield: '', freq: [], upcomingWithin: '', diamond: false });
       setShowAdvancedFilters(false);
-      setExploreSearchText('');
   }, []);
 
   // Watch groups hook
@@ -417,12 +464,6 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
   const canSelectPurchased = purchasedStockIds.length > 0;
 
   const filteredStocks = useMemo(() => exploreStocks.filter(stock => {
-    if (exploreSearchText.trim()) {
-      const query = exploreSearchText.trim().toLowerCase();
-      const matchesId = stock.stock_id.toLowerCase().includes(query);
-      const matchesName = (stock.stock_name || '').toLowerCase().includes(query);
-      if (!matchesId && !matchesName) return false;
-    }
     if (selectedStockIds.length && !selectedStockIds.includes(stock.stock_id)) return false;
 
     // Check if this is a purchased stock with no dividend data
@@ -501,7 +542,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
       }
     }
     return true;
-  }), [exploreStocks, selectedStockIds, exploreScope, purchasedStockIds, exploreDividendTable, monthHasValue, viewMode, exploreStockCurrencyMap, extraFilters, activeCurrencies, exploreFreqMap, exploreSearchText]);
+  }), [exploreStocks, selectedStockIds, exploreScope, purchasedStockIds, exploreDividendTable, monthHasValue, viewMode, exploreStockCurrencyMap, extraFilters, activeCurrencies, exploreFreqMap]);
 
   const maxYieldPerMonth = useMemo(() => {
     const currenciesForMax = exploreAvailableCurrencies.length > 0 ? exploreAvailableCurrencies : [DEFAULT_CURRENCY];
@@ -889,14 +930,29 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                     <label htmlFor="filter-search" className="filter-bar__label">
                       {lang === 'en' ? 'Search' : '搜尋'}
                     </label>
-                    <input
+                    <button
+                      type="button"
                       id="filter-search"
-                      type="search"
-                      className="filter-bar__search-input"
-                      value={exploreSearchText}
-                      onChange={e => setExploreSearchText(e.target.value)}
-                      placeholder={lang === 'en' ? 'ETF code or name' : 'ETF 代號或名稱'}
-                    />
+                      className="filter-bar__search-input filter-bar__search-trigger"
+                      onClick={() => setShowSearchDropdown(true)}
+                      onFocus={() => setShowSearchDropdown(true)}
+                      aria-haspopup="true"
+                      aria-expanded={showSearchDropdown}
+                      ref={searchTriggerRef}
+                    >
+                      {selectedStockIds.length > 0
+                        ? (lang === 'en' ? `${selectedStockIds.length} selected` : `已選 ${selectedStockIds.length} 檔`)
+                        : (lang === 'en' ? 'ETF code or name' : 'ETF 代號或名稱')}
+                    </button>
+                    {showSearchDropdown && searchDropdownPosition && (
+                      <FilterDropdown
+                        options={exploreStockOptions}
+                        selected={selectedStockIds}
+                        setSelected={setSelectedStockIds}
+                        onClose={() => setShowSearchDropdown(false)}
+                        position={searchDropdownPosition}
+                      />
+                    )}
                   </div>
                   <div className="filter-bar__item">
                     <label htmlFor="filter-year" className="filter-bar__label">
@@ -1019,7 +1075,7 @@ function DividendLifePage({ homeHref = '/', homeNavigation = 'router' } = {}) {
                   <button
                     type="button"
                     className="filter-bar__reset-btn"
-                    onClick={handleResetFilters}
+                    onClick={() => handleResetFilters()}
                   >
                     {lang === 'en' ? '↺ Reset' : '↺ 重置'}
                   </button>
