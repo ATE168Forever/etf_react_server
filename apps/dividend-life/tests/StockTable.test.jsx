@@ -229,13 +229,19 @@ test('the card totals row labels the accumulated yield when the yield display mo
 });
 
 test('a month with no dividend shows a no-dividend hint next to the month label', () => {
+  // The collapsed (current-month-only) view now hides a card entirely when
+  // the current month has no dividend (see the dedicated describe block
+  // below), so the hint is only reachable once the month list is expanded
+  // to include other months alongside one with no data.
   const noData = buildDividendTable()[STOCK_ID].map((cell, idx) => (idx === 5 ? {} : cell));
   const { container } = renderWithLang({
     currentMonth: 5,
     dividendTable: { [STOCK_ID]: noData },
   });
 
-  const monthRow = container.querySelector('.stock-card .stock-card__month');
+  fireEvent.click(screen.getByRole('button', { name: /顯示近3月比較/ }));
+
+  const monthRow = container.querySelector('.stock-card .stock-card__month--current');
   expect(monthRow).toHaveTextContent('無配息');
 });
 
@@ -516,7 +522,7 @@ describe('mobile cards: current-month ex-dividend date and already-passed filter
     expect(cardStockIds(container)).toEqual([STOCK_ID_2]);
   });
 
-  test('does not hide a stock with no dividend this month -- the existing no-dividend hint still applies', () => {
+  test('hides a stock with no dividend this month too -- the collapsed view only shows upcoming payouts', () => {
     const noDividendTable = buildDividendTable()[STOCK_ID].map((cell, idx) =>
       idx === 3 ? { TWD: { ...cell.TWD, dividend: 0, dividend_date: null } } : cell
     );
@@ -533,8 +539,8 @@ describe('mobile cards: current-month ex-dividend date and already-passed filter
       freqMap: { [STOCK_ID]: 4, [STOCK_ID_2]: 4 },
     });
 
-    expect(cardStockIds(container)).toEqual([STOCK_ID, STOCK_ID_2]);
-    expect(container.querySelector('.stock-card__month-nodata')).toBeInTheDocument();
+    expect(cardStockIds(container)).toEqual([STOCK_ID_2]);
+    expect(container.querySelector('.stock-card__month-nodata')).not.toBeInTheDocument();
   });
 
   test('does not apply the past-ex-dividend filter once the month list is expanded beyond the current month alone', () => {

@@ -313,12 +313,11 @@ export default function StockTable({
   const hasExtraRows = totalStocksCount > DEFAULT_VISIBLE_COUNT;
   const shouldVirtualizeMain = showAllStocks && !showInfoAxis;
 
-  // Mobile card list only: once the current month's dividend has already
-  // gone ex-dividend, showing it as "the current payment" is stale -- drop
-  // the card entirely rather than surface an already-past date. Only a
-  // stock that HAS a dividend this month is eligible for this; one with no
-  // dividend this month keeps the existing "no dividend" hint instead.
-  // Scoped to the collapsed (current-month-only) view -- once the month
+  // Mobile card list only: the collapsed (current-month-only) view now only
+  // shows stocks with an upcoming current-month payout -- a stock with no
+  // dividend this month, or one whose ex-dividend date has already passed,
+  // is dropped entirely rather than shown with a "no dividend" hint or a
+  // stale already-past date. Scoped to the collapsed view -- once the month
   // list is expanded, every stock's full history is relevant again.
   const isCollapsedMonthView = visibleMonthIndices.length === 1 && visibleMonthIndices[0] === currentMonth;
   const cardStocks = useMemo(() => {
@@ -327,7 +326,7 @@ export default function StockTable({
       const currenciesWithValue = activeCurrencies.filter(
         currency => getMonthValue(stock.stock_id, currentMonth, currency) > 0
       );
-      if (currenciesWithValue.length === 0) return true;
+      if (currenciesWithValue.length === 0) return false;
       const allPast = currenciesWithValue.every(currency =>
         isExDividendPast(getMonthDividendDate(stock.stock_id, currentMonth, currency))
       );
