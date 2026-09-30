@@ -42,6 +42,14 @@ afterEach(() => {
 // is currently visible. Values themselves are arbitrary — these tests only
 // assert on the number/labels of rendered month <th> headers.
 const STOCK_ID = '0050';
+// Always "tomorrow" (never hardcode a date -- see CLAUDE.md) so this fixture's
+// dividend_date never accidentally trips the "already past ex-dividend"
+// mobile-card filter in tests that aren't about that feature.
+const NOT_YET_PAST_DATE = (() => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+})();
 const buildDividendTable = () => ({
   [STOCK_ID]: Array.from({ length: 12 }, () => ({
     TWD: {
@@ -50,7 +58,7 @@ const buildDividendTable = () => ({
       dividend_yield: 2.5,
       hasValidYield: true,
       perYield: 0.2,
-      dividend_date: '2026-01-10',
+      dividend_date: NOT_YET_PAST_DATE,
       payment_date: '2026-01-20',
       entries: [],
     },
@@ -339,20 +347,16 @@ describe('mobile card sort control', () => {
     expect(container.querySelector('.stock-card-sort-direction')).toBeInTheDocument();
   });
 
-  test('the sort options keep their original month-labeled text, even though the underlying metric now also looks at next month', () => {
-    // buildDefaultProps sets currentMonth: 3, i.e. '4月'. Only the sort
-    // *logic* changed (max of this month and next month); the option
-    // labels stay exactly as before -- still naming the current month.
+  test('the sort options are labeled "latest" rather than naming the current month', () => {
     const { container } = renderWithLang(twoStockProps);
     const options = Array.from(container.querySelector('#stock-card-sort-select').options)
       .map(o => o.textContent);
 
-    expect(options).toContain('4月配息金額');
+    expect(options).toContain('最新配息金額');
     expect(options).toContain('全年預估殖利率');
-    expect(options).toContain('年化殖利率（4月）');
-    expect(options).not.toContain('最新配息金額');
-    expect(options).not.toContain('最新年化殖利率');
-    // The old bare-month-name label was the ambiguous one fixed earlier.
+    expect(options).toContain('最新年化殖利率');
+    expect(options).not.toContain('4月配息金額');
+    expect(options).not.toContain('年化殖利率（4月）');
     expect(options).not.toContain('4月');
   });
 
@@ -461,5 +465,96 @@ describe('mobile card sort control', () => {
 
     // Ascending: STOCK_ID_2 (perYield 0.1 -> 1.2%) before STOCK_ID (perYield 0.5 -> 6%).
     expect(cardStockIds(container)).toEqual([STOCK_ID_2, STOCK_ID]);
+  });
+});
+
+describe('mobile cards: current-month ex-dividend date and already-passed filtering', () => {
+  const STOCK_ID_2 = '00878';
+
+  function isoDateOffset(days) {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+  const YESTERDAY = isoDateOffset(-1);
+  const TOMORROW = isoDateOffset(1);
+
+  // buildDefaultProps sets currentMonth: 3.
+  function withCurrentMonthCell(stockId, overrides) {
+    return buildDividendTable()[STOCK_ID].map((cell, idx) =>
+      idx === 3 ? { TWD: { ...cell.TWD, ...overrides } } : cell
+    );
+  }
+
+  const cardStockIds = (container) =>
+    Array.from(container.querySelectorAll('.stock-card__id')).map((el) => el.textContent);
+
+  test('shows the current month\'s ex-dividend date on the card', () => {
+    const dividendTable = {
+      [STOCK_ID]: withCurrentMonthCell(STOCK_ID, { dividend_date: TOMORROW }),
+    };
+    const { container } = renderWithLang({ dividendTable });
+
+    const currentMonthLi = container.querySelector('.stock-card__month--current');
+    expect(currentMonthLi.textContent).toContain(TOMORROW);
+  });
+
+  test('hides a stock\'s card entirely when its current-month ex-dividend date has already passed', () => {
+    const dividendTable = {
+      [STOCK_ID]: withCurrentMonthCell(STOCK_ID, { dividend_date: YESTERDAY }),
+      [STOCK_ID_2]: withCurrentMonthCell(STOCK_ID, { dividend_date: TOMORROW }),
+    };
+    const { container } = renderWithLang({
+      stocks: [
+        { stock_id: STOCK_ID, stock_name: '元大台灣50' },
+        { stock_id: STOCK_ID_2, stock_name: '國泰永續高股息' },
+      ],
+      dividendTable,
+      freqMap: { [STOCK_ID]: 4, [STOCK_ID_2]: 4 },
+    });
+
+    expect(cardStockIds(container)).toEqual([STOCK_ID_2]);
+  });
+
+  test('does not hide a stock with no dividend this month -- the existing no-dividend hint still applies', () => {
+    const noDividendTable = buildDividendTable()[STOCK_ID].map((cell, idx) =>
+      idx === 3 ? { TWD: { ...cell.TWD, dividend: 0, dividend_date: null } } : cell
+    );
+    const dividendTable = {
+      [STOCK_ID]: noDividendTable,
+      [STOCK_ID_2]: withCurrentMonthCell(STOCK_ID, { dividend_date: TOMORROW }),
+    };
+    const { container } = renderWithLang({
+      stocks: [
+        { stock_id: STOCK_ID, stock_name: '元大台灣50' },
+        { stock_id: STOCK_ID_2, stock_name: '國泰永續高股息' },
+      ],
+      dividendTable,
+      freqMap: { [STOCK_ID]: 4, [STOCK_ID_2]: 4 },
+    });
+
+    expect(cardStockIds(container)).toEqual([STOCK_ID, STOCK_ID_2]);
+    expect(container.querySelector('.stock-card__month-nodata')).toBeInTheDocument();
+  });
+
+  test('does not apply the past-ex-dividend filter once the month list is expanded beyond the current month alone', () => {
+    const dividendTable = {
+      [STOCK_ID]: withCurrentMonthCell(STOCK_ID, { dividend_date: YESTERDAY }),
+      [STOCK_ID_2]: withCurrentMonthCell(STOCK_ID, { dividend_date: TOMORROW }),
+    };
+    const { container } = renderWithLang({
+      stocks: [
+        { stock_id: STOCK_ID, stock_name: '元大台灣50' },
+        { stock_id: STOCK_ID_2, stock_name: '國泰永續高股息' },
+      ],
+      dividendTable,
+      freqMap: { [STOCK_ID]: 4, [STOCK_ID_2]: 4 },
+    });
+
+    expect(cardStockIds(container)).toEqual([STOCK_ID_2]);
+
+    fireEvent.click(screen.getByRole('button', { name: /顯示近3月比較/ }));
+
+    expect(cardStockIds(container)).toEqual([STOCK_ID, STOCK_ID_2]);
   });
 });

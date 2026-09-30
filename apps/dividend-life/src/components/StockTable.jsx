@@ -6,6 +6,7 @@ import { HOST_URL } from '../../config';
 import { useLanguage } from '../i18n';
 import usePreserveScroll from '../hooks/usePreserveScroll';
 import { getDividendCellDisplay } from '../utils/dividendCellFormat';
+import { isExDividendPast } from '../utils/exDividendStatus';
 
 const NUM_COL_WIDTH = 90;
 const DEFAULT_VISIBLE_COUNT = 20;
@@ -233,6 +234,21 @@ export default function StockTable({
     }, 0);
   }, [activeCurrencies, dividendTable]);
 
+  // The ex-dividend date for a given cell -- used by the mobile card to
+  // show the current month's ex-dividend date, and to filter out stocks
+  // whose current-month dividend has already gone ex-dividend. With no
+  // currencyKey, returns the first active currency that has a date.
+  const getMonthDividendDate = useCallback((stockId, idx, currencyKey = null) => {
+    if (currencyKey) {
+      return dividendTable[stockId]?.[idx]?.[currencyKey]?.dividend_date || null;
+    }
+    for (const currency of activeCurrencies) {
+      const date = dividendTable[stockId]?.[idx]?.[currency]?.dividend_date;
+      if (date) return date;
+    }
+    return null;
+  }, [activeCurrencies, dividendTable]);
+
   const deferredStocks = useDeferredValue(stocks);
 
   const sortedStocks = useMemo(() => {
@@ -296,6 +312,28 @@ export default function StockTable({
   }, [sortedStocks, visibleLimit]);
   const hasExtraRows = totalStocksCount > DEFAULT_VISIBLE_COUNT;
   const shouldVirtualizeMain = showAllStocks && !showInfoAxis;
+
+  // Mobile card list only: once the current month's dividend has already
+  // gone ex-dividend, showing it as "the current payment" is stale -- drop
+  // the card entirely rather than surface an already-past date. Only a
+  // stock that HAS a dividend this month is eligible for this; one with no
+  // dividend this month keeps the existing "no dividend" hint instead.
+  // Scoped to the collapsed (current-month-only) view -- once the month
+  // list is expanded, every stock's full history is relevant again.
+  const isCollapsedMonthView = visibleMonthIndices.length === 1 && visibleMonthIndices[0] === currentMonth;
+  const cardStocks = useMemo(() => {
+    if (!isCollapsedMonthView) return limitedStocks;
+    return limitedStocks.filter(stock => {
+      const currenciesWithValue = activeCurrencies.filter(
+        currency => getMonthValue(stock.stock_id, currentMonth, currency) > 0
+      );
+      if (currenciesWithValue.length === 0) return true;
+      const allPast = currenciesWithValue.every(currency =>
+        isExDividendPast(getMonthDividendDate(stock.stock_id, currentMonth, currency))
+      );
+      return !allPast;
+    });
+  }, [limitedStocks, isCollapsedMonthView, activeCurrencies, getMonthValue, getMonthDividendDate, currentMonth]);
 
   const monthCellCache = useMemo(() => {
     const cache = new Map();
@@ -770,15 +808,9 @@ export default function StockTable({
           >
             <option value="stock_id">{t('stock_code_name')}</option>
             <option value="latest_price">{lang === 'zh' ? '最新股價' : 'Latest Price'}</option>
-            <option value="latest_amount">
-              {lang === 'zh' ? `${MONTHS[currentMonth]}配息金額` : `${MONTHS[currentMonth]} Dividend`}
-            </option>
+            <option value="latest_amount">{t('latest_dividend_amount')}</option>
             <option value="annual_yield">{t('full_year_estimated_yield')}</option>
-            <option value="latest_annualized_yield">
-              {lang === 'zh'
-                ? `${t('annualized_yield')}（${MONTHS[currentMonth]}）`
-                : `${t('annualized_yield')} (${MONTHS[currentMonth]})`}
-            </option>
+            <option value="latest_annualized_yield">{t('latest_annualized_yield')}</option>
           </select>
           <button
             type="button"
@@ -794,7 +826,7 @@ export default function StockTable({
       )}
       {stocks.length > 0 && isCardViewport && (
         <ul className="stock-table-cards">
-          {limitedStocks.map(stock => (
+          {cardStocks.map(stock => (
             <StockCard
               key={stock.stock_id + stock.stock_name}
               stock={stock}
@@ -807,6 +839,7 @@ export default function StockTable({
               latestPrice={latestPrice}
               getMonthValue={getMonthValue}
               getMonthPerYield={getMonthPerYield}
+              getMonthDividendDate={getMonthDividendDate}
               activeCurrencies={activeCurrencies}
               totalPerStock={totalPerStock}
               yieldSum={yieldSum}
@@ -1002,6 +1035,7 @@ const StockCard = memo(function StockCard({
   latestPrice,
   getMonthValue,
   getMonthPerYield,
+  getMonthDividendDate,
   activeCurrencies,
   totalPerStock,
   yieldSum,
@@ -1062,12 +1096,20 @@ const StockCard = memo(function StockCard({
                 <span className="stock-card__month-values">
                   {activeCurrencies.map(currency => {
                     const annualizedYield = getMonthPerYield(stock.stock_id, idx, currency) * 12;
+                    const exDivDate = idx === currentMonth
+                      ? getMonthDividendDate(stock.stock_id, idx, currency)
+                      : null;
                     return (
                       <span key={currency}>
                         {currencyLabelFor(currency)}{formatMonthValue(getMonthValue(stock.stock_id, idx, currency))}
                         {!showPerYield && annualizedYield > 0 && (
                           <span className="stock-card__month-yield">
                             {' '}· {t('annualized_yield')} {annualizedYield.toFixed(1)}%
+                          </span>
+                        )}
+                        {exDivDate && (
+                          <span className="stock-card__month-exdiv">
+                            {' '}· {t('ex_dividend_date')} {exDivDate}
                           </span>
                         )}
                       </span>
