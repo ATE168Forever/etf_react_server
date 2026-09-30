@@ -1078,6 +1078,17 @@ const StockCard = memo(function StockCard({
   const freq = freqMap[stock.stock_id];
   const freqLabel = freqNameMap[freq] || t('irregular');
 
+  // Only show currencies this stock actually has data in across the year --
+  // a TWD-only ETF shouldn't render a "US$—" placeholder just because the
+  // page's currency view also includes USD. Falls back to activeCurrencies
+  // when the stock has no data in ANY currency (e.g. a brand-new listing),
+  // so it isn't left with a blank month-values column.
+  const monthsRange = Array.from({ length: 12 }, (_, i) => i);
+  const cardCurrencies = activeCurrencies.filter(currency =>
+    monthsRange.some(i => getMonthValue(stock.stock_id, i, currency) > 0)
+  );
+  const displayCurrencies = cardCurrencies.length > 0 ? cardCurrencies : activeCurrencies;
+
   return (
     <li className="stock-card">
       <div className="stock-card__header">
@@ -1100,7 +1111,7 @@ const StockCard = memo(function StockCard({
       {visibleMonthIndices.length > 0 && (
         <ul className="stock-card__months">
           {visibleMonthIndices.map(idx => {
-            const hasAnyValue = activeCurrencies.some(
+            const hasAnyValue = displayCurrencies.some(
               currency => getMonthValue(stock.stock_id, idx, currency) > 0
             );
             return (
@@ -1115,7 +1126,7 @@ const StockCard = memo(function StockCard({
                   )}
                 </span>
                 <span className="stock-card__month-values">
-                  {activeCurrencies.map(currency => {
+                  {displayCurrencies.map(currency => {
                     const annualizedYield = getMonthPerYield(stock.stock_id, idx, currency) * 12;
                     const exDivDate = idx === currentMonth
                       ? getMonthDividendDate(stock.stock_id, idx, currency)

@@ -643,3 +643,30 @@ describe('mobile cards: current-month ex-dividend date and already-passed filter
     expect(byPriceSet).toEqual(new Set(eligibleIds));
   });
 });
+
+describe('mobile cards: only show currencies the stock actually trades in', () => {
+  test('a TWD-only stock does not show a "US$—" placeholder when USD is also an active currency', () => {
+    const { container } = renderWithLang({
+      activeCurrencies: ['TWD', 'USD'],
+    });
+
+    const currentMonthLi = container.querySelector('.stock-card__month--current');
+    expect(currentMonthLi.textContent).toContain('NT$');
+    expect(currentMonthLi.textContent).not.toContain('US$');
+  });
+
+  test('a stock with both currencies still shows both', () => {
+    const dualCurrencyTable = buildDividendTable()[STOCK_ID].map(cell => ({
+      ...cell,
+      USD: { ...cell.TWD, dividend: 0.05 },
+    }));
+    const { container } = renderWithLang({
+      activeCurrencies: ['TWD', 'USD'],
+      dividendTable: { [STOCK_ID]: dualCurrencyTable },
+    });
+
+    const currentMonthLi = container.querySelector('.stock-card__month--current');
+    expect(currentMonthLi.textContent).toContain('NT$');
+    expect(currentMonthLi.textContent).toContain('US$');
+  });
+});
