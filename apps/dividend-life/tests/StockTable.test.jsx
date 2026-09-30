@@ -603,4 +603,43 @@ describe('mobile cards: current-month ex-dividend date and already-passed filter
 
     expect(cardStockIds(container)).toEqual([STOCK_ID, STOCK_ID_2]);
   });
+
+  test('the eligible-stock set shown is the same regardless of which sort option is chosen', () => {
+    // 21 stocks: A00..A19 are eligible (an upcoming current-month dividend),
+    // A20 is not (no dividend this month or next). A20 sorts last
+    // alphabetically but has the LOWEST price, so ascending-by-price puts
+    // it FIRST. If eligibility were filtered only *after* slicing to the
+    // default 20-card page (the bug being fixed here), price-ascending
+    // would burn one of its 20 slots on A20 before dropping it, leaving
+    // only 19 visible stocks (missing A19) -- a different set than
+    // alphabetical sort's 20. Filtering before slicing keeps both sorts
+    // drawing from the same 20-stock eligible pool.
+    const eligibleIds = Array.from({ length: 20 }, (_, i) => `A${String(i).padStart(2, '0')}`);
+    const ineligibleId = 'A20';
+    const allIds = [...eligibleIds, ineligibleId];
+
+    const stocks = allIds.map(id => ({ stock_id: id, stock_name: id }));
+    const dividendTable = {};
+    eligibleIds.forEach((id, i) => {
+      dividendTable[id] = buildTable({ 3: { dividend_date: TOMORROW }, 4: null });
+    });
+    dividendTable[ineligibleId] = buildTable({ 3: null, 4: null });
+
+    const latestPrice = {};
+    eligibleIds.forEach((id, i) => { latestPrice[id] = { price: 100 + i }; });
+    latestPrice[ineligibleId] = { price: 1 };
+
+    const freqMap = {};
+    allIds.forEach(id => { freqMap[id] = 4; });
+
+    const { container } = renderWithLang({ stocks, dividendTable, latestPrice, freqMap });
+
+    const alphabeticalSet = new Set(cardStockIds(container));
+
+    fireEvent.change(screen.getByLabelText('排序：'), { target: { value: 'latest_price' } });
+    const byPriceSet = new Set(cardStockIds(container));
+
+    expect(alphabeticalSet).toEqual(new Set(eligibleIds));
+    expect(byPriceSet).toEqual(new Set(eligibleIds));
+  });
 });

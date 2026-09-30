@@ -302,17 +302,6 @@ export default function StockTable({
     });
   }, [deferredStocks, sortConfig, showDividendYield, latestPrice, getYieldSumForStock, getTotalForStock, getAnnualYieldForStock, getMonthValue, getMonthPerYield, currentMonth]);
 
-  const totalStocksCount = sortedStocks.length;
-  const visibleLimit = showAllStocks
-    ? totalStocksCount
-    : Math.min(visibleCount, totalStocksCount || 0) || 0;
-  const limitedStocks = useMemo(() => {
-    if (!visibleLimit) return [];
-    return sortedStocks.slice(0, visibleLimit);
-  }, [sortedStocks, visibleLimit]);
-  const hasExtraRows = totalStocksCount > DEFAULT_VISIBLE_COUNT;
-  const shouldVirtualizeMain = showAllStocks && !showInfoAxis;
-
   // Mobile card list only: the collapsed (current-month-only) view shows
   // each stock's nearest upcoming payout -- current month if it still has
   // one, otherwise next month (mirrors the "latest" sort option's
@@ -331,20 +320,40 @@ export default function StockTable({
       currency => !isExDividendPast(getMonthDividendDate(stockId, idx, currency))
     );
   }, [activeCurrencies, getMonthValue, getMonthDividendDate]);
+
+  // Eligibility is applied BEFORE pagination (not after slicing to
+  // visibleLimit) so that every sort option draws its "first N" cards from
+  // the same eligible pool -- otherwise switching sort metrics changes
+  // which stocks land in the pre-filter slice, making the post-filter
+  // result look arbitrarily different between sort options.
+  const eligibleSortedStocks = useMemo(() => {
+    if (!isCardViewport || !isCollapsedMonthView) return sortedStocks;
+    return sortedStocks.filter(stock =>
+      monthHasUpcomingDividend(stock.stock_id, currentMonth) || monthHasUpcomingDividend(stock.stock_id, nextMonth)
+    );
+  }, [sortedStocks, isCardViewport, isCollapsedMonthView, monthHasUpcomingDividend, currentMonth, nextMonth]);
+
+  const totalStocksCount = eligibleSortedStocks.length;
+  const visibleLimit = showAllStocks
+    ? totalStocksCount
+    : Math.min(visibleCount, totalStocksCount || 0) || 0;
+  const limitedStocks = useMemo(() => {
+    if (!visibleLimit) return [];
+    return eligibleSortedStocks.slice(0, visibleLimit);
+  }, [eligibleSortedStocks, visibleLimit]);
+  const hasExtraRows = totalStocksCount > DEFAULT_VISIBLE_COUNT;
+  const shouldVirtualizeMain = showAllStocks && !showInfoAxis;
+
   const cardStockEntries = useMemo(() => {
     if (!isCollapsedMonthView) {
       return limitedStocks.map(stock => ({ stock, effectiveMonthIdx: currentMonth }));
     }
-    return limitedStocks
-      .map(stock => {
-        const effectiveMonthIdx = monthHasUpcomingDividend(stock.stock_id, currentMonth)
-          ? currentMonth
-          : monthHasUpcomingDividend(stock.stock_id, nextMonth)
-            ? nextMonth
-            : null;
-        return { stock, effectiveMonthIdx };
-      })
-      .filter(entry => entry.effectiveMonthIdx !== null);
+    // limitedStocks is already eligibleSortedStocks sliced, so every entry
+    // here already has an upcoming dividend in current or next month.
+    return limitedStocks.map(stock => ({
+      stock,
+      effectiveMonthIdx: monthHasUpcomingDividend(stock.stock_id, currentMonth) ? currentMonth : nextMonth,
+    }));
   }, [limitedStocks, isCollapsedMonthView, monthHasUpcomingDividend, currentMonth, nextMonth]);
 
   const monthCellCache = useMemo(() => {
